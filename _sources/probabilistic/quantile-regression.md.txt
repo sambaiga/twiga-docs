@@ -1,0 +1,172 @@
+# Quantile Regression
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/models/ml/prob/base_quantile.py`
+- `twiga/models/ml/qrcatboost_model.py`
+- `twiga/models/ml/qrxgboost_model.py`
+- `twiga/models/ml/qrlightgbm_model.py`
+- `twiga/models/nn/mlpfqr_model.py`
+- `twiga/models/nn/nhitsqr_model.py`
+- `twiga/distributions/nn/quantile.py`
+- `twiga/distributions/nn/fpquantile.py`
+- `twiga/distributions/nn/quantile.py`
+- `twiga/distributions/ml/utils.py`
+
+</details>
+
+Quantile regression estimates conditional quantiles of the target distribution rather than the mean, enabling prediction intervals without distributional assumptions.
+
+## ML Quantile Models
+
+### BaseQuantileRegressor
+
+All ML quantile models extend `BaseQuantileRegressor` (`twiga/models/ml/prob/base_quantile.py`), which itself extends [`BaseRegressor`](../models/ml-models.md).
+
+Key attributes:
+
+| Attribute | Type | Description |
+|---|---|---|
+| `quantiles` | `list[float]` | Quantile levels including confidence bounds (e.g., `[0.05, 0.25, 0.5, 0.75, 0.95]`) |
+| `conf_level` | `float` | Confidence level for interval bounds |
+| `models` | `dict[float, Any]` | Mapping from quantile to trained model |
+| `supports_multi_output` | `bool` | Whether the underlying model supports multi-output natively |
+
+Key methods:
+
+| Method | Returns | Description |
+|---|---|---|
+| `fit(X, y)` | `BaseQuantileRegressor` | Trains one model per quantile |
+| `predict(X, sigma=False)` | `tuple` | Returns (median, sigma) or (median, quantile_values) |
+| `forecast(x, sigma=False)` | `dict` | Returns structured forecast dictionary |
+
+### Engine-Specific Handling
+
+Different gradient boosting libraries handle quantile regression differently:
+
+| Engine | Approach | Loss Function |
+|---|---|---|
+| **CatBoost** | Single model, multi-quantile | `MultiQuantile:alpha=0.05,0.25,0.5,0.75,0.95` |
+| **XGBoost** | Single model with `quantile_alpha` param | `reg:quantileerror` with multi-output |
+| **LightGBM** | Separate model per quantile | `objective="quantile"`, `alpha=quantile_value` |
+
+### Available Models
+
+#### QRCATBOOSTModel
+
+```python
+from twiga.models.ml.qrcatboost_model import QRCATBOOSTConfig
+
+config = QRCATBOOSTConfig(
+    quantiles=[0.05, 0.25, 0.5, 0.75, 0.95],
+    conf_level=0.1,
+    task_type="CPU",
+)
+```
+
+#### QRXGBOOSTModel
+
+```python
+from twiga.models.ml.qrxgboost_model import QRXGBOOSTConfig
+
+config = QRXGBOOSTConfig(
+    quantiles=[0.05, 0.25, 0.5, 0.75, 0.95],
+    conf_level=0.1,
+    device="cpu",
+)
+```
+
+#### QRLIGHTGBMModel
+
+```python
+from twiga.models.ml.qrlightgbm_model import QRLIGHTGBMConfig
+
+config = QRLIGHTGBMConfig(
+    quantiles=[0.05, 0.25, 0.5, 0.75, 0.95],
+    conf_level=0.1,
+)
+```
+
+
+## NN Quantile Models
+
+All four NN architectures (MLPF, MLPGAM, MLPGAF, NHITS) support QR and FPQR distribution heads via the [backbone/head architecture](../models/nn-models.md#probabilistic-models). The `MLPFQRModel` is documented here as the canonical example; all other variants (`MLPGAMQRModel`, `MLPGAFQRModel`, `NHITSQRModel`, and their FPQR counterparts) follow the same config pattern.
+
+### MLPFQRModel
+
+The `MLPFQRModel` pairs the [MLPF](../models/nn-models.md) backbone with `QRDistribution`.
+
+```python
+from twiga.models.nn.mlpfqr_model import MLPFQRConfig
+
+config = MLPFQRConfig.from_data_config(data_config)
+config.quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
+config.conf_level = 0.05
+config.loss_fn = "pinball"      # or "huber-pinball"
+config.kappa = 0.25             # Huber kappa (only used with "huber-pinball")
+config.max_epochs = 20
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `quantiles` | `list[float] \| None` | `None` | Quantile levels to predict |
+| `conf_level` | `float` | `0.05` | Confidence level for interval bounds |
+| `loss_fn` | `Literal["pinball", "huber-pinball"]` | `"pinball"` | Loss function |
+| `kappa` | `float` | `0.25` | Huber transition parameter |
+| `eps` | `float` | `1e-6` | Numerical stability |
+
+### Loss Functions
+
+- **Pinball (quantile) loss**: Standard asymmetric loss that penalizes over- and under-prediction differently based on the quantile level $\tau$
+- **Huber-pinball loss**: Combines pinball loss with Huber loss for smoother gradients near zero, controlled by `kappa`
+
+
+## ML Distribution Utilities
+
+Helper functions in `twiga/distributions/ml/utils.py` for post-processing quantile predictions:
+
+| Function | Input Shape | Output Shape | Description |
+|---|---|---|---|
+| `interpolate_quantile(predictions, quantiles, target_quantile)` | `(B, Q, C)` | `(B, C)` | Linear interpolation for any target quantile |
+| `get_median_prediction(predictions, quantiles)` | `(B, Q, C)` | `(B, C)` | Extract or interpolate the median (0.5 quantile) |
+| `get_sigma_prediction(predictions, quantiles)` | `(B, Q, C)` | `(B, C)` | Estimate sigma: `(Q75 - Q25) / (2 * 0.6745)` |
+
+```python
+from twiga.distributions.ml.utils import get_median_prediction, get_sigma_prediction
+
+# predictions shape: (batch, num_quantiles, num_targets)
+median = get_median_prediction(predictions, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95])
+sigma = get_sigma_prediction(predictions, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95])
+```
+
+
+## Evaluation
+
+Quantile predictions are evaluated using [probabilistic metrics](../core/metrics.md):
+
+```python
+from twiga.core.metrics.prob import pinball_loss, pinball_score
+
+# Per-quantile loss
+loss = pinball_loss(y=true_values, q=quantile_predictions, tau=0.5)
+
+# Aggregated pinball score
+score = pinball_score(
+    true=true_values,
+    q_values=[q10, q50, q90],
+    taus=[0.1, 0.5, 0.9],
+)
+```
+
+Quantile predictions can also be used with [conformal quantile regression](conformal-prediction.md) for calibrated prediction intervals.
+
+
+## API Reference
+
+
+```{eval-rst}
+.. autoclass:: twiga.models.ml.prob.base_quantile.BaseQuantileRegressor
+   :members:
+   :show-inheritance:
+```

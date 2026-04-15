@@ -1,0 +1,180 @@
+# Key Concepts
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/core/config/base.py`
+- `twiga/core/data/pipeline.py`
+- `twiga/forecaster/core.py`
+
+</details>
+
+## Time Series Terminology
+
+Twiga uses the following terminology consistently throughout the framework:
+
+| Term | Description | Config Field |
+|---|---|---|
+| **Lookback window** | Number of past time steps used as input features | `DataPipelineConfig.lookback_window_size` |
+| **Forecast horizon** | Number of future time steps to predict | `DataPipelineConfig.forecast_horizon` |
+| **Period** | Sampling frequency of the time series (pandas offset alias) | `DataPipelineConfig.period` |
+| **Target feature** | The variable(s) to forecast | `DataPipelineConfig.target_feature` |
+| **Exogenous features** | External variables available only for historical data | `DataPipelineConfig.exogenous_features` |
+| **Future covariates** | External variables available for both past and future | `DataPipelineConfig.future_covariates` |
+
+```{mermaid}
+graph LR
+    subgraph "Lookback Window (past)"
+        A[t-L] --> B[t-L+1] --> C[...] --> D[t-1] --> E[t]
+    end
+    subgraph "Forecast Horizon (future)"
+        F[t+1] --> G[t+2] --> H[...] --> I[t+H]
+    end
+    E --> F
+```
+
+## Data Format Requirements
+
+Twiga expects a pandas `DataFrame` with:
+
+1. **A datetime column**  -  named `"timestamp"` by default (configurable via `date_column`)
+2. **One or more target columns**  -  the variable(s) to forecast
+3. **Optional feature columns**  -  exogenous variables, future covariates
+
+```python
+import pandas as pd
+
+# Example data format
+df = pd.DataFrame({
+    "timestamp": pd.date_range("2024-01-01", periods=1000, freq="1h"),
+    "load_mw": [100.0, 102.5, ...],       # target feature
+    "temperature": [25.0, 24.8, ...],      # exogenous feature
+    "ghi": [0.0, 0.0, ...],               # exogenous feature
+})
+```
+
+:::{admonition} Note
+:class: note
+
+The DataFrame should be sorted by timestamp and have a regular frequency. Missing values should be handled before passing data to the pipeline.
+:::
+
+
+## Configuration-Driven Design
+
+Twiga follows a **configuration-as-code** pattern. Every component is configured via a Pydantic dataclass that validates inputs at construction time. The three core configs are:
+
+### DataPipelineConfig
+
+Controls data preprocessing  -  what features to engineer, how to scale, and how to create sequences.
+
+```python
+from twiga.core.config import DataPipelineConfig
+
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,   # 7 days of hourly data
+    forecast_horizon=48,        # predict 2 days ahead
+    lags=[1, 24, 48, 168],
+    windows=[24, 48],
+    window_funcs=["mean", "std"],
+    calendar_features=["hour", "dayofweek"],
+)
+```
+
+See [Configuration System](../core/config.md) for the full field reference.
+
+### ForecasterConfig
+
+Controls training orchestration  -  backtesting splits, project naming, and output directories.
+
+```python
+from twiga.core.config import ForecasterConfig
+
+train_config = ForecasterConfig(
+    split_freq="months",
+    train_size=6,
+    test_size=1,
+    gap=0,
+    window="expanding",
+    project_name="MyProject",
+    seed=42,
+)
+```
+
+### Model Configs
+
+Each model has its own config class inheriting from `BaseModelConfig` (ML) or `NeuralModelConfig` (NN):
+
+```python
+from twiga.models.ml.xgboost_model import XGBOOSTConfig
+
+xgb_config = XGBOOSTConfig(
+    device="cpu",
+    random_state=42,
+)
+```
+
+## Model Domains
+
+Twiga organizes models into two domains:
+
+| Domain | Base Class | Training Framework | Models |
+|---|---|---|---|
+| `"ml"` | `BaseRegressor` | scikit-learn API | CatBoost, XGBoost, LightGBM, Linear Regression |
+| `"nn"` | `BaseNeuralForecast` | PyTorch Lightning | MLPF, MLPGAM, MLPGAF, NHITS, GANF |
+
+The domain is set automatically based on the model config's `domain` field and determines how the [TwigaForecaster](../core/forecaster.md) handles training, prediction, and checkpointing.
+
+## Forecasting Types
+
+Twiga supports three types of forecasting:
+
+### Point Forecasting
+
+Produces a single predicted value for each future time step. All models support point forecasting by default.
+
+```python
+predictions = forecaster.predict(test_df)
+```
+
+### Probabilistic Forecasting
+
+Produces a distribution of predicted values, either via quantile regression, parametric distributions, or a distribution-free conformal step.
+
+**ML probabilistic models:**
+
+- `QRCATBOOSTModel`, `QRXGBOOSTModel`, `QRLIGHTGBMModel`  -  quantile regression
+- `GAUSSCATBOOSTModel`  -  Gaussian (mean + sigma) output
+
+**NN probabilistic models** use a composable backbone/head design. Every architecture (MLPF, MLPGAM, MLPGAF, NHITS) can be paired with any distribution head by selecting the appropriate config:
+
+| Distribution | Use case | Example config |
+|---|---|---|
+| Normal | Symmetric, unbounded targets | `MLPFNormalConfig`, `NHITSNormalConfig` |
+| Laplace | Heavy-tailed, outlier-robust | `MLPFLaplaceConfig` |
+| LogNormal | Strictly positive, right-skewed | `MLPGAMLogNormalConfig` |
+| Gamma | Strictly positive, flexible skew | `MLPGAFGammaConfig` |
+| Beta | Bounded [0, 1] targets | `NHITSBetaConfig` |
+| StudentT | Very heavy tails | `MLPGAMStudentTConfig` |
+| QR | Fixed-grid quantile regression | `MLPFQRConfig`, `NHITSQRConfig` |
+| FPQR | Adaptive quantile proposals | `MLPGAMFPQRConfig` |
+| CRC | Conformal residual coverage | `MLPGAMCRCConfig` |
+
+See [Distribution Families](../probabilistic/distributions.md) for the backbone/head architecture and [Quantile Regression](../probabilistic/quantile-regression.md) for the QR-specific approach.
+
+### Interval Forecasting
+
+Produces prediction intervals (lower and upper bounds) via [conformal prediction](../probabilistic/conformal-prediction.md). This is a post-hoc calibration step applied to any trained model.
+
+```python
+# Calibrate conformal prediction on held-out data
+forecaster.calibrate(calibration_df)
+
+# Generate prediction intervals
+intervals = forecaster.predict_interval(test_df)
+```
+
+
+**Next:** [Quick Start Guide](quickstart.md)

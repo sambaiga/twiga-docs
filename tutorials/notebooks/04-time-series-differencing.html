@@ -1,0 +1,1540 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4. 04 — Time Series Differencing &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=724e8a05" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/04-time-series-differencing';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="5. 05 — ML Point Forecasting with Multiple Models" href="05-ml-point-forecasting.html" />
+    <link rel="prev" title="3. 03 — Feature Engineering" href="03-feature-engineering.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../../_static/searchtools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="01-getting-started.html">1. 01 — Getting Started with Twiga</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02-forecastability-analysis.html">2. 02 — Forecastability Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03-feature-engineering.html">3. 03 — Feature Engineering</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">4. 04 — Time Series Differencing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05-ml-point-forecasting.html">5. 05 — ML Point Forecasting with Multiple Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="06-backtesting-and-evaluation.html">6. 06 — Backtesting &amp; Robust Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15-baseline-benchmarking.html">7. 15 — Baseline Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="07-neural-networks.html">8. 07 — Neural Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="08-quantile-regression.html">9. 08 — Quantile Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="09-parametric-distributions.html">10. 09 — Parametric Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="10-conformal-prediction.html">11. 10 — Conformal Prediction &amp; Guaranteed Coverage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="11-hyperparameter-tuning.html">12. 11 — Hyperparameter Tuning with Optuna</a></li>
+<li class="toctree-l1"><a class="reference internal" href="12-ensemble-strategies.html">13. 12 — Ensemble Strategies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="13-custom-models.html">14. 13 — Custom Models &amp; Extension Points</a></li>
+<li class="toctree-l1"><a class="reference internal" href="14-typed-forecast-results.html">15. 14 — Typed Forecast Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="16-shap-feature-attribution.html">16. 16 — SHAP Feature Attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="17-mlops-tracking-serving.html">17. 17 — MLOps: Tracking, Serving &amp; Monitoring</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">4. </span>04 — Time Series Differencing</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="04-—-Time-Series-Differencing">
+<h1><span class="section-number">4. </span>04 — Time Series Differencing<a class="headerlink" href="#04-—-Time-Series-Differencing" title="Link to this heading">#</a></h1>
+<p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
+<hr class="docutils" />
+<p><strong>What you’ll build</strong></p>
+<p>A stationarity-aware preprocessing pipeline for net-load data: detect non-stationarity with ADF and KPSS tests, apply first-order and seasonal differencing with <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code>, train a LightGBM model on the transformed target, and invert the transformation to recover physical-unit forecasts.</p>
+<p><strong>Prerequisites</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="01-getting-started.html"><span class="doc">01 — Getting Started</span></a> (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)</p></li>
+<li><p><a class="reference internal" href="02-forecastability-analysis.html"><span class="doc">02 — Forecastability Analysis</span></a> (ADF/KPSS stationarity tests)</p></li>
+<li><p><a class="reference internal" href="03-feature-engineering.html"><span class="doc">03 — Feature Engineering</span></a> (lag features and the feature matrix)</p></li>
+<li><p>Python: basic statistics, numpy familiarity</p></li>
+</ul>
+<p><strong>Learning objectives</strong></p>
+<p>By the end of this notebook you will be able to:</p>
+<ol class="arabic simple">
+<li><p>Diagnose non-stationarity in a time series using ADF and KPSS tests and interpret their output</p></li>
+<li><p>Apply first-order and seasonal differencing using <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> from Twiga</p></li>
+<li><p>Explain the difference between first-order differencing and seasonal differencing and when to use each</p></li>
+<li><p>Train a LightGBM model on a differenced target and correctly invert the transformation at inference time</p></li>
+<li><p>Identify common mistakes (leaking the inversion step, double-differencing) and how to avoid them</p></li>
+</ol>
+<section id="1.-Setup">
+<h2><span class="section-number">4.1. </span>1. Setup<a class="headerlink" href="#1.-Setup" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.tsa.stattools</span><span class="w"> </span><span class="kn">import</span> <span class="n">adfuller</span>
+
+<span class="n">LetsPlot</span><span class="o">.</span><span class="n">setup_html</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.basic_plot</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">plot_acf</span><span class="p">,</span>
+    <span class="n">plot_forecast_grid</span><span class="p">,</span>
+    <span class="n">plot_timeseries</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span><span class="p">,</span> <span class="n">get_logger</span>
+
+<span class="n">configure</span><span class="p">()</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;tutorials&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">])</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2020-01-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2021-07-01&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Shape : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Period: </span><span class="si">%s</span><span class="s2"> → </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<span class="n">GT</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="2.-Stationarity-—-Diagnosis">
+<h2><span class="section-number">4.2. </span>2. Stationarity — Diagnosis<a class="headerlink" href="#2.-Stationarity-—-Diagnosis" title="Link to this heading">#</a></h2>
+<div class="line-block">
+<div class="line">A <strong>stationary</strong> time series has constant mean and variance over time.</div>
+<div class="line">Many regression-based forecasters (including tree models) implicitly assume the target distribution is roughly constant across the training window.</div>
+<div class="line">Strong trends or slowly drifting means violate this and can degrade generalisation.</div>
+</div>
+<section id="Augmented-Dickey-Fuller-test">
+<h3><span class="section-number">4.2.1. </span>Augmented Dickey-Fuller test<a class="headerlink" href="#Augmented-Dickey-Fuller-test" title="Link to this heading">#</a></h3>
+<div class="line-block">
+<div class="line">The <strong>ADF test</strong> examines the null hypothesis that a unit root is present (i.e., the series is <em>non-stationary</em>).</div>
+<div class="line">A <strong>p-value &gt; 0.05</strong> means we cannot reject the null — the series is likely non-stationary.</div>
+</div>
+<blockquote>
+<div><p><strong>Key concept — stationarity</strong></p>
+<p>A <strong>stationary</strong> time series has a constant mean, constant variance, and autocorrelation structure that does not change over time. Many regression-based forecasters (tree models, linear models) implicitly assume the target distribution is roughly stable across the training window. When the mean drifts or variance grows, the model sees a different distribution at test time than it saw during training — and generalisation degrades.</p>
+<p>Two common tests:</p>
+<ul class="simple">
+<li><p><strong>ADF (Augmented Dickey-Fuller)</strong> — null hypothesis: the series has a unit root (non-stationary). A p-value &gt; 0.05 means we cannot reject non-stationarity.</p></li>
+<li><p><strong>KPSS</strong> — null hypothesis: the series is stationary. Use both together for a more robust diagnosis.</p></li>
+</ul>
+<p>Rolling statistics are a fast visual check: if the rolling mean or standard deviation drifts significantly, the series is likely non-stationary.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">series</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+
+<span class="n">adf_result</span> <span class="o">=</span> <span class="n">adfuller</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">autolag</span><span class="o">=</span><span class="s2">&quot;AIC&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== ADF Test — raw NetLoad(kW) ===&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  ADF statistic : </span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">adf_result</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  p-value       : </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">adf_result</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Critical vals : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">adf_result</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+<span class="n">conclusion</span> <span class="o">=</span> <span class="s2">&quot;STATIONARY (p ≤ 0.05)&quot;</span> <span class="k">if</span> <span class="n">adf_result</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mf">0.05</span> <span class="k">else</span> <span class="s2">&quot;NON-STATIONARY (p &gt; 0.05)&quot;</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Conclusion    : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">conclusion</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Rolling mean / std — visual check</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span>
+<span class="n">roll</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">48</span> <span class="o">*</span> <span class="mi">7</span><span class="p">)</span>  <span class="c1"># 7-day window</span>
+
+<span class="n">roll_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="s2">&quot;Rolling Mean&quot;</span><span class="p">:</span> <span class="n">roll</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="s2">&quot;Rolling Std&quot;</span><span class="p">:</span> <span class="n">roll</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+
+<span class="n">p1</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
+    <span class="n">roll_df</span><span class="p">,</span>
+    <span class="n">y_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Rolling Mean&quot;</span><span class="p">],</span>
+    <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;NetLoad — raw series with 7-day rolling mean&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;kW&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p1</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ACF of raw series — slow decay signals non-stationarity</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_acf</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">),</span>
+    <span class="n">max_lag</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;ACF — raw NetLoad(kW) (slow decay = non-stationary)&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="3.-TimeSeriesDifferentiator-API">
+<h2><span class="section-number">4.3. </span>3. <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> API<a class="headerlink" href="#3.-TimeSeriesDifferentiator-API" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> is a scikit-learn <code class="docutils literal notranslate"><span class="pre">TransformerMixin</span></code> that applies <strong>N-th order differencing</strong> and stores the boundary values needed for <strong>perfect reconstruction</strong>. Because it inherits from <code class="docutils literal notranslate"><span class="pre">sklearn.base.TransformerMixin</span></code>, you also get <code class="docutils literal notranslate"><span class="pre">fit_transform</span></code> for free.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">diff_api_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Method&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;`fit(X)`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`transform(X)`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`inverse_transform(X)`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`forecast_inverse(predictions)`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`fit_transform(X)`&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Purpose&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Store initial/last values of each order for later inversion&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Apply N-th order `np.diff`; pads leading NaNs to preserve length&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Reconstruct the original scale from diff + stored anchors&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Project future diffs into original scale using last training values&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Convenience: `fit` + `transform` in one call (inherited from sklearn)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">diff_api_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**TimeSeriesDifferentiator — API Reference**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Scikit-learn compatible transformer for N-th order differencing&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">diff_api_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;twiga/core/data/diff.py&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">diff_api_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>Key concept — first-order differencing</strong></p>
+<p>First-order differencing transforms a series by subtracting each value from its predecessor: <code class="docutils literal notranslate"><span class="pre">Δy_t</span> <span class="pre">=</span> <span class="pre">y_t</span> <span class="pre">−</span> <span class="pre">y_{t−1}</span></code>. This removes linear trends — if the original series drifts upward at a roughly constant rate, the differenced series will oscillate around zero.</p>
+<p><strong>Seasonal differencing</strong> subtracts a lag equal to the seasonal period (e.g., lag-48 for a 30-min series with a 24-hour cycle): <code class="docutils literal notranslate"><span class="pre">Δy_t</span> <span class="pre">=</span> <span class="pre">y_t</span> <span class="pre">−</span> <span class="pre">y_{t−48}</span></code>. This removes repeating patterns without destroying the trend information.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> stores boundary values (the initial and final observations at each order) so the transformation can be perfectly inverted. No information is lost — the original series can be reconstructed exactly from the differenced series plus the stored anchors.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.diff</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeriesDifferentiator</span>
+
+<span class="n">diff1</span> <span class="o">=</span> <span class="n">TimeSeriesDifferentiator</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">diff1</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Fitted differentiator ===&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  order          : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">diff1</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  initial_values : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">diff1</span><span class="o">.</span><span class="n">history_</span><span class="p">[</span><span class="s2">&quot;initial_values&quot;</span><span class="p">])</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  last_values    : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">diff1</span><span class="o">.</span><span class="n">history_</span><span class="p">[</span><span class="s2">&quot;last_values&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diffed</span> <span class="o">=</span> <span class="n">diff1</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Original length : </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Diffed length   : </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">diffed</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Leading NaNs    : </span><span class="si">%d</span><span class="s2">  (equal to order=1)&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">diffed</span><span class="p">)))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Diffed stats    — mean=</span><span class="si">%.4f</span><span class="s2">  std=</span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">diffed</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">diffed</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verify perfect round-trip reconstruction</span>
+<span class="n">reconstructed</span> <span class="o">=</span> <span class="n">diff1</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">diffed</span><span class="p">)</span>
+<span class="n">max_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">reconstructed</span> <span class="o">-</span> <span class="n">series</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Max reconstruction error: </span><span class="si">%.2e</span><span class="s2">  (should be ~0)&quot;</span><span class="p">,</span> <span class="n">max_error</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">max_error</span> <span class="o">&lt;</span> <span class="mf">1e-8</span><span class="p">,</span> <span class="s2">&quot;Reconstruction failed!&quot;</span>  <span class="c1"># noqa: S101</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Round-trip test passed.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Side-by-side: raw vs differenced</span>
+<span class="n">raw_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">],</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">:</span> <span class="n">series</span><span class="p">})</span>
+<span class="n">diff_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">],</span> <span class="s2">&quot;Differenced&quot;</span><span class="p">:</span> <span class="n">diffed</span><span class="p">})</span>
+
+<span class="n">p1</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
+    <span class="n">raw_df</span><span class="p">,</span>
+    <span class="n">y_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">],</span>
+    <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Raw NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;kW&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p1</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p2</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
+    <span class="n">diff_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span>
+    <span class="n">y_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Differenced&quot;</span><span class="p">],</span>
+    <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;1st-order differenced NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;Δ kW&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p2</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="4.-Stationarity-After-Differencing">
+<h2><span class="section-number">4.4. </span>4. Stationarity After Differencing<a class="headerlink" href="#4.-Stationarity-After-Differencing" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diffed_clean</span> <span class="o">=</span> <span class="n">diffed</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">diffed</span><span class="p">)]</span>
+
+<span class="n">adf_diff</span> <span class="o">=</span> <span class="n">adfuller</span><span class="p">(</span><span class="n">diffed_clean</span><span class="p">,</span> <span class="n">autolag</span><span class="o">=</span><span class="s2">&quot;AIC&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== ADF Test — 1st-order differenced ===&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  ADF statistic : </span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">adf_diff</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  p-value       : </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">adf_diff</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">conclusion_diff</span> <span class="o">=</span> <span class="s2">&quot;STATIONARY (p ≤ 0.05)&quot;</span> <span class="k">if</span> <span class="n">adf_diff</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mf">0.05</span> <span class="k">else</span> <span class="s2">&quot;NON-STATIONARY (p &gt; 0.05)&quot;</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Conclusion    : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">conclusion_diff</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ACF after differencing — should decay faster</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_acf</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">diffed_clean</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Differenced NetLoad(kW)&quot;</span><span class="p">),</span>
+    <span class="n">max_lag</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;ACF — 1st-order differenced NetLoad (faster decay = more stationary)&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>Key concept — inversion</strong></p>
+<p>When you forecast on a differenced series, your model predicts <strong>changes</strong> (Δy), not levels (y). To get back to the original scale you must integrate the changes — that is, take a cumulative sum starting from a known anchor.</p>
+<p>For <strong>batch regression</strong> (where each step is predicted independently), the correct anchor is always the <em>actual</em> previous value, not a predicted one: <code class="docutils literal notranslate"><span class="pre">ŷ_t</span> <span class="pre">=</span> <span class="pre">y_{t−1}^{actual}</span> <span class="pre">+</span> <span class="pre">Δŷ_t</span></code>. This keeps errors from accumulating — each step’s error is independent.</p>
+<p>For <strong>AR horizon forecasting</strong> (where a model generates an entire horizon window in one shot, like a neural network), the deltas are chained intentionally within that window: <code class="docutils literal notranslate"><span class="pre">ŷ_1</span> <span class="pre">=</span> <span class="pre">y_last^{train}</span> <span class="pre">+</span> <span class="pre">Δŷ_1</span></code>, <code class="docutils literal notranslate"><span class="pre">ŷ_2</span> <span class="pre">=</span> <span class="pre">ŷ_1</span> <span class="pre">+</span> <span class="pre">Δŷ_2</span></code>, … <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator.forecast_inverse(horizon_deltas)</span></code> implements this correctly.</p>
+<p>Twiga handles both patterns — you choose the right one based on your model architecture.</p>
+</div></blockquote>
+</section>
+<section id="5.-Forecasting-on-the-Differenced-Target">
+<h2><span class="section-number">4.5. </span>5. Forecasting on the Differenced Target<a class="headerlink" href="#5.-Forecasting-on-the-Differenced-Target" title="Link to this heading">#</a></h2>
+<p>The correct workflow for <strong>batch regression</strong> (a model that predicts each timestep independently, like CatBoost) is:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Raw series
+  │
+  ├─ fit(train)        → store anchors
+  ├─ transform(train)  → Δ_train  (train the model on Δy)
+  │
+  └─ reconstruction:   y_t = y_{t-1}_actual + Δy_t_predicted
+                            ↑ actual, not predicted — errors never accumulate
+</pre></div>
+</div>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> is designed for <strong>sequential AR forecasting</strong> — a model that generates a single horizon window all at once (e.g. 48-step-ahead), where chaining the deltas within that window is intentional. For independent step-by-step batch regression, use <code class="docutils literal notranslate"><span class="pre">actual_prev</span> <span class="pre">+</span> <span class="pre">Δy_pred</span></code>.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">mistakes_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Mistake&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;`forecast_inverse(all_test_preds)`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Differencing lag features&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Why it&#39;s wrong&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Applies `cumsum` over all test steps — every per-step error stacks on all future steps&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Removes the level information the model needs to predict the current level&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Fix&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Use `actual_prev + Δy_pred` instead&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Keep lag features in **original scale**&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">mistakes_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Two Common Mistakes That Destroy Performance**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Avoid these when building a differenced forecasting pipeline&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">mistakes_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">mistakes_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build a simple feature matrix with lag-48 (same time yesterday)</span>
+<span class="n">TARGET</span> <span class="o">=</span> <span class="s2">&quot;NetLoad(kW)&quot;</span>
+<span class="n">N_LAGS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">48</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">336</span><span class="p">]</span>  <span class="c1"># 1 day, 2 days, 7 days</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">lag</span> <span class="ow">in</span> <span class="n">N_LAGS</span><span class="p">:</span>
+    <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;lag_</span><span class="si">{</span><span class="n">lag</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">lag</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">feature_cols</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;lag_</span><span class="si">{</span><span class="n">lag</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">lag</span> <span class="ow">in</span> <span class="n">N_LAGS</span><span class="p">]</span>
+
+<span class="c1"># Train/test split (last 30 days as test)</span>
+<span class="n">n_test</span> <span class="o">=</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">30</span>  <span class="c1"># 30 days of 30-min data</span>
+<span class="n">train_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="o">-</span><span class="n">n_test</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">test_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="n">n_test</span><span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Train: </span><span class="si">%d</span><span class="s2"> rows | Test: </span><span class="si">%d</span><span class="s2"> rows&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_df</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_df</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">catboost</span><span class="w"> </span><span class="kn">import</span> <span class="n">CatBoostRegressor</span>
+
+<span class="c1"># ── Baseline: train on RAW target ──────────────────────────────────────────</span>
+<span class="n">cb_raw</span> <span class="o">=</span> <span class="n">CatBoostRegressor</span><span class="p">(</span><span class="n">iterations</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">cb_raw</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">],</span> <span class="n">train_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">])</span>
+<span class="n">pred_raw</span> <span class="o">=</span> <span class="n">cb_raw</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_df</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">])</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Baseline (raw target) model trained.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── Differenced model ──────────────────────────────────────────────────────</span>
+<span class="c1"># Fit differentiator on TRAIN only (prevent leakage)</span>
+<span class="n">diff_model</span> <span class="o">=</span> <span class="n">TimeSeriesDifferentiator</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">diff_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+<span class="c1"># Differentiate the target — prepend last train value to bridge train→test boundary</span>
+<span class="n">diff_target_train</span> <span class="o">=</span> <span class="n">diff_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">diff_target_test</span> <span class="o">=</span> <span class="n">diff_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="n">train_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span> <span class="n">test_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">]))[</span>
+    <span class="mi">1</span><span class="p">:</span>
+<span class="p">]</span>  <span class="c1"># drop the 1 leading NaN (order=1)</span>
+
+<span class="c1"># Lag features stay in ORIGINAL scale — they carry level information the model needs.</span>
+<span class="c1"># Differencing them would strip the &quot;where are we now&quot; context from every prediction.</span>
+<span class="n">X_train_diff</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">X_test_diff</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<span class="c1"># Filter out NaN row produced by differencing (first train row)</span>
+<span class="n">train_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">diff_target_train</span><span class="p">)</span>
+<span class="n">cb_diff</span> <span class="o">=</span> <span class="n">CatBoostRegressor</span><span class="p">(</span><span class="n">iterations</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">cb_diff</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train_diff</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">train_mask</span><span class="p">],</span> <span class="n">diff_target_train</span><span class="p">[</span><span class="n">train_mask</span><span class="p">])</span>
+
+<span class="n">pred_diff_delta</span> <span class="o">=</span> <span class="n">cb_diff</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test_diff</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+<span class="c1"># ── Correct reconstruction for batch regression ─────────────────────────────</span>
+<span class="c1"># y_t = y_{t-1}_actual + Δy_t_predicted</span>
+<span class="c1"># Each prediction uses the REAL previous value — errors never accumulate.</span>
+<span class="n">actual_prev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="n">train_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span> <span class="n">test_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="n">pred_diff</span> <span class="o">=</span> <span class="n">actual_prev</span> <span class="o">+</span> <span class="n">pred_diff_delta</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Differenced model trained. Reconstruction: y_t = y_{t-1}_actual + Δy_t_pred&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="6.-Evaluation-&amp;-Impact">
+<h2><span class="section-number">4.6. </span>6. Evaluation &amp; Impact<a class="headerlink" href="#6.-Evaluation-&-Impact" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">y_true</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mae</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">yhat</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">yhat</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">rmse</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">yhat</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">yhat</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">wmape</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">yhat</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">yhat</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">))</span> <span class="o">*</span> <span class="mi">100</span>
+
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Model&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;CatBoost (raw)&quot;</span><span class="p">,</span> <span class="s2">&quot;CatBoost (differenced)&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;MAE&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">mae</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">pred_raw</span><span class="p">),</span> <span class="n">mae</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">pred_diff</span><span class="p">)],</span>
+        <span class="s2">&quot;RMSE&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">rmse</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">pred_raw</span><span class="p">),</span> <span class="n">rmse</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">pred_diff</span><span class="p">)],</span>
+        <span class="s2">&quot;WMAPE (%)&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">wmape</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">pred_raw</span><span class="p">),</span> <span class="n">wmape</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">pred_diff</span><span class="p">)],</span>
+    <span class="p">}</span>
+<span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="n">results</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise predictions — first 7 days of the test window</span>
+<span class="n">n_show</span> <span class="o">=</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">7</span>
+<span class="n">ts</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:</span><span class="n">n_show</span><span class="p">]</span>
+
+<span class="n">raw_model_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;Actual&quot;</span><span class="p">:</span> <span class="n">y_true</span><span class="p">[:</span><span class="n">n_show</span><span class="p">],</span> <span class="s2">&quot;forecast&quot;</span><span class="p">:</span> <span class="n">pred_raw</span><span class="p">[:</span><span class="n">n_show</span><span class="p">],</span> <span class="s2">&quot;Model&quot;</span><span class="p">:</span> <span class="s2">&quot;CatBoost (raw)&quot;</span><span class="p">})</span>
+<span class="n">diff_model_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span><span class="s2">&quot;Actual&quot;</span><span class="p">:</span> <span class="n">y_true</span><span class="p">[:</span><span class="n">n_show</span><span class="p">],</span> <span class="s2">&quot;forecast&quot;</span><span class="p">:</span> <span class="n">pred_diff</span><span class="p">[:</span><span class="n">n_show</span><span class="p">],</span> <span class="s2">&quot;Model&quot;</span><span class="p">:</span> <span class="s2">&quot;CatBoost (differenced)&quot;</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="n">combined_forecast</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">raw_model_df</span><span class="p">,</span> <span class="n">diff_model_df</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast_grid</span><span class="p">(</span>
+    <span class="n">combined_forecast</span><span class="p">,</span>
+    <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
+    <span class="n">forecast_col</span><span class="o">=</span><span class="s2">&quot;forecast&quot;</span><span class="p">,</span>
+    <span class="n">model_col</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
+    <span class="n">n_samples_per_model</span><span class="o">=</span><span class="n">n_show</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;CatBoost raw vs differenced target — first 7 days of test&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;kW&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Residual comparison</span>
+<span class="n">res_raw</span> <span class="o">=</span> <span class="n">y_true</span> <span class="o">-</span> <span class="n">pred_raw</span>
+<span class="n">res_diff</span> <span class="o">=</span> <span class="n">y_true</span> <span class="o">-</span> <span class="n">pred_diff</span>
+
+<span class="n">residuals_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">res_raw</span><span class="p">,</span> <span class="n">res_diff</span><span class="p">]),</span>
+        <span class="s2">&quot;distribution&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Raw residuals&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">res_raw</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;Differenced residuals&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">res_diff</span><span class="p">),</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.basic_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_density</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_density</span><span class="p">(</span>
+    <span class="n">residuals_df</span><span class="p">,</span>
+    <span class="n">x_col</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
+    <span class="n">color_col</span><span class="o">=</span><span class="s2">&quot;distribution&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Residual distribution — Raw vs Differenced model&quot;</span><span class="p">,</span>
+    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;Residual (kW)&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="7.-Second-Order-Differencing">
+<h2><span class="section-number">4.7. </span>7. Second-Order Differencing<a class="headerlink" href="#7.-Second-Order-Differencing" title="Link to this heading">#</a></h2>
+<div class="line-block">
+<div class="line">Some series require <strong>two rounds of differencing</strong> to reach stationarity (e.g., series with both a trend and seasonal drift).</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator(order=2)</span></code> applies <code class="docutils literal notranslate"><span class="pre">np.diff</span></code> twice and stores two sets of anchor values.</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diff2</span> <span class="o">=</span> <span class="n">TimeSeriesDifferentiator</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">diff2</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+
+<span class="n">diffed2</span> <span class="o">=</span> <span class="n">diff2</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;2nd-order diff — leading NaNs: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">diffed2</span><span class="p">)))</span>
+
+<span class="c1"># Verify round-trip for order=2</span>
+<span class="n">reconstructed2</span> <span class="o">=</span> <span class="n">diff2</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">diffed2</span><span class="p">)</span>
+<span class="n">max_err2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">reconstructed2</span> <span class="o">-</span> <span class="n">series</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Max reconstruction error (order=2): </span><span class="si">%.2e</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">max_err2</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">max_err2</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="s2">&quot;2nd-order round-trip failed!&quot;</span>  <span class="c1"># noqa: S101</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;2nd-order round-trip test passed.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ADF on 2nd-order differenced series</span>
+<span class="n">diffed2_clean</span> <span class="o">=</span> <span class="n">diffed2</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">diffed2</span><span class="p">)]</span>
+<span class="n">adf2</span> <span class="o">=</span> <span class="n">adfuller</span><span class="p">(</span><span class="n">diffed2_clean</span><span class="p">,</span> <span class="n">autolag</span><span class="o">=</span><span class="s2">&quot;AIC&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ADF p-value (raw):         </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">adf_result</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ADF p-value (1st order):   </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">adf_diff</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ADF p-value (2nd order):   </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">adf2</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="c1"># Visualise all three</span>
+<span class="n">step_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">))</span>
+<span class="n">multi_diff_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">step_idx</span><span class="p">,</span> <span class="n">step_idx</span><span class="p">,</span> <span class="n">step_idx</span><span class="p">]),</span>
+        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">series</span><span class="p">,</span> <span class="n">diffed</span><span class="p">,</span> <span class="n">diffed2</span><span class="p">]),</span>
+        <span class="s2">&quot;Series&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;Raw NetLoad&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;1st-order diff&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">diffed</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;2nd-order diff&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">diffed2</span><span class="p">)</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.basic_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_density</span>
+
+<span class="k">for</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Raw NetLoad&quot;</span><span class="p">,</span> <span class="s2">&quot;1st-order diff&quot;</span><span class="p">,</span> <span class="s2">&quot;2nd-order diff&quot;</span><span class="p">]:</span>
+    <span class="n">sub</span> <span class="o">=</span> <span class="n">multi_diff_df</span><span class="p">[</span><span class="n">multi_diff_df</span><span class="p">[</span><span class="s2">&quot;Series&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">series_name</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
+        <span class="n">sub</span><span class="p">,</span>
+        <span class="n">y_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">],</span>
+        <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;step&quot;</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">series_name</span><span class="p">,</span>
+        <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">display</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="8.-forecast_inverse-—-When-to-Use-It">
+<h2><span class="section-number">4.8. </span>8. <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> — When to Use It<a class="headerlink" href="#8.-forecast_inverse-—-When-to-Use-It" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> is correct when a model produces an entire <strong>forecast horizon in one shot</strong> (e.g. a neural network that outputs 48 future deltas at once). It chains all deltas together starting from the last observed training value.</p>
+<p><strong>This is intentional chaining</strong>, not an error — within a single forward pass the deltas are sequentially dependent.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>last_train_value
+   └─→ + Δ_pred[0] = ŷ_1
+          └─→ + Δ_pred[1] = ŷ_2
+                 └─→ + Δ_pred[2] = ŷ_3  ...
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">actual_prev</span> <span class="pre">+</span> <span class="pre">Δy_pred</span></code> for batch regression; use <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> for single-horizon AR rollouts.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simulate a short future forecast scenario</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">48</span>  <span class="c1"># one day ahead</span>
+
+<span class="c1"># Toy: suppose our model predicted a constant delta of +0.5 kW per step</span>
+<span class="n">toy_future_diffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">HORIZON</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+
+<span class="c1"># Invert using the 1st-order differentiator fitted on train</span>
+<span class="n">toy_forecast</span> <span class="o">=</span> <span class="n">diff_model</span><span class="o">.</span><span class="n">forecast_inverse</span><span class="p">(</span><span class="n">toy_future_diffs</span><span class="p">)</span>
+
+<span class="n">last_train_val</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Last training value     : </span><span class="si">%.3f</span><span class="s2"> kW&quot;</span><span class="p">,</span> <span class="n">last_train_val</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Forecasted values[0:5]  : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">toy_forecast</span><span class="p">[:</span><span class="mi">5</span><span class="p">],</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Expected values[0:5]    : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">last_train_val</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">toy_future_diffs</span><span class="p">)[:</span><span class="mi">5</span><span class="p">],</span> <span class="mi">3</span><span class="p">))</span>
+
+<span class="n">forecast_df_plot</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">HORIZON</span><span class="p">),</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">toy_forecast</span><span class="p">})</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
+    <span class="n">forecast_df_plot</span><span class="p">,</span>
+    <span class="n">y_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">],</span>
+    <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;step&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;forecast_inverse — integrating future deltas back to original scale&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;kW&quot;</span><span class="p">,</span>
+    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;Forecast step&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="9.-When-to-Use-Differencing">
+<h2><span class="section-number">4.9. </span>9. When to Use Differencing<a class="headerlink" href="#9.-When-to-Use-Differencing" title="Link to this heading">#</a></h2>
+<p>Key caveats:</p>
+<ul class="simple">
+<li><p>Always fit the differentiator on <strong>training data only</strong> to prevent leakage.</p></li>
+<li><p><strong>Do not difference lag features</strong> — they provide the level context needed to predict levels.</p></li>
+<li><p>Keep the fitted differentiator at inference time for reconstruction.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inverse_transform</span></code> reconstructs the <strong>full history</strong> (needs leading NaNs); <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> is for future horizons only.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">when_to_diff_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Situation&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;ADF p-value &gt; 0.05, rolling mean drifts&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;1st-order diff still non-stationary&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Strong seasonal pattern (e.g., 48-step)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Series is already stationary&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Neural network models (MLPF, MLPGAM)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Tree-based models (CatBoost, LightGBM)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Recommended action&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Apply 1st-order differencing&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Try 2nd-order differencing&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Use seasonal differencing: `np.diff(x, n=1)` with period lag&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Skip — differencing adds variance without benefit&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Usually unnecessary — networks learn trends internally&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Often helps when target distribution shifts over time&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">reconstruction_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Model type&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Batch regression (CatBoost, LightGBM, XGBoost) — predicts each step independently&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Horizon AR (neural net / ARIMA forecasting a full window at once)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Correct inversion&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;`y_t = y_{t-1}_actual + Δy_t_predicted`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`diff.forecast_inverse(horizon_deltas)`&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">when_to_diff_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**When to Apply Differencing**&quot;</span><span class="p">),</span> <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Situation-by-situation decision guide&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">when_to_diff_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">when_to_diff_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">reconstruction_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Model type&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Batch regression (CatBoost, LightGBM, XGBoost) — predicts each step independently&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Horizon AR (neural net / ARIMA — generates a full horizon window at once)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Correct inversion&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;`y_t = y_{t-1}_actual + Δy_t_predicted`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`diff.forecast_inverse(horizon_deltas)`&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">reconstruction_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Reconstruction Rules by Model Type**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Choose the right inversion strategy based on how your model predicts&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">reconstruction_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">reconstruction_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="10.-Workflow-Summary">
+<h2><span class="section-number">4.10. </span>10. Workflow Summary<a class="headerlink" href="#10.-Workflow-Summary" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">workflow_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Step&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;1. Diagnose stationarity&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;2. Fit differentiator&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;3. Differentiate target&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;4. Train model on Δ&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;5. Invert (batch regression)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;6. Invert (AR horizon forecast)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;7. Reconstruct full history&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Code&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;`adfuller(series)`, rolling mean/std, ACF&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`diff = TimeSeriesDifferentiator(order=1); diff.fit(train_series)`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`y_diff = diff.transform(train_series)`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`model.fit(X_train_original_scale, y_diff[~np.isnan(y_diff)])`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`actual_prev + model.predict(X_test)`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`diff.forecast_inverse(horizon_deltas)`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`diff.inverse_transform(y_diff)`&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">workflow_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Differenced Forecasting Pipeline — Step by Step**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;End-to-end workflow from raw series to inverted predictions&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">workflow_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">workflow_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Wrapping-up">
+<h2><span class="section-number">4.11. </span>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<p><strong>What you did</strong></p>
+<ul class="simple">
+<li><p>☒ Diagnosed non-stationarity in a net-load series using the ADF test, rolling statistics, and ACF</p></li>
+<li><p>☒ Applied first-order differencing with <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> and verified perfect round-trip reconstruction</p></li>
+<li><p>☒ Confirmed that the differenced series is stationary using the ADF test</p></li>
+<li><p>☒ Built a correct diff → train → predict → invert pipeline using batch-regression reconstruction</p></li>
+<li><p>☒ Demonstrated second-order differencing for series that require two rounds of transformation</p></li>
+<li><p>☒ Used <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> for the AR horizon use case and explained when to choose each inversion strategy</p></li>
+<li><p>☒ Compared MAE/RMSE/WMAPE of raw vs. differenced CatBoost models on the same test window</p></li>
+</ul>
+<p><strong>Key takeaways</strong></p>
+<ol class="arabic simple">
+<li><p>Stationarity is a practical concern, not just theory — a drifting target distribution degrades tree model generalisation at test time.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> is lossless: the original series can always be recovered exactly from the differenced series + stored anchors.</p></li>
+<li><p>For batch regression, inversion is <code class="docutils literal notranslate"><span class="pre">ŷ_t</span> <span class="pre">=</span> <span class="pre">y_{t−1}^{actual}</span> <span class="pre">+</span> <span class="pre">Δŷ_t</span></code> — never accumulate predicted errors.</p></li>
+<li><p>Always fit the differentiator on training data only; use original-scale lag features to preserve level context.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> is the right tool for AR horizon models that generate a full window at once.</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="What's-next?">
+<h2><span class="section-number">4.12. </span>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<p>Combine differencing with the full Twiga pipeline in <a class="reference external" href="04-ml-point-forecasting.ipynb">NB04 — ML Point Forecasting</a> by pre-processing your DataFrame with <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> before passing it to <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code>, or explore <a class="reference internal" href="14-typed-forecast-results.html"><span class="doc">NB14 — Typed Forecast Results</span></a> for structured output handling.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
+
+<span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
+<span class="n">_TEAL_MID</span> <span class="o">=</span> <span class="s2">&quot;#069fac&quot;</span>
+<span class="n">_TEAL_LIGHT</span> <span class="o">=</span> <span class="s2">&quot;#e8f5f8&quot;</span>
+<span class="n">_TEAL_BEST</span> <span class="o">=</span> <span class="s2">&quot;#d0ecf1&quot;</span>
+<span class="n">_TEXT_DARK</span> <span class="o">=</span> <span class="s2">&quot;#2d3748&quot;</span>
+<span class="n">_TEXT_MUTED</span> <span class="o">=</span> <span class="s2">&quot;#718096&quot;</span>
+<span class="n">_WHITE</span> <span class="o">=</span> <span class="s2">&quot;#ffffff&quot;</span>
+
+<span class="n">steps</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;03&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Feature Engineering&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Lag, rolling-window, and calendar features&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="s2">&quot;lags&quot;</span><span class="p">,</span> <span class="s2">&quot;windows&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;04&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Time Series Differencing&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Stationarity · first-order and seasonal differencing · inversion&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;differencing&quot;</span><span class="p">,</span> <span class="s2">&quot;stationarity&quot;</span><span class="p">,</span> <span class="s2">&quot;ADF&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;05&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;ML Point Forecasting&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;CatBoost · XGBoost · LightGBM · model comparison&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;catboost&quot;</span><span class="p">,</span> <span class="s2">&quot;xgboost&quot;</span><span class="p">,</span> <span class="s2">&quot;lightgbm&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;06&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Backtesting &amp; Evaluation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Rolling-window backtesting · fold-level metrics&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;backtesting&quot;</span><span class="p">,</span> <span class="s2">&quot;evaluation&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;08&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Quantile Regression&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;First probabilistic step — prediction intervals&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;probabilistic&quot;</span><span class="p">,</span> <span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="s2">&quot;intervals&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+<span class="n">track_name</span> <span class="o">=</span> <span class="s2">&quot;Intermediate Track&quot;</span>
+<span class="n">footer</span> <span class="o">=</span> <span class="s1">&#39;Next: build models on the transformed target in &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;05 — ML Point Forecasting&lt;/span&gt;.&#39;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bg</span><span class="p">,</span> <span class="n">fg</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;display:inline-block;background:</span><span class="si">{</span><span class="n">bg</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">fg</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;&quot;&gt;</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s1">&lt;/span&gt;&#39;</span>
+
+
+<span class="n">ch</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;active&quot;</span><span class="p">]</span>
+    <span class="n">cb</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_WHITE</span>
+    <span class="n">cbo</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="s2">&quot;#d1ecf1&quot;</span>
+    <span class="n">nb</span> <span class="o">=</span> <span class="n">_TEAL_MID</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_LIGHT</span>
+    <span class="n">nf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">tf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_DARK</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="s2">&quot;#cce8ef&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_MUTED</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="s2">&quot;#0d5f75&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_BEST</span>
+    <span class="n">bf</span> <span class="o">=</span> <span class="s2">&quot;#b8e4ed&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">yh</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;float:right;background:</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:700;padding:2px 10px;border-radius:12px;&quot;&gt;★ you are here&lt;/span&gt;&#39;</span>
+        <span class="k">if</span> <span class="n">a</span>
+        <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">bdg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">bf</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">])</span>
+    <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;background:</span><span class="si">{</span><span class="n">cb</span><span class="si">}</span><span class="s1">;border:2px solid </span><span class="si">{</span><span class="n">cbo</span><span class="si">}</span><span class="s1">;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:</span><span class="si">{</span><span class="s2">&quot;0 4px 14px rgba(16,117,145,.25)&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;0 1px 4px rgba(0,0,0,.06)&quot;</span><span class="si">}</span><span class="s1">;&quot;&gt;&lt;div style=&quot;min-width:44px;height:44px;background:</span><span class="si">{</span><span class="n">nb</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">nf</span><span class="si">}</span><span class="s1">;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;flex:1;&quot;&gt;&lt;div style=&quot;font-size:15px;font-weight:700;color:</span><span class="si">{</span><span class="n">tf</span><span class="si">}</span><span class="s1">;margin-bottom:4px;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="si">}{</span><span class="n">yh</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;font-size:12.5px;color:</span><span class="si">{</span><span class="n">df</span><span class="si">}</span><span class="s1">;margin-bottom:8px;line-height:1.5;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;desc&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div&gt;</span><span class="si">{</span><span class="n">bdg</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;display:flex;justify-content:center;height:32px;&quot;&gt;&lt;svg width=&quot;24&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 32&quot; fill=&quot;none&quot;&gt;&lt;line x1=&quot;12&quot; y1=&quot;0&quot; x2=&quot;12&quot; y2=&quot;24&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot; stroke-dasharray=&quot;4 3&quot;/&gt;&lt;polygon points=&quot;6,20 18,20 12,30&quot; fill=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;&#39;</span>
+
+<span class="n">HTML</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;font-family:Inter,</span><span class="se">\&#39;</span><span class="s1">Segoe UI</span><span class="se">\&#39;</span><span class="s1">,sans-serif;max-width:640px;margin:8px 0;&quot;&gt;&lt;div style=&quot;background:linear-gradient(135deg,</span><span class="si">{</span><span class="n">_TEAL</span><span class="si">}</span><span class="s1"> 0%,</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1"> 100%);border-radius:12px 12px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px;&quot;&gt;&lt;svg width=&quot;22&quot; height=&quot;22&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot;&gt;&lt;path d=&quot;M12 2L2 7l10 5 10-5-10-5z&quot;/&gt;&lt;path d=&quot;M2 17l10 5 10-5&quot;/&gt;&lt;path d=&quot;M2 12l10 5 10-5&quot;/&gt;&lt;/svg&gt;&lt;span style=&quot;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:14px;font-weight:700;&quot;&gt;Twiga Learning Path — </span><span class="si">{</span><span class="n">track_name</span><span class="si">}</span><span class="s1">&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;border:2px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;border-top:none;border-radius:0 0 12px 12px;padding:20px 20px 16px;background:#f9fdfe;display:flex;flex-direction:column;&quot;&gt;</span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s1">&lt;div style=&quot;margin-top:16px;font-size:11.5px;color:</span><span class="si">{</span><span class="n">_TEXT_MUTED</span><span class="si">}</span><span class="s1">;text-align:center;border-top:1px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;padding-top:12px;&quot;&gt;</span><span class="si">{</span><span class="n">footer</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="03-feature-engineering.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">3. </span>03 — Feature Engineering</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="05-ml-point-forecasting.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">5. </span>05 — ML Point Forecasting with Multiple Models</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Setup">4.1. 1. Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Stationarity-—-Diagnosis">4.2. 2. Stationarity — Diagnosis</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Augmented-Dickey-Fuller-test">4.2.1. Augmented Dickey-Fuller test</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-TimeSeriesDifferentiator-API">4.3. 3. <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> API</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Stationarity-After-Differencing">4.4. 4. Stationarity After Differencing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Forecasting-on-the-Differenced-Target">4.5. 5. Forecasting on the Differenced Target</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Evaluation-&amp;-Impact">4.6. 6. Evaluation &amp; Impact</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-Second-Order-Differencing">4.7. 7. Second-Order Differencing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-forecast_inverse-—-When-to-Use-It">4.8. 8. <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> — When to Use It</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9.-When-to-Use-Differencing">4.9. 9. When to Use Differencing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#10.-Workflow-Summary">4.10. 10. Workflow Summary</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">4.11. Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">4.12. What’s next?</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../_sources/tutorials/notebooks/04-time-series-differencing.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

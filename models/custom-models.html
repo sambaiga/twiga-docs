@@ -1,0 +1,1435 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Creating Custom Models &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/twiga.css?v=724e8a05" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'models/custom-models';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Hyperparameter Optimization" href="../advanced/hyperparameter-tuning.html" />
+    <link rel="prev" title="Neural Network Models" href="nn-models.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="baseline-models.html">Baseline Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ml-models.html">Machine Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nn-models.html">Neural Network Models</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Creating Custom Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced/hyperparameter-tuning.html">Hyperparameter Optimization</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Model Catalog Overview</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Creating Custom Models</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="creating-custom-models">
+<h1>Creating Custom Models<a class="headerlink" href="#creating-custom-models" title="Link to this heading">#</a></h1>
+<details>
+<summary>Source Files</summary>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/registry.py</span></code> – Model registry and dynamic loading</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/ml/core/base_regressor.py</span></code> – <code class="docutils literal notranslate"><span class="pre">BaseRegressor</span></code> (ML base class)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/core/base.py</span></code> – <code class="docutils literal notranslate"><span class="pre">BaseNeuralForecast</span></code> (NN base class)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/core/base_arch.py</span></code> – <code class="docutils literal notranslate"><span class="pre">BaseArchitecture</span></code> (NN architecture base)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/core/base_model.py</span></code> – <code class="docutils literal notranslate"><span class="pre">BaseNeuralModel</span></code> (Lightning module base)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/config/base.py</span></code> – <code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">NeuralModelConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">BaseSearchSpace</span></code></p></li>
+</ul>
+</details>
+<p>Twiga’s model system is designed for extensibility. Any model that follows the registry naming convention and extends the appropriate base class can be plugged into the <a class="reference internal" href="../core/forecaster.html"><span class="std std-doc">TwigaForecaster</span></a> without modifying framework code. This page walks through the process of creating custom models for both the <strong>ML</strong> and <strong>NN</strong> domains.</p>
+<section id="how-the-model-registry-works">
+<h2>How the Model Registry Works<a class="headerlink" href="#how-the-model-registry-works" title="Link to this heading">#</a></h2>
+<p>The registry in <code class="docutils literal notranslate"><span class="pre">twiga/forecaster/registry.py</span></code> uses <strong>dynamic imports</strong> to load model and config classes at runtime. When you call <code class="docutils literal notranslate"><span class="pre">get_model(name,</span> <span class="pre">domain)</span></code>, the registry:</p>
+<ol class="arabic simple">
+<li><p>Constructs a module path: <code class="docutils literal notranslate"><span class="pre">twiga.models.{domain}.{name}_model</span></code></p></li>
+<li><p>Imports the module dynamically with <code class="docutils literal notranslate"><span class="pre">importlib.import_module</span></code></p></li>
+<li><p>Retrieves two classes by name: <code class="docutils literal notranslate"><span class="pre">{NAME}Model</span></code> and <code class="docutils literal notranslate"><span class="pre">{NAME}Config</span></code> (where <code class="docutils literal notranslate"><span class="pre">NAME</span></code> is the uppercase version of the <code class="docutils literal notranslate"><span class="pre">name</span></code> argument)</p></li>
+<li><p>Caches the result for subsequent lookups</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_model</span>
+
+<span class="c1"># Loads twiga.models.ml.catboost_model -&gt; (CATBOOSTModel, CATBOOSTConfig)</span>
+<span class="n">model_cls</span><span class="p">,</span> <span class="n">config_cls</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="s2">&quot;catboost&quot;</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="s2">&quot;ml&quot;</span><span class="p">)</span>
+
+<span class="c1"># Loads twiga.models.nn.mlpf_model -&gt; (MLPFModel, MLPFConfig)</span>
+<span class="n">model_cls</span><span class="p">,</span> <span class="n">config_cls</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="s2">&quot;mlpf&quot;</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="s2">&quot;nn&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="warning admonition">
+<p class="admonition-title">Naming convention is strict</p>
+<p>The registry uppercases the entire <code class="docutils literal notranslate"><span class="pre">name</span></code> string to form class names. For a model named <code class="docutils literal notranslate"><span class="pre">&quot;mymodel&quot;</span></code>, it expects <code class="docutils literal notranslate"><span class="pre">MYMODELModel</span></code> and <code class="docutils literal notranslate"><span class="pre">MYMODELConfig</span></code> – not <code class="docutils literal notranslate"><span class="pre">MyModelModel</span></code> or <code class="docutils literal notranslate"><span class="pre">MymodelConfig</span></code>. The file must be named <code class="docutils literal notranslate"><span class="pre">mymodel_model.py</span></code> and placed in the correct domain directory (<code class="docutils literal notranslate"><span class="pre">twiga/models/ml/</span></code> or <code class="docutils literal notranslate"><span class="pre">twiga/models/nn/</span></code>).</p>
+</div>
+<p>The naming rules are summarised below:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>Convention</p></th>
+<th class="head"><p>Example (<code class="docutils literal notranslate"><span class="pre">name=&quot;randomforest&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">domain=&quot;ml&quot;</span></code>)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>File path</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">twiga/models/{domain}/{name}_model.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">twiga/models/ml/randomforest_model.py</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Config class</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{NAME}Config</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RANDOMFORESTConfig</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Model class</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{NAME}Model</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RANDOMFORESTModel</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Config <code class="docutils literal notranslate"><span class="pre">name</span></code> field</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;{name}&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;randomforest&quot;]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Config <code class="docutils literal notranslate"><span class="pre">domain</span></code> field</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;{domain}&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;ml&quot;]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="adding-a-custom-ml-model">
+<h2>Adding a Custom ML Model<a class="headerlink" href="#adding-a-custom-ml-model" title="Link to this heading">#</a></h2>
+<p>ML models are traditional machine learning regressors (tree-based methods, linear models, etc.) that operate on tabular feature arrays. They extend <code class="docutils literal notranslate"><span class="pre">BaseRegressor</span></code> and use <code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span></code> for configuration.</p>
+<section id="step-1-create-the-module-file">
+<h3>Step 1: Create the Module File<a class="headerlink" href="#step-1-create-the-module-file" title="Link to this heading">#</a></h3>
+<p>Create a new file in <code class="docutils literal notranslate"><span class="pre">twiga/models/ml/</span></code> following the naming convention. For this tutorial we will build a Random Forest model.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">twiga</span><span class="o">/</span><span class="n">models</span><span class="o">/</span><span class="n">ml</span><span class="o">/</span><span class="n">randomforest_model</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-define-the-config-class">
+<h3>Step 2: Define the Config Class<a class="headerlink" href="#step-2-define-the-config-class" title="Link to this heading">#</a></h3>
+<p>The config class extends <code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span></code> and declares the model’s hyperparameters as Pydantic fields. Parameters that should not be passed to the underlying estimator (like <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">domain</span></code>, and <code class="docutils literal notranslate"><span class="pre">search_space</span></code>) must use <code class="docutils literal notranslate"><span class="pre">exclude=True</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModelConfig</span><span class="p">,</span> <span class="n">BaseSearchSpace</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RANDOMFORESTConfig</span><span class="p">(</span><span class="n">BaseModelConfig</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for Random Forest regression model.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;randomforest&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;randomforest&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Model identifier, fixed to &#39;randomforest&#39;.&quot;</span><span class="p">,</span>
+        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;model_name&quot;</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">domain</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;ml&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;ml&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Domain identifier, fixed to &#39;ml&#39;.&quot;</span><span class="p">,</span>
+        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;model_type&quot;</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">n_estimators</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of trees in the forest.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Maximum depth of each tree. None means unlimited.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">min_samples_split</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Minimum samples required to split an internal node.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+        <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Random seed for reproducibility.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of parallel jobs. -1 uses all processors.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">BaseSearchSpace</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">BaseSearchSpace</span><span class="p">(</span>
+            <span class="n">n_estimators</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span>
+            <span class="n">max_depth</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+            <span class="n">min_samples_split</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Hyperparameter search space for Optuna tuning.&quot;</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<div class="tip admonition">
+<p class="admonition-title">How <code class="docutils literal notranslate"><span class="pre">exclude=True</span></code> works</p>
+<p>Fields marked with <code class="docutils literal notranslate"><span class="pre">exclude=True</span></code> are omitted when you call <code class="docutils literal notranslate"><span class="pre">config.dict()</span></code> or <code class="docutils literal notranslate"><span class="pre">config.model_dump()</span></code>. This is how Twiga separates metadata fields (<code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">domain</span></code>, <code class="docutils literal notranslate"><span class="pre">search_space</span></code>) from the parameters that get passed directly to the underlying estimator constructor. See <a class="reference internal" href="../core/config.html"><span class="std std-doc">Configuration System</span></a> for the full reference.</p>
+</div>
+</section>
+<section id="step-3-define-the-model-class">
+<h3>Step 3: Define the Model Class<a class="headerlink" href="#step-3-define-the-model-class" title="Link to this heading">#</a></h3>
+<p>The model class extends <code class="docutils literal notranslate"><span class="pre">BaseRegressor</span></code> and must implement the <code class="docutils literal notranslate"><span class="pre">update(trial)</span></code> method for <a class="reference internal" href="../advanced/hyperparameter-tuning.html"><span class="std std-doc">hyperparameter tuning</span></a>. The base class provides <code class="docutils literal notranslate"><span class="pre">fit</span></code>, <code class="docutils literal notranslate"><span class="pre">predict</span></code>, <code class="docutils literal notranslate"><span class="pre">forecast</span></code>, and <code class="docutils literal notranslate"><span class="pre">format_features</span></code> out of the box.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomForestRegressor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.multioutput</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiOutputRegressor</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core.base_regressor</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseRegressor</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RANDOMFORESTModel</span><span class="p">(</span><span class="n">BaseRegressor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Random Forest regression model for time series forecasting.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_config</span><span class="p">:</span> <span class="n">RANDOMFORESTConfig</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">model_config</span> <span class="k">if</span> <span class="n">model_config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">RANDOMFORESTConfig</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">MultiOutputRegressor</span><span class="p">(</span>
+            <span class="n">RandomForestRegressor</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trial</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reinitialize the model with Optuna-suggested hyperparameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            trial: An Optuna trial object used to sample hyperparameters</span>
+<span class="sd">                from the search space defined in RANDOMFORESTConfig.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">get_optuna_params</span><span class="p">(</span><span class="n">trial</span><span class="o">=</span><span class="n">trial</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">MultiOutputRegressor</span><span class="p">(</span>
+            <span class="n">RandomForestRegressor</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+<div class="note admonition">
+<p class="admonition-title">MultiOutputRegressor wrapper</p>
+<p>Twiga’s data pipeline produces multi-output targets with shape <code class="docutils literal notranslate"><span class="pre">(samples,</span> <span class="pre">horizon</span> <span class="pre">*</span> <span class="pre">num_targets)</span></code>. Scikit-learn estimators that do not natively support multi-output regression need to be wrapped in <code class="docutils literal notranslate"><span class="pre">MultiOutputRegressor</span></code>. Tree-based models like XGBoost and CatBoost handle this internally, but for scikit-learn models (Random Forest, SVR, etc.) the wrapper is required.</p>
+</div>
+</section>
+<section id="step-4-assemble-the-complete-file">
+<h3>Step 4: Assemble the Complete File<a class="headerlink" href="#step-4-assemble-the-complete-file" title="Link to this heading">#</a></h3>
+<p>Here is the complete <code class="docutils literal notranslate"><span class="pre">randomforest_model.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;Module implementing Random Forest configuration and model classes.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomForestRegressor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.multioutput</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiOutputRegressor</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModelConfig</span><span class="p">,</span> <span class="n">BaseSearchSpace</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core.base_regressor</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseRegressor</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RANDOMFORESTConfig</span><span class="p">(</span><span class="n">BaseModelConfig</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for Random Forest regression model.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;randomforest&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;randomforest&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Model identifier, fixed to &#39;randomforest&#39;.&quot;</span><span class="p">,</span>
+        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;model_name&quot;</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">domain</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;ml&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;ml&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Domain identifier, fixed to &#39;ml&#39;.&quot;</span><span class="p">,</span>
+        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;model_type&quot;</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">n_estimators</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of trees in the forest.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Maximum depth of each tree. None means unlimited.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">min_samples_split</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Minimum samples required to split an internal node.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+        <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Random seed for reproducibility.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of parallel jobs. -1 uses all processors.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">BaseSearchSpace</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">BaseSearchSpace</span><span class="p">(</span>
+            <span class="n">n_estimators</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span>
+            <span class="n">max_depth</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+            <span class="n">min_samples_split</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Hyperparameter search space for Optuna tuning.&quot;</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RANDOMFORESTModel</span><span class="p">(</span><span class="n">BaseRegressor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Random Forest regression model for time series forecasting.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_config</span><span class="p">:</span> <span class="n">RANDOMFORESTConfig</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">model_config</span> <span class="k">if</span> <span class="n">model_config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">RANDOMFORESTConfig</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">MultiOutputRegressor</span><span class="p">(</span>
+            <span class="n">RandomForestRegressor</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trial</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reinitialize the model with Optuna-suggested hyperparameters.&quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">get_optuna_params</span><span class="p">(</span><span class="n">trial</span><span class="o">=</span><span class="n">trial</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">MultiOutputRegressor</span><span class="p">(</span>
+            <span class="n">RandomForestRegressor</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-use-your-custom-model">
+<h3>Step 5: Use Your Custom Model<a class="headerlink" href="#step-5-use-your-custom-model" title="Link to this heading">#</a></h3>
+<p>Once the file is in place, the registry discovers it automatically. No additional registration step is needed.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+
+<span class="c1"># Option A: Use the config class directly</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml.randomforest_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">RANDOMFORESTConfig</span>
+
+<span class="n">rf_config</span> <span class="o">=</span> <span class="n">RANDOMFORESTConfig</span><span class="p">(</span><span class="n">n_estimators</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+<span class="c1"># Option B: Use a dictionary (the registry resolves the name)</span>
+<span class="n">rf_config_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;randomforest&quot;</span><span class="p">,</span> <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">}</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">rf_config</span><span class="p">],</span>      <span class="c1"># or rf_config_dict</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">)</span>
+<span class="n">predictions</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="adding-a-custom-nn-model">
+<h2>Adding a Custom NN Model<a class="headerlink" href="#adding-a-custom-nn-model" title="Link to this heading">#</a></h2>
+<p>Neural network models are PyTorch-based forecasters that use PyTorch Lightning for training orchestration. Creating a custom NN model involves three layers:</p>
+<ol class="arabic simple">
+<li><p><strong>Architecture</strong> (<code class="docutils literal notranslate"><span class="pre">BaseArchitecture</span></code> subclass) – defines the <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code> with <code class="docutils literal notranslate"><span class="pre">forward()</span></code> logic</p></li>
+<li><p><strong>Lightning model</strong> (<code class="docutils literal notranslate"><span class="pre">BaseNeuralModel</span></code> subclass) – wraps the architecture with training/validation steps and optimizer configuration</p></li>
+<li><p><strong>Forecaster</strong> (<code class="docutils literal notranslate"><span class="pre">BaseNeuralForecast</span></code> subclass) – manages the Trainer, callbacks, logging, and Optuna integration</p></li>
+</ol>
+<section id="id1">
+<h3>Step 1: Create the Module File<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<p>Create a new file in <code class="docutils literal notranslate"><span class="pre">twiga/models/nn/</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">twiga</span><span class="o">/</span><span class="n">models</span><span class="o">/</span><span class="n">nn</span><span class="o">/</span><span class="n">simplenn_model</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>You will also need an architecture file in <code class="docutils literal notranslate"><span class="pre">twiga/models/nn/net/</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">twiga</span><span class="o">/</span><span class="n">models</span><span class="o">/</span><span class="n">nn</span><span class="o">/</span><span class="n">net</span><span class="o">/</span><span class="n">simplenn</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h3>Step 2: Define the Config Class<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<p>NN configs extend <code class="docutils literal notranslate"><span class="pre">NeuralModelConfig</span></code>, which itself extends <code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span></code>. The neural config adds training parameters (batch size, epochs, patience, etc.) and provides the <code class="docutils literal notranslate"><span class="pre">from_data_config</span></code> classmethod for automatic dimensionality setup.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In twiga/models/nn/simplenn_model.py</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSearchSpace</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">NeuralModelConfig</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SIMPLENNConfig</span><span class="p">(</span><span class="n">NeuralModelConfig</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for a simple feedforward neural network forecaster.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;simplenn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;simplenn&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Model identifier, fixed to &#39;simplenn&#39;.&quot;</span><span class="p">,</span>
+        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;model_name&quot;</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Architecture parameters</span>
+    <span class="n">num_target_feature</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of target features.&quot;</span><span class="p">)</span>
+    <span class="n">num_historical_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of historical features.&quot;</span><span class="p">)</span>
+    <span class="n">num_calendar_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of calendar features.&quot;</span><span class="p">)</span>
+    <span class="n">num_exogenous_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of exogenous features.&quot;</span><span class="p">)</span>
+    <span class="n">num_future_covariates</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of future covariate features.&quot;</span><span class="p">)</span>
+    <span class="n">forecast_horizon</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Forecast horizon in time steps.&quot;</span><span class="p">)</span>
+    <span class="n">lookback_window_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Input window size in time steps.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Model-specific hyperparameters</span>
+    <span class="n">hidden_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Hidden layer dimensionality.&quot;</span><span class="p">)</span>
+    <span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of hidden layers.&quot;</span><span class="p">)</span>
+    <span class="n">activation_function</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;ReLU&quot;</span><span class="p">,</span> <span class="s2">&quot;SiLU&quot;</span><span class="p">,</span> <span class="s2">&quot;GELU&quot;</span><span class="p">,</span> <span class="s2">&quot;Tanh&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="s2">&quot;ReLU&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Activation function for hidden layers.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Dropout rate for regularization.&quot;</span><span class="p">)</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Loss weighting: alpha*MSE + (1-alpha)*MAE.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Search space for hyperparameter tuning</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">BaseSearchSpace</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">BaseSearchSpace</span><span class="p">(</span>
+            <span class="n">hidden_size</span><span class="o">=</span><span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">],</span>
+            <span class="n">num_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+            <span class="n">dropout</span><span class="o">=</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Hyperparameter search space for Optuna tuning.&quot;</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<div class="tip admonition">
+<p class="admonition-title">Use <code class="docutils literal notranslate"><span class="pre">from_data_config</span></code> for convenience</p>
+<p><code class="docutils literal notranslate"><span class="pre">NeuralModelConfig.from_data_config(data_config,</span> <span class="pre">**kwargs)</span></code> automatically computes <code class="docutils literal notranslate"><span class="pre">num_target_feature</span></code>, <code class="docutils literal notranslate"><span class="pre">num_historical_features</span></code>, <code class="docutils literal notranslate"><span class="pre">num_calendar_features</span></code>, <code class="docutils literal notranslate"><span class="pre">num_exogenous_features</span></code>, <code class="docutils literal notranslate"><span class="pre">num_future_covariates</span></code>, <code class="docutils literal notranslate"><span class="pre">forecast_horizon</span></code>, and <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code> from a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>. Always prefer this over setting dimensional parameters manually. See <a class="reference internal" href="../core/config.html#key-method-from-data-config-data-config-kwargs"><span class="std std-ref">Configuration System</span></a> for details.</p>
+</div>
+</section>
+<section id="step-3-define-the-architecture">
+<h3>Step 3: Define the Architecture<a class="headerlink" href="#step-3-define-the-architecture" title="Link to this heading">#</a></h3>
+<p>The architecture is an <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code> that extends <code class="docutils literal notranslate"><span class="pre">BaseArchitecture</span></code>. You must implement the <code class="docutils literal notranslate"><span class="pre">forward()</span></code> method. The base class provides:</p>
+<ul class="simple">
+<li><p>Feature dimension attributes (<code class="docutils literal notranslate"><span class="pre">num_target_feature</span></code>, <code class="docutils literal notranslate"><span class="pre">num_historical_features</span></code>, etc.)</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">step(batch,</span> <span class="pre">metric_fn)</span></code> method that computes the combined loss: <code class="docutils literal notranslate"><span class="pre">alpha</span> <span class="pre">*</span> <span class="pre">MSE</span> <span class="pre">+</span> <span class="pre">(1</span> <span class="pre">-</span> <span class="pre">alpha)</span> <span class="pre">*</span> <span class="pre">MAE</span></code></p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">forecast(x)</span></code> method that calls <code class="docutils literal notranslate"><span class="pre">forward</span></code> in <code class="docutils literal notranslate"><span class="pre">torch.no_grad()</span></code> mode</p></li>
+<li><p>Dropout layer and output activation</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In twiga/models/nn/net/simplenn.py</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.core.base_arch</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseArchitecture</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.core.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseNeuralModel</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SimpleNNArchitecture</span><span class="p">(</span><span class="n">BaseArchitecture</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple feedforward architecture for time series forecasting.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_target_feature</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_historical_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_calendar_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_exogenous_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_future_covariates</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">forecast_horizon</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">lookback_window_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">hidden_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+        <span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">activation_function</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ReLU&quot;</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">output_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Identity&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">num_target_feature</span><span class="o">=</span><span class="n">num_target_feature</span><span class="p">,</span>
+            <span class="n">num_historical_features</span><span class="o">=</span><span class="n">num_historical_features</span><span class="p">,</span>
+            <span class="n">num_calendar_features</span><span class="o">=</span><span class="n">num_calendar_features</span><span class="p">,</span>
+            <span class="n">num_exogenous_features</span><span class="o">=</span><span class="n">num_exogenous_features</span><span class="p">,</span>
+            <span class="n">num_future_covariates</span><span class="o">=</span><span class="n">num_future_covariates</span><span class="p">,</span>
+            <span class="n">forecast_horizon</span><span class="o">=</span><span class="n">forecast_horizon</span><span class="p">,</span>
+            <span class="n">lookback_window_size</span><span class="o">=</span><span class="n">lookback_window_size</span><span class="p">,</span>
+            <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">output_activation</span><span class="o">=</span><span class="n">output_activation</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Compute input dimension from all past features</span>
+        <span class="n">input_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_past_features</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback_window_size</span>
+        <span class="n">output_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forecast_horizon</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_target_feature</span>
+
+        <span class="c1"># Build hidden layers</span>
+        <span class="n">activation</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">activation_function</span><span class="p">)()</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">in_dim</span> <span class="o">=</span> <span class="n">input_size</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">):</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_dim</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">),</span>
+                <span class="n">activation</span><span class="p">,</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">dropout</span><span class="p">),</span>
+            <span class="p">])</span>
+            <span class="n">in_dim</span> <span class="o">=</span> <span class="n">hidden_size</span>
+
+        <span class="c1"># Output projection</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">output_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass: flatten input, run through MLP, reshape to forecast.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x: Input tensor of shape (batch, lookback_window_size, num_past_features).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Predictions of shape (batch, forecast_horizon, num_target_feature).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">x_flat</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">(</span><span class="n">x_flat</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">forecast_horizon</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_target_feature</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_activation</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-create-the-lightning-model-wrapper">
+<h3>Step 4: Create the Lightning Model Wrapper<a class="headerlink" href="#step-4-create-the-lightning-model-wrapper" title="Link to this heading">#</a></h3>
+<p>Wrap your architecture in a <code class="docutils literal notranslate"><span class="pre">BaseNeuralModel</span></code> subclass. The base class provides <code class="docutils literal notranslate"><span class="pre">training_step</span></code>, <code class="docutils literal notranslate"><span class="pre">validation_step</span></code>, <code class="docutils literal notranslate"><span class="pre">configure_optimizers</span></code>, checkpoint saving/loading, and metric tracking. In most cases you only need to pass your architecture as <code class="docutils literal notranslate"><span class="pre">self.model</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Continuing in twiga/models/nn/net/simplenn.py</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SimpleNNForecastModel</span><span class="p">(</span><span class="n">BaseNeuralModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lightning module wrapping the SimpleNNArchitecture.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="o">**</span><span class="n">arch_kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">,</span> <span class="n">max_epochs</span><span class="o">=</span><span class="n">max_epochs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">SimpleNNArchitecture</span><span class="p">(</span><span class="o">**</span><span class="n">arch_kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_hyperparameters</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="note admonition">
+<p class="admonition-title">The <code class="docutils literal notranslate"><span class="pre">self.model</span></code> attribute</p>
+<p><code class="docutils literal notranslate"><span class="pre">BaseNeuralModel.forward()</span></code> delegates to <code class="docutils literal notranslate"><span class="pre">self.model(x)</span></code>, and <code class="docutils literal notranslate"><span class="pre">BaseNeuralModel.forecast()</span></code> delegates to <code class="docutils literal notranslate"><span class="pre">self.model.forecast(x)</span></code>. As long as you assign your architecture to <code class="docutils literal notranslate"><span class="pre">self.model</span></code>, the training and validation steps work automatically.</p>
+</div>
+</section>
+<section id="step-5-define-the-forecaster-class">
+<h3>Step 5: Define the Forecaster Class<a class="headerlink" href="#step-5-define-the-forecaster-class" title="Link to this heading">#</a></h3>
+<p>The forecaster extends <code class="docutils literal notranslate"><span class="pre">BaseNeuralForecast</span></code> and ties everything together. It must implement <code class="docutils literal notranslate"><span class="pre">update(trial)</span></code> (for Optuna) and <code class="docutils literal notranslate"><span class="pre">load_checkpoint()</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Back in twiga/models/nn/simplenn_model.py</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">optuna</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.core.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseNeuralForecast</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.net.simplenn</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleNNForecastModel</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SIMPLENNModel</span><span class="p">(</span><span class="n">BaseNeuralForecast</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple feedforward neural network forecaster.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_config</span><span class="p">:</span> <span class="n">SIMPLENNConfig</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">rich_progress_bar</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">rich_progress_bar</span><span class="p">,</span>
+            <span class="n">wandb_logging</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">wandb_logging</span><span class="p">,</span>
+            <span class="n">drop_last</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">drop_last</span><span class="p">,</span>
+            <span class="n">num_workers</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_workers</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">pin_memory</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">pin_memory</span><span class="p">,</span>
+            <span class="n">max_epochs</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">max_epochs</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+            <span class="n">patience</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">patience</span><span class="p">,</span>
+            <span class="n">resume_training</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">resume_training</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span> <span class="o">=</span> <span class="n">model_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_model</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the neural network from the current config.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">SimpleNNForecastModel</span><span class="p">(</span>
+            <span class="n">num_target_feature</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_target_feature</span><span class="p">,</span>
+            <span class="n">num_historical_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_historical_features</span><span class="p">,</span>
+            <span class="n">num_calendar_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_calendar_features</span><span class="p">,</span>
+            <span class="n">num_exogenous_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_exogenous_features</span><span class="p">,</span>
+            <span class="n">num_future_covariates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_future_covariates</span><span class="p">,</span>
+            <span class="n">forecast_horizon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">forecast_horizon</span><span class="p">,</span>
+            <span class="n">lookback_window_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">lookback_window_size</span><span class="p">,</span>
+            <span class="n">hidden_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
+            <span class="n">num_layers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_layers</span><span class="p">,</span>
+            <span class="n">activation_function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">activation_function</span><span class="p">,</span>
+            <span class="n">dropout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span>
+            <span class="n">max_epochs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">max_epochs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trial</span><span class="p">:</span> <span class="n">optuna</span><span class="o">.</span><span class="n">Trial</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update model with Optuna-suggested hyperparameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            trial: Optuna trial for sampling hyperparameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">get_optuna_params</span><span class="p">(</span><span class="n">trial</span><span class="o">=</span><span class="n">trial</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span> <span class="o">=</span> <span class="n">SIMPLENNConfig</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_model</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the latest checkpoint into the model.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_load_checkpoints</span><span class="p">(</span><span class="n">model_instance</span><span class="o">=</span><span class="n">SimpleNNForecastModel</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="step-6-use-your-custom-nn-model">
+<h3>Step 6: Use Your Custom NN Model<a class="headerlink" href="#step-6-use-your-custom-nn-model" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.simplenn_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">SIMPLENNConfig</span>
+
+<span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;load_mw&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;1h&quot;</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">168</span><span class="p">,</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;dayofweek&quot;</span><span class="p">,</span> <span class="s2">&quot;month&quot;</span><span class="p">],</span>
+    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="c1"># Use from_data_config for automatic dimensionality setup</span>
+<span class="n">nn_config</span> <span class="o">=</span> <span class="n">SIMPLENNConfig</span><span class="o">.</span><span class="n">from_data_config</span><span class="p">(</span>
+    <span class="n">data_config</span><span class="p">,</span>
+    <span class="n">hidden_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+    <span class="n">num_layers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">max_epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+    <span class="n">patience</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+    <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">window</span><span class="o">=</span><span class="s2">&quot;expanding&quot;</span><span class="p">,</span>
+    <span class="n">project_name</span><span class="o">=</span><span class="s2">&quot;CustomNNExperiment&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">nn_config</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">predictions</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="defining-search-spaces-for-optuna">
+<h2>Defining Search Spaces for Optuna<a class="headerlink" href="#defining-search-spaces-for-optuna" title="Link to this heading">#</a></h2>
+<p>Every model config can include a <code class="docutils literal notranslate"><span class="pre">search_space</span></code> field that defines hyperparameters to tune during <a class="reference internal" href="../advanced/hyperparameter-tuning.html"><span class="std std-doc">hyperparameter optimisation</span></a>. The search space uses <code class="docutils literal notranslate"><span class="pre">BaseSearchSpace</span></code>, which supports two parameter types:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter Type</p></th>
+<th class="head"><p>Python Type</p></th>
+<th class="head"><p>Optuna Method</p></th>
+<th class="head"><p>Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Numeric range (int)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tuple[int,</span> <span class="pre">int]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">suggest_int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">max_depth=(3,</span> <span class="pre">12)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Numeric range (float)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tuple[float,</span> <span class="pre">float]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">suggest_float</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">learning_rate=(1e-4,</span> <span class="pre">1e-1)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Categorical choices</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">list[Any]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">suggest_categorical</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">activation=[&quot;ReLU&quot;,</span> <span class="pre">&quot;SiLU&quot;,</span> <span class="pre">&quot;GELU&quot;]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Log-scale sampling is applied automatically for float ranges where <code class="docutils literal notranslate"><span class="pre">high</span> <span class="pre">/</span> <span class="pre">low</span> <span class="pre">&gt;=</span> <span class="pre">10</span></code> and both bounds are positive (useful for learning rates, regularisation coefficients, etc.).</p>
+<section id="creating-a-custom-search-space">
+<h3>Creating a Custom Search Space<a class="headerlink" href="#creating-a-custom-search-space" title="Link to this heading">#</a></h3>
+<p>You can define a search space inline using <code class="docutils literal notranslate"><span class="pre">BaseSearchSpace(...)</span></code>, or create a named subclass for reuse:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSearchSpace</span>
+
+<span class="c1"># Inline (most common)</span>
+<span class="n">search_space</span> <span class="o">=</span> <span class="n">BaseSearchSpace</span><span class="p">(</span>
+    <span class="n">n_estimators</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span>
+    <span class="n">max_depth</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+    <span class="n">learning_rate</span><span class="o">=</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">,</span> <span class="mf">1e-1</span><span class="p">),</span>          <span class="c1"># log scale (ratio &gt;= 10)</span>
+    <span class="n">subsample</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>                <span class="c1"># linear scale (ratio &lt; 10)</span>
+    <span class="n">activation</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ReLU&quot;</span><span class="p">,</span> <span class="s2">&quot;SiLU&quot;</span><span class="p">,</span> <span class="s2">&quot;GELU&quot;</span><span class="p">],</span> <span class="c1"># categorical</span>
+<span class="p">)</span>
+
+<span class="c1"># Named subclass (for reuse or IDE autocompletion)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MySearchSpace</span><span class="p">(</span><span class="n">BaseSearchSpace</span><span class="p">):</span>
+    <span class="n">n_estimators</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+    <span class="n">max_depth</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+    <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1e-4</span><span class="p">,</span> <span class="mf">1e-1</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="how-search-spaces-connect-to-tuning">
+<h3>How Search Spaces Connect to Tuning<a class="headerlink" href="#how-search-spaces-connect-to-tuning" title="Link to this heading">#</a></h3>
+<p>During <code class="docutils literal notranslate"><span class="pre">TwigaForecaster.tune(...)</span></code>, the framework calls <code class="docutils literal notranslate"><span class="pre">model.update(trial)</span></code> for each Optuna trial. Inside <code class="docutils literal notranslate"><span class="pre">update</span></code>, the config’s <code class="docutils literal notranslate"><span class="pre">get_optuna_params(trial)</span></code> method merges fixed parameters with trial suggestions drawn from the search space:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_optuna_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trial</span><span class="p">:</span> <span class="n">optuna</span><span class="o">.</span><span class="n">Trial</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="n">base_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;search_space&quot;</span><span class="p">})</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_space</span><span class="p">:</span>
+        <span class="n">search_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_space</span><span class="o">.</span><span class="n">get_optuna_params</span><span class="p">(</span><span class="n">trial</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">base_params</span><span class="p">,</span> <span class="o">**</span><span class="n">search_params</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">base_params</span>
+</pre></div>
+</div>
+<div class="tip admonition">
+<p class="admonition-title">Disabling hyperparameter tuning for specific parameters</p>
+<p>To fix a parameter during tuning, simply set it as a regular field (not in the search space). Only parameters listed in the <code class="docutils literal notranslate"><span class="pre">search_space</span></code> are sampled by Optuna. The rest are passed through as-is from the config.</p>
+</div>
+</section>
+</section>
+<section id="base-class-reference">
+<h2>Base Class Reference<a class="headerlink" href="#base-class-reference" title="Link to this heading">#</a></h2>
+<section id="ml-domain">
+<h3>ML Domain<a class="headerlink" href="#ml-domain" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Class</p></th>
+<th class="head"><p>Location</p></th>
+<th class="head"><p>Role</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">twiga/core/config/base.py</span></code></p></td>
+<td><p>Root config with <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">domain</span></code>, <code class="docutils literal notranslate"><span class="pre">search_space</span></code>, and <code class="docutils literal notranslate"><span class="pre">get_optuna_params()</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BaseSearchSpace</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">twiga/core/config/base.py</span></code></p></td>
+<td><p>Search space validator with <code class="docutils literal notranslate"><span class="pre">get_optuna_params(trial,</span> <span class="pre">prefix)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BaseRegressor</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">twiga/models/ml/core/base_regressor.py</span></code></p></td>
+<td><p>Sklearn-compatible base with <code class="docutils literal notranslate"><span class="pre">fit()</span></code>, <code class="docutils literal notranslate"><span class="pre">predict()</span></code>, <code class="docutils literal notranslate"><span class="pre">forecast()</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong><code class="docutils literal notranslate"><span class="pre">BaseRegressor</span></code> key methods:</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Signature</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fit</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fit(X,</span> <span class="pre">y,</span> <span class="pre">verbose=False)</span></code></p></td>
+<td><p>Formats features, fits the wrapped model</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">predict</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">predict(x)</span></code></p></td>
+<td><p>Returns predictions as a 3D array <code class="docutils literal notranslate"><span class="pre">(samples,</span> <span class="pre">horizon,</span> <span class="pre">targets)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">forecast</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">forecast(x)</span></code></p></td>
+<td><p>Calls <code class="docutils literal notranslate"><span class="pre">predict</span></code> and returns the result directly</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">format_features</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">format_features(x)</span></code></p></td>
+<td><p>Flattens 3D input to 2D for sklearn compatibility</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">update</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">update(trial)</span></code></p></td>
+<td><p><strong>Must implement</strong> – reinitialize model with Optuna params</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="nn-domain">
+<h3>NN Domain<a class="headerlink" href="#nn-domain" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Class</p></th>
+<th class="head"><p>Location</p></th>
+<th class="head"><p>Role</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">NeuralModelConfig</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">twiga/core/config/base.py</span></code></p></td>
+<td><p>Extends <code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span></code> with batch_size, max_epochs, patience, etc.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BaseNeuralForecast</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/core/base.py</span></code></p></td>
+<td><p>Abstract forecaster: Trainer setup, callbacks, logging, <code class="docutils literal notranslate"><span class="pre">fit()</span></code>, <code class="docutils literal notranslate"><span class="pre">forecast()</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BaseArchitecture</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/core/base_arch.py</span></code></p></td>
+<td><p>Abstract <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code>: <code class="docutils literal notranslate"><span class="pre">forward()</span></code>, <code class="docutils literal notranslate"><span class="pre">step()</span></code>, <code class="docutils literal notranslate"><span class="pre">forecast()</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BaseNeuralModel</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/core/base_model.py</span></code></p></td>
+<td><p>Lightning module: <code class="docutils literal notranslate"><span class="pre">training_step</span></code>, <code class="docutils literal notranslate"><span class="pre">validation_step</span></code>, <code class="docutils literal notranslate"><span class="pre">configure_optimizers</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong><code class="docutils literal notranslate"><span class="pre">BaseNeuralForecast</span></code> abstract methods (must implement):</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Signature</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">update</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">update(trial:</span> <span class="pre">Trial)</span></code></p></td>
+<td><p>Reinitialize model with Optuna-suggested hyperparameters</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">load_checkpoint</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">load_checkpoint(checkpoints_path)</span></code></p></td>
+<td><p>Restore model from a saved checkpoint</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong><code class="docutils literal notranslate"><span class="pre">BaseArchitecture</span></code> abstract methods (must implement):</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Signature</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">forward</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">forward(x:</span> <span class="pre">Tensor)</span> <span class="pre">-&gt;</span> <span class="pre">Tensor</span></code></p></td>
+<td><p>Define the neural network computation graph</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="checklist">
+<h2>Checklist<a class="headerlink" href="#checklist" title="Link to this heading">#</a></h2>
+<p>Before your custom model is ready for production use, verify:</p>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> File is named <code class="docutils literal notranslate"><span class="pre">{name}_model.py</span></code> in the correct domain directory (<code class="docutils literal notranslate"><span class="pre">twiga/models/ml/</span></code> or <code class="docutils literal notranslate"><span class="pre">twiga/models/nn/</span></code>)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Config class is named <code class="docutils literal notranslate"><span class="pre">{NAME}Config</span></code> (all uppercase) and extends <code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span></code> or <code class="docutils literal notranslate"><span class="pre">NeuralModelConfig</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Model class is named <code class="docutils literal notranslate"><span class="pre">{NAME}Model</span></code> (all uppercase) and extends <code class="docutils literal notranslate"><span class="pre">BaseRegressor</span></code> or <code class="docutils literal notranslate"><span class="pre">BaseNeuralForecast</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Config <code class="docutils literal notranslate"><span class="pre">name</span></code> field uses <code class="docutils literal notranslate"><span class="pre">Literal[&quot;{name}&quot;]</span></code> with <code class="docutils literal notranslate"><span class="pre">exclude=True</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Config <code class="docutils literal notranslate"><span class="pre">domain</span></code> field uses <code class="docutils literal notranslate"><span class="pre">Literal[&quot;ml&quot;]</span></code> or <code class="docutils literal notranslate"><span class="pre">Literal[&quot;nn&quot;]</span></code> with <code class="docutils literal notranslate"><span class="pre">exclude=True</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Model class implements <code class="docutils literal notranslate"><span class="pre">update(trial)</span></code> for Optuna hyperparameter tuning</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> NN models implement <code class="docutils literal notranslate"><span class="pre">load_checkpoint()</span></code> for checkpoint restoration</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> NN architectures implement <code class="docutils literal notranslate"><span class="pre">forward(x)</span></code> in their <code class="docutils literal notranslate"><span class="pre">BaseArchitecture</span></code> subclass</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Search space fields use tuples for numeric ranges and lists for categorical choices</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> <code class="docutils literal notranslate"><span class="pre">get_model(&quot;yourmodel&quot;,</span> <span class="pre">&quot;yourdomain&quot;)</span></code> returns the correct <code class="docutils literal notranslate"><span class="pre">(ModelClass,</span> <span class="pre">ConfigClass)</span></code> tuple</p></li>
+</ul>
+<div class="warning admonition">
+<p class="admonition-title">Common pitfalls</p>
+<ul class="simple">
+<li><p><strong>Class name mismatch</strong>: The registry uses <code class="docutils literal notranslate"><span class="pre">name.upper()</span></code>, so <code class="docutils literal notranslate"><span class="pre">&quot;my_model&quot;</span></code> becomes <code class="docutils literal notranslate"><span class="pre">MY_MODELModel</span></code>, not <code class="docutils literal notranslate"><span class="pre">MyModelModel</span></code>. Avoid underscores in the <code class="docutils literal notranslate"><span class="pre">name</span></code> field.</p></li>
+<li><p><strong>Forgetting <code class="docutils literal notranslate"><span class="pre">exclude=True</span></code></strong>: If <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">domain</span></code>, or <code class="docutils literal notranslate"><span class="pre">search_space</span></code> are not excluded, they get passed to the underlying estimator constructor and cause unexpected keyword argument errors.</p></li>
+<li><p><strong>Missing <code class="docutils literal notranslate"><span class="pre">__init__</span></code> call</strong>: ML models do not need to call <code class="docutils literal notranslate"><span class="pre">super().__init__()</span></code> explicitly (the base class has no required args), but NN models must call <code class="docutils literal notranslate"><span class="pre">super().__init__(...)</span></code> with the training parameters from the config.</p></li>
+</ul>
+</div>
+<p><strong>See also:</strong> <a class="reference internal" href="index.html"><span class="std std-doc">Model Catalog</span></a> | <a class="reference internal" href="ml-models.html"><span class="std std-doc">ML Models</span></a> | <a class="reference internal" href="nn-models.html"><span class="std std-doc">NN Models</span></a> | <a class="reference internal" href="../core/config.html"><span class="std std-doc">Configuration System</span></a> | <a class="reference internal" href="../core/forecaster.html"><span class="std std-doc">TwigaForecaster</span></a> | <a class="reference internal" href="../advanced/hyperparameter-tuning.html"><span class="std std-doc">Hyperparameter Tuning</span></a></p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="nn-models.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Neural Network Models</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../advanced/hyperparameter-tuning.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Hyperparameter Optimization</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-the-model-registry-works">How the Model Registry Works</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-a-custom-ml-model">Adding a Custom ML Model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-create-the-module-file">Step 1: Create the Module File</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-define-the-config-class">Step 2: Define the Config Class</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-define-the-model-class">Step 3: Define the Model Class</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-assemble-the-complete-file">Step 4: Assemble the Complete File</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-use-your-custom-model">Step 5: Use Your Custom Model</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-a-custom-nn-model">Adding a Custom NN Model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Step 1: Create the Module File</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Step 2: Define the Config Class</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-define-the-architecture">Step 3: Define the Architecture</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-create-the-lightning-model-wrapper">Step 4: Create the Lightning Model Wrapper</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-define-the-forecaster-class">Step 5: Define the Forecaster Class</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-use-your-custom-nn-model">Step 6: Use Your Custom NN Model</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#defining-search-spaces-for-optuna">Defining Search Spaces for Optuna</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-a-custom-search-space">Creating a Custom Search Space</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-search-spaces-connect-to-tuning">How Search Spaces Connect to Tuning</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#base-class-reference">Base Class Reference</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ml-domain">ML Domain</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nn-domain">NN Domain</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#checklist">Checklist</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/models/custom-models.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

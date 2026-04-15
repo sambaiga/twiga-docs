@@ -1,0 +1,299 @@
+# Pipeline Orchestration
+
+<details>
+<summary>Source files</summary>
+
+- `twiga/pipeline/tasks.py`  -  Prefect tasks
+- `twiga/pipeline/flows.py`  -  `training_flow`, `retraining_flow`
+- `twiga/pipeline/schemas.py`  -  `TrainingResult`, `RetrainingResult`, `DriftSummary`
+
+</details>
+
+## Overview
+
+`twiga.pipeline` provides two [Prefect](https://docs.prefect.io/) flows that
+orchestrate the complete Twiga training and retraining lifecycle.  Each stage
+of the pipeline is a separate Prefect *task*  -  enabling independent retries,
+logging, and observability in the Prefect UI.
+
+Both flows return typed dataclasses so downstream code gets IDE completion and
+type checking with no dict-key guesswork.
+
+```bash
+pip install twiga[mlops]
+```
+
+---
+
+## `training_flow`
+
+The full train → evaluate → checkpoint → MLflow pipeline in one call:
+
+```python
+from twiga.pipeline import training_flow
+from twiga.pipeline.schemas import TrainingResult
+
+result: TrainingResult = training_flow(
+    forecaster=forecaster,
+    data_path="data/load.parquet",
+    date_col="timestamp",
+    train_end="2023-12-31",
+    test_start="2024-01-01",
+    tune=True,
+    num_trials=30,
+    experiment="load-forecast-v2",
+    run_name="lgbm-run-001",
+)
+
+print(result.checkpoint_path)
+print(result.mlflow_run_id)
+print(result.metrics)
+```
+
+### Steps
+
+```{mermaid}
+graph LR
+    A[load_data] --> B[fit_forecaster]
+    B --> C[evaluate_model]
+    C --> D[save_checkpoint]
+    D --> E[log_to_mlflow]
+    E --> F[publish_artifact]
+```
+
+| Step | Task | Description |
+|------|------|-------------|
+| 1 | `load_data` | Read parquet/CSV, parse timestamps, split train/test |
+| 2 | `fit_forecaster` | Optionally tune with Optuna, then fit on training data |
+| 3 | `evaluate_model` | Run `forecaster.evaluate()` on test split |
+| 4 | `save_checkpoint` | Persist model + write `_checkpoint_manifest.json` |
+| 5 | `log_to_mlflow` | Log params, metrics, and checkpoint artefacts via `TwigaTracker` |
+| 6 | Publish artefact | Markdown metrics table in the Prefect UI |
+
+### Return value  -  `TrainingResult`
+
+```python
+from twiga.pipeline.schemas import TrainingResult
+
+result.checkpoint_path   # "/checkpoints/load-forecast/20240101/"
+result.mlflow_run_id     # "a1b2c3d4e5f6"
+result.metrics           # {"lightgbm": {"mae": 4.23, "rmse": 6.11, "corr": 0.97}}
+```
+
+### API reference
+
+```{eval-rst}
+.. autofunction:: twiga.pipeline.flows.training_flow
+```
+
+---
+
+## `retraining_flow`
+
+Drift-aware retraining that only promotes the new model if it outperforms the
+incumbent:
+
+```python
+from twiga.pipeline import retraining_flow
+from twiga.pipeline.schemas import RetrainingResult
+
+result: RetrainingResult = retraining_flow(
+    forecaster=forecaster,
+    reference_data_path="data/train.parquet",
+    current_data_path="data/current_window.parquet",
+    drift_threshold=0.5,          # retrain if > 50 % of features drifted
+    performance_threshold=0.15,   # also retrain if incumbent MAE > 0.15
+    metric_key="mae",
+    experiment="load-forecast-retrain",
+)
+
+print(result.retrained, result.promoted)
+print(result.drift_summary.drift_detected)
+print(result.drift_summary.n_drifted)
+```
+
+### Decision logic
+
+```{mermaid}
+graph TD
+    A[load reference + current data] --> B[run_drift_check\n→ DriftSummary]
+    B --> C{drift_fraction\n> threshold?}
+    C -->|No| D[evaluate incumbent]
+    C -->|Yes| G
+    D --> E{perf_threshold\nbreached?}
+    E -->|No| F[Return: retrained=False]
+    E -->|Yes| G[fit_forecaster on current data]
+    G --> H[evaluate new model]
+    H --> I{new_metric\n< incumbent?}
+    I -->|Yes| J[save_checkpoint\n+ log_to_mlflow]
+    I -->|No| K[Return: promoted=False]
+    J --> L[Return: promoted=True\n+ POST /reload]
+```
+
+### Incumbent evaluation  -  error classification
+
+The flow distinguishes expected first-run conditions from unexpected failures:
+
+```python
+try:
+    forecaster.on_load_checkpoint()
+    # evaluate incumbent...
+except (NotFittedError, ValueError) as exc:
+    # Expected: no checkpoint yet on first run
+    prefect_log.info("No incumbent model available (%s)  -  will retrain.", exc)
+except Exception as exc:
+    # Unexpected: corrupted checkpoint, pipeline error
+    prefect_log.warning("Unexpected error evaluating incumbent: %s", exc)
+```
+
+### Return value  -  `RetrainingResult`
+
+```python
+from twiga.pipeline.schemas import RetrainingResult, DriftSummary
+
+result.retrained          # True
+result.promoted           # True
+result.checkpoint_path    # "/checkpoints/load-forecast/20240601/"
+result.mlflow_run_id      # "f7e8d9c0b1a2"
+result.metrics            # {"lightgbm": {"mae": 3.91, "rmse": 5.72}}
+
+ds: DriftSummary = result.drift_summary
+ds.drift_detected         # True
+ds.dataset_drift_score    # 0.6
+ds.n_drifted              # 4
+ds.feature_drift          # {"temperature": 0.21, "hour": 0.04, ...}
+ds.report_path            # "/reports/data_drift_20240601T120000Z.html"
+```
+
+### API reference
+
+```{eval-rst}
+.. autofunction:: twiga.pipeline.flows.retraining_flow
+```
+
+---
+
+## Pipeline schemas
+
+```{eval-rst}
+.. autoclass:: twiga.pipeline.schemas.TrainingResult
+   :members:
+   :no-index:
+
+.. autoclass:: twiga.pipeline.schemas.RetrainingResult
+   :members:
+   :no-index:
+
+.. autoclass:: twiga.pipeline.schemas.DriftSummary
+   :members:
+   :no-index:
+```
+
+---
+
+## Tasks
+
+Each task is individually retryable and can be imported and called directly
+outside of a flow (useful for notebooks and testing):
+
+```python
+# Call without a running Prefect server
+from twiga.pipeline.tasks import load_data
+
+train_df, test_df = load_data.fn(
+    data_path="data/load.parquet",
+    date_col="timestamp",
+    train_end="2023-12-31",
+    test_start="2024-01-01",
+)
+```
+
+### `load_data`
+
+```{eval-rst}
+.. autofunction:: twiga.pipeline.tasks.load_data
+```
+
+### `fit_forecaster`
+
+```{eval-rst}
+.. autofunction:: twiga.pipeline.tasks.fit_forecaster
+```
+
+### `evaluate_model`
+
+```{eval-rst}
+.. autofunction:: twiga.pipeline.tasks.evaluate_model
+```
+
+### `save_checkpoint`
+
+```{eval-rst}
+.. autofunction:: twiga.pipeline.tasks.save_checkpoint
+```
+
+### `run_drift_check`
+
+```{eval-rst}
+.. autofunction:: twiga.pipeline.tasks.run_drift_check
+```
+
+### `log_to_mlflow`
+
+```{eval-rst}
+.. autofunction:: twiga.pipeline.tasks.log_to_mlflow
+```
+
+---
+
+## Scheduling with Prefect deployments
+
+Deploy `training_flow` as a Prefect deployment to run on a schedule:
+
+```python
+from prefect.deployments import Deployment
+from prefect.server.schemas.schedules import CronSchedule
+from twiga.pipeline import training_flow
+
+deployment = Deployment.build_from_flow(
+    flow=training_flow,
+    name="weekly-retrain",
+    schedule=CronSchedule(cron="0 2 * * 1"),  # Every Monday at 02:00
+    parameters={
+        "data_path": "data/load.parquet",
+        "experiment": "load-forecast",
+    },
+)
+deployment.apply()
+```
+
+```bash
+prefect agent start --work-queue default
+```
+
+---
+
+## End-to-end pipeline
+
+Combine `training_flow` → serve → `retraining_flow` into a complete
+production cycle:
+
+```{mermaid}
+sequenceDiagram
+    participant OPS as Scheduler
+    participant PF  as Prefect
+    participant API as FastAPI
+
+    Note over OPS,PF: Initial training
+    OPS->>PF: trigger training_flow
+    PF-->>PF: TrainingResult.checkpoint_path saved
+
+    Note over API: API starts, ModelLoader reads manifest
+
+    Note over OPS,PF: Weekly retraining
+    OPS->>PF: trigger retraining_flow
+    PF->>PF: DriftSummary → drift check + retrain if needed
+    PF-->>API: POST /reload (if RetrainingResult.promoted)
+```
+
+See [Architecture](architecture.md) for the full system diagram.

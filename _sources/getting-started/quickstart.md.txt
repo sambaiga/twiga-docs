@@ -1,0 +1,237 @@
+# Quick Start Guide
+
+:::{dropdown} Source Files
+
+- `examples/forecaster.py`
+- `examples/experiment.py`
+- `twiga/forecaster/core.py`
+- `twiga/core/config/base.py`
+
+:::
+
+This guide walks through a complete forecasting workflow: loading data, configuring models, training, predicting, and evaluating.
+
+## Minimal Example with ML Models
+
+```python
+import pandas as pd
+from sklearn.preprocessing import RobustScaler, StandardScaler
+
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.ml.xgboost_model import XGBOOSTConfig
+from twiga.models.ml.lightgbm_model import LIGHTGBMConfig
+
+# 1. Load your time series data
+data = pd.read_parquet("data/my_timeseries.parquet")
+# Expected columns: timestamp, target_variable, [optional features]
+
+# 2. Configure the data pipeline
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="30min",
+    lookback_window_size=48,
+    forecast_horizon=48,
+    calendar_features=["hour", "day_night"],
+    exogenous_features=["ghi"],
+    latitude=-6.8,
+    longitude=39.3,
+    input_scaler=StandardScaler(),
+    target_scaler=RobustScaler(),
+)
+
+# 3. Configure models
+xgb_config = XGBOOSTConfig(device="cpu")
+lgb_config = LIGHTGBMConfig()
+
+# 4. Configure training parameters
+train_config = ForecasterConfig(
+    split_freq="days",
+    train_size=14,
+    test_size=7,
+    project_name="QuickStart",
+)
+
+# 5. Create forecaster
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[xgb_config, lgb_config],
+    train_params=train_config,
+)
+
+# 6. Split data
+train_df = data[data.timestamp <= "2024-06-01"]
+val_df = data[(data.timestamp > "2024-05-15") & (data.timestamp <= "2024-07-01")]
+test_df = data[data.timestamp > "2024-07-01"]
+
+# 7. Fit models
+forecaster.fit(train_df=train_df, val_df=val_df)
+
+# 8. Evaluate point forecasts
+predictions_df, metrics_df = forecaster.evaluate_point_forecast(
+    test_df=test_df,
+    ensemble_strategy="mean",
+)
+
+print(metrics_df.groupby("Model")[["mae", "rmse", "smape"]].mean().round(2))
+```
+
+## Using Neural Network Models
+
+Neural network models use `NeuralModelConfig` and are created via `from_data_config()` for convenience:
+
+```python
+from twiga.models.nn.mlpf_model import MLPFConfig
+from twiga.models.nn.nhits_model import NHITSConfig
+
+# Create NN configs from data config (automatically sets input/output dimensions)
+mlpf_config = MLPFConfig.from_data_config(data_config)
+mlpf_config.max_epochs = 20
+mlpf_config.batch_size = 64
+
+nhits_config = NHITSConfig.from_data_config(data_config)
+nhits_config.max_epochs = 20
+
+# Mix ML and NN models in a single forecaster
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[xgb_config, lgb_config, mlpf_config, nhits_config],
+    train_params=train_config,
+)
+
+forecaster.fit(train_df=train_df, val_df=val_df)
+predictions_df, metrics_df = forecaster.evaluate_point_forecast(
+    test_df=test_df,
+    ensemble_strategy="mean",
+)
+```
+
+:::{admonition} Note
+:class: note
+
+Neural models require the `pytorch` and `lightning` optional dependency groups. Install with `pip install twiga-forecast[pytorch,lightning]`.
+:::
+
+## Hyperparameter Tuning
+
+Use Optuna-powered tuning before training to find optimal hyperparameters:
+
+```python
+# Tune all models (uses Optuna with TPE sampler and Hyperband pruner)
+forecaster.tune(
+    train_df=train_df,
+    val_df=val_df,
+    num_trials=20,
+    patience=5,
+)
+
+# Then fit with tuned parameters
+forecaster.fit(train_df=train_df, val_df=val_df)
+```
+
+See [Hyperparameter Tuning](../advanced/hyperparameter-tuning.md) for details.
+
+## Backtesting
+
+Evaluate model performance over multiple time-based cross-validation folds:
+
+```python
+predictions_df, metrics_df = forecaster.backtesting(
+    data=data,
+    train_ratio=1.0,
+    verbose=True,
+    ensemble_strategy="mean",
+)
+
+# Aggregate metrics across folds
+print(metrics_df.groupby(["Model", "Folds"])[["mae", "rmse"]].mean().round(2))
+```
+
+The backtesting parameters are controlled by `ForecasterConfig`:
+
+| Parameter | Description | Example |
+| --- | --- | --- |
+| `split_freq` | Unit for split sizes | `"days"`, `"months"` |
+| `train_size` | Training window length | `14` (14 days) |
+| `test_size` | Test window length | `7` (7 days) |
+| `gap` | Gap between train and test | `0` |
+| `window` | Window strategy | `"expanding"` or `"rolling"` |
+
+See [Backtesting](../core/backtesting.md) for details.
+
+## Conformal Prediction
+
+Add prediction intervals using conformal prediction:
+
+```python
+from twiga.core.config import ConformalConfig
+
+# Configure conformal prediction
+conformal_config = ConformalConfig(
+    method="residual",
+    score_type="res",
+    alpha=0.1,  # 90% prediction interval
+)
+
+# Create forecaster with conformal prediction
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[xgb_config],
+    train_params=train_config,
+    conformal_params=conformal_config,
+)
+
+# Train the model
+forecaster.fit(train_df=train_df, val_df=val_df)
+
+# Calibrate on held-out data
+forecaster.calibrate(calibrate_df=val_df)
+
+# Generate prediction intervals
+interval_predictions, interval_metrics = forecaster.evaluate_interval_forecast(
+    test_df=test_df,
+)
+```
+
+See [Conformal Prediction](../probabilistic/conformal-prediction.md) for details on available methods and score types.
+
+## Accessing Predictions
+
+Predictions are returned as dictionaries mapping model names to NumPy arrays:
+
+```python
+# Point predictions
+prediction_dict, inference_times = forecaster.predict(test_df=test_df)
+
+for model_name, preds in prediction_dict.items():
+    print(f"{model_name}: shape={preds.shape}")
+    # Shape: (num_samples, forecast_horizon, num_targets)
+
+# Interval predictions (after calibration)
+interval_dict, inference_times = forecaster.predict_interval(test_df=test_df)
+
+for model_name, (lower, point, upper) in interval_dict.items():
+    print(f"{model_name}: lower={lower.shape}, point={point.shape}, upper={upper.shape}")
+```
+
+## Formatting Results
+
+Use the built-in result formatting utilities:
+
+```python
+from twiga.core.plot.gt import create_model_performance_table
+
+# Aggregate metrics
+res = metrics_df.groupby("Model")[["mae", "corr", "rmse", "smape"]].mean().round(2).reset_index()
+res = res.rename(columns={"mae": "MAE", "corr": "Corr", "rmse": "RMSE", "smape": "SMAPE"})
+
+# Create a formatted comparison table
+create_model_performance_table(
+    res,
+    metrics=["MAE", "Corr", "SMAPE", "RMSE"],
+    minimize_cols=["MAE", "SMAPE", "RMSE"],
+    maximize_cols=["Corr"],
+)
+```
+
+**Next:** [TwigaForecaster API](../core/forecaster.md) | [Configuration System](../core/config.md)

@@ -1,0 +1,211 @@
+# Model Serving
+
+<details>
+<summary>Source files</summary>
+
+- `twiga/serve/app.py`  -  `create_app()`
+- `twiga/serve/loader.py`  -  `ModelLoader`
+- `twiga/serve/schemas.py`  -  request / response schemas
+
+</details>
+
+## Overview
+
+`twiga.serve` wraps a fitted `TwigaForecaster` in a production-ready
+[FastAPI](https://fastapi.tiangolo.com/) REST API.  The application is created
+by the `create_app()` factory and served with [uvicorn](https://www.uvicorn.org/).
+
+```bash
+pip install twiga[mlops]
+```
+
+---
+
+## Quick start
+
+```python
+# serve.py
+from twiga import TwigaForecaster
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.serve import create_app
+
+forecaster = TwigaForecaster(
+    data_params=DataPipelineConfig(...),
+    model_params=[...],
+    train_params=ForecasterConfig(...),
+)
+
+app = create_app(forecaster, report_dir="reports/", title="Load Forecast API")
+```
+
+```bash
+uvicorn serve:app --host 0.0.0.0 --port 8000
+```
+
+The forecaster checkpoint is loaded once at startup via `ModelLoader`.  The
+interactive OpenAPI docs are available at `http://localhost:8000/docs`.
+
+---
+
+## Endpoints
+
+| Method | Path | Tag | Description |
+|--------|------|-----|-------------|
+| `GET` | `/health` | Ops | Readiness probe  -  returns model metadata |
+| `POST` | `/predict` | Forecast | Point forecast |
+| `POST` | `/predict-interval` | Forecast | Conformal prediction interval |
+| `POST` | `/monitor/drift` | Monitor | Evidently data drift report |
+| `POST` | `/monitor/performance` | Monitor | Evidently regression performance |
+| `POST` | `/reload` | Ops | Hot-reload checkpoint from disk |
+
+### `GET /health`
+
+Returns service status and loaded model metadata:
+
+```json
+{
+  "status": "ok",
+  "models": ["lightgbm", "catboost"],
+  "forecast_horizon": 24,
+  "targets": ["Load(MW)"]
+}
+```
+
+### `POST /predict`
+
+**Request**
+
+```json
+{
+  "records": [
+    {"timestamp": "2024-01-01T00:00:00Z", "temperature": 12.5, "hour": 0},
+    {"timestamp": "2024-01-01T01:00:00Z", "temperature": 12.1, "hour": 1}
+  ],
+  "ensemble_strategy": "mean",
+  "prepare_test_data": true
+}
+```
+
+**Response**  -  `ForecastResponse`
+
+```text
+{
+  "predictions": {
+    "lightgbm": [[120.5, 118.3, ...]],
+    "catboost":  [[121.0, 119.1, ...]]
+  },
+  "inference_time_ms": {"lightgbm": 3.2, "catboost": 2.9},
+  "targets": ["Load(MW)"],
+  "forecast_horizon": 24
+}
+```
+
+### `POST /predict-interval`
+
+Same request shape as `/predict` plus an `alpha` field:
+
+```text
+{
+  "records": [...],
+  "alpha": 0.1,
+  "ensemble_strategy": "mean"
+}
+```
+
+**Response**  -  `IntervalResponse`
+
+```text
+{
+  "lower": {"lightgbm": [[105.0, ...]]},
+  "point": {"lightgbm": [[120.5, ...]]},
+  "upper": {"lightgbm": [[136.0, ...]]},
+  "alpha": 0.1,
+  "coverage": 0.9,
+  "targets": ["Load(MW)"],
+  "forecast_horizon": 24
+}
+```
+
+Requires conformal calibration (`forecaster.calibrate(...)`) before serving.
+
+### `POST /reload`
+
+Hot-reloads the checkpoint without restarting the process:
+
+```bash
+curl -X POST http://localhost:8000/reload
+# → {"status": "reloaded", "models": "['lightgbm', 'catboost']"}
+```
+
+---
+
+## API reference
+
+### `create_app`
+
+```{eval-rst}
+.. autofunction:: twiga.serve.app.create_app
+```
+
+### `ModelLoader`
+
+```{eval-rst}
+.. autoclass:: twiga.serve.loader.ModelLoader
+   :members:
+   :undoc-members:
+   :show-inheritance:
+```
+
+### Request / response schemas
+
+```{eval-rst}
+.. automodule:: twiga.serve.schemas
+   :members:
+   :undoc-members:
+```
+
+---
+
+## `ModelLoader`
+
+`ModelLoader` handles lazy, cached checkpoint loading so that deserialisation
+happens once at startup rather than on every request.
+
+```python
+from twiga.serve import ModelLoader
+
+loader = ModelLoader(forecaster)
+fc = loader.load()    # loads from checkpoint_path; cached on subsequent calls
+loader.reload()       # force fresh load (e.g. after a new model version is saved)
+```
+
+Key properties exposed after loading:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `is_loaded` | `bool` | `True` after a successful load |
+| `targets` | `list[str]` | Target variable names |
+| `forecast_horizon` | `int` | Steps ahead |
+| `model_names` | `list[str]` | Names of all loaded models |
+
+---
+
+## Deployment tips
+
+**Pre-fork model loading**  -  For multi-worker deployments use gunicorn with
+`--preload` so the checkpoint is loaded once in the master process and forked
+into each worker, avoiding repeated disk I/O:
+
+```bash
+gunicorn serve:app -k uvicorn.workers.UvicornWorker -w 4 --preload
+```
+
+**Health checks**  -  Wire `/health` to your container orchestrator's liveness
+and readiness probes.  The endpoint returns `status: "degraded"` if the model
+has not been loaded successfully.
+
+**Hot reload**  -  After saving a new checkpoint, trigger `/reload` via your
+deployment pipeline instead of restarting the container.
+
+See [Pipeline](pipeline.md) for how `training_flow` saves checkpoints and
+triggers `/reload` automatically via Prefect.

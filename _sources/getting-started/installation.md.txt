@@ -1,0 +1,112 @@
+# Installation & Setup
+
+<details>
+<summary>Source Files</summary>
+
+- `pyproject.toml`
+
+</details>
+
+## Quick Install
+
+```bash
+pip install twiga-forecast
+```
+
+## Development Setup with uv
+
+For development, use [uv](https://docs.astral.sh/uv/) to manage dependencies:
+
+```bash
+# Clone the repository
+git clone https://github.com/sambaiga/twiga-forecast.git
+cd twiga-forecast
+
+# Create a virtual environment and sync all extras
+uv sync --extra pytorch --extra lightning --extra gbtree --extra plots --extra dev --extra test
+```
+
+## Optional Dependency Groups
+
+Twiga uses optional dependency groups to keep the base install lightweight. Install only what you need:
+
+| Group | Purpose | Install Command | Key Packages |
+|---|---|---|---|
+| `pytorch` | Neural network models | `pip install twiga-forecast[pytorch]` | `torch>=2.8.0` |
+| `lightning` | PyTorch Lightning training | `pip install twiga-forecast[lightning]` | `lightning>=2.6.0`, `torchmetrics>=1.8.2` |
+| `gbtree` | Gradient boosting models | `pip install twiga-forecast[gbtree]` | `xgboost>=3.1.3`, `catboost>=1.2.8`, `lightgbm>=4.6.0` |
+| `plots` | Visualization | `pip install twiga-forecast[plots]` | `altair`, `lets-plot`, `seaborn`, `plotly`, `matplotlib_inline` |
+| `tracking` | Experiment tracking | `pip install twiga-forecast[tracking]` | `wandb>=0.19.10`, `tensorboard>=2.19.0` |
+| `docs` | Documentation generation | `pip install twiga-forecast[docs]` | `mkdocs`, `mkdocstrings-python`, `mkdocs-material` |
+| `dev` | Development tools | `pip install twiga-forecast[dev]` | `ruff`, `mypy`, `pre-commit`, `commitizen` |
+| `test` | Testing | `pip install twiga-forecast[test]` | `pytest>=9.0.2`, `pytest-cov>=7.0.0` |
+
+To install multiple groups at once:
+
+```bash
+pip install twiga-forecast[pytorch,lightning,gbtree,plots]
+```
+
+## PyTorch Backend
+
+### CPU Only
+
+```bash
+pip install torch>=2.8.0 --index-url https://download.pytorch.org/whl/cpu
+```
+
+### CUDA (GPU)
+
+```bash
+pip install torch>=2.8.0 --index-url https://download.pytorch.org/whl/cu124
+```
+
+:::{admonition} Note
+:class: note
+
+GPU support is optional. All ML models (CatBoost, XGBoost, LightGBM, Linear Regression) run on CPU. Neural network models benefit from GPU acceleration but work on CPU as well. CatBoost also supports GPU training via `task_type="GPU"` in its config.
+:::
+
+
+## Core Dependencies
+
+The base install includes:
+
+| Package | Version | Purpose |
+|---|---|---|
+| `pydantic` | >=2.10.6 | Configuration validation |
+| `numpy` | 2.0.0 | Numerical computation |
+| `pandas` | >=2.2.3 | Data manipulation |
+| `scikit-learn` | >=1.8.0 | Base transformers and utilities |
+| `optuna` | >=4.7.0 | Hyperparameter optimization |
+| `statsmodels` | >=0.14.0 | Statistical modeling |
+| `astral` | >=3.2 | Sunrise/sunset calculations |
+| `rich` | >=14.3.1 | Progress bars |
+| `tqdm` | >=4.66.4 | Progress bars |
+
+## Prerequisites
+
+- **Python**: 3.11 (required  -  `>=3.11,<3.12`)
+- **OS**: Linux, macOS, Windows
+- **GPU**: Optional, for neural network models and CatBoost GPU mode
+
+## Verification
+
+```python
+import twiga
+from twiga.forecaster.core import TwigaForecaster
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+
+print("Twiga installed successfully!")
+```
+
+To verify GPU availability for neural models:
+
+```python
+import torch
+print(f"CUDA available: {torch.cuda.is_available()}")
+print(f"Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
+```
+
+
+**Next:** [Key Concepts](key-concepts.md) | [Quick Start Guide](quickstart.md)

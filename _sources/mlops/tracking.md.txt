@@ -1,0 +1,128 @@
+# Experiment Tracking
+
+<details>
+<summary>Source file</summary>
+
+- `twiga/tracking/tracker.py`  -  `TwigaTracker`
+
+</details>
+
+## Overview
+
+`TwigaTracker` is a context manager that wraps an MLflow run lifecycle and exposes
+helpers tuned to Twiga's data structures  -  Pydantic configs, metrics DataFrames, and
+checkpoint directories.  It is installed as part of the `[mlops]` extra.
+
+```bash
+pip install twiga[mlops]
+```
+
+---
+
+## Quick start
+
+```python
+from twiga.tracking import TwigaTracker
+
+with TwigaTracker(experiment="load-forecast", run_name="lgbm-v1") as tracker:
+    forecaster.fit(train_df, val_df)
+    _, metrics_df = forecaster.evaluate(test_df)
+    tracker.log_metrics(metrics_df)
+    tracker.log_forecaster(forecaster)
+```
+
+The block above:
+
+1. Creates (or resumes) the MLflow experiment `"load-forecast"`.
+2. Starts a new run named `"lgbm-v1"`.
+3. Logs evaluation metrics keyed as `{model}/{metric}`.
+4. Logs data pipeline params and checkpoint artefacts.
+5. Ends the run with status `FINISHED` on exit (or `FAILED` on exception).
+
+---
+
+## API reference
+
+### `TwigaTracker`
+
+```{eval-rst}
+.. autoclass:: twiga.tracking.TwigaTracker
+   :members:
+   :undoc-members:
+   :show-inheritance:
+```
+
+---
+
+## Logging helpers
+
+### Parameters from Pydantic configs
+
+`log_config` uses `model_dump()` and flattens nested dicts with dot-separated
+keys so that all Pydantic config fields appear as searchable MLflow parameters:
+
+```python
+tracker.log_config(forecaster.data_pipeline, prefix="data")
+# → logs  data.target_feature, data.forecast_horizon, data.lookback_window_size, …
+```
+
+### Metrics from a DataFrame
+
+`log_metrics` reads the standard Twiga evaluation DataFrame (columns include
+`mae`, `rmse`, `corr`, `Model`).  Each model gets its own metric namespace:
+
+```python
+tracker.log_metrics(metrics_df)
+# → logs  lgbm/mae, lgbm/rmse, catboost/mae, catboost/rmse, …
+```
+
+### Full forecaster log
+
+`log_forecaster` is a convenience wrapper that logs:
+
+| What | MLflow path |
+|------|-------------|
+| `data_pipeline` fields | params |
+| `project_name`, `model_type` | params |
+| Checkpoint directory | `artefacts/checkpoints/` |
+
+```python
+tracker.log_forecaster(forecaster)
+```
+
+---
+
+## Using a remote tracking server
+
+Pass `tracking_uri` to point at a remote MLflow instance:
+
+```python
+with TwigaTracker(
+    experiment="solar-forecast",
+    tracking_uri="http://mlflow.internal:5000",
+) as tracker:
+    ...
+```
+
+Without `tracking_uri`, MLflow defaults to a local `mlruns/` directory in the
+working directory.
+
+---
+
+## Prefect integration
+
+Inside a Prefect flow, the `log_to_mlflow` task wraps `TwigaTracker` so you
+do not need to call it directly:
+
+```python
+from twiga.pipeline import training_flow
+
+training_flow(
+    forecaster=forecaster,
+    data_path="data/load.parquet",
+    experiment="load-forecast",
+    run_name="lgbm-v1",
+)
+```
+
+See [Pipeline](pipeline.md) for the complete flow reference.

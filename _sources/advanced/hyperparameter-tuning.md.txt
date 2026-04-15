@@ -1,0 +1,254 @@
+# Hyperparameter Optimization
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/core/config/base.py`
+- `twiga/forecaster/base.py`
+
+</details>
+
+Twiga integrates with [Optuna](https://optuna.org/) for hyperparameter optimization. Every model config includes a `search_space` field that defines the tunable parameter ranges, and the [`TwigaForecaster.tune()`](../core/forecaster.md) method orchestrates the optimization process.
+
+## Architecture
+
+```{mermaid}
+graph TD
+    A[TwigaForecaster.tune] --> B[For each model]
+    B --> C[create_optuna_study]
+    C --> D[TPESampler + HyperbandPruner]
+    D --> E[study.optimize]
+    E --> F[_objective_fn]
+    F --> G[model.update trial]
+    G --> H[BaseSearchSpace.get_optuna_params]
+    H --> I[suggest_int / suggest_float / suggest_categorical]
+    F --> J[_fit + _evaluate]
+    J --> K[Return MAE cost]
+    E --> L[study.best_trial.params]
+    L --> M[Update model config]
+```
+
+## Search Spaces
+
+### BaseSearchSpace
+
+The `BaseSearchSpace` class (`twiga/core/config/base.py`) is a Pydantic model that defines and validates hyperparameter ranges:
+
+```python
+from twiga.core.config import BaseSearchSpace
+
+space = BaseSearchSpace(
+    learning_rate=(1e-3, 1e-1),           # float range → suggest_float
+    max_depth=(1, 10),                     # int range → suggest_int
+    n_estimators=(50, 500),                # int range → suggest_int
+    boosting_type=["gbdt", "dart"],        # list → suggest_categorical
+)
+```
+
+**Type inference rules:**
+
+| Input Format | Optuna Method | Log Scale |
+|---|---|---|
+| `(int, int)` | `suggest_int` | If ratio >= 10 and both > 0 |
+| `(float, float)` | `suggest_float` | If ratio >= 10 and both > 0 |
+| `[val1, val2, ...]` | `suggest_categorical` | N/A |
+
+**Log-scale detection:** Applied automatically when `high / low >= 10` and both values are positive. This is controlled by the `_should_use_log()` static method.
+
+**Validation rules:**
+- Tuples must have exactly 2 numeric values with `low < high`
+- Lists must have at least 1 element with no duplicates
+
+### Per-Model Search Spaces
+
+Each model config defines default search spaces:
+
+#### CatBoost
+
+```python
+BaseSearchSpace(
+    learning_rate=(1e-3, 1e-1),      # log scale
+    depth=(1, 12),
+    iterations=(20, 1000),            # log scale
+    min_data_in_leaf=(1, 100),        # log scale
+)
+```
+
+#### XGBoost
+
+```python
+BaseSearchSpace(
+    learning_rate=(1e-3, 1e-1),      # log scale
+    subsample=(0.05, 1.0),
+    gamma=(0, 10),
+    colsample_bytree=(0.05, 1.0),
+    min_child_weight=(1, 20),         # log scale
+    n_estimators=(10, 500),           # log scale
+    max_depth=(1, 10),
+)
+```
+
+#### LightGBM
+
+```python
+BaseSearchSpace(
+    learning_rate=(1e-3, 1e-1),      # log scale
+    num_leaves=(2, 1024),             # log scale
+    subsample=(0.05, 1.0),
+    colsample_bytree=(0.05, 1.0),
+    min_data_in_leaf=(1, 100),        # log scale
+    n_estimators=(10, 200),           # log scale
+    max_depth=(1, 10),
+    linear_tree=[True, False],
+    iterations=(20, 1000),            # log scale
+)
+```
+
+#### MLPF / MLPGAM / Neural Models
+
+```python
+BaseSearchSpace(
+    embedding_size=[8, 16, 32, 64],
+    hidden_size=[16, 32, 64, 128, 256, 512],
+    num_layers=(1, 5),
+    dropout=(0.1, 0.9),
+    alpha=(0.01, 0.9),
+    combination_type=["attn-comb", "weighted-comb", "addition-comb"],
+    activation_function=["ReLU", "GELU", "SiLU"],
+)
+```
+
+## The Tuning Process
+
+### `TwigaForecaster.tune()`
+
+```python
+forecaster.tune(
+    train_df=train_df,
+    val_df=val_df,
+    num_trials=20,              # number of Optuna trials
+    reduction_factor=3,        # Hyperband reduction factor
+    patience=5,                # early stopping patience
+    load_if_exists=True,       # resume existing study
+    direction="minimize",      # optimize direction
+)
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `train_df` | `pd.DataFrame` | Required | Training data |
+| `val_df` | `pd.DataFrame` | Required | Validation data |
+| `num_trials` | `int` | `10` | Number of Optuna trials |
+| `reduction_factor` | `int` | `3` | Hyperband pruner reduction factor |
+| `patience` | `int` | `10` | Patient pruner patience |
+| `load_if_exists` | `bool` | `True` | Load existing study from disk |
+| `initial_params` | `dict \| None` | `None` | Initial parameters to try first |
+| `direction` | `str` | `"minimize"` | `"minimize"` or `"maximize"` |
+| `sampler` | `object \| None` | `None` | Custom Optuna sampler |
+| `base_pruner` | `object \| None` | `None` | Custom Optuna pruner |
+
+### Study Configuration
+
+`create_optuna_study()` in `BaseForecaster` configures:
+
+- **Sampler**: `TPESampler` (Tree-structured Parzen Estimator) with:
+  - `seed=self.seed` for reproducibility
+  - `multivariate=True` for correlated parameters
+  - `n_startup_trials=patience * 2` random trials before TPE
+  - `constant_liar=True` for parallel optimization
+  - `group=True` for grouped parameters
+
+- **Pruner**: `HyperbandPruner` with:
+  - `min_resource=patience`
+  - `max_resource="auto"`
+  - `reduction_factor=reduction_factor`
+
+- **Storage**: JournalFile-based storage at `{logs_path}/{project_name}_{model_type}.log`
+
+### Objective Function
+
+The `_objective_fn` per trial:
+
+1. Calls `model.update(trial)`  -  uses `BaseSearchSpace.get_optuna_params()` to suggest values
+2. Calls `_fit(train_df, val_df, trial)`  -  trains the model
+3. Calls `_evaluate(val_df)`  -  computes validation metrics
+4. Returns `mean(MAE)` as the cost to minimize
+5. Sets user attributes: `rmse` and `std_dev` for dashboard visualization
+
+### After Tuning
+
+Best parameters are:
+- Saved to `{results_path}/best_params.npy`
+- Applied to the model config via `model_copy(update=best_params)`
+- The model is re-instantiated with the updated config
+
+## Full Example
+
+```python
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.ml.xgboost_model import XGBOOSTConfig
+from twiga.models.nn.mlpf_model import MLPFConfig
+
+# Configure
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,
+    forecast_horizon=48,
+)
+
+train_config = ForecasterConfig(
+    split_freq="days",
+    train_size=14,
+    test_size=7,
+)
+
+# Custom search space
+xgb_config = XGBOOSTConfig(
+    search_space=BaseSearchSpace(
+        learning_rate=(0.01, 0.3),
+        max_depth=(3, 8),
+        n_estimators=(100, 1000),
+    )
+)
+
+mlpf_config = MLPFConfig.from_data_config(data_config)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[xgb_config, mlpf_config],
+    train_params=train_config,
+)
+
+# Tune all models
+forecaster.tune(
+    train_df=train_df,
+    val_df=val_df,
+    num_trials=30,
+    patience=5,
+)
+
+# Fit with tuned parameters
+forecaster.fit(train_df=train_df, val_df=val_df)
+
+# Evaluate
+predictions_df, metrics_df = forecaster.evaluate_point_forecast(test_df=test_df)
+```
+
+:::{admonition} Tip
+:class: tip
+
+Use `load_if_exists=True` (default) to resume tuning from a previous run. The study state is persisted to disk automatically.
+:::
+
+
+## API Reference
+
+
+```{eval-rst}
+.. autoclass:: twiga.core.config.BaseSearchSpace
+   :members:
+   :show-inheritance:
+   :noindex:
+```

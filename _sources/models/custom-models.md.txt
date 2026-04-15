@@ -1,0 +1,712 @@
+# Creating Custom Models
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/forecaster/registry.py` -- Model registry and dynamic loading
+- `twiga/models/ml/core/base_regressor.py` -- `BaseRegressor` (ML base class)
+- `twiga/models/nn/core/base.py` -- `BaseNeuralForecast` (NN base class)
+- `twiga/models/nn/core/base_arch.py` -- `BaseArchitecture` (NN architecture base)
+- `twiga/models/nn/core/base_model.py` -- `BaseNeuralModel` (Lightning module base)
+- `twiga/core/config/base.py` -- `BaseModelConfig`, `NeuralModelConfig`, `BaseSearchSpace`
+
+</details>
+
+Twiga's model system is designed for extensibility. Any model that follows the registry naming convention and extends the appropriate base class can be plugged into the [TwigaForecaster](../core/forecaster.md) without modifying framework code. This page walks through the process of creating custom models for both the **ML** and **NN** domains.
+
+
+## How the Model Registry Works
+
+The registry in `twiga/forecaster/registry.py` uses **dynamic imports** to load model and config classes at runtime. When you call `get_model(name, domain)`, the registry:
+
+1. Constructs a module path: `twiga.models.{domain}.{name}_model`
+2. Imports the module dynamically with `importlib.import_module`
+3. Retrieves two classes by name: `{NAME}Model` and `{NAME}Config` (where `NAME` is the uppercase version of the `name` argument)
+4. Caches the result for subsequent lookups
+
+```python
+from twiga.forecaster.registry import get_model
+
+# Loads twiga.models.ml.catboost_model -> (CATBOOSTModel, CATBOOSTConfig)
+model_cls, config_cls = get_model("catboost", domain="ml")
+
+# Loads twiga.models.nn.mlpf_model -> (MLPFModel, MLPFConfig)
+model_cls, config_cls = get_model("mlpf", domain="nn")
+```
+
+:::{admonition} Naming convention is strict
+:class: warning
+
+The registry uppercases the entire `name` string to form class names. For a model named `"mymodel"`, it expects `MYMODELModel` and `MYMODELConfig` -- not `MyModelModel` or `MymodelConfig`. The file must be named `mymodel_model.py` and placed in the correct domain directory (`twiga/models/ml/` or `twiga/models/nn/`).
+:::
+
+
+The naming rules are summarised below:
+
+| Component | Convention | Example (`name="randomforest"`, `domain="ml"`) |
+|---|---|---|
+| File path | `twiga/models/{domain}/{name}_model.py` | `twiga/models/ml/randomforest_model.py` |
+| Config class | `{NAME}Config` | `RANDOMFORESTConfig` |
+| Model class | `{NAME}Model` | `RANDOMFORESTModel` |
+| Config `name` field | `Literal["{name}"]` | `Literal["randomforest"]` |
+| Config `domain` field | `Literal["{domain}"]` | `Literal["ml"]` |
+
+
+## Adding a Custom ML Model
+
+ML models are traditional machine learning regressors (tree-based methods, linear models, etc.) that operate on tabular feature arrays. They extend `BaseRegressor` and use `BaseModelConfig` for configuration.
+
+### Step 1: Create the Module File
+
+Create a new file in `twiga/models/ml/` following the naming convention. For this tutorial we will build a Random Forest model.
+
+```
+twiga/models/ml/randomforest_model.py
+```
+
+### Step 2: Define the Config Class
+
+The config class extends `BaseModelConfig` and declares the model's hyperparameters as Pydantic fields. Parameters that should not be passed to the underlying estimator (like `name`, `domain`, and `search_space`) must use `exclude=True`.
+
+```python
+from typing import Literal
+
+from pydantic import Field
+
+from twiga.core.config import BaseModelConfig, BaseSearchSpace
+
+
+class RANDOMFORESTConfig(BaseModelConfig):
+    """Configuration for Random Forest regression model."""
+
+    name: Literal["randomforest"] = Field(
+        default="randomforest",
+        description="Model identifier, fixed to 'randomforest'.",
+        alias="model_name",
+        exclude=True,
+    )
+    domain: Literal["ml"] = Field(
+        default="ml",
+        description="Domain identifier, fixed to 'ml'.",
+        alias="model_type",
+        exclude=True,
+    )
+    n_estimators: int = Field(
+        default=100,
+        description="Number of trees in the forest.",
+    )
+    max_depth: int | None = Field(
+        default=None,
+        description="Maximum depth of each tree. None means unlimited.",
+    )
+    min_samples_split: int = Field(
+        default=2,
+        description="Minimum samples required to split an internal node.",
+    )
+    random_state: int = Field(
+        default=42,
+        gt=0,
+        description="Random seed for reproducibility.",
+    )
+    n_jobs: int = Field(
+        default=-1,
+        description="Number of parallel jobs. -1 uses all processors.",
+    )
+    search_space: BaseSearchSpace = Field(
+        default=BaseSearchSpace(
+            n_estimators=(50, 500),
+            max_depth=(3, 30),
+            min_samples_split=(2, 20),
+        ),
+        description="Hyperparameter search space for Optuna tuning.",
+        exclude=True,
+    )
+```
+
+:::{admonition} How `exclude=True` works
+:class: tip
+
+Fields marked with `exclude=True` are omitted when you call `config.dict()` or `config.model_dump()`. This is how Twiga separates metadata fields (`name`, `domain`, `search_space`) from the parameters that get passed directly to the underlying estimator constructor. See [Configuration System](../core/config.md) for the full reference.
+:::
+
+
+### Step 3: Define the Model Class
+
+The model class extends `BaseRegressor` and must implement the `update(trial)` method for [hyperparameter tuning](../advanced/hyperparameter-tuning.md). The base class provides `fit`, `predict`, `forecast`, and `format_features` out of the box.
+
+```python
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.multioutput import MultiOutputRegressor
+
+from .core.base_regressor import BaseRegressor
+
+
+class RANDOMFORESTModel(BaseRegressor):
+    """Random Forest regression model for time series forecasting."""
+
+    def __init__(self, model_config: RANDOMFORESTConfig = None):
+        self.model_config = (
+            model_config if model_config is not None else RANDOMFORESTConfig()
+        )
+        self.model = MultiOutputRegressor(
+            RandomForestRegressor(**self.model_config.dict())
+        )
+
+    def update(self, trial):
+        """Reinitialize the model with Optuna-suggested hyperparameters.
+
+        Args:
+            trial: An Optuna trial object used to sample hyperparameters
+                from the search space defined in RANDOMFORESTConfig.
+        """
+        params = self.model_config.get_optuna_params(trial=trial)
+        self.model = MultiOutputRegressor(
+            RandomForestRegressor(**params)
+        )
+```
+
+:::{admonition} MultiOutputRegressor wrapper
+:class: note
+
+Twiga's data pipeline produces multi-output targets with shape `(samples, horizon * num_targets)`. Scikit-learn estimators that do not natively support multi-output regression need to be wrapped in `MultiOutputRegressor`. Tree-based models like XGBoost and CatBoost handle this internally, but for scikit-learn models (Random Forest, SVR, etc.) the wrapper is required.
+:::
+
+
+### Step 4: Assemble the Complete File
+
+Here is the complete `randomforest_model.py`:
+
+```python
+"""Module implementing Random Forest configuration and model classes."""
+
+from typing import Literal
+
+from pydantic import Field
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.multioutput import MultiOutputRegressor
+
+from twiga.core.config import BaseModelConfig, BaseSearchSpace
+
+from .core.base_regressor import BaseRegressor
+
+
+class RANDOMFORESTConfig(BaseModelConfig):
+    """Configuration for Random Forest regression model."""
+
+    name: Literal["randomforest"] = Field(
+        default="randomforest",
+        description="Model identifier, fixed to 'randomforest'.",
+        alias="model_name",
+        exclude=True,
+    )
+    domain: Literal["ml"] = Field(
+        default="ml",
+        description="Domain identifier, fixed to 'ml'.",
+        alias="model_type",
+        exclude=True,
+    )
+    n_estimators: int = Field(
+        default=100,
+        description="Number of trees in the forest.",
+    )
+    max_depth: int | None = Field(
+        default=None,
+        description="Maximum depth of each tree. None means unlimited.",
+    )
+    min_samples_split: int = Field(
+        default=2,
+        description="Minimum samples required to split an internal node.",
+    )
+    random_state: int = Field(
+        default=42,
+        gt=0,
+        description="Random seed for reproducibility.",
+    )
+    n_jobs: int = Field(
+        default=-1,
+        description="Number of parallel jobs. -1 uses all processors.",
+    )
+    search_space: BaseSearchSpace = Field(
+        default=BaseSearchSpace(
+            n_estimators=(50, 500),
+            max_depth=(3, 30),
+            min_samples_split=(2, 20),
+        ),
+        description="Hyperparameter search space for Optuna tuning.",
+        exclude=True,
+    )
+
+
+class RANDOMFORESTModel(BaseRegressor):
+    """Random Forest regression model for time series forecasting."""
+
+    def __init__(self, model_config: RANDOMFORESTConfig = None):
+        self.model_config = (
+            model_config if model_config is not None else RANDOMFORESTConfig()
+        )
+        self.model = MultiOutputRegressor(
+            RandomForestRegressor(**self.model_config.dict())
+        )
+
+    def update(self, trial):
+        """Reinitialize the model with Optuna-suggested hyperparameters."""
+        params = self.model_config.get_optuna_params(trial=trial)
+        self.model = MultiOutputRegressor(
+            RandomForestRegressor(**params)
+        )
+```
+
+### Step 5: Use Your Custom Model
+
+Once the file is in place, the registry discovers it automatically. No additional registration step is needed.
+
+```python
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.forecaster.core import TwigaForecaster
+
+# Option A: Use the config class directly
+from twiga.models.ml.randomforest_model import RANDOMFORESTConfig
+
+rf_config = RANDOMFORESTConfig(n_estimators=200, max_depth=15)
+
+# Option B: Use a dictionary (the registry resolves the name)
+rf_config_dict = {"name": "randomforest", "n_estimators": 200, "max_depth": 15}
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[rf_config],      # or rf_config_dict
+    train_params=train_config,
+)
+forecaster.fit(train_df=train_df)
+predictions, metrics = forecaster.evaluate_point_forecast(test_df=test_df)
+```
+
+
+## Adding a Custom NN Model
+
+Neural network models are PyTorch-based forecasters that use PyTorch Lightning for training orchestration. Creating a custom NN model involves three layers:
+
+1. **Architecture** (`BaseArchitecture` subclass) -- defines the `nn.Module` with `forward()` logic
+2. **Lightning model** (`BaseNeuralModel` subclass) -- wraps the architecture with training/validation steps and optimizer configuration
+3. **Forecaster** (`BaseNeuralForecast` subclass) -- manages the Trainer, callbacks, logging, and Optuna integration
+
+### Step 1: Create the Module File
+
+Create a new file in `twiga/models/nn/`:
+
+```
+twiga/models/nn/simplenn_model.py
+```
+
+You will also need an architecture file in `twiga/models/nn/net/`:
+
+```
+twiga/models/nn/net/simplenn.py
+```
+
+### Step 2: Define the Config Class
+
+NN configs extend `NeuralModelConfig`, which itself extends `BaseModelConfig`. The neural config adds training parameters (batch size, epochs, patience, etc.) and provides the `from_data_config` classmethod for automatic dimensionality setup.
+
+```python
+# In twiga/models/nn/simplenn_model.py
+
+from typing import Literal
+
+from twiga.core.config import BaseSearchSpace, Field, NeuralModelConfig
+
+
+class SIMPLENNConfig(NeuralModelConfig):
+    """Configuration for a simple feedforward neural network forecaster."""
+
+    name: Literal["simplenn"] = Field(
+        default="simplenn",
+        description="Model identifier, fixed to 'simplenn'.",
+        alias="model_name",
+        exclude=True,
+    )
+
+    # Architecture parameters
+    num_target_feature: int = Field(..., description="Number of target features.")
+    num_historical_features: int = Field(0, description="Number of historical features.")
+    num_calendar_features: int = Field(0, description="Number of calendar features.")
+    num_exogenous_features: int = Field(0, description="Number of exogenous features.")
+    num_future_covariates: int = Field(0, description="Number of future covariate features.")
+    forecast_horizon: int = Field(..., description="Forecast horizon in time steps.")
+    lookback_window_size: int = Field(..., description="Input window size in time steps.")
+
+    # Model-specific hyperparameters
+    hidden_size: int = Field(128, description="Hidden layer dimensionality.")
+    num_layers: int = Field(2, description="Number of hidden layers.")
+    activation_function: Literal["ReLU", "SiLU", "GELU", "Tanh"] = Field(
+        "ReLU", description="Activation function for hidden layers."
+    )
+    dropout: float = Field(0.25, description="Dropout rate for regularization.")
+    alpha: float = Field(0.1, description="Loss weighting: alpha*MSE + (1-alpha)*MAE.")
+
+    # Search space for hyperparameter tuning
+    search_space: BaseSearchSpace = Field(
+        default=BaseSearchSpace(
+            hidden_size=[64, 128, 256, 512],
+            num_layers=(1, 5),
+            dropout=(0.1, 0.5),
+            alpha=(0.01, 0.9),
+        ),
+        description="Hyperparameter search space for Optuna tuning.",
+        exclude=True,
+    )
+```
+
+:::{admonition} Use `from_data_config` for convenience
+:class: tip
+
+`NeuralModelConfig.from_data_config(data_config, **kwargs)` automatically computes `num_target_feature`, `num_historical_features`, `num_calendar_features`, `num_exogenous_features`, `num_future_covariates`, `forecast_horizon`, and `lookback_window_size` from a `DataPipelineConfig`. Always prefer this over setting dimensional parameters manually. See [Configuration System](../core/config.md#key-method-from_data_configdata_config-kwargs) for details.
+:::
+
+
+### Step 3: Define the Architecture
+
+The architecture is an `nn.Module` that extends `BaseArchitecture`. You must implement the `forward()` method. The base class provides:
+
+- Feature dimension attributes (`num_target_feature`, `num_historical_features`, etc.)
+- The `step(batch, metric_fn)` method that computes the combined loss: `alpha * MSE + (1 - alpha) * MAE`
+- A `forecast(x)` method that calls `forward` in `torch.no_grad()` mode
+- Dropout layer and output activation
+
+```python
+# In twiga/models/nn/net/simplenn.py
+
+import torch
+import torch.nn as nn
+
+from twiga.models.nn.core.base_arch import BaseArchitecture
+from twiga.models.nn.core.base_model import BaseNeuralModel
+
+
+class SimpleNNArchitecture(BaseArchitecture):
+    """Simple feedforward architecture for time series forecasting."""
+
+    def __init__(
+        self,
+        num_target_feature: int,
+        num_historical_features: int,
+        num_calendar_features: int,
+        num_exogenous_features: int,
+        num_future_covariates: int,
+        forecast_horizon: int,
+        lookback_window_size: int,
+        hidden_size: int = 128,
+        num_layers: int = 2,
+        activation_function: str = "ReLU",
+        dropout: float = 0.25,
+        alpha: float = 0.1,
+        output_activation: str = "Identity",
+        **kwargs,
+    ):
+        super().__init__(
+            num_target_feature=num_target_feature,
+            num_historical_features=num_historical_features,
+            num_calendar_features=num_calendar_features,
+            num_exogenous_features=num_exogenous_features,
+            num_future_covariates=num_future_covariates,
+            forecast_horizon=forecast_horizon,
+            lookback_window_size=lookback_window_size,
+            dropout=dropout,
+            alpha=alpha,
+            output_activation=output_activation,
+        )
+
+        # Compute input dimension from all past features
+        input_size = self.num_past_features * self.lookback_window_size
+        output_size = self.forecast_horizon * self.num_target_feature
+
+        # Build hidden layers
+        activation = getattr(nn, activation_function)()
+        layers = []
+        in_dim = input_size
+        for _ in range(num_layers):
+            layers.extend([
+                nn.Linear(in_dim, hidden_size),
+                activation,
+                nn.Dropout(p=dropout),
+            ])
+            in_dim = hidden_size
+
+        # Output projection
+        layers.append(nn.Linear(hidden_size, output_size))
+        self.network = nn.Sequential(*layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass: flatten input, run through MLP, reshape to forecast.
+
+        Args:
+            x: Input tensor of shape (batch, lookback_window_size, num_past_features).
+
+        Returns:
+            Predictions of shape (batch, forecast_horizon, num_target_feature).
+        """
+        batch_size = x.size(0)
+        x_flat = x.reshape(batch_size, -1)
+        out = self.network(x_flat)
+        out = out.reshape(batch_size, self.forecast_horizon, self.num_target_feature)
+        return self.output_activation(out)
+```
+
+### Step 4: Create the Lightning Model Wrapper
+
+Wrap your architecture in a `BaseNeuralModel` subclass. The base class provides `training_step`, `validation_step`, `configure_optimizers`, checkpoint saving/loading, and metric tracking. In most cases you only need to pass your architecture as `self.model`.
+
+```python
+# Continuing in twiga/models/nn/net/simplenn.py
+
+class SimpleNNForecastModel(BaseNeuralModel):
+    """Lightning module wrapping the SimpleNNArchitecture."""
+
+    def __init__(self, metric: str = "mae", max_epochs: int = 10, **arch_kwargs):
+        super().__init__(metric=metric, max_epochs=max_epochs)
+        self.model = SimpleNNArchitecture(**arch_kwargs)
+        self.save_hyperparameters()
+```
+
+:::{admonition} The `self.model` attribute
+:class: note
+
+`BaseNeuralModel.forward()` delegates to `self.model(x)`, and `BaseNeuralModel.forecast()` delegates to `self.model.forecast(x)`. As long as you assign your architecture to `self.model`, the training and validation steps work automatically.
+:::
+
+
+### Step 5: Define the Forecaster Class
+
+The forecaster extends `BaseNeuralForecast` and ties everything together. It must implement `update(trial)` (for Optuna) and `load_checkpoint()`.
+
+```python
+# Back in twiga/models/nn/simplenn_model.py
+
+import optuna
+
+from twiga.models.nn.core.base import BaseNeuralForecast
+from twiga.models.nn.net.simplenn import SimpleNNForecastModel
+
+
+class SIMPLENNModel(BaseNeuralForecast):
+    """Simple feedforward neural network forecaster."""
+
+    def __init__(self, model_config: SIMPLENNConfig = None):
+        super().__init__(
+            rich_progress_bar=model_config.rich_progress_bar,
+            wandb_logging=model_config.wandb_logging,
+            drop_last=model_config.drop_last,
+            num_workers=model_config.num_workers,
+            batch_size=model_config.batch_size,
+            pin_memory=model_config.pin_memory,
+            max_epochs=model_config.max_epochs,
+            seed=model_config.seed,
+            patience=model_config.patience,
+            resume_training=model_config.resume_training,
+        )
+        self.model_config = model_config
+        self._init_model()
+
+    def _init_model(self) -> None:
+        """Initialize the neural network from the current config."""
+        self.model = SimpleNNForecastModel(
+            num_target_feature=self.model_config.num_target_feature,
+            num_historical_features=self.model_config.num_historical_features,
+            num_calendar_features=self.model_config.num_calendar_features,
+            num_exogenous_features=self.model_config.num_exogenous_features,
+            num_future_covariates=self.model_config.num_future_covariates,
+            forecast_horizon=self.model_config.forecast_horizon,
+            lookback_window_size=self.model_config.lookback_window_size,
+            hidden_size=self.model_config.hidden_size,
+            num_layers=self.model_config.num_layers,
+            activation_function=self.model_config.activation_function,
+            dropout=self.model_config.dropout,
+            alpha=self.model_config.alpha,
+            metric=self.model_config.metric,
+            max_epochs=self.model_config.max_epochs,
+        )
+
+    def update(self, trial: optuna.Trial) -> None:
+        """Update model with Optuna-suggested hyperparameters.
+
+        Args:
+            trial: Optuna trial for sampling hyperparameters.
+        """
+        params = self.model_config.get_optuna_params(trial=trial)
+        self.model_config = SIMPLENNConfig(**params)
+        self._init_model()
+
+    def load_checkpoint(self):
+        """Load the latest checkpoint into the model."""
+        self._load_checkpoints(model_instance=SimpleNNForecastModel)
+        self.model.eval()
+```
+
+### Step 6: Use Your Custom NN Model
+
+```python
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.nn.simplenn_model import SIMPLENNConfig
+
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,
+    forecast_horizon=48,
+    calendar_features=["hour", "dayofweek", "month"],
+    exogenous_features=["ghi", "temperature"],
+)
+
+# Use from_data_config for automatic dimensionality setup
+nn_config = SIMPLENNConfig.from_data_config(
+    data_config,
+    hidden_size=256,
+    num_layers=3,
+    max_epochs=50,
+    batch_size=128,
+    patience=10,
+)
+
+train_config = ForecasterConfig(
+    split_freq="months",
+    train_size=6,
+    test_size=1,
+    window="expanding",
+    project_name="CustomNNExperiment",
+)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[nn_config],
+    train_params=train_config,
+)
+
+forecaster.fit(train_df=train_df, val_df=val_df)
+predictions, metrics = forecaster.evaluate_point_forecast(test_df=test_df)
+```
+
+
+## Defining Search Spaces for Optuna
+
+Every model config can include a `search_space` field that defines hyperparameters to tune during [hyperparameter optimisation](../advanced/hyperparameter-tuning.md). The search space uses `BaseSearchSpace`, which supports two parameter types:
+
+| Parameter Type | Python Type | Optuna Method | Example |
+|---|---|---|---|
+| Numeric range (int) | `tuple[int, int]` | `suggest_int` | `max_depth=(3, 12)` |
+| Numeric range (float) | `tuple[float, float]` | `suggest_float` | `learning_rate=(1e-4, 1e-1)` |
+| Categorical choices | `list[Any]` | `suggest_categorical` | `activation=["ReLU", "SiLU", "GELU"]` |
+
+Log-scale sampling is applied automatically for float ranges where `high / low >= 10` and both bounds are positive (useful for learning rates, regularisation coefficients, etc.).
+
+### Creating a Custom Search Space
+
+You can define a search space inline using `BaseSearchSpace(...)`, or create a named subclass for reuse:
+
+```python
+from twiga.core.config import BaseSearchSpace
+
+# Inline (most common)
+search_space = BaseSearchSpace(
+    n_estimators=(50, 500),
+    max_depth=(3, 30),
+    learning_rate=(1e-4, 1e-1),          # log scale (ratio >= 10)
+    subsample=(0.5, 1.0),                # linear scale (ratio < 10)
+    activation=["ReLU", "SiLU", "GELU"], # categorical
+)
+
+# Named subclass (for reuse or IDE autocompletion)
+class MySearchSpace(BaseSearchSpace):
+    n_estimators: tuple[int, int] = (50, 500)
+    max_depth: tuple[int, int] = (3, 30)
+    learning_rate: tuple[float, float] = (1e-4, 1e-1)
+```
+
+### How Search Spaces Connect to Tuning
+
+During `TwigaForecaster.tune(...)`, the framework calls `model.update(trial)` for each Optuna trial. Inside `update`, the config's `get_optuna_params(trial)` method merges fixed parameters with trial suggestions drawn from the search space:
+
+```python
+def get_optuna_params(self, trial: optuna.Trial) -> dict[str, Any]:
+    base_params = self.model_dump(exclude={"name", "search_space"})
+    if self.search_space:
+        search_params = self.search_space.get_optuna_params(trial, prefix=self.name)
+        return {**base_params, **search_params}
+    return base_params
+```
+
+:::{admonition} Disabling hyperparameter tuning for specific parameters
+:class: tip
+
+To fix a parameter during tuning, simply set it as a regular field (not in the search space). Only parameters listed in the `search_space` are sampled by Optuna. The rest are passed through as-is from the config.
+:::
+
+
+## Base Class Reference
+
+### ML Domain
+
+| Class | Location | Role |
+|---|---|---|
+| `BaseModelConfig` | `twiga/core/config/base.py` | Root config with `name`, `domain`, `search_space`, and `get_optuna_params()` |
+| `BaseSearchSpace` | `twiga/core/config/base.py` | Search space validator with `get_optuna_params(trial, prefix)` |
+| `BaseRegressor` | `twiga/models/ml/core/base_regressor.py` | Sklearn-compatible base with `fit()`, `predict()`, `forecast()` |
+
+**`BaseRegressor` key methods:**
+
+| Method | Signature | Description |
+|---|---|---|
+| `fit` | `fit(X, y, verbose=False)` | Formats features, fits the wrapped model |
+| `predict` | `predict(x)` | Returns predictions as a 3D array `(samples, horizon, targets)` |
+| `forecast` | `forecast(x)` | Calls `predict` and returns the result directly |
+| `format_features` | `format_features(x)` | Flattens 3D input to 2D for sklearn compatibility |
+| `update` | `update(trial)` | **Must implement** -- reinitialize model with Optuna params |
+
+### NN Domain
+
+| Class | Location | Role |
+|---|---|---|
+| `NeuralModelConfig` | `twiga/core/config/base.py` | Extends `BaseModelConfig` with batch_size, max_epochs, patience, etc. |
+| `BaseNeuralForecast` | `twiga/models/nn/core/base.py` | Abstract forecaster: Trainer setup, callbacks, logging, `fit()`, `forecast()` |
+| `BaseArchitecture` | `twiga/models/nn/core/base_arch.py` | Abstract `nn.Module`: `forward()`, `step()`, `forecast()` |
+| `BaseNeuralModel` | `twiga/models/nn/core/base_model.py` | Lightning module: `training_step`, `validation_step`, `configure_optimizers` |
+
+**`BaseNeuralForecast` abstract methods (must implement):**
+
+| Method | Signature | Description |
+|---|---|---|
+| `update` | `update(trial: Trial)` | Reinitialize model with Optuna-suggested hyperparameters |
+| `load_checkpoint` | `load_checkpoint(checkpoints_path)` | Restore model from a saved checkpoint |
+
+**`BaseArchitecture` abstract methods (must implement):**
+
+| Method | Signature | Description |
+|---|---|---|
+| `forward` | `forward(x: Tensor) -> Tensor` | Define the neural network computation graph |
+
+
+## Checklist
+
+Before your custom model is ready for production use, verify:
+
+- [ ] File is named `{name}_model.py` in the correct domain directory (`twiga/models/ml/` or `twiga/models/nn/`)
+- [ ] Config class is named `{NAME}Config` (all uppercase) and extends `BaseModelConfig` or `NeuralModelConfig`
+- [ ] Model class is named `{NAME}Model` (all uppercase) and extends `BaseRegressor` or `BaseNeuralForecast`
+- [ ] Config `name` field uses `Literal["{name}"]` with `exclude=True`
+- [ ] Config `domain` field uses `Literal["ml"]` or `Literal["nn"]` with `exclude=True`
+- [ ] Model class implements `update(trial)` for Optuna hyperparameter tuning
+- [ ] NN models implement `load_checkpoint()` for checkpoint restoration
+- [ ] NN architectures implement `forward(x)` in their `BaseArchitecture` subclass
+- [ ] Search space fields use tuples for numeric ranges and lists for categorical choices
+- [ ] `get_model("yourmodel", "yourdomain")` returns the correct `(ModelClass, ConfigClass)` tuple
+
+:::{admonition} Common pitfalls
+:class: warning
+
+- **Class name mismatch**: The registry uses `name.upper()`, so `"my_model"` becomes `MY_MODELModel`, not `MyModelModel`. Avoid underscores in the `name` field.
+- **Forgetting `exclude=True`**: If `name`, `domain`, or `search_space` are not excluded, they get passed to the underlying estimator constructor and cause unexpected keyword argument errors.
+- **Missing `__init__` call**: ML models do not need to call `super().__init__()` explicitly (the base class has no required args), but NN models must call `super().__init__(...)` with the training parameters from the config.
+:::
+
+
+**See also:** [Model Catalog](index.md) | [ML Models](ml-models.md) | [NN Models](nn-models.md) | [Configuration System](../core/config.md) | [TwigaForecaster](../core/forecaster.md) | [Hyperparameter Tuning](../advanced/hyperparameter-tuning.md)

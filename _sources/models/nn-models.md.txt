@@ -1,0 +1,594 @@
+# Neural Network Models
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/models/nn/core/base.py` -- `BaseNeuralForecast` (training orchestration)
+- `twiga/models/nn/core/base_model.py` -- `BaseNeuralModel` (LightningModule wrapper)
+- `twiga/models/nn/core/base_arch.py` -- `BaseArchitecture` (nn.Module ABC)
+- `twiga/models/nn/core/embedding.py` -- Value & positional embeddings
+- `twiga/models/nn/core/linear.py` -- `create_linear`, `MLPBlock`, `PastFutureEncoder`, `FeedForward`
+- `twiga/models/nn/mlpf_model.py` -- `MLPFModel` / `MLPFConfig`
+- `twiga/models/nn/mlpgam_model.py` -- `MLPGAMModel` / `MLPGAMConfig`
+- `twiga/models/nn/mlpgaf_model.py` -- `MLPGAFModel` / `MLPGAFConfig`
+- `twiga/models/nn/nhits_model.py` -- `NHITSModel` / `NHITSConfig`
+- `twiga/models/nn/mlpfqr_model.py` -- `MLPFQRModel` / `MLPFQRConfig`
+- `twiga/models/nn/mlpgamcrc_model.py` -- `MLPGAMCRCModel` / `MLPGAMCRCConfig`
+- `twiga/models/nn/net/` -- Network architecture implementations
+- `twiga/models/nn/prob/core.py` -- `ProbabilisticModel` / `ProbabilisticNetwork`
+- `twiga/models/nn/prob/` -- Probabilistic network variants (parametric, QR, FPQR, CRC)
+
+</details>
+
+Twiga provides seven neural network forecasting models built on PyTorch Lightning. Every model follows the same three-layer design: a **config** (Pydantic model inheriting from [`NeuralModelConfig`](../core/config.md#neuralmodelconfig)), a **model wrapper** (inheriting from `BaseNeuralForecast`), and an **architecture** (inheriting from `BaseArchitecture`). This page documents the base class hierarchy, each model's architecture and configuration, and how to create neural network models within the [TwigaForecaster](../core/forecaster.md) workflow.
+
+
+## Base Class Hierarchy
+
+The diagram below shows how the three core base classes relate to each other and to PyTorch Lightning.
+
+```{mermaid}
+classDiagram
+    direction TB
+
+    class ABC {
+        <<stdlib>>
+    }
+
+    class nn_Module {
+        <<PyTorch>>
+    }
+
+    class LightningModule {
+        <<PyTorch Lightning>>
+    }
+
+    class BaseNeuralForecast {
+        <<ABC>>
+        +wandb_logging: bool
+        +rich_progress_bar: bool
+        +batch_size: int
+        +max_epochs: int
+        +seed: int
+        +model: LightningModule
+        +trainer: Trainer
+        +update(trial)* ABC
+        +load_checkpoint()* ABC
+        +fit(X_train, y_train, X_val, y_val, trial)
+        +forecast(features) Tensor
+    }
+
+    class BaseNeuralModel {
+        <<LightningModule>>
+        +OPTIMIZERS: dict
+        +SCHEDULERS: dict
+        +tra_metric_fcn: Metric
+        +val_metric_fcn: Metric
+        +forward(x)
+        +forecast(x)
+        +training_step(batch, batch_idx)
+        +validation_step(batch, batch_idx)
+        +configure_optimizers()
+    }
+
+    class BaseArchitecture {
+        <<ABC, nn.Module>>
+        +num_target_feature: int
+        +forecast_horizon: int
+        +lookback_window_size: int
+        +dropout: float
+        +alpha: float
+        +encode_size: int
+        +forward(x)* ABC
+        +encode(x) Tensor
+        +forecast(x) dict
+        +step(batch, metric_fn, epoch)
+        +penalty_dict(epoch) dict
+    }
+
+    ABC <|-- BaseNeuralForecast
+    LightningModule <|-- BaseNeuralModel
+    nn_Module <|-- BaseArchitecture
+    ABC <|-- BaseArchitecture
+
+    BaseNeuralForecast o-- BaseNeuralModel : model
+    BaseNeuralModel o-- BaseArchitecture : model
+
+    BaseNeuralForecast <|-- MLPFModel
+    BaseNeuralForecast <|-- MLPGAMModel
+    BaseNeuralForecast <|-- MLPGAFModel
+    BaseNeuralForecast <|-- NHITSModel
+    BaseNeuralForecast <|-- GANFModel
+    BaseNeuralForecast <|-- MLPFQRModel
+    BaseNeuralForecast <|-- MLPGAMCRCModel
+```
+
+### BaseNeuralForecast
+
+`BaseNeuralForecast` is the top-level abstract class that every neural model wrapper inherits from. It owns the PyTorch Lightning `Trainer`, manages checkpointing and logging, and exposes the public `fit` / `forecast` API.
+
+| Responsibility | Method | Details |
+|---|---|---|
+| Hyperparameter update | `update(trial)` | Abstract -- each model subclass reinitializes itself from an Optuna trial. |
+| Checkpoint loading | `load_checkpoint()` | Abstract -- loads the best checkpoint for the specific architecture. |
+| Trainer setup | `_set_up_trainer(trial=None)` | Creates a `pl.Trainer` with early stopping (or Optuna pruning), model checkpointing, LR monitoring, and a progress bar. |
+| Logger setup | `_configure_logger()` | `WandbLogger` when `wandb_logging=True`, otherwise `TensorBoardLogger`. |
+| Training | `fit(X_train, y_train, X_val, y_val, trial)` | Wraps data in a `TimeseriesDataModule`, optionally resumes from the latest checkpoint, and calls `trainer.fit()`. |
+| Inference | `forecast(features: Tensor)` | Switches to eval mode, runs a forward pass with `torch.no_grad()`, and returns NumPy arrays. |
+
+### BaseNeuralModel
+
+`BaseNeuralModel` extends `pl.LightningModule` and handles the training loop mechanics: optimizer/scheduler creation, metric logging, and dual-optimizer support for models that learn both a mean (mu) and a variance (sigma) head.
+
+**Built-in optimizers:**
+
+| Key | Class | Default LR | Default Weight Decay |
+|---|---|---|---|
+| `adam` | `torch.optim.Adam` | `1e-3` | `1e-6` |
+| `adamw` | `torch.optim.AdamW` | `1e-3` | `1e-5` |
+
+**Built-in schedulers:**
+
+| Key | PyTorch Class | Notes |
+|---|---|---|
+| `multi_step` | `MultiStepLR` | Milestones at `prob_decay_1` and `prob_decay_2` fractions of `max_epochs` |
+| `cosine_annealing` | `CosineAnnealingWarmRestarts` | `T_0` computed from `prob_T0 * max_epochs` |
+| `reduce_on_plateau` | `ReduceLROnPlateau` | Patience computed from `prob_patience * max_epochs` |
+| `one_cycle` | `OneCycleLR` | Uses `estimated_stepping_batches` for total steps |
+| `warmup_multi_step` | `SequentialLR(LambdaLR, MultiStepLR)` | Linear warmup followed by multi-step decay |
+
+**Metric mapping:**
+
+| Config string | Torchmetrics Class |
+|---|---|
+| `"mae"` | `MeanAbsoluteError` |
+| `"mse"` | `MeanSquaredError` |
+| `"smape"` | `SymmetricMeanAbsolutePercentageError` |
+
+### BaseArchitecture
+
+`BaseArchitecture` is the `nn.Module` ABC that every network architecture extends. It defines the data dimensions, the default composite loss function, and the `forecast` method.
+
+The default **loss function** in `step()` combines MSE and MAE with a tunable `alpha`:
+
+```
+loss = alpha * MSE(y_pred, y) + (1 - alpha) * MAE(y_pred, y)
+```
+
+Models that need custom losses (GANF, MLPGAF, MLPFQR) override `step()` in their own architecture class.
+
+`BaseArchitecture` also defines the **probabilistic backbone contract**:
+
+- `encode(x) → Tensor`  -  maps the raw input `(B, T, F)` to a latent vector `(B, encode_size)`. The default implementation raises `NotImplementedError`; each architecture (MLPF, MLPGAM, MLPGAF, NHITS) overrides it.
+- `encode_size: int` property  -  returns `self._encode_size`, set in each architecture's `__init__`.
+- `penalty_dict(epoch) → dict`  -  returns architecture-specific regularisation terms for probabilistic training. Defaults to `{}`.
+
+These three methods are the interface that `ProbabilisticModel` relies on to wire a backbone to any distribution head.
+
+### Embeddings
+
+The embedding system uses a registry pattern. Available embedding types:
+
+| Category | Registry Key | Class | Description |
+|---|---|---|---|
+| Value | `"ConvEmb"` | `ConvEmbedding` | 1D circular convolution (kernel=3) that projects input channels to `hidden_size` |
+| Value | `"LinearEmb"` | `LinearEmbedding` | Simple linear projection from `c_in` to `hidden_size` |
+| Positional | `"RotaryEmb"` | `RotaryEmbedding` | Rotary positional encoding (RoPE) with dynamic buffer extension |
+| Positional | `"PosEmb"` | `PositionalEmbedding` | Classic sinusoidal positional encoding |
+| Positional | `"TimeEmb"` | `TimeDEmbedding` | Learned linear time embedding with ReLU activation |
+
+`DataEmbedding` combines one value embedding and one positional embedding (both optional) with dropout.
+
+### Linear Layers and Building Blocks
+
+| Component | Description |
+|---|---|
+| `create_linear(in_ch, out_ch, bn, activation, use_bias)` | Factory that creates `nn.Linear` with activation-aware weight initialization (Kaiming, Xavier, or LeCun depending on the activation function). Optionally wraps with `BatchNorm1d`. |
+| `MLPBlock` | Multi-layer perceptron: input is flattened from `(batch, context_size, in_size)`, passed through `num_layers` linear layers with optional residual connections, and projected to `latent_dim`. |
+| `PastFutureEncoder` | `LayerNorm` then optional `DataEmbedding` then `MLPBlock`. Used to encode past or future feature groups independently. |
+| `FeedForward` | Expand-activate-dropout-contract block: `dim` to `dim * expansion_factor` and back. |
+
+
+## Point Forecast Models
+
+### MLPF -- MLP Forecaster
+
+An MLP-based forecaster with attention-based feature combination. Separate `PastFutureEncoder` modules process each feature group (target, historical, calendar, exogenous, future covariates), and the resulting latent vectors are combined via multi-head attention, learned weights, or simple addition.
+
+:::{admonition} Config class: `MLPFConfig`
+:class: info
+
+Registered name: `"mlpf"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](../core/config.md#neuralmodelconfig)
+:::
+
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `num_target_feature` | `int` | *required* | Number of target variables to forecast |
+| `num_historical_features` | `int` | `0` | Historical (unknown-future) feature count |
+| `num_calendar_features` | `int` | `0` | Calendar feature count |
+| `num_exogenous_features` | `int` | `0` | Exogenous (known-future) feature count |
+| `num_future_covariates` | `int` | `0` | Future-only covariate count |
+| `forecast_horizon` | `int` | *required* | Steps ahead to predict |
+| `lookback_window_size` | `int` | *required* | Input window length |
+| `embedding_size` | `int` | `28` | Dimensionality of the embedding space |
+| `embedding_type` | `Literal["RotaryEmb", "PosEmb"] \| None` | `None` | Positional embedding type |
+| `value_embed_type` | `Literal[None, "ConvEmb", "LinearEmb"]` | `None` | Value embedding type |
+| `combination_type` | `Literal["attn-comb", "weighted-comb", "addition-comb"]` | `"addition-comb"` | Strategy for combining encoded feature groups |
+| `hidden_size` | `int` | `256` | Hidden layer dimensionality |
+| `num_layers` | `int` | `2` | Number of MLP layers per encoder |
+| `activation_function` | `str` | `"SiLU"` | Hidden layer activation |
+| `out_activation_function` | `str` | `"Identity"` | Output activation |
+| `dropout` | `float` | `0.25` | Dropout probability |
+| `alpha` | `float` | `0.1` | MSE/MAE loss weighting |
+| `num_attention_heads` | `int` | `4` | Heads for `"attn-comb"` combination |
+
+
+### MLPGAM -- MLP Generalized Additive Model
+
+Extends the MLPF architecture with a **generalized additive model (GAM) structure**: each feature group contributes independently to the final forecast via its own linear projection, and the outputs are summed. A **Lasso penalty** (`lambda_lasso`) encourages sparsity across group contributions.
+
+:::{admonition} Config class: `MLPGAMConfig`
+:class: info
+
+Registered name: `"mlpgam"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](../core/config.md#neuralmodelconfig)
+:::
+
+
+`MLPGAMConfig` shares all fields with `MLPFConfig` (except `combination_type` and `num_attention_heads`) and adds:
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `lambda_lasso` | `float` | `1e-6` | Lasso (L1) penalty coefficient for group-level sparsity |
+
+
+### MLPGAF -- MLP Generalized Additive Forecaster with Feature Gates
+
+Builds on the GAM structure with **learned feature gates** and an optional **sigma head** for uncertainty estimation. Feature gates use a sigmoid function (controlled by `gate_scale`) to perform soft feature selection, and a warm-up schedule (`warmup_epochs`) gradually activates the gate penalty.
+
+:::{admonition} Config class: `MLPGAFConfig`
+:class: info
+
+Registered name: `"mlpgaf"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](../core/config.md#neuralmodelconfig)
+:::
+
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `embedding_type` | `None` | `None` | Fixed to `None` for MLPGAF |
+| `value_embed_type` | `Literal["ConvEmb", "LinearEmb"] \| None` | `"LinearEmb"` | Value embedding strategy |
+| `use_bias` | `bool` | `True` | Include bias terms in linear layers |
+| `bn` | `bool` | `True` | Use batch normalization |
+| `residual_connection` | `bool` | `False` | Enable residual connections in MLP blocks |
+| `hidden_size` | `int` | `256` | Hidden layer dimensionality |
+| `num_layers` | `int` | `2` | Number of MLP layers |
+| `activation_function` | `Literal["SiLU", "ELU", "LeakyReLU"]` | `"SiLU"` | Hidden activation (restricted set) |
+| `dropout` | `float` | `0.1` | Dropout probability |
+| `alpha` | `float` | `0.2` | MSE/MAE loss weighting |
+| `lambda_weight` | `float` | `1e-6` | Lasso penalty for group weights |
+| `lambda_gate` | `float` | `1e-4` | Lasso penalty for feature gates |
+| `delta` | `float` | `0.05` | Huber-loss delta for gate penalty |
+| `lambda_sigma` | `float` | `1e-6` | Penalty coefficient for the sigma (residual) head |
+| `gate_scale` | `float` | `5.0` | Temperature scaling for gates (higher = more binary) |
+| `gate_type` | `Literal["sigmoid"]` | `"sigmoid"` | Gating mechanism type |
+| `warmup_epochs` | `int` | `10` | Epochs before gate penalty is fully active |
+| `sigma_type` | `str` | `"Residual"` | Uncertainty modeling type for the sigma head |
+
+
+### N-HiTS -- Neural Hierarchical Interpolation for Time Series
+
+N-HiTS decomposes the forecasting problem into multiple resolution levels using **stacked hierarchical interpolation blocks**. Each stack processes the input at a different temporal resolution:
+
+1. **Input pooling** -- a `MaxPool1d` or `AvgPool1d` layer with a per-stack kernel size (`n_pool_kernel_size`) downsamples the lookback window to capture patterns at different scales.
+2. **MLP processing** -- within each stack, one or more MLP blocks (`n_blocks`) with configurable layer sizes (`mlp_units`) produce basis expansion coefficients.
+3. **Interpolation** -- the low-resolution coefficients are upsampled back to the forecast horizon using the chosen `interpolation_mode` (linear, nearest, or cubic), with a per-stack downsampling factor (`n_freq_downsample`) controlling the number of coefficients.
+4. **Hierarchical summation** -- forecasts from all stacks are summed to produce the final prediction, combining coarse global trends with fine local patterns.
+
+:::{admonition} Config class: `NHITSConfig`
+:class: info
+
+Registered name: `"nhits"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](../core/config.md#neuralmodelconfig)
+:::
+
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `stack_types` | `list[Literal["identity"]]` | `["identity", "identity", "identity"]` | Block type per stack |
+| `n_blocks` | `list[int]` | `[1, 1, 1]` | Number of MLP blocks per stack |
+| `mlp_units` | `list[list[int]]` | `[[512, 512], [512, 512], [512, 512]]` | Layer sizes in each block's MLP |
+| `n_pool_kernel_size` | `list[int]` | `[2, 2, 1]` | Pooling kernel size per stack |
+| `n_freq_downsample` | `list[int]` | `[4, 2, 1]` | Frequency downsampling factor per stack |
+| `pooling_mode` | `Literal["MaxPool1d", "AvgPool1d"]` | `"MaxPool1d"` | Pooling strategy |
+| `interpolation_mode` | `Literal["linear", "nearest", "cubic"]` | `"linear"` | Upsampling interpolation method |
+| `decompose_forecast` | `bool` | `False` | Output per-stack decomposition for interpretability |
+| `activation_function` | `str` | `"ReLU"` | Hidden layer activation |
+| `dropout` | `float` | `0.25` | Dropout probability |
+| `alpha` | `float` | `0.1` | MSE/MAE loss weighting |
+
+:::{admonition} Configuring N-HiTS stacks
+:class: tip
+
+The lists `stack_types`, `n_blocks`, `mlp_units`, `n_pool_kernel_size`, and `n_freq_downsample` must all have the same length (one entry per stack). Use larger pooling kernels and downsampling factors in earlier stacks to capture long-range trends, and smaller values in later stacks for short-range detail.
+:::
+
+
+### GANF -- Group Additive Neural Forecaster
+
+GANF is a multivariate forecasting model that uses a **group-wise additive structure** aligned with the natural feature groupings in the [DataPipeline](../core/data-pipeline.md). Each feature group (target, historical, calendar, exogenous, future covariates) is processed by a dedicated encoder. Group-level predictions are produced via linear projections and summed with a global bias to form the final forecast.
+
+Key architectural features:
+
+- **Group-specific encoders** -- `PastFutureEncoder` instances process each feature group independently, preserving the additive interpretability of the model.
+- **Structured sparsity** -- group Lasso (L2/L1) or element-wise Lasso regularization (`lambda_lasso`) encourages the model to zero out entire feature groups that do not contribute to the forecast.
+- **Optional sigma learning** -- when `sigma_learning=True`, the model learns per-group observation noise parameters for probabilistic forecasting.
+- **Flexible group combination** -- for feature groups with both past and future information, representations can be combined via `"learnable"`, `"average"`, `"sum"`, or `"cat"` strategies.
+
+:::{admonition} Config class: `GANFConfig`
+:class: info
+
+Registered name: `"ganf"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](../core/config.md#neuralmodelconfig)
+:::
+
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `embedding_size` | `int` | `28` | Dimensionality of the embedding space |
+| `embedding_type` | `Literal["RotaryEmb", "PosEmb"] \| None` | `None` | Positional embedding type |
+| `value_embed_type` | `Literal["ConvEmb", "LinearEmb"] \| None` | `None` | Value embedding strategy |
+| `hidden_size` | `int` | `256` | Latent dimension of group encoders (min 32) |
+| `num_layers` | `int` | `2` | Layers per group encoder (1--6) |
+| `activation_function` | `Literal["ReLU", "SiLU", "GELU", "Tanh", "LeakyReLU", "ELU", "SELU"]` | `"SiLU"` | Encoder activation |
+| `dropout` | `float` | `0.25` | Dropout probability (0.0--0.5) |
+| `alpha` | `float` | `0.1` | MSE/MAE loss weighting (0.0--1.0) |
+| `use_bn` | `bool` | `True` | Batch normalization in encoders |
+| `use_bias` | `bool` | `True` | Bias terms in linear layers |
+| `lambda_lasso` | `float` | `1e-6` | Lasso/group-Lasso regularization strength |
+| `use_group_lasso` | `bool` | `True` | Use group Lasso (L2/L1) instead of element-wise L1 |
+| `normalize_lasso_by_output` | `bool` | `True` | Normalize penalty by output dimension |
+| `sigma_learning` | `bool` | `False` | Learn per-group observation noise |
+| `sigma_type` | `Literal["Gaussian", "Residual"]` | `"Gaussian"` | Noise model type |
+| `combination_type` | `Literal["learnable", "average", "sum", "cat"]` | `"average"` | Strategy for combining past/future representations |
+
+
+## Probabilistic Models
+
+Probabilistic NN models use the **backbone/head architecture** from `twiga/models/nn/prob/core.py`. Each architecture (MLPF, MLPGAM, MLPGAF, NHITS) can be paired with any distribution head by selecting the appropriate config class. `TwigaForecaster` resolves the pairing automatically when you pass a `distribution` field or use a named probabilistic config.
+
+### How the backbone/head pattern works
+
+```python
+# ProbabilisticModel wires these together automatically:
+backbone = MLPFNetwork(**backbone_kwargs)           # implements encode()
+head = NormalDistribution(hidden_size=backbone.encode_size, ...)
+model = ProbabilisticNetwork(backbone, head)
+
+# Training step:
+z = backbone.encode(x)          # (B, encode_size)
+loss, metric = head.step(z, y, metric_fn, epoch)
+```
+
+Because `hidden_size` is injected from `backbone.encode_size`, distribution heads are **backbone-agnostic**  -  the same `NormalDistribution` head works with MLPF, MLPGAM, MLPGAF, and NHITS without modification.
+
+### Available probabilistic variants
+
+Each base architecture supports these distribution heads:
+
+| Distribution | MLPF | MLPGAM | MLPGAF | NHITS | Config suffix |
+|---|---|---|---|---|---|
+| Normal | ✓ | ✓ | ✓ | ✓ | `NormalConfig` |
+| Laplace | ✓ | ✓ | ✓ | ✓ | `LaplaceConfig` |
+| LogNormal | ✓ | ✓ | ✓ | ✓ | `LogNormalConfig` |
+| Gamma | ✓ | ✓ | ✓ | ✓ | `GammaConfig` |
+| Beta | ✓ | ✓ | ✓ | ✓ | `BetaConfig` |
+| StudentT | -- | ✓ | ✓ | ✓ | `StudentTConfig` |
+| QR | ✓ | ✓ | ✓ | ✓ | `QRConfig` |
+| FPQR | ✓ | ✓ | ✓ | ✓ | `FPQRConfig` |
+| CRC | ✓ | ✓ | -- | -- | `CRCConfig` |
+
+```python
+from twiga.models.nn.mlpfnormal_model import MLPFNormalConfig
+from twiga.models.nn.nhitsgamma_model import NHITSGammaConfig
+from twiga.models.nn.mlpgamqr_model import MLPGAMQRConfig
+
+# All created and passed to TwigaForecaster the same way as point models
+mlpf_normal = MLPFNormalConfig.from_data_config(data_config, max_epochs=50)
+nhits_gamma  = NHITSGammaConfig(num_target_feature=1, forecast_horizon=24,
+                                lookback_window_size=168, max_epochs=50)
+mlpgam_qr    = MLPGAMQRConfig.from_data_config(data_config, quantiles=[0.1, 0.5, 0.9])
+```
+
+Alternatively, set the `distribution` field on any base config and `TwigaForecaster` resolves the probabilistic variant automatically:
+
+```python
+from twiga.models.nn.mlpf_model import MLPFConfig
+
+# Equivalent to MLPFNormalConfig
+mlpf_config = MLPFConfig.from_data_config(data_config, distribution="normal")
+```
+
+### MLPF-QR -- MLPF with Quantile Regression
+
+Extends the MLPF architecture with a **multi-quantile output head**. Instead of producing a single point forecast, MLPF-QR outputs one forecast per quantile, trained with either a pinball loss or a smoothed Huber-pinball variant.
+
+:::{admonition} Config class: `MLPFQRConfig`
+:class: info
+
+Registered name: `"mlpfqr"` | Domain: `"nn"` | Extends: `MLPFConfig`
+:::
+
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `quantiles` | `list[float] \| None` | `None` | Quantile levels to forecast (e.g., `[0.1, 0.5, 0.9]`). When `None`, quantiles are derived from `conf_level`. |
+| `conf_level` | `float` | `0.05` | Confidence level for automatically computed quantile bounds |
+| `loss_fn` | `Literal["pinball", "huber-pinball"]` | `"pinball"` | Loss function |
+| `kappa` | `float` | `0.25` | Smoothing parameter for the Huber-pinball loss |
+| `eps` | `float` | `1e-6` | Epsilon for numerical stability |
+
+All other fields are inherited from `MLPFConfig`. See [Quantile Regression](../probabilistic/quantile-regression.md) for details on the loss functions and quantile calibration.
+
+
+### MLPGAM-CRC -- MLPGAM with Conformal Residual Coverage
+
+Extends `MLPGAMModel` with a conformal residual coverage (CRC) head. The architecture is identical to MLPGAM, but the model produces outputs that are compatible with the conformal prediction framework. Configuration inherits all fields from `MLPGAMConfig` without additions.
+
+:::{admonition} Config class: `MLPGAMCRCConfig`
+:class: info
+
+Registered name: `"mlpgamcrc"` | Domain: `"nn"` | Extends: `MLPGAMConfig`
+:::
+
+
+`MLPGAMCRCConfig` inherits every field from `MLPGAMConfig` (including `lambda_lasso`) and changes only the model `name` to `"mlpgamcrc"`. See the [Conformal Prediction](../probabilistic/conformal-prediction.md) documentation for how conformal calibration wraps this model.
+
+
+## Model Comparison
+
+| Model | Type | Feature Combination | Interpretable | Sparsity | Probabilistic variants | Best For |
+|---|---|---|---|---|---|---|
+| **MLPF** | Point | Attention / weighted / additive | -- | -- | Normal, Laplace, LogNormal, Gamma, Beta, QR, FPQR, CRC | General-purpose deep forecasting |
+| **MLPGAM** | Point | Additive (GAM) | Yes | L1 Lasso | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Interpretable group-additive forecasts |
+| **MLPGAF** | Point | Gated additive | Yes | Gate + weight Lasso | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Feature selection with uncertainty |
+| **N-HiTS** | Point | Hierarchical stack sum | Decomposable | -- | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR | Multi-resolution temporal patterns |
+| **GANF** | Point | Group-additive sum | Yes | Group Lasso | -- (use conformal post-hoc) | Multivariate additive forecasting |
+
+:::{admonition} Choosing a distribution
+:class: tip
+
+Use **Normal/Laplace** for general energy targets. **Gamma/LogNormal** for strictly positive variables (solar generation, prices). **Beta** for capacity factors or state-of-charge (bounded [0, 1]). **StudentT** for spot prices with very heavy tails. **QR/FPQR** when you want quantiles directly without a parametric assumption.
+:::
+
+
+## Usage
+
+### Creating a Model via `from_data_config`
+
+The recommended way to instantiate a neural network model is through the `from_data_config` classmethod on the config class. This automatically computes the input and output dimensions from your [`DataPipelineConfig`](../core/config.md#datapipelineconfig).
+
+```python
+from sklearn.preprocessing import StandardScaler, RobustScaler
+
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.nn.mlpf_model import MLPFConfig
+from twiga.models.nn.ganf_model import GANFConfig
+from twiga.models.nn.nhits_model import NHITSConfig
+
+# 1. Define data pipeline
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,
+    forecast_horizon=48,
+    calendar_features=["hour", "dayofweek", "month"],
+    exogenous_features=["ghi", "temperature"],
+    input_scaler=StandardScaler(),
+    target_scaler=RobustScaler(),
+)
+
+# 2. Create model configs -- dimensions are inferred automatically
+mlpf_config = MLPFConfig.from_data_config(
+    data_config,
+    max_epochs=50,
+    batch_size=128,
+    hidden_size=256,
+    num_layers=3,
+    patience=10,
+)
+
+ganf_config = GANFConfig.from_data_config(
+    data_config,
+    max_epochs=50,
+    batch_size=128,
+    hidden_size=256,
+    lambda_lasso=1e-4,
+    use_group_lasso=True,
+    patience=10,
+)
+
+nhits_config = NHITSConfig.from_data_config(
+    data_config,
+    max_epochs=50,
+    batch_size=128,
+    n_pool_kernel_size=[2, 2, 1],
+    n_freq_downsample=[4, 2, 1],
+    patience=10,
+)
+
+# 3. Train via TwigaForecaster
+train_config = ForecasterConfig(
+    split_freq="months",
+    train_size=6,
+    test_size=1,
+    window="expanding",
+    project_name="EnergyForecast",
+)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[mlpf_config, ganf_config, nhits_config],
+    train_params=train_config,
+)
+
+forecaster.fit(train_df=train_df, val_df=val_df)
+predictions, metrics = forecaster.evaluate_point_forecast(test_df=test_df)
+```
+
+:::{admonition} Always use `from_data_config` for NN models
+:class: warning
+
+Neural models require dimensional parameters (`num_target_feature`, `num_calendar_features`, etc.) that must match the data pipeline exactly. Using `from_data_config` guarantees consistency. Setting these values manually is error-prone and not recommended.
+:::
+
+
+### Probabilistic Forecasting with MLPF-QR
+
+```python
+from twiga.models.nn.mlpfqr_model import MLPFQRConfig
+
+mlpfqr_config = MLPFQRConfig.from_data_config(
+    data_config,
+    max_epochs=50,
+    batch_size=128,
+    quantiles=[0.1, 0.5, 0.9],
+    loss_fn="pinball",
+    patience=10,
+)
+```
+
+See [Quantile Regression](../probabilistic/quantile-regression.md) for a full walkthrough.
+
+
+## API Reference
+
+### BaseNeuralForecast
+
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.core.base.BaseNeuralForecast
+   :members:
+   :show-inheritance:
+```
+
+
+### BaseNeuralModel
+
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.core.base_model.BaseNeuralModel
+   :members:
+   :show-inheritance:
+```
+
+
+### BaseArchitecture
+
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.core.base_arch.BaseArchitecture
+   :members:
+   :show-inheritance:
+```
+
+
+**See also:** [Model Catalog](index.md) | [Configuration System](../core/config.md) | [TwigaForecaster](../core/forecaster.md) | [Data Pipeline](../core/data-pipeline.md) | [Quantile Regression](../probabilistic/quantile-regression.md)

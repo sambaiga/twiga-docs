@@ -1,0 +1,1577 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>6. 06 — Backtesting &amp; Robust Evaluation &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=724e8a05" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/06-backtesting-and-evaluation';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="7. 15 — Baseline Benchmarking" href="15-baseline-benchmarking.html" />
+    <link rel="prev" title="5. 05 — ML Point Forecasting with Multiple Models" href="05-ml-point-forecasting.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../../_static/searchtools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="01-getting-started.html">1. 01 — Getting Started with Twiga</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02-forecastability-analysis.html">2. 02 — Forecastability Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03-feature-engineering.html">3. 03 — Feature Engineering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04-time-series-differencing.html">4. 04 — Time Series Differencing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05-ml-point-forecasting.html">5. 05 — ML Point Forecasting with Multiple Models</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">6. 06 — Backtesting &amp; Robust Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15-baseline-benchmarking.html">7. 15 — Baseline Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="07-neural-networks.html">8. 07 — Neural Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="08-quantile-regression.html">9. 08 — Quantile Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="09-parametric-distributions.html">10. 09 — Parametric Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="10-conformal-prediction.html">11. 10 — Conformal Prediction &amp; Guaranteed Coverage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="11-hyperparameter-tuning.html">12. 11 — Hyperparameter Tuning with Optuna</a></li>
+<li class="toctree-l1"><a class="reference internal" href="12-ensemble-strategies.html">13. 12 — Ensemble Strategies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="13-custom-models.html">14. 13 — Custom Models &amp; Extension Points</a></li>
+<li class="toctree-l1"><a class="reference internal" href="14-typed-forecast-results.html">15. 14 — Typed Forecast Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="16-shap-feature-attribution.html">16. 16 — SHAP Feature Attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="17-mlops-tracking-serving.html">17. 17 — MLOps: Tracking, Serving &amp; Monitoring</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">6. </span>06 — Backtesting &amp; Robust Evaluation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="06-—-Backtesting-&amp;-Robust-Evaluation">
+<h1><span class="section-number">6. </span>06 — Backtesting &amp; Robust Evaluation<a class="headerlink" href="#06-—-Backtesting-&-Robust-Evaluation" title="Link to this heading">#</a></h1>
+<p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~25%20min-lightgrey" /></p>
+<hr class="docutils" />
+<p><strong>What you’ll build</strong></p>
+<p>A multi-fold backtesting pipeline for LightGBM using both expanding-window and rolling-window strategies, with per-fold metric visualisation and a strategy comparison table that shows which approach is more appropriate for your problem.</p>
+<p><strong>Prerequisites</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="01-getting-started.html"><span class="doc">01 — Getting Started</span></a> (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)</p></li>
+<li><p><a class="reference internal" href="05-ml-point-forecasting.html"><span class="doc">05 — ML Point Forecasting</span></a> (multi-model training and metric interpretation)</p></li>
+<li><p>Python: pandas basics, list comprehensions</p></li>
+</ul>
+<p><strong>Learning objectives</strong></p>
+<p>By the end of this notebook you will be able to:</p>
+<ol class="arabic simple">
+<li><p>Explain why a single train/test split is insufficient for time series evaluation</p></li>
+<li><p>Configure expanding-window and rolling-window cross-validation via <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code></p></li>
+<li><p>Visualise the split scheme with <code class="docutils literal notranslate"><span class="pre">plot_split_scheme()</span></code> to confirm no data leakage</p></li>
+<li><p>Interpret per-fold metric distributions and identify unstable models</p></li>
+<li><p>Decide between expanding and rolling strategies based on dataset characteristics</p></li>
+</ol>
+<section id="1-Setup">
+<h2><span class="section-number">6.1. </span>1 Setup<a class="headerlink" href="#1-Setup" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">LetsPlot</span><span class="o">.</span><span class="n">setup_html</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.basic_plot</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">plot_forecast</span><span class="p">,</span>
+    <span class="n">plot_forecast_grid</span><span class="p">,</span>
+    <span class="n">plot_metrics_bar</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span><span class="p">,</span> <span class="n">get_logger</span>
+
+<span class="n">configure</span><span class="p">()</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;tutorials&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">])</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Dataset shape : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Date range    : </span><span class="si">%s</span><span class="s2"> → </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<span class="n">GT</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="2-Why-a-single-train/test-split-is-insufficient">
+<h2><span class="section-number">6.2. </span>2 Why a single train/test split is insufficient<a class="headerlink" href="#2-Why-a-single-train/test-split-is-insufficient" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p><strong>Key concept — temporal leakage</strong></p>
+<p>In standard ML, shuffling data before splitting is common practice. For time series this is catastrophic: if any training sample is drawn from after the test period, the model has effectively “seen the future” during training. Twiga’s <code class="docutils literal notranslate"><span class="pre">TimeBasedCV</span></code> prevents this by construction — every training fold ends strictly before its corresponding test fold starts.</p>
+</div></blockquote>
+<blockquote>
+<div><p><strong>Key concept — why backtesting matters</strong></p>
+<p>A single train/test split gives <strong>one</strong> performance number. That number depends entirely on which period you happened to pick — a mild winter month looks very different from a heat-wave month for net-load forecasting. Backtesting replaces that single estimate with a distribution of performance scores across many non-overlapping test windows. The mean is more reliable; the variance tells you whether the model is consistent or seasonal-brittle.</p>
+</div></blockquote>
+<p>When we evaluate a forecasting model on a single fixed test period we get <strong>one</strong> performance number. Time series data also <strong>drifts</strong>: seasons change, demand patterns evolve, solar irradiance profiles shift. A model trained on data from January may generalise poorly to August.</p>
+<blockquote>
+<div><p><strong>Key concept — expanding-window cross-validation</strong></p>
+<p>Instead of one fixed test window, Twiga evaluates across multiple consecutive folds. With <code class="docutils literal notranslate"><span class="pre">window=&quot;expanding&quot;</span></code>, the training set grows with each fold — Fold 1 trains on 5 months, Fold 2 on 6 months, and so on. Each fold tests on a fresh period the model never saw. The final reported metric is the mean across all folds, which is far more reliable than a single-split estimate and reveals whether performance is stable over time.</p>
+</div></blockquote>
+<p><strong>Time-based cross-validation</strong> addresses both problems:</p>
+<ol class="arabic simple">
+<li><p>We evaluate across <strong>multiple non-overlapping test windows</strong> — this reduces the variance of our performance estimate and reveals how consistent the model is across time.</p></li>
+<li><p>We always <strong>respect the arrow of time</strong>: training data always precede test data, so there is no data leakage.</p></li>
+</ol>
+<p>Twiga implements this via <code class="docutils literal notranslate"><span class="pre">TimeBasedCV</span></code>, configured through <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>. Two window strategies are available — the table below summarises the trade-offs.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">strategy_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Strategy&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Expanding&quot;</span><span class="p">,</span> <span class="s2">&quot;Rolling (sliding)&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Description&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Training set grows with each fold — Fold 1: N months, Fold 2: N+1 months, ...&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Training window slides forward at fixed size — always trains on exactly N months&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Best for&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Stable distributions — older data is still informative&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Drifting distributions — recent data matters more than old data&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Trade-off&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;More data per fold → lower variance, but may include stale patterns&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Fixed data volume → consistent training conditions, but discards early data&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">strategy_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Cross-Validation Window Strategies**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Expanding vs. Rolling — when to use which&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Strategy</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Strategy**&quot;</span><span class="p">),</span>
+        <span class="n">Description</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Description**&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="p">{</span><span class="s2">&quot;Best for&quot;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Best for**&quot;</span><span class="p">)},</span>
+        <span class="o">**</span><span class="p">{</span><span class="s2">&quot;Trade-off&quot;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Trade-off**&quot;</span><span class="p">)},</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">strategy_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">aes</span><span class="p">,</span>
+    <span class="n">facet_wrap</span><span class="p">,</span>
+    <span class="n">geom_rect</span><span class="p">,</span>
+    <span class="n">ggplot</span><span class="p">,</span>
+    <span class="n">ggsize</span><span class="p">,</span>
+    <span class="n">labs</span><span class="p">,</span>
+    <span class="n">scale_fill_manual</span><span class="p">,</span>
+    <span class="n">scale_y_continuous</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.theme</span><span class="w"> </span><span class="kn">import</span> <span class="n">TWIGA_PALETTE</span><span class="p">,</span> <span class="n">twiga_theme</span>
+
+<span class="n">_N_FOLDS</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">_TRAIN_SIZE</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># relative time units</span>
+<span class="n">_TEST_SIZE</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">_BAR_H</span> <span class="o">=</span> <span class="mf">0.55</span>
+
+<span class="n">_FILL</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Train&quot;</span><span class="p">:</span> <span class="n">TWIGA_PALETTE</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;Test&quot;</span><span class="p">:</span> <span class="n">TWIGA_PALETTE</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_make_cv_df</span><span class="p">(</span><span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fold</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_N_FOLDS</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">fold</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">t_start</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s2">&quot;Expanding&quot;</span> <span class="k">else</span> <span class="n">fold</span>
+        <span class="n">t_end</span> <span class="o">=</span> <span class="n">_TRAIN_SIZE</span> <span class="o">+</span> <span class="n">fold</span> <span class="k">if</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s2">&quot;Expanding&quot;</span> <span class="k">else</span> <span class="n">fold</span> <span class="o">+</span> <span class="n">_TRAIN_SIZE</span>
+        <span class="n">rows</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;xmin&quot;</span><span class="p">:</span> <span class="n">t_start</span><span class="p">,</span>
+                <span class="s2">&quot;xmax&quot;</span><span class="p">:</span> <span class="n">t_end</span><span class="p">,</span>
+                <span class="s2">&quot;ymin&quot;</span><span class="p">:</span> <span class="n">y</span> <span class="o">-</span> <span class="n">_BAR_H</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;ymax&quot;</span><span class="p">:</span> <span class="n">y</span> <span class="o">+</span> <span class="n">_BAR_H</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;segment&quot;</span><span class="p">:</span> <span class="s2">&quot;Train&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="n">strategy</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;xmin&quot;</span><span class="p">:</span> <span class="n">t_end</span><span class="p">,</span>
+                <span class="s2">&quot;xmax&quot;</span><span class="p">:</span> <span class="n">t_end</span> <span class="o">+</span> <span class="n">_TEST_SIZE</span><span class="p">,</span>
+                <span class="s2">&quot;ymin&quot;</span><span class="p">:</span> <span class="n">y</span> <span class="o">-</span> <span class="n">_BAR_H</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;ymax&quot;</span><span class="p">:</span> <span class="n">y</span> <span class="o">+</span> <span class="n">_BAR_H</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;segment&quot;</span><span class="p">:</span> <span class="s2">&quot;Test&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="n">strategy</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+
+
+<span class="n">_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">_make_cv_df</span><span class="p">(</span><span class="s2">&quot;Expanding&quot;</span><span class="p">),</span> <span class="n">_make_cv_df</span><span class="p">(</span><span class="s2">&quot;Rolling&quot;</span><span class="p">)],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">_df</span><span class="p">[</span><span class="s2">&quot;strategy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_df</span><span class="p">[</span><span class="s2">&quot;strategy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Expanding&quot;</span><span class="p">:</span> <span class="s2">&quot;Expanding window  (train grows each fold)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Rolling&quot;</span><span class="p">:</span> <span class="s2">&quot;Rolling window  (fixed train size, slides forward)&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="p">(</span>
+    <span class="n">ggplot</span><span class="p">(</span><span class="n">_df</span><span class="p">)</span>
+    <span class="o">+</span> <span class="n">geom_rect</span><span class="p">(</span>
+        <span class="n">aes</span><span class="p">(</span><span class="n">xmin</span><span class="o">=</span><span class="s2">&quot;xmin&quot;</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="s2">&quot;xmax&quot;</span><span class="p">,</span> <span class="n">ymin</span><span class="o">=</span><span class="s2">&quot;ymin&quot;</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=</span><span class="s2">&quot;ymax&quot;</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;segment&quot;</span><span class="p">),</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.88</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">+</span> <span class="n">facet_wrap</span><span class="p">(</span><span class="s2">&quot;strategy&quot;</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="o">+</span> <span class="n">scale_fill_manual</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="n">_FILL</span><span class="p">)</span>
+    <span class="o">+</span> <span class="n">scale_y_continuous</span><span class="p">(</span>
+        <span class="n">breaks</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">_N_FOLDS</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Fold </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">_N_FOLDS</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)],</span>
+    <span class="p">)</span>
+    <span class="o">+</span> <span class="n">labs</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;Time (months)&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Cross-validation strategies&quot;</span><span class="p">)</span>
+    <span class="o">+</span> <span class="n">twiga_theme</span><span class="p">(</span><span class="n">grid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">legend_pos</span><span class="o">=</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
+    <span class="o">+</span> <span class="n">ggsize</span><span class="p">(</span><span class="mi">980</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="3-ForecasterConfig-—-the-split-parameters">
+<h2><span class="section-number">6.3. </span>3 ForecasterConfig — the split parameters<a class="headerlink" href="#3-ForecasterConfig-—-the-split-parameters" title="Link to this heading">#</a></h2>
+<p>All cross-validation behaviour is controlled by <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>. The table below documents each parameter.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">params_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Parameter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;split_freq&quot;</span><span class="p">,</span> <span class="s2">&quot;train_size&quot;</span><span class="p">,</span> <span class="s2">&quot;test_size&quot;</span><span class="p">,</span> <span class="s2">&quot;window&quot;</span><span class="p">,</span> <span class="s2">&quot;stride&quot;</span><span class="p">,</span> <span class="s2">&quot;num_splits&quot;</span><span class="p">,</span> <span class="s2">&quot;gap&quot;</span><span class="p">,</span> <span class="s2">&quot;project_name&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Meaning&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s1">&#39;Unit for all size parameters (&quot;months&quot;, &quot;days&quot;, &quot;hours&quot;, …)&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;How many split_freq units each training fold covers&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;How many split_freq units each test fold covers&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;&quot;expanding&quot; (train grows) or &quot;rolling&quot; (fixed window slides)&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;How far the test window moves forward between folds&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Maximum number of folds to generate&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Unused periods between train end and test start (prevents leakage on slow-moving features)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Identifier used for logging and artefact paths&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">params_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**ForecasterConfig — Cross-Validation Parameters**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;All temporal splits are controlled by these fields&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Parameter</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Parameter**&quot;</span><span class="p">),</span>
+        <span class="n">Type</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Type**&quot;</span><span class="p">),</span>
+        <span class="n">Meaning</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Meaning**&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">params_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">params_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Parameter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;split_freq&quot;</span><span class="p">,</span> <span class="s2">&quot;train_size&quot;</span><span class="p">,</span> <span class="s2">&quot;test_size&quot;</span><span class="p">,</span> <span class="s2">&quot;window&quot;</span><span class="p">,</span> <span class="s2">&quot;stride&quot;</span><span class="p">,</span> <span class="s2">&quot;num_splits&quot;</span><span class="p">,</span> <span class="s2">&quot;gap&quot;</span><span class="p">,</span> <span class="s2">&quot;project_name&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Meaning&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Unit for all size parameters: &#39;months&#39;, &#39;days&#39;, &#39;hours&#39;, …&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;How many split_freq units each training fold covers&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;How many split_freq units each test fold covers&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;&#39;expanding&#39; — train grows each fold; &#39;rolling&#39; — fixed train size&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;How far the test window moves forward between folds&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Maximum number of folds to generate&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Unused periods between train end and test start (avoids overlap)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Identifier used for logging and artefact paths&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">params_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**ForecasterConfig Parameters**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;All CV behaviour is controlled through these settings&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Parameter</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Parameter**&quot;</span><span class="p">),</span>
+        <span class="n">Type</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Type**&quot;</span><span class="p">),</span>
+        <span class="n">Meaning</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Meaning**&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">params_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+
+<span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">,</span>
+    <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
+    <span class="n">longitude</span><span class="o">=-</span><span class="mf">16.274998</span><span class="p">,</span>
+    <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">],</span>
+    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">],</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+<span class="p">)</span>
+
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+    <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">test_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">window</span><span class="o">=</span><span class="s2">&quot;expanding&quot;</span><span class="p">,</span>
+    <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">num_splits</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="n">project_name</span><span class="o">=</span><span class="s2">&quot;backtesting-tutorial&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DataPipelineConfig:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data_config</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_none</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ForecasterConfig:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">train_config</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_none</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="4-Instantiate-the-forecaster">
+<h2><span class="section-number">6.4. </span>4 Instantiate the forecaster<a class="headerlink" href="#4-Instantiate-the-forecaster" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">LIGHTGBMConfig</span><span class="p">()],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Forecaster ready.&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  window   : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">window</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  splits   : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">num_splits</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  train_sz : </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">train_size</span><span class="p">,</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">split_freq</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  test_sz  : </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">test_size</span><span class="p">,</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">split_freq</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="5-Visualising-the-split-scheme">
+<h2><span class="section-number">6.5. </span>5 Visualising the split scheme<a class="headerlink" href="#5-Visualising-the-split-scheme" title="Link to this heading">#</a></h2>
+<p>Before training a single model it is good practice to inspect the split layout. Twiga provides <code class="docutils literal notranslate"><span class="pre">plot_split_scheme()</span></code>, which returns a <strong>lets_plot</strong> chart. Calling it with <code class="docutils literal notranslate"><span class="pre">data=data</span></code> also initialises the internal split state, so the same scheme is reused during backtesting.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">plot_split_scheme</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="n">plot</span>
+</pre></div>
+</div>
+</div>
+<p>The chart shows the <strong>train</strong> (blue) and <strong>test</strong> (orange) windows for each fold. Because we chose <code class="docutils literal notranslate"><span class="pre">window=&quot;expanding&quot;</span></code>, each blue bar is longer than the previous one — the model sees progressively more history as we move forward in time.</p>
+</section>
+<section id="6-Running-backtesting">
+<h2><span class="section-number">6.6. </span>6 Running backtesting<a class="headerlink" href="#6-Running-backtesting" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
+
+<span class="n">forecast_df</span><span class="p">,</span> <span class="n">metrics_df</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">backtesting</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;forecast_df shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">forecast_df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;metrics_df shape : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;metrics_df columns: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Forecast DataFrame (first 5 rows) ===</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">forecast_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Metrics DataFrame (first 5 rows) ===</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<section id="What-the-DataFrames-contain">
+<h3><span class="section-number">6.6.1. </span>What the DataFrames contain<a class="headerlink" href="#What-the-DataFrames-contain" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">backtesting()</span></code> returns two DataFrames. The tables below document each column.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">forecast_schema</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Column&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;forecast&quot;</span><span class="p">,</span> <span class="s2">&quot;Actual&quot;</span><span class="p">,</span> <span class="s2">&quot;Folds&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Description&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Model name in upper-case (e.g. LIGHTGBM)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Target variable name from DataPipelineConfig&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Model point prediction&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Observed value from the test set&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Fold index (1-based) indicating which CV fold this row belongs to&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">forecast_schema</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**`forecast_df` — one row per timestep per model**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Indexed by UTC timestamp&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Column</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Column**&quot;</span><span class="p">),</span>
+        <span class="n">Description</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Description**&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">forecast_schema</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metrics_schema</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Column&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">,</span> <span class="s2">&quot;wmape&quot;</span><span class="p">,</span> <span class="s2">&quot;smape&quot;</span><span class="p">,</span> <span class="s2">&quot;nbias&quot;</span><span class="p">,</span> <span class="s2">&quot;Folds&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Description&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Target variable name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Model name in upper-case&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Mean absolute error (same units as target)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Root-mean-squared error (penalises large spikes)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Pearson correlation between forecast and actual&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Weighted mean absolute percentage error&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Symmetric mean absolute percentage error&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Normalised bias (positive = systematic over-forecasting)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Fold index (1-based)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">metrics_schema</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**`metrics_df` — one row per day per model**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Indexed by daily timestamp&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Column</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Column**&quot;</span><span class="p">),</span>
+        <span class="n">Description</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Description**&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">metrics_schema</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">forecast_cols</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Column&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;forecast&quot;</span><span class="p">,</span> <span class="s2">&quot;Actual&quot;</span><span class="p">,</span> <span class="s2">&quot;Folds&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Description&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Model name in upper-case (e.g. LIGHTGBM)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Target variable name from DataPipelineConfig&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Model point prediction (inverse-scaled to original units)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Observed value from the test fold&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Fold index (1-based)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;DataFrame&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;forecast_df&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">metrics_cols</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Column&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">,</span> <span class="s2">&quot;wmape&quot;</span><span class="p">,</span> <span class="s2">&quot;smape&quot;</span><span class="p">,</span> <span class="s2">&quot;nbias&quot;</span><span class="p">,</span> <span class="s2">&quot;Folds&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Description&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Target variable name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Model name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Mean absolute error&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Root-mean-squared error&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Pearson correlation (actuals vs. forecasts)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Weighted mean absolute percentage error&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Symmetric mean absolute percentage error&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Normalised bias (signed average error)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Fold index&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;DataFrame&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;metrics_df&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">9</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">combined</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">forecast_cols</span><span class="p">,</span> <span class="n">metrics_cols</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">combined</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Backtesting Output Columns**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;forecast_df and metrics_df returned by forecaster.backtesting()&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Column</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Column**&quot;</span><span class="p">),</span>
+        <span class="n">Description</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Description**&quot;</span><span class="p">),</span>
+        <span class="n">DataFrame</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**DataFrame**&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">combined</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="7-Per-fold-results">
+<h2><span class="section-number">6.7. </span>7 Per-fold results<a class="headerlink" href="#7-Per-fold-results" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fold_col</span> <span class="o">=</span> <span class="s2">&quot;Folds&quot;</span> <span class="k">if</span> <span class="s2">&quot;Folds&quot;</span> <span class="ow">in</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;fold&quot;</span> <span class="k">if</span> <span class="s2">&quot;fold&quot;</span> <span class="ow">in</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">fold_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">fold_metrics</span> <span class="o">=</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="n">fold_col</span><span class="p">])[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Per-fold metrics (MAE / RMSE / Corr):</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fold_metrics</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No fold column found. Available columns: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">agg_metrics</span> <span class="o">=</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Aggregate metrics (mean over all folds):</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">agg_metrics</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<section id="Interpreting-per-fold-variance">
+<h3><span class="section-number">6.7.1. </span>Interpreting per-fold variance<a class="headerlink" href="#Interpreting-per-fold-variance" title="Link to this heading">#</a></h3>
+<blockquote>
+<div><p><strong>Interpretation</strong> — Scan the per-fold MAE column. A stable spread (e.g., all folds within ±0.5 kW of the mean) indicates the model generalises well across seasons. A large spike in one fold (e.g., Fold 2 MAE = 3.9 vs. the 3.3–3.7 range for others) points to a specific time window where the model struggles — investigate what was different in that period (unusual weather, holiday effects, data quality issues).</p>
+</div></blockquote>
+<p>High variance across folds (e.g., fold 1 MAE = 50 but fold 6 MAE = 120) indicates that model performance degrades as the dataset grows older or seasonal conditions change. If you observe this pattern consider:</p>
+<ul class="simple">
+<li><p>Adding more seasonal calendar features</p></li>
+<li><p>Retraining more frequently in production</p></li>
+<li><p>Switching from <code class="docutils literal notranslate"><span class="pre">expanding</span></code> to <code class="docutils literal notranslate"><span class="pre">rolling</span></code> window to prevent stale data dominating</p></li>
+</ul>
+</section>
+</section>
+<section id="8-Reading-the-performance-table">
+<h2><span class="section-number">6.8. </span>8 Reading the performance table<a class="headerlink" href="#8-Reading-the-performance-table" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">create_model_performance_table</span></code> wraps <strong>Great Tables</strong> to produce a colour-highlighted summary. Green cells mark the best value for each metric (lower is better for error metrics, higher is better for correlation).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_model_performance_table</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">,</span> <span class="s2">&quot;nbias&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;wmape&quot;</span><span class="p">,</span> <span class="s2">&quot;smape&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;mae&quot;</span><span class="p">:</span> <span class="s2">&quot;MAE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;corr&quot;</span><span class="p">:</span> <span class="s2">&quot;Corr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;wmape&quot;</span><span class="p">:</span> <span class="s2">&quot;WMAPE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;smape&quot;</span><span class="p">:</span> <span class="s2">&quot;SMAPE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;nbias&quot;</span><span class="p">:</span> <span class="s2">&quot;NBIAS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rmse&quot;</span><span class="p">:</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">create_model_performance_table</span><span class="p">(</span>
+    <span class="n">res</span><span class="p">,</span>
+    <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;Corr&quot;</span><span class="p">,</span> <span class="s2">&quot;SMAPE&quot;</span><span class="p">,</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">],</span>
+    <span class="n">minimize_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;SMAPE&quot;</span><span class="p">,</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">],</span>
+    <span class="n">maximize_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Corr&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>Interpretation</strong> — The teal-highlighted cells mark the best value per column. For a single-model backtesting run, all highlights will be in the LIGHTGBM row by definition. The value of this table grows when you add multiple models (see NB04): compare MAE, RMSE, and Corr together — a model that wins on MAE but loses on Corr may be fitting noise rather than signal. An RMSE significantly larger than MAE indicates sporadic large errors; investigate those forecast timesteps directly in
+<code class="docutils literal notranslate"><span class="pre">forecast_df</span></code>.</p>
+</div></blockquote>
+</section>
+<section id="9-Expanding-vs-sliding-window">
+<h2><span class="section-number">6.9. </span>9 Expanding vs sliding window<a class="headerlink" href="#9-Expanding-vs-sliding-window" title="Link to this heading">#</a></h2>
+<p>A <strong>sliding</strong> (rolling) window keeps the training set at a fixed size. This means the model is always trained on the same amount of data, which can reduce bias when older data is no longer representative of current conditions.</p>
+<p>Let us run the same experiment with <code class="docutils literal notranslate"><span class="pre">window=&quot;rolling&quot;</span></code> and compare aggregate MAE.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
+
+<span class="n">sliding_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+    <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">window</span><span class="o">=</span><span class="s2">&quot;rolling&quot;</span><span class="p">,</span>  <span class="c1"># fixed-size training window</span>
+    <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">num_splits</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="n">project_name</span><span class="o">=</span><span class="s2">&quot;backtesting-sliding&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Fresh data config (same parameters)</span>
+<span class="n">data_config_sliding</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">,</span>
+    <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
+    <span class="n">longitude</span><span class="o">=-</span><span class="mf">16.274998</span><span class="p">,</span>
+    <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">],</span>
+    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">],</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+<span class="p">)</span>
+
+<span class="n">forecaster_sliding</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config_sliding</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">LIGHTGBMConfig</span><span class="p">()],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">sliding_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Visualise sliding scheme</span>
+<span class="n">plot_sliding</span> <span class="o">=</span> <span class="n">forecaster_sliding</span><span class="o">.</span><span class="n">plot_split_scheme</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="n">plot_sliding</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
+
+<span class="n">forecast_sliding_df</span><span class="p">,</span> <span class="n">metrics_sliding_df</span> <span class="o">=</span> <span class="n">forecaster_sliding</span><span class="o">.</span><span class="n">backtesting</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">mae_expanding</span> <span class="o">=</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[</span><span class="s2">&quot;mae&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">mae_sliding</span> <span class="o">=</span> <span class="n">metrics_sliding_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[</span><span class="s2">&quot;mae&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">comparison</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Expanding MAE&quot;</span><span class="p">:</span> <span class="n">mae_expanding</span><span class="p">,</span>
+        <span class="s2">&quot;Sliding MAE&quot;</span><span class="p">:</span> <span class="n">mae_sliding</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;Difference&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;Sliding MAE&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">comparison</span><span class="p">[</span><span class="s2">&quot;Expanding MAE&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Strategy comparison — aggregate MAE across 6 folds:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">comparison</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>Interpretation</strong> — A negative “Difference” (Sliding MAE &lt; Expanding MAE) means rolling window outperforms expanding on this dataset, suggesting that recent data is more predictive than older history. A difference of &lt; 0.1 kW is within noise — prefer the simpler expanding strategy unless you have a strong domain reason to believe the distribution is drifting. If the difference is large (&gt; 0.5 kW), investigate when the regime changed by plotting fold-level MAE over time.</p>
+</div></blockquote>
+<section id="Which-strategy-to-choose?">
+<h3><span class="section-number">6.9.1. </span>Which strategy to choose?<a class="headerlink" href="#Which-strategy-to-choose?" title="Link to this heading">#</a></h3>
+<p>The right strategy depends on how your data distribution evolves over time.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">choice_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Situation&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Distribution is stable over time&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Concept drift / seasonal regime changes&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Limited data available&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Recommended strategy&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Expanding — more data per fold, lower variance&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Rolling — model stays focused on recent patterns&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Expanding — avoids throwing away useful early observations&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">choice_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Window Strategy Decision Guide**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Expanding vs. Rolling — choose based on your data&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Situation</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Situation**&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="p">{</span><span class="s2">&quot;Recommended strategy&quot;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Recommended strategy**&quot;</span><span class="p">)},</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">choice_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">decision_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Situation&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Distribution is stable over time&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Concept drift / seasonal regime changes&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Limited data (&lt; 1 year)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Recommended strategy&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Expanding&quot;</span><span class="p">,</span> <span class="s2">&quot;Rolling&quot;</span><span class="p">,</span> <span class="s2">&quot;Expanding&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Reason&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;More data per fold → lower variance, older data is still informative&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Model stays focused on recent patterns, discards stale distributions&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Avoids throwing away useful early observations; every row counts&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">decision_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Strategy Selection Guide**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;When to use expanding vs. rolling window&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Situation</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Situation**&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="p">{</span><span class="s2">&quot;Recommended strategy&quot;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Recommended**&quot;</span><span class="p">)},</span>
+        <span class="n">Reason</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Reason**&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">decision_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="10-Plotting-the-forecast-over-time">
+<h2><span class="section-number">6.10. </span>10 Plotting the forecast over time<a class="headerlink" href="#10-Plotting-the-forecast-over-time" title="Link to this heading">#</a></h2>
+<p>A visual sanity-check: overlay the model forecast against actuals for the first week of backtesting results (7 days × 48 half-hour steps = 336 rows per target).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast</span><span class="p">(</span>
+    <span class="n">forecast_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(),</span>
+    <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span>
+    <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
+    <span class="n">forecast_col</span><span class="o">=</span><span class="s2">&quot;forecast&quot;</span><span class="p">,</span>
+    <span class="n">n_samples</span><span class="o">=</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Backtesting forecast — first 7 days&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;Net Load (kW)&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>  <span class="c1"># noqa: B018</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Per-fold MAE bar chart</span>
+<span class="k">if</span> <span class="n">fold_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">fold_mae</span> <span class="o">=</span> <span class="n">metrics_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="n">fold_col</span><span class="p">])[</span><span class="s2">&quot;mae&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="n">fold_mae_renamed</span> <span class="o">=</span> <span class="n">fold_mae</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mae&quot;</span><span class="p">:</span> <span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="n">fold_col</span><span class="p">:</span> <span class="s2">&quot;Fold&quot;</span><span class="p">})</span>
+    <span class="n">fold_mae_renamed</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fold_mae_renamed</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; (Fold &quot;</span> <span class="o">+</span> <span class="n">fold_mae_renamed</span><span class="p">[</span><span class="s2">&quot;Fold&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">plot_metrics_bar</span><span class="p">(</span>
+        <span class="n">fold_mae_renamed</span><span class="p">,</span>
+        <span class="n">metric_col</span><span class="o">=</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span>
+        <span class="n">model_col</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
+        <span class="n">lower_is_better</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;MAE per fold — expanding window&quot;</span><span class="p">,</span>
+        <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span>
+        <span class="n">horizontal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">p</span>  <span class="c1"># noqa: B018</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Wrapping-up">
+<h2><span class="section-number">6.11. </span>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<p><strong>What you did</strong></p>
+<ul class="simple">
+<li><p>☒ Loaded the MLVS-PT dataset and understood why a single split is unreliable</p></li>
+<li><p>☒ Configured <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code> with expanding window, 6 folds, 2-month test periods</p></li>
+<li><p>☒ Visualised the CV split scheme with <code class="docutils literal notranslate"><span class="pre">plot_split_scheme()</span></code> before training</p></li>
+<li><p>☒ Ran <code class="docutils literal notranslate"><span class="pre">forecaster.backtesting()</span></code> and inspected both <code class="docutils literal notranslate"><span class="pre">forecast_df</span></code> and <code class="docutils literal notranslate"><span class="pre">metrics_df</span></code></p></li>
+<li><p>☒ Analysed per-fold MAE variance and diagnosed fold-level instability</p></li>
+<li><p>☒ Compared expanding vs. rolling window strategies on aggregate MAE</p></li>
+<li><p>☒ Read the <code class="docutils literal notranslate"><span class="pre">create_model_performance_table</span></code> output and interpreted teal-highlighted cells</p></li>
+</ul>
+<p><strong>Key takeaways</strong></p>
+<ol class="arabic simple">
+<li><p>A single train/test split is a point estimate — backtesting gives you a distribution of scores and reveals seasonal instability.</p></li>
+<li><p>Always visualise splits before training; <code class="docutils literal notranslate"><span class="pre">plot_split_scheme()</span></code> catches misconfigured <code class="docutils literal notranslate"><span class="pre">train_size</span></code> / <code class="docutils literal notranslate"><span class="pre">test_size</span></code> before you waste compute.</p></li>
+<li><p>Per-fold variance is as important as the mean — a model with low mean MAE but high variance is unreliable in production.</p></li>
+<li><p>Expanding window suits stable distributions; rolling window suits drifting ones — let the fold-level variance guide your choice.</p></li>
+<li><p>Save <code class="docutils literal notranslate"><span class="pre">forecast_df</span></code> and <code class="docutils literal notranslate"><span class="pre">metrics_df</span></code> to parquet after a long backtesting run so you can re-analyse without re-training.</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="What's-next?">
+<h2><span class="section-number">6.12. </span>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<p><a class="reference external" href="06-neural-networks.ipynb">NB06 — Neural Network Models</a></p>
+<p>Learn how to train deep learning architectures (MLPF, MLPGAM, MLPGAF, N-HiTS) using the same <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> API, and compare NN models against the ML baselines you evaluated here.</p>
+<blockquote>
+<div><p>If you want to jump ahead to automated hyperparameter search, see <a class="reference external" href="10-hyperparameter-tuning.ipynb">NB10 — Hyperparameter Tuning</a>, which covers <code class="docutils literal notranslate"><span class="pre">forecaster.tune()</span></code>, Bayesian optimisation, and resumable SQLite studies.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
+
+<span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
+<span class="n">_TEAL_MID</span> <span class="o">=</span> <span class="s2">&quot;#069fac&quot;</span>
+<span class="n">_TEAL_LIGHT</span> <span class="o">=</span> <span class="s2">&quot;#e8f5f8&quot;</span>
+<span class="n">_TEAL_BEST</span> <span class="o">=</span> <span class="s2">&quot;#d0ecf1&quot;</span>
+<span class="n">_TEXT_DARK</span> <span class="o">=</span> <span class="s2">&quot;#2d3748&quot;</span>
+<span class="n">_TEXT_MUTED</span> <span class="o">=</span> <span class="s2">&quot;#718096&quot;</span>
+<span class="n">_WHITE</span> <span class="o">=</span> <span class="s2">&quot;#ffffff&quot;</span>
+
+<span class="n">steps</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;04&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Time Series Differencing&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Stationarity · differencing · inversion&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;differencing&quot;</span><span class="p">,</span> <span class="s2">&quot;stationarity&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;05&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;ML Point Forecasting&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;CatBoost · XGBoost · LightGBM · model comparison&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;catboost&quot;</span><span class="p">,</span> <span class="s2">&quot;xgboost&quot;</span><span class="p">,</span> <span class="s2">&quot;lightgbm&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;06&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Backtesting &amp; Evaluation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Rolling-window backtesting · fold-level metrics · strategy comparison&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;backtesting&quot;</span><span class="p">,</span> <span class="s2">&quot;evaluation&quot;</span><span class="p">,</span> <span class="s2">&quot;cross-validation&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;07&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Neural Networks&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;MLPF · N-HiTS · Lightning training loop&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;neural network&quot;</span><span class="p">,</span> <span class="s2">&quot;pytorch&quot;</span><span class="p">,</span> <span class="s2">&quot;lightning&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;08&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Quantile Regression&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;First probabilistic step — prediction intervals&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;probabilistic&quot;</span><span class="p">,</span> <span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="s2">&quot;intervals&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+<span class="n">track_name</span> <span class="o">=</span> <span class="s2">&quot;Point Forecasting Track&quot;</span>
+<span class="n">footer</span> <span class="o">=</span> <span class="s1">&#39;Next: explore &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;neural networks&lt;/span&gt; (07) or jump to &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;probabilistic forecasting&lt;/span&gt; (08–10).&#39;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bg</span><span class="p">,</span> <span class="n">fg</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;display:inline-block;background:</span><span class="si">{</span><span class="n">bg</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">fg</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;&quot;&gt;</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s1">&lt;/span&gt;&#39;</span>
+
+
+<span class="n">ch</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;active&quot;</span><span class="p">]</span>
+    <span class="n">cb</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_WHITE</span>
+    <span class="n">cbo</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="s2">&quot;#d1ecf1&quot;</span>
+    <span class="n">nb</span> <span class="o">=</span> <span class="n">_TEAL_MID</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_LIGHT</span>
+    <span class="n">nf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">tf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_DARK</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="s2">&quot;#cce8ef&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_MUTED</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="s2">&quot;#0d5f75&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_BEST</span>
+    <span class="n">bf</span> <span class="o">=</span> <span class="s2">&quot;#b8e4ed&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">yh</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;float:right;background:</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:700;padding:2px 10px;border-radius:12px;&quot;&gt;★ you are here&lt;/span&gt;&#39;</span>
+        <span class="k">if</span> <span class="n">a</span>
+        <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">bdg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">bf</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">])</span>
+    <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;background:</span><span class="si">{</span><span class="n">cb</span><span class="si">}</span><span class="s1">;border:2px solid </span><span class="si">{</span><span class="n">cbo</span><span class="si">}</span><span class="s1">;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:</span><span class="si">{</span><span class="s2">&quot;0 4px 14px rgba(16,117,145,.25)&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;0 1px 4px rgba(0,0,0,.06)&quot;</span><span class="si">}</span><span class="s1">;&quot;&gt;&lt;div style=&quot;min-width:44px;height:44px;background:</span><span class="si">{</span><span class="n">nb</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">nf</span><span class="si">}</span><span class="s1">;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;flex:1;&quot;&gt;&lt;div style=&quot;font-size:15px;font-weight:700;color:</span><span class="si">{</span><span class="n">tf</span><span class="si">}</span><span class="s1">;margin-bottom:4px;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="si">}{</span><span class="n">yh</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;font-size:12.5px;color:</span><span class="si">{</span><span class="n">df</span><span class="si">}</span><span class="s1">;margin-bottom:8px;line-height:1.5;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;desc&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div&gt;</span><span class="si">{</span><span class="n">bdg</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;display:flex;justify-content:center;height:32px;&quot;&gt;&lt;svg width=&quot;24&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 32&quot; fill=&quot;none&quot;&gt;&lt;line x1=&quot;12&quot; y1=&quot;0&quot; x2=&quot;12&quot; y2=&quot;24&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot; stroke-dasharray=&quot;4 3&quot;/&gt;&lt;polygon points=&quot;6,20 18,20 12,30&quot; fill=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;&#39;</span>
+
+<span class="n">HTML</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;font-family:Inter,</span><span class="se">\&#39;</span><span class="s1">Segoe UI</span><span class="se">\&#39;</span><span class="s1">,sans-serif;max-width:640px;margin:8px 0;&quot;&gt;&lt;div style=&quot;background:linear-gradient(135deg,</span><span class="si">{</span><span class="n">_TEAL</span><span class="si">}</span><span class="s1"> 0%,</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1"> 100%);border-radius:12px 12px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px;&quot;&gt;&lt;svg width=&quot;22&quot; height=&quot;22&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot;&gt;&lt;path d=&quot;M12 2L2 7l10 5 10-5-10-5z&quot;/&gt;&lt;path d=&quot;M2 17l10 5 10-5&quot;/&gt;&lt;path d=&quot;M2 12l10 5 10-5&quot;/&gt;&lt;/svg&gt;&lt;span style=&quot;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:14px;font-weight:700;&quot;&gt;Twiga Learning Path — </span><span class="si">{</span><span class="n">track_name</span><span class="si">}</span><span class="s1">&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;border:2px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;border-top:none;border-radius:0 0 12px 12px;padding:20px 20px 16px;background:#f9fdfe;display:flex;flex-direction:column;&quot;&gt;</span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s1">&lt;div style=&quot;margin-top:16px;font-size:11.5px;color:</span><span class="si">{</span><span class="n">_TEXT_MUTED</span><span class="si">}</span><span class="s1">;text-align:center;border-top:1px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;padding-top:12px;&quot;&gt;</span><span class="si">{</span><span class="n">footer</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="05-ml-point-forecasting.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">5. </span>05 — ML Point Forecasting with Multiple Models</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="15-baseline-benchmarking.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">7. </span>15 — Baseline Benchmarking</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1-Setup">6.1. 1 Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2-Why-a-single-train/test-split-is-insufficient">6.2. 2 Why a single train/test split is insufficient</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3-ForecasterConfig-—-the-split-parameters">6.3. 3 ForecasterConfig — the split parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4-Instantiate-the-forecaster">6.4. 4 Instantiate the forecaster</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5-Visualising-the-split-scheme">6.5. 5 Visualising the split scheme</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6-Running-backtesting">6.6. 6 Running backtesting</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#What-the-DataFrames-contain">6.6.1. What the DataFrames contain</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7-Per-fold-results">6.7. 7 Per-fold results</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Interpreting-per-fold-variance">6.7.1. Interpreting per-fold variance</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8-Reading-the-performance-table">6.8. 8 Reading the performance table</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9-Expanding-vs-sliding-window">6.9. 9 Expanding vs sliding window</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Which-strategy-to-choose?">6.9.1. Which strategy to choose?</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#10-Plotting-the-forecast-over-time">6.10. 10 Plotting the forecast over time</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">6.11. Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">6.12. What’s next?</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../_sources/tutorials/notebooks/06-backtesting-and-evaluation.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

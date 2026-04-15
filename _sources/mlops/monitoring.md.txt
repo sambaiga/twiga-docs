@@ -1,0 +1,171 @@
+# Production Monitoring
+
+<details>
+<summary>Source file</summary>
+
+- `twiga/serve/monitor.py`  -  `ForecastMonitor`
+
+</details>
+
+## Overview
+
+`ForecastMonitor` uses [Evidently](https://docs.evidentlyai.com/) to detect
+distribution shifts in model inputs and track regression performance once
+ground truth is available.  It is used both inside the FastAPI serving layer
+(via the `/monitor/drift` and `/monitor/performance` endpoints) and inside
+Prefect flows (via the `run_drift_check` task).
+
+```bash
+pip install twiga[mlops]
+```
+
+---
+
+## Quick start
+
+```python
+from twiga.serve import ForecastMonitor
+
+monitor = ForecastMonitor(report_dir="reports/", target_col="Load(MW)")
+monitor.set_reference(train_df)
+
+# At inference time  -  check whether input distribution has shifted
+summary = monitor.run_data_drift(current_df)
+print(summary["drift_detected"], summary["n_drifted_features"])
+
+# Once ground truth is available  -  check model accuracy
+perf = monitor.run_performance(df_with_actuals)
+print(perf["mae"], perf["rmse"])
+```
+
+---
+
+## Report types
+
+### Data drift
+
+Compares numeric feature distributions between the reference (training) and
+current (production) datasets using Evidently's `DataDriftPreset`:
+
+```python
+summary = monitor.run_data_drift(current_df, feature_cols=["temp", "hour"])
+```
+
+**Returns**
+
+```python
+{
+    "drift_detected": True,
+    "n_drifted_features": 3,
+    "feature_drift": {
+        "temperature": 0.031,
+        "hour": 0.002,
+        "weekday": 0.187,
+    },
+    "report_path": "/abs/path/to/reports/data_drift_20240601T120000Z.html",
+}
+```
+
+### Prediction drift
+
+Detects shifts in the model's output distribution  -  useful when ground truth
+is not yet available but you still want to monitor forecast stability:
+
+```python
+summary = monitor.run_prediction_drift(
+    current_predictions=current_preds,    # np.ndarray
+    reference_predictions=train_preds,    # np.ndarray
+)
+```
+
+Both arrays are automatically flattened to 1-D so multi-step forecast arrays
+(shape `(n_samples, horizon, n_targets)`) are handled transparently.
+
+### Regression performance
+
+Once ground truth becomes available, compute MAE, RMSE, and MAPE against
+actuals.  Requires the current DataFrame to contain both the target and
+prediction columns:
+
+```python
+perf = monitor.run_performance(
+    current_df,
+    target_col="Load(MW)",
+    prediction_col="pred_Load(MW)",
+)
+# → {"mae": 4.23, "rmse": 6.11, "mape": 0.034, "report_path": "..."}
+```
+
+---
+
+## HTML reports
+
+Every report method saves a self-contained HTML file to `report_dir` with a
+UTC timestamp suffix:
+
+```
+reports/
+├── data_drift_20240601T120000Z.html
+├── prediction_drift_20240602T083012Z.html
+└── performance_20240603T000000Z.html
+```
+
+The absolute path is returned in `report_path` so it can be logged to MLflow
+or exposed via the API response.
+
+---
+
+## API reference
+
+```{eval-rst}
+.. autoclass:: twiga.serve.monitor.ForecastMonitor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+```
+
+---
+
+## Integration with the FastAPI app
+
+`ForecastMonitor` is wired into the FastAPI app automatically by `create_app`.
+The reference dataset is initialised at startup from the forecaster's data
+pipeline:
+
+```{mermaid}
+sequenceDiagram
+    participant API as FastAPI
+    participant MON as ForecastMonitor
+    participant EV  as Evidently
+
+    Note over API,MON: Startup
+    API->>MON: set_reference(train_df)
+
+    Note over API,EV: POST /monitor/drift
+    API->>MON: run_data_drift(current_df)
+    MON->>EV: Report(DataDriftPreset)
+    EV-->>MON: drift summary + HTML
+    MON-->>API: {"drift_detected": true, …}
+```
+
+See [Serving](serving.md) for the full endpoint reference.
+
+## Integration with Prefect
+
+In the retraining flow, `run_drift_check` wraps `ForecastMonitor` as a
+Prefect task:
+
+```python
+from twiga.pipeline import retraining_flow
+
+result = retraining_flow(
+    forecaster=forecaster,
+    reference_data_path="data/train.parquet",
+    current_data_path="data/current.parquet",
+    drift_threshold=0.5,          # retrain if > 50 % of features drift
+    performance_threshold=0.15,   # also retrain if MAE > 0.15
+)
+print(result["drift_summary"])
+```
+
+See [Pipeline](pipeline.md) for the complete retraining flow reference.

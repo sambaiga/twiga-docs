@@ -1,0 +1,158 @@
+# Model Catalog Overview
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/models/baseline/`  -  no-training baselines
+- `twiga/models/ml/`  -  tree-based and linear models
+- `twiga/models/nn/`  -  neural network models
+- `twiga/forecaster/registry.py`
+
+</details>
+
+Twiga provides forecasting models across three domains: **baseline** (parameter-free reference models), **ml** (gradient-boosted trees, random forests, linear, and NGBoost), and **nn** (neural networks). All models share a common interface and are loaded dynamically through the [model registry](../core/forecaster.md#model-registry).
+
+The table below lists the **base** model configurations. In addition, every neural architecture (MLPF, MLPGAM, MLPGAF, NHITS) has dedicated probabilistic config classes for each distribution family (Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC)  -  see [Neural Network Models](nn-models.md#probabilistic-models) for the full matrix.
+
+## Available Models
+
+### Baseline Domain
+
+| Model | Name | Domain | Type | Config Class | Description |
+|---|---|---|---|---|---|
+| Naive | `naive` | baseline | Point | `NAIVEConfig` | Per-window last value, training mean, or zero |
+| Seasonal Naive | `seasonal_naive` | baseline | Point | `SEASONALNAIVEConfig` | Repeats value from m steps ago (daily/weekly) |
+| Window Average | `window_average` | baseline | Point | `WINDOWAVERAGEConfig` | Local mean over the last w steps |
+| Drift | `drift` | baseline | Point | `DRIFTConfig` | Linear extrapolation of per-window trend |
+
+### ML Domain
+
+| Model | Name | Domain | Type | Config Class | Description |
+|---|---|---|---|---|---|
+| CatBoost | `catboost` | ml | Point | `CATBOOSTConfig` | Gradient boosting with ordered boosting |
+| XGBoost | `xgboost` | ml | Point | `XGBOOSTConfig` | Gradient boosting with regularization |
+| LightGBM | `lightgbm` | ml | Point | `LIGHTGBMConfig` | Histogram-based gradient boosting |
+| Random Forest | `randomforest` | ml | Point | `RANDOMFORESTConfig` | Bagged decision trees, native multi-output |
+| Linear Regression | `lineareg` | ml | Point | `LINEAREGConfig` | OLS linear model |
+| Gaussian CatBoost | `gausscatboost` | ml | Probabilistic | `GAUSSCATBOOSTConfig` | CatBoost with Gaussian output (mean + sigma) |
+| NGBoost Normal | `ngboostnormal` | ml | Probabilistic | `NGBOOSTNORMALConfig` | Natural gradient boosting, Gaussian distribution |
+| NGBoost LogNormal | `ngboostlognormal` | ml | Probabilistic | `NGBOOSTLOGNORMALConfig` | Natural gradient boosting, LogNormal (positive targets) |
+| NGBoost Exponential | `ngboostexponential` | ml | Probabilistic | `NGBOOSTEXPONENTIALConfig` | Natural gradient boosting, Exponential distribution |
+| QR CatBoost | `qrcatboost` | ml | Quantile | `QRCATBOOSTConfig` | CatBoost with multi-quantile loss |
+| QR XGBoost | `qrxgboost` | ml | Quantile | `QRXGBOOSTConfig` | XGBoost with quantile regression |
+| QR LightGBM | `qrlightgbm` | ml | Quantile | `QRLIGHTGBMConfig` | LightGBM with quantile regression |
+| QR Random Forest | `qrrandomforest` | ml | Quantile | `QRRANDOMFORESTConfig` | Single-forest quantile regression, any quantile at inference |
+
+### NN Domain
+
+| Model | Name | Domain | Type | Config Class | Description |
+|---|---|---|---|---|---|
+| MLPF | `mlpf` | nn | Point | `MLPFConfig` | MLP forecaster with attention-based feature combination |
+| MLPGAM | `mlpgam` | nn | Point | `MLPGAMConfig` | MLP with Generalized Additive Model structure |
+| MLPGAF | `mlpgaf` | nn | Point | `MLPGAFConfig` | MLP-GAM with feature gates and uncertainty |
+| N-HiTS | `nhits` | nn | Point | `NHITSConfig` | Neural Hierarchical Interpolation for Time Series |
+| GANF | `ganf` | nn | Point | `GANFConfig` | Group Additive Neural Forecaster |
+| MLPF-QR | `mlpfqr` | nn | Quantile | `MLPFQRConfig` | MLPF with quantile regression output |
+| MLPGAM-CRC | `mlpgamcrc` | nn | Probabilistic | `MLPGAMCRCConfig` | MLPGAM with conformal residual coverage |
+
+## Model Class Hierarchy
+
+```{mermaid}
+classDiagram
+    class BaseRegressor {
+        <<ML / Baseline>>
+        +fit(X, y)
+        +predict(x)
+        +forecast(x)
+        +format_features(x)
+    }
+
+    class BaseQuantileRegressor {
+        <<ML Quantile>>
+        +quantiles: list
+        +conf_level: float
+        +fit(X, y)
+        +predict(X, sigma)
+    }
+
+    class BaseNGBoostRegressor {
+        <<ML Probabilistic>>
+        +fit(X, y)
+        +predict(X)
+        +forecast(x)
+    }
+
+    class BaseNeuralForecast {
+        <<NN Domain>>
+        +fit(X_train, y_train, X_val, y_val)
+        +forecast(features)
+        +update(trial)
+        +load_checkpoint()
+    }
+
+    BaseRegressor <|-- NAIVEModel
+    BaseRegressor <|-- SEASONALNAIVEModel
+    BaseRegressor <|-- WINDOWAVERAGEModel
+    BaseRegressor <|-- DRIFTModel
+    BaseRegressor <|-- CATBOOSTModel
+    BaseRegressor <|-- XGBOOSTModel
+    BaseRegressor <|-- LIGHTGBMModel
+    BaseRegressor <|-- RANDOMFORESTModel
+    BaseRegressor <|-- LINEAREGModel
+    BaseRegressor <|-- GAUSSCATBOOSTModel
+    BaseRegressor <|-- QRRANDOMFORESTModel
+    BaseRegressor <|-- BaseQuantileRegressor
+    BaseQuantileRegressor <|-- QRCATBOOSTModel
+    BaseQuantileRegressor <|-- QRXGBOOSTModel
+    BaseQuantileRegressor <|-- QRLIGHTGBMModel
+    BaseNGBoostRegressor <|-- NGBOOSTNORMALModel
+    BaseNGBoostRegressor <|-- NGBOOSTLOGNORMALModel
+    BaseNGBoostRegressor <|-- NGBOOSTEXPONENTIALModel
+
+    BaseNeuralForecast <|-- MLPFModel
+    BaseNeuralForecast <|-- MLPGAMModel
+    BaseNeuralForecast <|-- MLPGAFModel
+    BaseNeuralForecast <|-- NHITSModel
+    BaseNeuralForecast <|-- GANFModel
+    BaseNeuralForecast <|-- MLPFQRModel
+    BaseNeuralForecast <|-- MLPGAMCRCModel
+```
+
+## Choosing a Model
+
+| Use Case | Recommended Models | Why |
+|---|---|---|
+| Establish performance floor | `naive`, `seasonal_naive`, `drift` | Zero-training reference; compute skill scores against ML/NN |
+| Quick ML baseline | `lineareg`, `randomforest` | Fast training, easy to interpret |
+| Tabular data, many features | `catboost`, `lightgbm`, `xgboost` | Strong with heterogeneous features |
+| GPU acceleration needed | `catboost` (GPU), `mlpf`, `nhits` | Native GPU support |
+| Uncertainty  -  symmetric targets | `gausscatboost`, `ngboostnormal` | Gaussian output; GaussCatBoost also decomposes epistemic vs aleatoric uncertainty |
+| Uncertainty  -  positive targets | `ngboostlognormal`, `qrcatboost` | LogNormal or distribution-free quantiles |
+| Uncertainty  -  any model | `qrcatboost`, `qrrandomforest`, `mlpfqr` | Quantile regression outputs |
+| Complex temporal patterns | `nhits`, `mlpf`, `ganf` | Deep learning captures nonlinearities |
+| Interpretable forecasts | `mlpgam`, `mlpgaf`, `ganf` | Additive structure provides feature insights |
+| Small datasets | `lineareg`, `catboost`, `randomforest` | Less prone to overfitting |
+
+## Model Registry
+
+Models are loaded dynamically via the registry in `twiga/forecaster/registry.py`. The naming convention is:
+
+- Module: `twiga.models.{domain}.{name}_model`
+- Model class: `{NAME}Model` (uppercase)
+- Config class: `{NAME}Config` (uppercase)
+
+For example, `get_model("catboost", "ml")` loads from `twiga.models.ml.catboost_model` and returns `(CATBOOSTModel, CATBOOSTConfig)`.
+
+See [Creating Custom Models](custom-models.md) for how to add new models to the registry.
+
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+baseline-models
+ml-models
+nn-models
+custom-models
+../advanced/hyperparameter-tuning
+```

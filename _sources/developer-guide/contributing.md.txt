@@ -1,0 +1,282 @@
+# Contributing Guide
+
+<details>
+<summary>Source Files</summary>
+
+- `pyproject.toml`
+- `.pre-commit-config.yaml`
+- `.github/workflows/check_pullrequest.yaml`
+
+</details>
+
+This guide covers how to set up a development environment, the project structure, code style conventions, and contribution workflow for Twiga.
+
+## Development Setup
+
+### Prerequisites
+
+- **Python 3.12** (required: `>=3.12,<3.13`)
+- **[uv](https://docs.astral.sh/uv/)**  -  fast Python package manager
+- **Git** with pre-commit hook support
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/twiga-forecast.git
+cd twiga-forecast
+
+# Install all development dependencies
+uv sync --all-extras --dev
+
+# Install pre-commit hooks
+uv run pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre-push
+```
+
+This installs **all** optional dependency groups needed for development: PyTorch, gradient boosting libraries, plotting backends, dev tools, and test frameworks.
+
+### Optional: GPU Support
+
+For CUDA-enabled PyTorch (Linux/Windows):
+
+```bash
+uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+```
+
+
+## Project Structure
+
+```
+twiga-forecast/
+├── twiga/                      # Main package
+│   ├── __init__.py
+│   ├── core/                   # Core infrastructure
+│   │   ├── config/             # Pydantic configuration models
+│   │   ├── data/               # Data pipeline & feature engineering
+│   │   ├── metrics/            # Evaluation metrics (point, interval, probabilistic)
+│   │   ├── plot/               # Visualization utilities
+│   │   ├── stats/              # Statistical analysis
+│   │   └── backtester.py       # Time-based cross-validation
+│   ├── distributions/          # Probabilistic distributions
+│   │   ├── conformal/          # Conformal prediction methods
+│   │   ├── ml/                 # ML distribution utilities
+│   │   └── nn/                 # NN distribution heads (Gaussian, Quantile)
+│   ├── forecaster/             # Forecaster orchestration
+│   │   ├── abstract.py         # Abstract forecaster interface
+│   │   ├── base.py             # Base forecaster with CV
+│   │   ├── core.py             # TwigaForecaster (main entry point)
+│   │   ├── ensemble.py         # Ensemble strategies
+│   │   └── registry.py         # Model registry
+│   ├── models/                 # Model implementations
+│   │   ├── ml/                 # Machine learning models
+│   │   │   ├── core/           # BaseRegressor
+│   │   │   ├── prob/           # BaseQuantileRegressor
+│   │   │   ├── catboost_model.py
+│   │   │   ├── xgboost_model.py
+│   │   │   ├── lightgbm_model.py
+│   │   │   └── ...
+│   │   └── nn/                 # Neural network models
+│   │       ├── core/           # BaseNeuralForecast, BaseNeuralModel, BaseArchitecture
+│   │       ├── mlpf_model.py
+│   │       ├── mlpgam_model.py
+│   │       ├── nhits_model.py
+│   │       └── ...
+│   └── utils/                  # Shared utilities
+├── tests/                      # Test suite
+│   └── unit/                   # Unit tests (mirrors source structure)
+├── examples/                   # Example notebooks and scripts
+├── docs/                       # Documentation (MkDocs)
+├── pyproject.toml              # Project configuration
+├── .pre-commit-config.yaml     # Pre-commit hooks
+└── .github/workflows/          # CI/CD pipelines
+```
+
+
+## Code Style
+
+### Ruff (Linter & Formatter)
+
+Twiga uses [Ruff](https://docs.astral.sh/ruff/) for both linting and formatting:
+
+| Setting | Value |
+|---|---|
+| Target version | Python 3.11 |
+| Line length | 120 characters |
+| Docstring convention | Google style |
+| Import sorting | isort-compatible (`known-first-party: twiga`) |
+
+**Enabled rule sets:** `B` (bugbear), `C4` (comprehensions), `D` (docstrings), `E`/`F`/`W` (pycodestyle/pyflakes), `UP` (pyupgrade), `I` (isort), `TID` (tidy imports), `N` (naming), `PGH` (pygrep), `PTH` (pathlib), `Q` (quotes), `S` (bandit security), `SIM` (simplify), `TRY` (tryceratops), `YTT` (year 2020)
+
+**Run manually:**
+
+```bash
+# Check for issues
+uv run ruff check .
+
+# Auto-fix issues
+uv run ruff check . --fix
+
+# Check formatting
+uv run ruff format --check .
+
+# Apply formatting
+uv run ruff format .
+```
+
+### ty (Type Checking)
+
+Twiga uses [ty](https://github.com/astral-sh/ty)  -  Astral's fast Python type checker  -  instead of mypy.
+
+```bash
+uv run ty check twiga
+```
+
+| Setting | Value |
+| --- | --- |
+| Python version | 3.12 |
+| Scope | `twiga/` package only (`tests/` and `examples/` are excluded by running `ty check twiga`) |
+| Configuration | `[tool.ty.environment]` in `pyproject.toml` |
+
+### Docstring Coverage (Interrogate)
+
+[Interrogate](https://interrogate.readthedocs.io/) checks docstring coverage with a minimum threshold of **25%**:
+
+```bash
+uv run interrogate twiga/ --fail-under=25
+```
+
+
+## Pre-Commit Hooks
+
+All hooks are defined in `.pre-commit-config.yaml` and run automatically on commit/push:
+
+| Hook | Stage | Description |
+|---|---|---|
+| **commitizen** | `commit-msg` | Validates commit message format (conventional commits) |
+| **uv-lock** | `pre-commit` | Ensures `uv.lock` is up to date |
+| **check-yaml** | `pre-commit` | Validates YAML syntax |
+| **check-added-large-files** | `pre-commit` | Blocks files > 1200 KB |
+| **check-merge-conflict** | `pre-commit` | Detects unresolved merge markers |
+| **check-json** | `pre-commit` | Validates JSON syntax |
+| **check-toml** | `pre-commit` | Validates TOML syntax |
+| **detect-private-key** | `pre-commit` | Prevents accidental key commits |
+| **end-of-file-fixer** | `pre-commit` | Ensures files end with newline |
+| **trailing-whitespace** | `pre-commit` | Removes trailing whitespace |
+| **codespell** | `pre-commit` | Spell-checks code and comments |
+| **ruff-check** | `pre-commit` | Linting with auto-fix |
+| **ruff-format** | `pre-commit` | Code formatting |
+| **nb-clean** | `pre-commit` | Strips notebook metadata from `examples/*.ipynb` |
+| **interrogate** | `pre-commit` | Docstring coverage check (≥25%) |
+| **commitizen-branch** | `pre-push` | Validates branch naming conventions |
+
+### Install Hooks
+
+```bash
+uv run pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre-push
+```
+
+### Run All Hooks Manually
+
+```bash
+uv run pre-commit run --all-files
+```
+
+
+## Commit Conventions
+
+Twiga uses [Commitizen](https://commitizen-tools.github.io/commitizen/) for standardized commit messages following the [Conventional Commits](https://www.conventionalcommits.org/) specification.
+
+### Format
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Common Types
+
+| Type | Description |
+|---|---|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation changes |
+| `refactor` | Code refactoring (no feature/fix) |
+| `test` | Adding or updating tests |
+| `ci` | CI/CD configuration |
+| `chore` | Maintenance tasks |
+| `bump` | Version bump (auto-generated) |
+
+### Examples
+
+```bash
+git commit -m "feat(models): add GANF neural network model"
+git commit -m "fix(conformal): correct signed residual calculation"
+git commit -m "docs(api): update forecaster method signatures"
+```
+
+
+## Branch Naming
+
+Branches must match one of the allowed patterns (enforced by commitizen on push):
+
+| Pattern | Purpose |
+|---|---|
+| `feature/*` | New features |
+| `fix/*` | Bug fixes |
+| `docs/*` | Documentation updates |
+| `release/*` | Release preparation |
+
+
+## Adding a New Model
+
+See [Creating Custom Models](../models/custom-models.md) for a step-by-step guide. The key points:
+
+1. **Create the model file** at `twiga/models/{domain}/{name}_model.py`
+2. **Define a config class** extending `BaseModelConfig` or `NeuralModelConfig`
+3. **Implement the model** extending `BaseRegressor` (ML) or `BaseNeuralModel` (NN)
+4. **Add tests** in `tests/unit/models/{domain}/`
+5. The [model registry](../core/forecaster.md) auto-discovers models by naming convention
+
+
+## Documentation
+
+Documentation is built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) and uses [mkdocstrings](https://mkdocstrings.github.io/) for API reference generation.
+
+### Build Locally
+
+```bash
+# Install docs dependencies
+uv sync --extra docs
+
+# Serve with live reload
+uv run mkdocs serve
+
+# Build static site
+uv run mkdocs build
+```
+
+### Writing Docs
+
+- Place new pages in the appropriate `docs/` subdirectory
+- Use MkDocs Material [admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) (`!!! note`, `!!! tip`, `!!! warning`)
+- Use [Mermaid diagrams](https://mermaid.js.org/) for architecture and flow visualizations
+- Use `:::` directives for auto-generated API docs from docstrings:
+
+```markdown
+
+```{eval-rst}
+.. autoclass:: twiga.core.config.DataPipelineConfig
+   :members:
+   :show-inheritance:
+```
+
+```
+
+- Cross-link between pages using relative markdown links:
+
+```markdown
+See [TwigaForecaster](../core/forecaster.md) for details.
+```

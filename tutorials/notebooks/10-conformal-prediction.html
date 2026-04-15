@@ -1,0 +1,1535 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>11. 10 — Conformal Prediction &amp; Guaranteed Coverage &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=724e8a05" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/10-conformal-prediction';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="12. 11 — Hyperparameter Tuning with Optuna" href="11-hyperparameter-tuning.html" />
+    <link rel="prev" title="10. 09 — Parametric Distributions" href="09-parametric-distributions.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../../_static/searchtools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="01-getting-started.html">1. 01 — Getting Started with Twiga</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02-forecastability-analysis.html">2. 02 — Forecastability Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03-feature-engineering.html">3. 03 — Feature Engineering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04-time-series-differencing.html">4. 04 — Time Series Differencing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05-ml-point-forecasting.html">5. 05 — ML Point Forecasting with Multiple Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="06-backtesting-and-evaluation.html">6. 06 — Backtesting &amp; Robust Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15-baseline-benchmarking.html">7. 15 — Baseline Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="07-neural-networks.html">8. 07 — Neural Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="08-quantile-regression.html">9. 08 — Quantile Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="09-parametric-distributions.html">10. 09 — Parametric Distributions</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">11. 10 — Conformal Prediction &amp; Guaranteed Coverage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="11-hyperparameter-tuning.html">12. 11 — Hyperparameter Tuning with Optuna</a></li>
+<li class="toctree-l1"><a class="reference internal" href="12-ensemble-strategies.html">13. 12 — Ensemble Strategies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="13-custom-models.html">14. 13 — Custom Models &amp; Extension Points</a></li>
+<li class="toctree-l1"><a class="reference internal" href="14-typed-forecast-results.html">15. 14 — Typed Forecast Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="16-shap-feature-attribution.html">16. 16 — SHAP Feature Attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="17-mlops-tracking-serving.html">17. 17 — MLOps: Tracking, Serving &amp; Monitoring</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">11. </span>10 — Conformal Prediction &amp; Guaranteed Coverage</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="10-—-Conformal-Prediction-&amp;-Guaranteed-Coverage">
+<h1><span class="section-number">11. </span>10 — Conformal Prediction &amp; Guaranteed Coverage<a class="headerlink" href="#10-—-Conformal-Prediction-&-Guaranteed-Coverage" title="Link to this heading">#</a></h1>
+<p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
+<hr class="docutils" />
+<p><strong>What you’ll build</strong></p>
+<p>Coverage-guaranteed prediction intervals using Conformalised Quantile Regression (CQR) and Conformal Risk Control (CRC) applied as post-training wrappers on any trained Twiga model.</p>
+<p><strong>Prerequisites</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="08-quantile-regression.html"><span class="doc">08 — Quantile Regression</span></a> (QR models and interval metrics)</p></li>
+<li><p><a class="reference internal" href="09-parametric-distributions.html"><span class="doc">09 — Parametric Distributions</span></a> (parametric probabilistic heads)</p></li>
+<li><p>Python: basic probability, coverage concepts</p></li>
+</ul>
+<p><strong>Learning objectives</strong></p>
+<p>By the end of this notebook you will be able to:</p>
+<ol class="arabic simple">
+<li><p>Explain the conformal prediction coverage guarantee and when it holds</p></li>
+<li><p>Apply CQR and CRC as post-training wrappers to any Twiga model via <code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code></p></li>
+<li><p>Distinguish between CQR (tightens intervals) and CRC (adjusts a single threshold)</p></li>
+<li><p>Evaluate coverage and sharpness trade-offs using PICP, NMPI, and Winkler score</p></li>
+<li><p>Select the right conformal method based on your base model type</p></li>
+</ol>
+<section id="1.-Motivation:-Why-Conformal-Prediction?">
+<h2><span class="section-number">11.1. </span>1. Motivation: Why Conformal Prediction?<a class="headerlink" href="#1.-Motivation:-Why-Conformal-Prediction?" title="Link to this heading">#</a></h2>
+<p>The two probabilistic approaches covered in earlier notebooks each have a fundamental limitation:</p>
+<ul class="simple">
+<li><p><strong>Parametric (NB08)</strong>: assumes data follows a known distribution family. Wrong family → miscalibrated coverage.</p></li>
+<li><p><strong>Quantile Regression (NB07)</strong>: relies on asymptotic regime. Finite-sample coverage is not guaranteed.</p></li>
+</ul>
+<blockquote>
+<div><p><strong>Key concept — conformal prediction</strong></p>
+<p>Conformal prediction produces prediction intervals with a <strong>finite-sample, distribution-free coverage guarantee</strong>. Formally, for a significance level α ∈ (0, 1), it constructs intervals [l̂, û] such that:</p>
+<p>P(y_{n+1} ∈ [l̂<em>{n+1}, û</em>{n+1}]) ≥ 1 − α</p>
+<p>This is a <strong>marginal coverage guarantee</strong> — it holds over the randomness of the calibration and test draw, with no distributional assumption required. It works with <em>any</em> underlying model: tree ensembles, neural networks, or linear models.</p>
+<p>The key ingredient is a <strong>calibration set</strong> — a held-out set of labeled examples (separate from training) used to compute <strong>nonconformity scores</strong>, which measure how surprised the model is by each observation. The coverage guarantee follows directly from the exchangeability of calibration and test data.</p>
+<p><strong>Key concept — CQR vs. CRC</strong></p>
+<p>Twiga provides three conformal methods, differing in how they compute and adjust nonconformity scores:</p>
+<ul class="simple">
+<li><p><strong>Split Conformal</strong> (<code class="docutils literal notranslate"><span class="pre">method=&quot;residual&quot;</span></code>): the simplest approach. Nonconformity score = |y − ŷ|. Interval = ŷ ± q_{1−α}(scores). Produces constant-width intervals — cannot adapt to local uncertainty.</p></li>
+<li><p><strong>CQR — Conformal Quantile Regression</strong> (<code class="docutils literal notranslate"><span class="pre">method=&quot;quantile&quot;</span></code>): requires a QR base model. Adjusts the QR interval using calibration residuals. Inherits the adaptive width of the underlying QR model while adding the coverage guarantee. Best when you already have a QR model (NB07) and want sharper, locally adaptive intervals.</p></li>
+<li><p><strong>CRC — Conformal Residual Calibration</strong> (<code class="docutils literal notranslate"><span class="pre">method=&quot;residual-fitting&quot;</span></code>): fits a secondary model to predict residual magnitude. Most expressive — interval width adapts to predicted local uncertainty. Best for heteroscedastic signals (e.g. solar-driven net load with strong day/night cycles).</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><p><strong>Key concept — coverage vs. sharpness trade-off</strong></p>
+<p>All three methods satisfy the marginal coverage guarantee, but they differ in <strong>sharpness</strong> — how narrow the intervals are on average. Wider intervals are trivially easy to achieve (just make them very wide), so a good method is one that achieves the nominal coverage with the <em>smallest</em> possible interval width. This is measured by metrics like NMPI (Normalised Mean Prediction Interval width) and the Winkler score, which penalises both excess width and coverage violations jointly. The
+reliability diagram reveals whether a method is over- or under-covering systematically, while the sharpness comparison reveals which method produces the tightest intervals at the same nominal level.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">df_methods</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Method&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Split Conformal&quot;</span><span class="p">,</span> <span class="s2">&quot;CQR&quot;</span><span class="p">,</span> <span class="s2">&quot;CRC&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Config method=&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;&quot;residual&quot;&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;quantile&quot;&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;residual-fitting&quot;&#39;</span><span class="p">],</span>
+        <span class="s2">&quot;Key idea&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Quantile of absolute residuals on the calibration set&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Adjust the QR interval using calibration residuals&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Fit a secondary model to predict residual magnitude adaptively&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Interval width&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Constant&quot;</span><span class="p">,</span> <span class="s2">&quot;Adaptive (from QR)&quot;</span><span class="p">,</span> <span class="s2">&quot;Adaptive (from residual model)&quot;</span><span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">df_methods</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Conformal methods in Twiga**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;All three methods satisfy the marginal coverage guarantee&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df_methods</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">df_methods</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="2.-Setup">
+<h2><span class="section-number">11.2. </span>2. Setup<a class="headerlink" href="#2.-Setup" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
+
+<span class="n">LetsPlot</span><span class="o">.</span><span class="n">setup_html</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.basic_plot</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">plot_forecast</span><span class="p">,</span>
+    <span class="n">plot_forecast_grid</span><span class="p">,</span>
+    <span class="n">plot_metrics_bar</span><span class="p">,</span>
+    <span class="n">plot_reliability_diagram</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span><span class="p">,</span> <span class="n">get_logger</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+<span class="n">configure</span><span class="p">()</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;tutorials&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Load-data">
+<h3><span class="section-number">11.2.1. </span>Load data<a class="headerlink" href="#Load-data" title="Link to this heading">#</a></h3>
+<p>The dataset covers Madeira, Portugal (32.37°N, 16.27°W) at 30-minute resolution. We load only the columns needed: timestamp, net load (target), and two exogenous variables.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">GT</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Train-/-val-/-test-splits">
+<h3><span class="section-number">11.2.2. </span>Train / val / test splits<a class="headerlink" href="#Train-/-val-/-test-splits" title="Link to this heading">#</a></h3>
+<p>We use the same fixed temporal split as all other tutorials. The <strong>validation set doubles as the calibration set</strong> — it is held out of training and used to compute nonconformity scores.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">df_splits</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Split&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;val / calibration&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Period&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;before 2021-01-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-01-01 – 2021-06-30&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-07-01 onwards&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Role&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Model training&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Early stopping + conformal calibration (nonconformity scores)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Final evaluation of coverage and sharpness&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">df_splits</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Data splits**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Validation set is reused as the calibration set for all three conformal methods&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df_splits</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">df_splits</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2021-01-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">val_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2021-01-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2021-07-01&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">test_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2021-07-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># The calibration set is the validation set</span>
+<span class="n">calibrate_df</span> <span class="o">=</span> <span class="n">val_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;train      : </span><span class="si">{</span><span class="n">train_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows  &quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">train_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">train_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;val        : </span><span class="si">{</span><span class="n">val_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows  (</span><span class="si">{</span><span class="n">val_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">val_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;test       : </span><span class="si">{</span><span class="n">test_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows  &quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">test_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">test_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;calibration: same as val — </span><span class="si">{</span><span class="n">calibrate_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Shared-data-and-training-configs">
+<h3><span class="section-number">11.2.3. </span>Shared data and training configs<a class="headerlink" href="#Shared-data-and-training-configs" title="Link to this heading">#</a></h3>
+<p>All three conformal methods share the same <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> and <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>. We define them once and reuse them throughout the notebook.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">,</span>
+    <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
+    <span class="n">longitude</span><span class="o">=-</span><span class="mf">16.274998</span><span class="p">,</span>
+    <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">],</span>
+    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">],</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+<span class="p">)</span>
+
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+    <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">data_config</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="3.-Method-1-—-Split-Conformal-(method=%22residual%22)">
+<h2><span class="section-number">11.3. </span>3. Method 1 — Split Conformal (<code class="docutils literal notranslate"><span class="pre">method=&quot;residual&quot;</span></code>)<a class="headerlink" href="#3.-Method-1-—-Split-Conformal-(method=%22residual%22)" title="Link to this heading">#</a></h2>
+<p>Split conformal (also called inductive conformal prediction) is the simplest approach:</p>
+<ol class="arabic simple">
+<li><p>Train any point forecasting model on <code class="docutils literal notranslate"><span class="pre">train_df</span></code>.</p></li>
+<li><p>Compute nonconformity scores <span class="math notranslate nohighlight">\(s_i = |y_i - \hat{y}_i|\)</span> on the calibration set.</p></li>
+<li><p>At test time, construct the interval as <span class="math notranslate nohighlight">\(\hat{y} \pm q_{1-\alpha}(s)\)</span> where <span class="math notranslate nohighlight">\(q_{1-\alpha}\)</span> is the <span class="math notranslate nohighlight">\((1-\alpha)(1 + 1/n)\)</span>-quantile of the calibration scores.</p></li>
+</ol>
+<div class="line-block">
+<div class="line"><strong>Pros</strong>: works with any base model, fast calibration, finite-sample coverage guarantee.</div>
+<div class="line"><strong>Cons</strong>: produces constant-width intervals — cannot adapt to regions of higher or lower uncertainty.</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformalConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># method=&quot;residual&quot; corresponds to Split Conformal Prediction</span>
+<span class="n">conformal_config_split</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;residual&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+<span class="n">forecaster_split</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">LIGHTGBMConfig</span><span class="p">()],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">conformal_params</span><span class="o">=</span><span class="n">conformal_config_split</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">forecaster_split</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Split Conformal — LightGBM training complete.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Calibration step: computes nonconformity scores on the calibration set</span>
+<span class="n">forecaster_split</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calibrate_df</span><span class="o">=</span><span class="n">calibrate_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Calibration complete.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># predict_interval returns: dict[model_name -&gt; (lower, forecast, upper)]</span>
+<span class="n">intervals_split</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">forecaster_split</span><span class="o">.</span><span class="n">predict_interval</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Split conformal — available model keys: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">intervals_split</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+<span class="c1"># Extract arrays for the first (and only) model</span>
+<span class="n">model_key_split</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">intervals_split</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">lower_split</span><span class="p">,</span> <span class="n">fc_split</span><span class="p">,</span> <span class="n">upper_split</span> <span class="o">=</span> <span class="n">intervals_split</span><span class="p">[</span><span class="n">model_key_split</span><span class="p">]</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lower shape: </span><span class="si">{</span><span class="n">lower_split</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, forecast shape: </span><span class="si">{</span><span class="n">fc_split</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, upper shape: </span><span class="si">{</span><span class="n">upper_split</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="4.-Method-2-—-CQR:-Conformal-Quantile-Regression-(method=%22quantile%22)">
+<h2><span class="section-number">11.4. </span>4. Method 2 — CQR: Conformal Quantile Regression (<code class="docutils literal notranslate"><span class="pre">method=&quot;quantile&quot;</span></code>)<a class="headerlink" href="#4.-Method-2-—-CQR:-Conformal-Quantile-Regression-(method=%22quantile%22)" title="Link to this heading">#</a></h2>
+<p>CQR (Angelopoulos &amp; Bates, 2021) extends split conformal to models that already output quantile estimates:</p>
+<ol class="arabic simple">
+<li><p>Train a quantile regression model to output lower (<span class="math notranslate nohighlight">\(\hat{q}_{\alpha/2}\)</span>) and upper (<span class="math notranslate nohighlight">\(\hat{q}_{1-\alpha/2}\)</span>) quantiles.</p></li>
+<li><p>Compute calibration nonconformity scores as <span class="math notranslate nohighlight">\(s_i = \max(\hat{q}_{\alpha/2} - y_i,\; y_i - \hat{q}_{1-\alpha/2})\)</span>.</p></li>
+<li><p>Adjust the QR interval by adding the calibration quantile of these scores.</p></li>
+</ol>
+<p><strong>Result</strong>: CQR adapts the interval width to the local uncertainty estimated by the QR model, while still maintaining the marginal coverage guarantee. Intervals are typically <strong>sharper</strong> than split conformal.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">QRLIGHTGBMConfig</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># method=&quot;quantile&quot; corresponds to Conformal Quantile Regression (CQR)</span>
+<span class="n">conformal_config_cqr</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="n">score_type</span><span class="o">=</span><span class="s2">&quot;unscaled&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+<span class="n">forecaster_cqr</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">QRLIGHTGBMConfig</span><span class="p">()],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">conformal_params</span><span class="o">=</span><span class="n">conformal_config_cqr</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">forecaster_cqr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CQR — QR-LightGBM training complete.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_cqr</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calibrate_df</span><span class="o">=</span><span class="n">calibrate_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CQR calibration complete.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">intervals_cqr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">forecaster_cqr</span><span class="o">.</span><span class="n">predict_interval</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+
+<span class="n">model_key_cqr</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">intervals_cqr</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">lower_cqr</span><span class="p">,</span> <span class="n">fc_cqr</span><span class="p">,</span> <span class="n">upper_cqr</span> <span class="o">=</span> <span class="n">intervals_cqr</span><span class="p">[</span><span class="n">model_key_cqr</span><span class="p">]</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CQR arrays — lower: </span><span class="si">{</span><span class="n">lower_cqr</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, forecast: </span><span class="si">{</span><span class="n">fc_cqr</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, upper: </span><span class="si">{</span><span class="n">upper_cqr</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="5.-Method-3-—-CRC:-Conformal-Residual-Calibration-(method=%22residual-fitting%22)">
+<h2><span class="section-number">11.5. </span>5. Method 3 — CRC: Conformal Residual Calibration (<code class="docutils literal notranslate"><span class="pre">method=&quot;residual-fitting&quot;</span></code>)<a class="headerlink" href="#5.-Method-3-—-CRC:-Conformal-Residual-Calibration-(method=%22residual-fitting%22)" title="Link to this heading">#</a></h2>
+<p>CRC takes a different approach: instead of a fixed correction term, it <strong>fits a secondary model</strong> that predicts the magnitude of the residuals. This gives the interval an adaptive width — wider where the model is uncertain, narrower where it is confident.</p>
+<p>CRC requires a base model that outputs both a <strong>location</strong> (point forecast) and a <strong>scale</strong> (predicted uncertainty). The <code class="docutils literal notranslate"><span class="pre">MLPGAMCRCConfig</span></code> model is purpose-built for this: it is a Group Additive Model with a conformal residual calibration head.</p>
+<blockquote>
+<div><p><strong>Note</strong>: CRC is the most expressive of the three methods but also the most computationally demanding, since it involves training a neural network. We set <code class="docutils literal notranslate"><span class="pre">max_epochs=5</span></code> here for a quick demo.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPGAMCRCConfig</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># method=&quot;residual-fitting&quot; corresponds to Conformal Residual Calibration (CRC)</span>
+<span class="n">conformal_config_crc</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;residual-fitting&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+<span class="n">crc_config</span> <span class="o">=</span> <span class="n">MLPGAMCRCConfig</span><span class="o">.</span><span class="n">from_data_config</span><span class="p">(</span><span class="n">data_config</span><span class="p">)</span>
+<span class="n">crc_config</span><span class="o">.</span><span class="n">max_epochs</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">crc_config</span><span class="o">.</span><span class="n">rich_progress_bar</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CRC model config ready.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_crc</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">crc_config</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">conformal_params</span><span class="o">=</span><span class="n">conformal_config_crc</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">forecaster_crc</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CRC — MLPGAMCRCConfig training complete.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_crc</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calibrate_df</span><span class="o">=</span><span class="n">calibrate_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CRC calibration complete.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">intervals_crc</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">forecaster_crc</span><span class="o">.</span><span class="n">predict_interval</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+
+<span class="n">model_key_crc</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">intervals_crc</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">lower_crc</span><span class="p">,</span> <span class="n">fc_crc</span><span class="p">,</span> <span class="n">upper_crc</span> <span class="o">=</span> <span class="n">intervals_crc</span><span class="p">[</span><span class="n">model_key_crc</span><span class="p">]</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CRC arrays — lower: </span><span class="si">{</span><span class="n">lower_crc</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, forecast: </span><span class="si">{</span><span class="n">fc_crc</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, upper: </span><span class="si">{</span><span class="n">upper_crc</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="6.-Evaluating-Coverage-—-PICP-Comparison">
+<h2><span class="section-number">11.6. </span>6. Evaluating Coverage — PICP Comparison<a class="headerlink" href="#6.-Evaluating-Coverage-—-PICP-Comparison" title="Link to this heading">#</a></h2>
+<p>We use <code class="docutils literal notranslate"><span class="pre">get_interval_metrics</span></code> to compute standard interval evaluation metrics for each method.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">df_cov_metrics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Metric&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;`picp`&quot;</span><span class="p">,</span> <span class="s2">&quot;`ace`&quot;</span><span class="p">,</span> <span class="s2">&quot;`nmpi`&quot;</span><span class="p">,</span> <span class="s2">&quot;`winkle-score`&quot;</span><span class="p">,</span> <span class="s2">&quot;`cwe`&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Good value&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;≥ 1 − α&quot;</span><span class="p">,</span> <span class="s2">&quot;≈ 0&quot;</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Interpretation&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Prediction Interval Coverage Probability — must meet or exceed the nominal level&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Absolute Coverage Error — deviation from nominal; positive = under-coverage&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Normalised Mean Prediction Interval width — sharper is better at equal coverage&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Penalises both excess width and coverage violations jointly&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Combined Width-coverage Error (0–1, higher is better)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">df_cov_metrics</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Coverage evaluation metrics**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;From `twiga.core.metrics.get_interval_metrics` · nominal level = 90 % (α = 0.10)&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df_cov_metrics</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">df_cov_metrics</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_interval_metrics</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">flatten_arrays</span><span class="p">(</span><span class="o">*</span><span class="n">arrays</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flatten potentially multi-dimensional forecast arrays to 1-D.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">arrays</span><span class="p">]</span>
+
+
+<span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;Split Conformal&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">lower_split</span><span class="p">,</span> <span class="n">fc_split</span><span class="p">,</span> <span class="n">upper_split</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">&quot;CQR&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">lower_cqr</span><span class="p">,</span> <span class="n">fc_cqr</span><span class="p">,</span> <span class="n">upper_cqr</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">&quot;CRC&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">lower_crc</span><span class="p">,</span> <span class="n">fc_crc</span><span class="p">,</span> <span class="n">upper_crc</span><span class="p">)),</span>
+<span class="p">]:</span>
+    <span class="c1"># We need actual values — use the test split ground truth</span>
+    <span class="c1"># Ground truth shape must match forecast; align by min length</span>
+    <span class="n">fc_flat</span><span class="p">,</span> <span class="n">lo_flat</span><span class="p">,</span> <span class="n">hi_flat</span> <span class="o">=</span> <span class="n">flatten_arrays</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fc_flat</span><span class="p">)</span>
+
+    <span class="c1"># Build ground truth from test_df target column (flattened to same length)</span>
+    <span class="n">true_vals</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span>
+
+    <span class="n">m</span> <span class="o">=</span> <span class="n">get_interval_metrics</span><span class="p">(</span>
+        <span class="n">pred</span><span class="o">=</span><span class="n">fc_flat</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_vals</span><span class="p">)],</span>
+        <span class="n">true</span><span class="o">=</span><span class="n">true_vals</span><span class="p">,</span>
+        <span class="n">lower</span><span class="o">=</span><span class="n">lo_flat</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_vals</span><span class="p">)],</span>
+        <span class="n">upper</span><span class="o">=</span><span class="n">hi_flat</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_vals</span><span class="p">)],</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Method&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">:&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Summary table (alpha=0.10, target coverage=90%):&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">summary</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="7.-Reliability-Diagram-Across-Methods">
+<h2><span class="section-number">11.7. </span>7. Reliability Diagram Across Methods<a class="headerlink" href="#7.-Reliability-Diagram-Across-Methods" title="Link to this heading">#</a></h2>
+<p>A reliability diagram plots the <strong>empirical coverage</strong> (PICP) against the <strong>nominal coverage</strong> (1 − α) for a range of significance levels. A well-calibrated method should track the diagonal.</p>
+<p><strong>How to read the reliability diagram:</strong></p>
+<ul class="simple">
+<li><p>Points on the diagonal → perfect calibration at that nominal level</p></li>
+<li><p>Points above the diagonal → over-coverage (intervals are unnecessarily wide; safe but wasteful)</p></li>
+<li><p>Points below the diagonal → under-coverage (the nominal guarantee is violated)</p></li>
+<li><p>All conformal methods should meet or exceed the diagonal by construction — deviations below indicate implementation issues or violation of the exchangeability assumption</p></li>
+<li><p>A method that is consistently above the diagonal is still valid but produces wider intervals than necessary; prefer methods that track the diagonal more closely</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">alpha_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.40</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+
+<span class="n">method_specs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;Split Conformal&quot;</span><span class="p">,</span> <span class="n">lower_split</span><span class="p">,</span> <span class="n">fc_split</span><span class="p">,</span> <span class="n">upper_split</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;CQR&quot;</span><span class="p">,</span> <span class="n">lower_cqr</span><span class="p">,</span> <span class="n">fc_cqr</span><span class="p">,</span> <span class="n">upper_cqr</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;CRC&quot;</span><span class="p">,</span> <span class="n">lower_crc</span><span class="p">,</span> <span class="n">fc_crc</span><span class="p">,</span> <span class="n">upper_crc</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="n">all_nominal</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">all_empirical</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">all_groups</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">upper</span> <span class="ow">in</span> <span class="n">method_specs</span><span class="p">:</span>
+    <span class="n">empirical_coverages</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">alpha_values</span><span class="p">:</span>
+        <span class="n">fc_f</span><span class="p">,</span> <span class="n">lo_f</span><span class="p">,</span> <span class="n">hi_f</span> <span class="o">=</span> <span class="n">flatten_arrays</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+        <span class="n">true_vals</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">fc_f</span><span class="p">)]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">get_interval_metrics</span><span class="p">(</span>
+            <span class="n">pred</span><span class="o">=</span><span class="n">fc_f</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_vals</span><span class="p">)],</span>
+            <span class="n">true</span><span class="o">=</span><span class="n">true_vals</span><span class="p">,</span>
+            <span class="n">lower</span><span class="o">=</span><span class="n">lo_f</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_vals</span><span class="p">)],</span>
+            <span class="n">upper</span><span class="o">=</span><span class="n">hi_f</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_vals</span><span class="p">)],</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">a</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">empirical_coverages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;picp&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">nominal_coverages</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha_values</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">all_nominal</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">nominal_coverages</span><span class="p">)</span>
+    <span class="n">all_empirical</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">empirical_coverages</span><span class="p">)</span>
+    <span class="n">all_groups</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">name</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">nominal_coverages</span><span class="p">))</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_reliability_diagram</span><span class="p">(</span>
+    <span class="n">nominal</span><span class="o">=</span><span class="n">all_nominal</span><span class="p">,</span>
+    <span class="n">empirical</span><span class="o">=</span><span class="n">all_empirical</span><span class="p">,</span>
+    <span class="n">group_col</span><span class="o">=</span><span class="s2">&quot;Method&quot;</span><span class="p">,</span>
+    <span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Split Conformal&quot;</span><span class="p">,</span> <span class="s2">&quot;CQR&quot;</span><span class="p">,</span> <span class="s2">&quot;CRC&quot;</span><span class="p">],</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Reliability diagram — conformal methods&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="8.-Visualising-Interval-Width">
+<h2><span class="section-number">11.8. </span>8. Visualising Interval Width<a class="headerlink" href="#8.-Visualising-Interval-Width" title="Link to this heading">#</a></h2>
+<p>We plot the prediction intervals from all three methods over the <strong>first 48 steps (1 day)</strong> of the test set.</p>
+<p>Key observations to look for:</p>
+<ul class="simple">
+<li><p><strong>Split Conformal</strong> produces constant-width bands.</p></li>
+<li><p><strong>CQR</strong> inherits the adaptive shape of the underlying quantile model — typically sharper.</p></li>
+<li><p><strong>CRC</strong> can vary width according to predicted local uncertainty from the secondary residual model.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">n_steps</span> <span class="o">=</span> <span class="mi">48</span>  <span class="c1"># 1 day at 30-min resolution</span>
+
+<span class="c1"># Flatten and take first n_steps from each method</span>
+<span class="n">lo_s</span><span class="p">,</span> <span class="n">fc_s</span><span class="p">,</span> <span class="n">hi_s</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[:</span><span class="n">n_steps</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">(</span><span class="n">lower_split</span><span class="p">,</span> <span class="n">fc_split</span><span class="p">,</span> <span class="n">upper_split</span><span class="p">)]</span>
+<span class="n">lo_q</span><span class="p">,</span> <span class="n">fc_q</span><span class="p">,</span> <span class="n">hi_q</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[:</span><span class="n">n_steps</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">(</span><span class="n">lower_cqr</span><span class="p">,</span> <span class="n">fc_cqr</span><span class="p">,</span> <span class="n">upper_cqr</span><span class="p">)]</span>
+<span class="n">lo_c</span><span class="p">,</span> <span class="n">fc_c</span><span class="p">,</span> <span class="n">hi_c</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[:</span><span class="n">n_steps</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">(</span><span class="n">lower_crc</span><span class="p">,</span> <span class="n">fc_crc</span><span class="p">,</span> <span class="n">upper_crc</span><span class="p">)]</span>
+<span class="n">actual</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:</span><span class="n">n_steps</span><span class="p">]</span>
+<span class="n">steps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">))</span>
+
+<span class="c1"># Build combined DataFrame for plot_forecast_grid</span>
+<span class="n">split_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;Actual&quot;</span><span class="p">:</span> <span class="n">actual</span><span class="p">,</span> <span class="s2">&quot;forecast&quot;</span><span class="p">:</span> <span class="n">fc_s</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">:</span> <span class="n">lo_s</span><span class="p">,</span> <span class="s2">&quot;upper&quot;</span><span class="p">:</span> <span class="n">hi_s</span><span class="p">,</span> <span class="s2">&quot;Model&quot;</span><span class="p">:</span> <span class="s2">&quot;Split Conformal&quot;</span><span class="p">})</span>
+<span class="n">cqr_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;Actual&quot;</span><span class="p">:</span> <span class="n">actual</span><span class="p">,</span> <span class="s2">&quot;forecast&quot;</span><span class="p">:</span> <span class="n">fc_q</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">:</span> <span class="n">lo_q</span><span class="p">,</span> <span class="s2">&quot;upper&quot;</span><span class="p">:</span> <span class="n">hi_q</span><span class="p">,</span> <span class="s2">&quot;Model&quot;</span><span class="p">:</span> <span class="s2">&quot;CQR&quot;</span><span class="p">})</span>
+<span class="n">crc_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;Actual&quot;</span><span class="p">:</span> <span class="n">actual</span><span class="p">,</span> <span class="s2">&quot;forecast&quot;</span><span class="p">:</span> <span class="n">fc_c</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">:</span> <span class="n">lo_c</span><span class="p">,</span> <span class="s2">&quot;upper&quot;</span><span class="p">:</span> <span class="n">hi_c</span><span class="p">,</span> <span class="s2">&quot;Model&quot;</span><span class="p">:</span> <span class="s2">&quot;CRC&quot;</span><span class="p">})</span>
+
+<span class="n">all_intervals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">split_df</span><span class="p">,</span> <span class="n">cqr_df</span><span class="p">,</span> <span class="n">crc_df</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast_grid</span><span class="p">(</span>
+    <span class="n">all_intervals</span><span class="p">,</span>
+    <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
+    <span class="n">forecast_col</span><span class="o">=</span><span class="s2">&quot;forecast&quot;</span><span class="p">,</span>
+    <span class="n">model_col</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
+    <span class="n">n_samples_per_model</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Prediction intervals — first 48 steps of test set (1 day)&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;Net Load (kW)&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+<section id="Mean-interval-width-comparison">
+<h3><span class="section-number">11.8.1. </span>Mean interval width comparison<a class="headerlink" href="#Mean-interval-width-comparison" title="Link to this heading">#</a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="ow">in</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;Split Conformal&quot;</span><span class="p">,</span> <span class="n">lower_split</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">upper_split</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">&quot;CQR&quot;</span><span class="p">,</span> <span class="n">lower_cqr</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">upper_cqr</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">&quot;CRC&quot;</span><span class="p">,</span> <span class="n">lower_crc</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">upper_crc</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+<span class="p">]:</span>
+    <span class="n">widths</span> <span class="o">=</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">&lt;20</span><span class="si">}</span><span class="s2"> mean width = </span><span class="si">{</span><span class="n">widths</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">  std = </span><span class="si">{</span><span class="n">widths</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="9.-When-to-Use-Which-Method">
+<h2><span class="section-number">11.9. </span>9. When to Use Which Method<a class="headerlink" href="#9.-When-to-Use-Which-Method" title="Link to this heading">#</a></h2>
+<p><strong>General guidance:</strong></p>
+<ul class="simple">
+<li><p>Start with <strong>Split Conformal</strong> — it requires zero additional modelling effort and provides the coverage guarantee immediately with any point forecasting model.</p></li>
+<li><p>If you already have a quantile regression model (NB07), upgrade to <strong>CQR</strong> for free: it only adds a calibration step on top of your existing QR model and gives locally adaptive intervals.</p></li>
+<li><p>Use <strong>CRC</strong> when you have reason to believe uncertainty varies significantly across time (e.g. solar-driven net load, day/night cycles) and are willing to pay the cost of training a neural network backbone.</p></li>
+</ul>
+<p>All three methods satisfy the marginal coverage guarantee under exchangeability. None requires specifying a parametric distribution family.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">df_selector</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Method&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Split Conformal&quot;</span><span class="p">,</span> <span class="s2">&quot;CQR&quot;</span><span class="p">,</span> <span class="s2">&quot;CRC&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Config method=&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;&quot;residual&quot;&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;quantile&quot;&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;residual-fitting&quot;&#39;</span><span class="p">],</span>
+        <span class="s2">&quot;Requires&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Any point forecasting model&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;A QR model (e.g. QRLIGHTGBMConfig)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;A location-scale model (e.g. MLPGAMCRCConfig)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Best when&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Fast, general-purpose guarantee; ideal starting point&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Want tighter, locally adaptive intervals on top of QR&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Heteroscedastic data; want residual model to drive width&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">df_selector</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Conformal method selector**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;All three meet the marginal coverage guarantee under exchangeability&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df_selector</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">df_selector</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="Interval-Comparison">
+<h2><span class="section-number">11.10. </span>Interval Comparison<a class="headerlink" href="#Interval-Comparison" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">plot_forecast_intervals</span></code> overlays Split Conformal, CQR, and CRC bands side by side — immediately revealing differences in sharpness between methods.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.basic_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_forecast_intervals</span>
+
+<span class="n">n_plot</span> <span class="o">=</span> <span class="mi">48</span>  <span class="c1"># one day</span>
+
+<span class="c1"># Flatten and slice all three methods to the same length</span>
+<span class="n">lo_s_f</span><span class="p">,</span> <span class="n">fc_s_f</span><span class="p">,</span> <span class="n">hi_s_f</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[:</span><span class="n">n_plot</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">(</span><span class="n">lower_split</span><span class="p">,</span> <span class="n">fc_split</span><span class="p">,</span> <span class="n">upper_split</span><span class="p">)]</span>
+<span class="n">lo_q_f</span><span class="p">,</span> <span class="n">fc_q_f</span><span class="p">,</span> <span class="n">hi_q_f</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[:</span><span class="n">n_plot</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">(</span><span class="n">lower_cqr</span><span class="p">,</span> <span class="n">fc_cqr</span><span class="p">,</span> <span class="n">upper_cqr</span><span class="p">)]</span>
+<span class="n">lo_c_f</span><span class="p">,</span> <span class="n">fc_c_f</span><span class="p">,</span> <span class="n">hi_c_f</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[:</span><span class="n">n_plot</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">(</span><span class="n">lower_crc</span><span class="p">,</span> <span class="n">fc_crc</span><span class="p">,</span> <span class="n">upper_crc</span><span class="p">)]</span>
+
+<span class="n">actual_f</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="n">data_config</span><span class="o">.</span><span class="n">target_feature</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:</span><span class="n">n_plot</span><span class="p">]</span>
+
+<span class="n">cmp_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Actual&quot;</span><span class="p">:</span> <span class="n">actual_f</span><span class="p">,</span>
+        <span class="s2">&quot;lo_s&quot;</span><span class="p">:</span> <span class="n">lo_s_f</span><span class="p">,</span>
+        <span class="s2">&quot;hi_s&quot;</span><span class="p">:</span> <span class="n">hi_s_f</span><span class="p">,</span>
+        <span class="s2">&quot;fc_s&quot;</span><span class="p">:</span> <span class="n">fc_s_f</span><span class="p">,</span>
+        <span class="s2">&quot;lo_q&quot;</span><span class="p">:</span> <span class="n">lo_q_f</span><span class="p">,</span>
+        <span class="s2">&quot;hi_q&quot;</span><span class="p">:</span> <span class="n">hi_q_f</span><span class="p">,</span>
+        <span class="s2">&quot;fc_q&quot;</span><span class="p">:</span> <span class="n">fc_q_f</span><span class="p">,</span>
+        <span class="s2">&quot;lo_c&quot;</span><span class="p">:</span> <span class="n">lo_c_f</span><span class="p">,</span>
+        <span class="s2">&quot;hi_c&quot;</span><span class="p">:</span> <span class="n">hi_c_f</span><span class="p">,</span>
+        <span class="s2">&quot;fc_c&quot;</span><span class="p">:</span> <span class="n">fc_c_f</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">interval_specs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;Split Conformal&quot;</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">:</span> <span class="s2">&quot;lo_s&quot;</span><span class="p">,</span> <span class="s2">&quot;upper&quot;</span><span class="p">:</span> <span class="s2">&quot;hi_s&quot;</span><span class="p">,</span> <span class="s2">&quot;center&quot;</span><span class="p">:</span> <span class="s2">&quot;fc_s&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;CQR&quot;</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">:</span> <span class="s2">&quot;lo_q&quot;</span><span class="p">,</span> <span class="s2">&quot;upper&quot;</span><span class="p">:</span> <span class="s2">&quot;hi_q&quot;</span><span class="p">,</span> <span class="s2">&quot;center&quot;</span><span class="p">:</span> <span class="s2">&quot;fc_q&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;CRC&quot;</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">:</span> <span class="s2">&quot;lo_c&quot;</span><span class="p">,</span> <span class="s2">&quot;upper&quot;</span><span class="p">:</span> <span class="s2">&quot;hi_c&quot;</span><span class="p">,</span> <span class="s2">&quot;center&quot;</span><span class="p">:</span> <span class="s2">&quot;fc_c&quot;</span><span class="p">},</span>
+<span class="p">]</span>
+
+<span class="n">p_cmp</span> <span class="o">=</span> <span class="n">plot_forecast_intervals</span><span class="p">(</span>
+    <span class="n">cmp_df</span><span class="p">,</span>
+    <span class="n">interval_specs</span><span class="o">=</span><span class="n">interval_specs</span><span class="p">,</span>
+    <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Conformal Methods — 90 % Interval Comparison (first 48 steps)&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;Net Load (kW)&quot;</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="o">=</span><span class="p">(</span><span class="mi">820</span><span class="p">,</span> <span class="mi">380</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">p_cmp</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Reliability-Diagram">
+<h2><span class="section-number">11.11. </span>Reliability Diagram<a class="headerlink" href="#Reliability-Diagram" title="Link to this heading">#</a></h2>
+<p>Plots empirical coverage against nominal coverage for all three methods. A well-calibrated method tracks the diagonal; conformal methods are guaranteed to meet or exceed the target coverage by construction.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.basic_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_reliability_diagram</span>
+
+<span class="c1"># Compute empirical coverage per nominal level for all three methods</span>
+<span class="n">nominal_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.60</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>  <span class="c1"># coverage = 1 - alpha</span>
+
+<span class="n">y_true_flat</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="n">data_config</span><span class="o">.</span><span class="n">target_feature</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">empirical_all</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">lower_arr</span><span class="p">,</span> <span class="n">upper_arr</span> <span class="ow">in</span> <span class="p">[</span>
+    <span class="p">(</span><span class="n">lower_split</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">upper_split</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+    <span class="p">(</span><span class="n">lower_cqr</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">upper_cqr</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+    <span class="p">(</span><span class="n">lower_crc</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">upper_crc</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+<span class="p">]:</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y_true_flat</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">lower_arr</span><span class="p">))</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">y_true_flat</span><span class="p">[:</span><span class="n">n</span><span class="p">],</span> <span class="n">lower_arr</span><span class="p">[:</span><span class="n">n</span><span class="p">],</span> <span class="n">upper_arr</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span>
+    <span class="c1"># For each nominal level, scale the interval by the ratio nominal / 0.9</span>
+    <span class="c1"># (intervals were computed at alpha=0.1, i.e. 90 % coverage)</span>
+    <span class="n">empirical_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">((</span><span class="n">y</span> <span class="o">&gt;=</span> <span class="n">lo</span> <span class="o">-</span> <span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">lvl</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y</span> <span class="o">&lt;=</span> <span class="n">hi</span> <span class="o">+</span> <span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">lvl</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">lvl</span> <span class="ow">in</span> <span class="n">nominal_levels</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+<span class="n">p_rel</span> <span class="o">=</span> <span class="n">plot_reliability_diagram</span><span class="p">(</span>
+    <span class="n">nominal</span><span class="o">=</span><span class="n">nominal_levels</span><span class="p">,</span>
+    <span class="n">empirical</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">empirical_all</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>  <span class="c1"># shape (n_levels, n_methods)</span>
+    <span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Split Conformal&quot;</span><span class="p">,</span> <span class="s2">&quot;CQR&quot;</span><span class="p">,</span> <span class="s2">&quot;CRC&quot;</span><span class="p">],</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Reliability Diagram — Conformal Methods&quot;</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="o">=</span><span class="p">(</span><span class="mi">480</span><span class="p">,</span> <span class="mi">440</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">p_rel</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Wrapping-up">
+<h2><span class="section-number">11.12. </span>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<p><strong>What you did</strong></p>
+<ul class="simple">
+<li><p>☒ Understood the conformal prediction finite-sample coverage guarantee and the exchangeability assumption</p></li>
+<li><p>☒ Calibrated a LightGBM model with Split Conformal using <code class="docutils literal notranslate"><span class="pre">calibrate()</span></code></p></li>
+<li><p>☒ Applied CQR on top of a QR-LightGBM model for locally adaptive intervals</p></li>
+<li><p>☒ Applied CRC with an MLPGAMCRCConfig model for heteroscedastic adaptive intervals</p></li>
+<li><p>☒ Compared all three methods on coverage (reliability diagram) and sharpness (mean interval width)</p></li>
+</ul>
+<p><strong>Key takeaways</strong></p>
+<ol class="arabic simple">
+<li><p>Conformal prediction produces finite-sample coverage-guaranteed intervals without any distributional assumption — it works with any base model.</p></li>
+<li><p>The calibration set (held-out labeled data) is the core ingredient: nonconformity scores from this set drive the coverage guarantee.</p></li>
+<li><p>Split Conformal is the safest starting point — zero modelling overhead, immediate guarantee.</p></li>
+<li><p>CQR inherits adaptive width from the underlying QR model; CRC trains a secondary residual model for maximum adaptivity.</p></li>
+<li><p>The reliability diagram is the primary diagnostic: all conformal methods should meet or exceed the diagonal; persistent under-coverage signals a violation of the exchangeability assumption.</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="What's-next?">
+<h2><span class="section-number">11.13. </span>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<p><strong>NB10 — Hyperparameter Optimisation</strong> (<code class="docutils literal notranslate"><span class="pre">10-hyperparameter-tuning.ipynb</span></code>)</p>
+<p>Learn how to use Optuna-powered HPO via <code class="docutils literal notranslate"><span class="pre">forecaster.tune()</span></code> to automatically search for optimal model hyperparameters across any model type, with resumable SQLite-backed studies.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
+
+<span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
+<span class="n">_TEAL_MID</span> <span class="o">=</span> <span class="s2">&quot;#069fac&quot;</span>
+<span class="n">_TEAL_LIGHT</span> <span class="o">=</span> <span class="s2">&quot;#e8f5f8&quot;</span>
+<span class="n">_TEAL_BEST</span> <span class="o">=</span> <span class="s2">&quot;#d0ecf1&quot;</span>
+<span class="n">_TEXT_DARK</span> <span class="o">=</span> <span class="s2">&quot;#2d3748&quot;</span>
+<span class="n">_TEXT_MUTED</span> <span class="o">=</span> <span class="s2">&quot;#718096&quot;</span>
+<span class="n">_WHITE</span> <span class="o">=</span> <span class="s2">&quot;#ffffff&quot;</span>
+
+<span class="n">steps</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;08&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Quantile Regression&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;QR-LightGBM · FPQR — prediction intervals&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="s2">&quot;pinball loss&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;09&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Parametric Distributions&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Normal · Laplace · Gamma heads — NLL training&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;parametric&quot;</span><span class="p">,</span> <span class="s2">&quot;NLL&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;10&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Conformal Prediction&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;CQR · CRC — finite-sample coverage guarantees&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;conformal&quot;</span><span class="p">,</span> <span class="s2">&quot;CQR&quot;</span><span class="p">,</span> <span class="s2">&quot;CRC&quot;</span><span class="p">,</span> <span class="s2">&quot;coverage&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;11&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Hyperparameter Tuning&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Optuna-backed HPO · typed search spaces · resumable SQLite&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;optuna&quot;</span><span class="p">,</span> <span class="s2">&quot;HPO&quot;</span><span class="p">,</span> <span class="s2">&quot;tuning&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;12&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Ensemble Strategies&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Mean · median · weighted-mean ensembles&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ensemble&quot;</span><span class="p">,</span> <span class="s2">&quot;weighted&quot;</span><span class="p">,</span> <span class="s2">&quot;aggregation&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+<span class="n">track_name</span> <span class="o">=</span> <span class="s2">&quot;Probabilistic Track&quot;</span>
+<span class="n">footer</span> <span class="o">=</span> <span class="s1">&#39;Next: push coverage further with &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;Hyperparameter Tuning&lt;/span&gt; (11) or combine models with &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;Ensemble Strategies&lt;/span&gt; (12).&#39;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bg</span><span class="p">,</span> <span class="n">fg</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;display:inline-block;background:</span><span class="si">{</span><span class="n">bg</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">fg</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;&quot;&gt;</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s1">&lt;/span&gt;&#39;</span>
+
+
+<span class="n">ch</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;active&quot;</span><span class="p">]</span>
+    <span class="n">cb</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_WHITE</span>
+    <span class="n">cbo</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="s2">&quot;#d1ecf1&quot;</span>
+    <span class="n">nb</span> <span class="o">=</span> <span class="n">_TEAL_MID</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_LIGHT</span>
+    <span class="n">nf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">tf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_DARK</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="s2">&quot;#cce8ef&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_MUTED</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="s2">&quot;#0d5f75&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_BEST</span>
+    <span class="n">bf</span> <span class="o">=</span> <span class="s2">&quot;#b8e4ed&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">yh</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;float:right;background:</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:700;padding:2px 10px;border-radius:12px;&quot;&gt;★ you are here&lt;/span&gt;&#39;</span>
+        <span class="k">if</span> <span class="n">a</span>
+        <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">bdg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">bf</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">])</span>
+    <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;background:</span><span class="si">{</span><span class="n">cb</span><span class="si">}</span><span class="s1">;border:2px solid </span><span class="si">{</span><span class="n">cbo</span><span class="si">}</span><span class="s1">;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:</span><span class="si">{</span><span class="s2">&quot;0 4px 14px rgba(16,117,145,.25)&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;0 1px 4px rgba(0,0,0,.06)&quot;</span><span class="si">}</span><span class="s1">;&quot;&gt;&lt;div style=&quot;min-width:44px;height:44px;background:</span><span class="si">{</span><span class="n">nb</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">nf</span><span class="si">}</span><span class="s1">;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;flex:1;&quot;&gt;&lt;div style=&quot;font-size:15px;font-weight:700;color:</span><span class="si">{</span><span class="n">tf</span><span class="si">}</span><span class="s1">;margin-bottom:4px;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="si">}{</span><span class="n">yh</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;font-size:12.5px;color:</span><span class="si">{</span><span class="n">df</span><span class="si">}</span><span class="s1">;margin-bottom:8px;line-height:1.5;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;desc&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div&gt;</span><span class="si">{</span><span class="n">bdg</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;display:flex;justify-content:center;height:32px;&quot;&gt;&lt;svg width=&quot;24&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 32&quot; fill=&quot;none&quot;&gt;&lt;line x1=&quot;12&quot; y1=&quot;0&quot; x2=&quot;12&quot; y2=&quot;24&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot; stroke-dasharray=&quot;4 3&quot;/&gt;&lt;polygon points=&quot;6,20 18,20 12,30&quot; fill=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;&#39;</span>
+
+<span class="n">HTML</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;font-family:Inter,</span><span class="se">\&#39;</span><span class="s1">Segoe UI</span><span class="se">\&#39;</span><span class="s1">,sans-serif;max-width:640px;margin:8px 0;&quot;&gt;&lt;div style=&quot;background:linear-gradient(135deg,</span><span class="si">{</span><span class="n">_TEAL</span><span class="si">}</span><span class="s1"> 0%,</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1"> 100%);border-radius:12px 12px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px;&quot;&gt;&lt;svg width=&quot;22&quot; height=&quot;22&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot;&gt;&lt;path d=&quot;M12 2L2 7l10 5 10-5-10-5z&quot;/&gt;&lt;path d=&quot;M2 17l10 5 10-5&quot;/&gt;&lt;path d=&quot;M2 12l10 5 10-5&quot;/&gt;&lt;/svg&gt;&lt;span style=&quot;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:14px;font-weight:700;&quot;&gt;Twiga Learning Path — </span><span class="si">{</span><span class="n">track_name</span><span class="si">}</span><span class="s1">&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;border:2px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;border-top:none;border-radius:0 0 12px 12px;padding:20px 20px 16px;background:#f9fdfe;display:flex;flex-direction:column;&quot;&gt;</span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s1">&lt;div style=&quot;margin-top:16px;font-size:11.5px;color:</span><span class="si">{</span><span class="n">_TEXT_MUTED</span><span class="si">}</span><span class="s1">;text-align:center;border-top:1px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;padding-top:12px;&quot;&gt;</span><span class="si">{</span><span class="n">footer</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="09-parametric-distributions.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">10. </span>09 — Parametric Distributions</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="11-hyperparameter-tuning.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">12. </span>11 — Hyperparameter Tuning with Optuna</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Motivation:-Why-Conformal-Prediction?">11.1. 1. Motivation: Why Conformal Prediction?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Setup">11.2. 2. Setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Load-data">11.2.1. Load data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Train-/-val-/-test-splits">11.2.2. Train / val / test splits</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Shared-data-and-training-configs">11.2.3. Shared data and training configs</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-Method-1-—-Split-Conformal-(method=%22residual%22)">11.3. 3. Method 1 — Split Conformal (<code class="docutils literal notranslate"><span class="pre">method="residual"</span></code>)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Method-2-—-CQR:-Conformal-Quantile-Regression-(method=%22quantile%22)">11.4. 4. Method 2 — CQR: Conformal Quantile Regression (<code class="docutils literal notranslate"><span class="pre">method="quantile"</span></code>)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Method-3-—-CRC:-Conformal-Residual-Calibration-(method=%22residual-fitting%22)">11.5. 5. Method 3 — CRC: Conformal Residual Calibration (<code class="docutils literal notranslate"><span class="pre">method="residual-fitting"</span></code>)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Evaluating-Coverage-—-PICP-Comparison">11.6. 6. Evaluating Coverage — PICP Comparison</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-Reliability-Diagram-Across-Methods">11.7. 7. Reliability Diagram Across Methods</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-Visualising-Interval-Width">11.8. 8. Visualising Interval Width</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Mean-interval-width-comparison">11.8.1. Mean interval width comparison</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9.-When-to-Use-Which-Method">11.9. 9. When to Use Which Method</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Interval-Comparison">11.10. Interval Comparison</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Reliability-Diagram">11.11. Reliability Diagram</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">11.12. Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">11.13. What’s next?</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../_sources/tutorials/notebooks/10-conformal-prediction.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

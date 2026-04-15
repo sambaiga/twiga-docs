@@ -1,0 +1,103 @@
+# Checkpoints
+
+<details>
+<summary>Source file</summary>
+
+- `twiga/forecaster/base.py` - `on_save_checkpoint`, `on_load_checkpoint`
+- `twiga/core/config/forecaster.py` - `ForecasterConfig.checkpoints_path`
+
+</details>
+
+Twiga checkpoints persist the trained model **and** its fitted data pipeline
+together, so a restored forecaster is immediately ready to predict with no
+re-fitting required.
+
+A JSON manifest alongside the pickle records the version, model type, and save
+timestamp, giving you a lightweight audit trail without an external artefact
+store.
+
+---
+
+## Saving
+
+```python
+path = forecaster.on_save_checkpoint()
+# Writes:
+#   checkpoints/model_and_pipeline.pkl
+#   checkpoints/_checkpoint_manifest.json
+```
+
+The manifest increments `version` monotonically on every save:
+
+```json
+{
+  "version": 3,
+  "checkpoint_file": "model_and_pipeline.pkl",
+  "model_type": "lightgbm",
+  "saved_at": "2026-04-11T12:52:34.562294+00:00"
+}
+```
+
+Configure the checkpoint directory via `ForecasterConfig`:
+
+```python
+from twiga.core.config import ForecasterConfig
+
+train_config = ForecasterConfig(
+    checkpoints_path="checkpoints/",
+    split_freq="months",
+    train_size=3,
+    test_size=1,
+)
+```
+
+On each call, `on_save_checkpoint` writes (or overwrites) two files:
+
+| File | Description |
+|------|-------------|
+| `model_and_pipeline.pkl` | Joblib-serialised `(model, pipeline)` tuple |
+| `_checkpoint_manifest.json` | Version, model type, filename, and UTC timestamp |
+
+---
+
+## Loading
+
+```python
+new_forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[model_config],
+    train_params=train_config,
+)
+new_forecaster.on_load_checkpoint()  # reads manifest, restores model + pipeline
+
+predictions, _ = new_forecaster.predict(test_df)
+```
+
+`on_load_checkpoint` reads `_checkpoint_manifest.json` first. If the manifest
+is absent (e.g. checkpoints saved before the manifest was introduced), it falls
+back to loading the most-recently-modified `*.pkl` file in the directory.
+
+---
+
+## In the MLOps pipeline
+
+Checkpoints are the hand-off point between every MLOps stage:
+
+- `training_flow` calls `on_save_checkpoint` after fitting and evaluation.
+- `ModelLoader` (used by `create_app`) reads the manifest at API startup and on
+  every `/reload` call.
+- `retraining_flow` saves a new checkpoint and calls `/reload` only when the
+  retrained model is promoted.
+
+See [Pipeline Orchestration](pipeline.md) and [Architecture](architecture.md)
+for the full sequence diagram.
+
+---
+
+## API reference
+
+```{eval-rst}
+.. automethod:: twiga.forecaster.base.BaseForecaster.on_save_checkpoint
+
+.. automethod:: twiga.forecaster.base.BaseForecaster.on_load_checkpoint
+```

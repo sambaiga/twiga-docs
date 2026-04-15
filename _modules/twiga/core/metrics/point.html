@@ -1,0 +1,1800 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>twiga.core.metrics.point &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/twiga.css?v=724e8a05" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/twiga/core/metrics/point';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../../../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../../../../_static/searchtools.js"></script>
+    <script src="../../../../_static/language_data.js"></script>
+    <script src="../../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../../../../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../../../../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../../../../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">twiga.core.metrics.point</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for twiga.core.metrics.point</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecastResult</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># ArrayLike = np.ndarray | pd.Series</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_inputs</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">y_hat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">require_1d</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate and convert input arrays for metric functions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values.</span>
+<span class="sd">        y_hat: Predicted values.</span>
+<span class="sd">        require_1d: If True, ensure inputs are 1D arrays. Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Validated NumPy arrays for y and y_hat.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If shapes of y and y_hat do not match or if require_1d is True and inputs are not 1D.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">y_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y_hat</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shapes of y </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> and y_hat </span><span class="si">{</span><span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> must match.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">require_1d</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Inputs must be 1D arrays.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">error</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the raw error between actual and predicted values.</span>
+
+<span class="sd">    The error is defined as the difference between actual values `y` and predicted values `y_hat`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Raw errors, `y - y_hat`, with the same shape as inputs.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If `y` and `y_hat` have incompatible shapes.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; error(y, y_hat)</span>
+<span class="sd">        array([-0.1,  0.1, -0.2])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span> <span class="o">-</span> <span class="n">y_hat</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">abs_error</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the absolute error between actual and predicted values.</span>
+
+<span class="sd">    The absolute error is the absolute value of the difference between actual values `y` and predicted values `y_hat`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Absolute errors, `|y - y_hat|`, with the same shape as inputs.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; abs_error(y, y_hat)</span>
+<span class="sd">        array([0.1, 0.1, 0.2])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">res</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Mean Error (ME) between actual and predicted values.</span>
+
+<span class="sd">    The mean error is the average of the raw errors over the specified axis:</span>
+<span class="sd">    \[</span>
+<span class="sd">    ME = \frac{1}{T} \sum_{t=1}^{T} (y_t - \hat{y}_t)</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the number of samples, \( y_t \) is the actual value, and \( \hat{y}_t \)</span>
+<span class="sd">    is the predicted value at time \( t \).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Mean error, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; res(y, y_hat)</span>
+<span class="sd">        -0.033333333333333326  # Average of [-0.1, 0.1, -0.2]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mae</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Mean Absolute Error (MAE) between actual and predicted values.</span>
+
+<span class="sd">    The MAE is the average of the absolute errors over the specified axis:</span>
+<span class="sd">    \[</span>
+<span class="sd">    MAE = \frac{1}{T} \sum_{t=1}^{T} |y_t - \hat{y}_t|</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the number of samples, \( y_t \) is the actual value, and \( \hat{y}_t \) is</span>
+<span class="sd">    the predicted value at time \( t \).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        MAE, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; mae(y, y_hat)</span>
+<span class="sd">        0.13333333333333333  # Average of [0.1, 0.1, 0.2]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">abs_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_scaled</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the scaling factor for error metrics based on historical differences.</span>
+
+<span class="sd">    The scaling factor \( E_m \) is computed over lagged differences \( y[t+h] - y[t] \):</span>
+<span class="sd">    - If `metric=&quot;mae&quot;`: \( E_m = \frac{1}{n-h} \sum_{i=1}^{n-h} |y_{i+h} - y_i| \),</span>
+<span class="sd">    - If `metric=&quot;mse&quot;`: \( E_m = \frac{1}{n-h} \sum_{i=1}^{n-h} (y_{i+h} - y_i)^2 \),</span>
+<span class="sd">    - If `metric=&quot;rmse&quot;`: \( E_m = \sqrt{\frac{1}{n-h} \sum_{i=1}^{n-h} (y_{i+h} - y_i)^2} \),</span>
+<span class="sd">    where \( n \) is the length of `y`, and \( h \) is the lag.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        h: Lag or horizon for scaling computation. Defaults to 1.</span>
+<span class="sd">        metric: Scaling metric (&#39;mae&#39;, &#39;mse&#39;, &#39;rmse&#39;). Defaults to &quot;mae&quot;.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Scaling factor, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If `metric` is not one of &#39;mae&#39;, &#39;mse&#39;, or &#39;rmse&#39;.</span>
+<span class="sd">        ValueError: If `h` is greater than or equal to the length of `y`.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3, 4, 5])</span>
+<span class="sd">        &gt;&gt;&gt; get_scaled(y, h=1, metric=&quot;mae&quot;)</span>
+<span class="sd">        1.0  # MAE of differences [1, 1, 1, 1]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">h</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Lag h=</span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2"> must be less than the length of y=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">h</span><span class="p">:]</span> <span class="o">-</span> <span class="n">y</span><span class="p">[:</span><span class="o">-</span><span class="n">h</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;mae&quot;</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;mse&quot;</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;rmse&quot;</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown `metric=</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">`. Must be one of (&#39;mae&#39;, &#39;mse&#39;, &#39;rmse&#39;).&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scale</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">abs_scaled_error</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mae&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Absolute Scaled Error (ASE) between actual and predicted values.</span>
+
+<span class="sd">    The ASE scales the absolute error by a baseline error metric:</span>
+<span class="sd">    \[</span>
+<span class="sd">    ASE = \frac{AE(y_{t_p+1:t_p+T}, \hat{y}_{t_p+1:t_p+T})}{E_m}</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( AE = |y_t - \hat{y}_t| \), and \( E_m \) is the baseline error from `get_scaled`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        h: Lag or horizon for scaling computation.</span>
+<span class="sd">        axis: Axis along which to compute the mean for scaling. Defaults to 0.</span>
+<span class="sd">        metric: Baseline error metric (&#39;mae&#39;, &#39;mse&#39;, &#39;rmse&#39;). Defaults to &quot;mae&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Absolute scaled errors, same shape as `error(y, y_hat)`.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If shapes of `y` and `y_hat` do not match.</span>
+<span class="sd">        ValueError: If `h` is greater than or equal to the length of `y`.</span>
+<span class="sd">        ValueError: If `metric` is invalid.</span>
+<span class="sd">        ValueError: If scale factor is zero or NaN.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3, 4, 5])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 2.2, 3.1, 4.3, 5.2])</span>
+<span class="sd">        &gt;&gt;&gt; abs_scaled_error(y, y_hat, h=1, metric=&quot;mae&quot;)</span>
+<span class="sd">        array([0.1, 0.2, 0.1, 0.3, 0.2])  # Scaled by MAE of [1, 1, 1, 1] = 1.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">get_scaled</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">scale</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">scale</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Scale factor is zero or NaN, cannot compute scaled error.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">abs_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mase</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Mean Absolute Scaled Error (MASE) between actual and predicted values.</span>
+
+<span class="sd">    The MASE is the mean of the absolute scaled errors:</span>
+<span class="sd">    \[</span>
+<span class="sd">    MASE = \frac{1}{T} \sum_{t=1}^{T} \left| \frac{y_t - \hat{y}_t}{\frac{1}{n-h}</span>
+<span class="sd">    \sum_{i=h+1}^{n} |y_i - y_{i-h}|} \right|</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the forecast period length, \( n \) is the total observations, and \( h \) is the lag.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        h: Lag or horizon for scaling. Defaults to 1.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        MASE, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If shapes of `y` and `y_hat` do not match.</span>
+<span class="sd">        ValueError: If `h` is invalid or scale is zero/NaN.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3, 4, 5])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 2.2, 3.1, 4.3, 5.2])</span>
+<span class="sd">        &gt;&gt;&gt; mase(y, y_hat, h=1)</span>
+<span class="sd">        0.18  # Mean of [0.1, 0.2, 0.1, 0.3, 0.2] scaled by 1.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">abs_scaled_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;mae&quot;</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">squared_error</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the squared error between actual and predicted values.</span>
+
+<span class="sd">    The squared error is the square of the difference between actual values `y` and predicted values `y_hat`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Squared errors, `(y - y_hat)^2`, with the same shape as inputs.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; squared_error(y, y_hat)</span>
+<span class="sd">        array([0.01, 0.01, 0.04])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mse</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Mean Squared Error (MSE) between actual and predicted values.</span>
+
+<span class="sd">    The MSE is the average of the squared errors over the specified axis:</span>
+<span class="sd">    \[</span>
+<span class="sd">    MSE = \frac{1}{T} \sum_{t=1}^{T} (y_t - \hat{y}_t)^2</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the number of samples, \( y_t \) is the actual value, and \( \hat{y}_t \) is the predicted value.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        MSE, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; mse(y, y_hat)</span>
+<span class="sd">        0.02  # Average of [0.01, 0.01, 0.04]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">squared_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">squared_scaled_error</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Squared Scaled Error (SSE) between actual and predicted values.</span>
+
+<span class="sd">    The SSE scales the squared error by the MSE of a naive forecast:</span>
+<span class="sd">    \[</span>
+<span class="sd">    SSE = \frac{(y_t - \hat{y}_t)^2}{\frac{1}{n-h} \sum_{i=h+1}^{n} (y_i - y_{i-h})^2}</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( h \) is the lag, and \( n \) is the total observations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        h: Lag or horizon for scaling computation.</span>
+<span class="sd">        axis: Axis along which to compute the mean for scaling. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Squared scaled errors, same shape as `squared_error(y, y_hat)`.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If shapes of `y` and `y_hat` do not match.</span>
+<span class="sd">        ValueError: If `h` is invalid or scale is zero/NaN.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3, 4, 5])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 2.2, 3.1, 4.3, 5.2])</span>
+<span class="sd">        &gt;&gt;&gt; squared_scaled_error(y, y_hat, h=1)</span>
+<span class="sd">        array([0.01, 0.04, 0.01, 0.09, 0.04])  # Scaled by MSE of [1, 1, 1, 1] = 1.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">get_scaled</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;mse&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">scale</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">scale</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Scale factor is zero or NaN, cannot compute scaled error.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">squared_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">msse</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Mean Squared Scaled Error (MSSE) between actual and predicted values.</span>
+
+<span class="sd">    The MSSE is the mean of the squared scaled errors:</span>
+<span class="sd">    \[</span>
+<span class="sd">    MSSE = \frac{1}{T} \sum_{t=1}^{T} \frac{(y_t - \hat{y}_t)^2}{\frac{1}{n-h} \sum_{i=h+1}^{n} (y_i - y_{i-h})^2}</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the forecast period length, \( n \) is the total observations, and \( h \) is the lag.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        h: Lag or horizon for scaling computation.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        MSSE, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If shapes of `y` and `y_hat` do not match.</span>
+<span class="sd">        ValueError: If `h` is invalid or scale is zero/NaN.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3, 4, 5])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 2.2, 3.1, 4.3, 5.2])</span>
+<span class="sd">        &gt;&gt;&gt; msse(y, y_hat, h=1)</span>
+<span class="sd">        0.038  # Mean of [0.01, 0.04, 0.01, 0.09, 0.04] scaled by 1.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">squared_scaled_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">axis</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">rmse</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Root Mean Squared Error (RMSE) between actual and predicted values.</span>
+
+<span class="sd">    The RMSE is the square root of the mean squared error:</span>
+<span class="sd">    \[</span>
+<span class="sd">    RMSE = \sqrt{\frac{1}{T} \sum_{t=1}^{T} (y_t - \hat{y}_t)^2}</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the number of samples, \( y_t \) is the actual value, and \( \hat{y}_t \) is the predicted value.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        RMSE, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; rmse(y, y_hat)</span>
+<span class="sd">        0.14142135623730953  # sqrt(0.02)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mse</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">axis</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">nrmse</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale_method</span><span class="o">=</span><span class="s2">&quot;max&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the Normalized Root Mean Squared Error (NRMSE) between actual and predicted values.</span>
+
+<span class="sd">    NRMSE is computed as RMSE divided by a scaling factor, which can be provided or computed from `y`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values.</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        scale: Scaling factor. If None, computed based on `scale_method`.</span>
+<span class="sd">        axis: Axis along which to compute RMSE and scaling factor. Defaults to 0.</span>
+<span class="sd">        scale_method: Method to compute scale if not provided:</span>
+<span class="sd">            - &quot;max&quot;: Maximum of `y`.</span>
+<span class="sd">            - &quot;range&quot;: Range (max - min) of `y`.</span>
+<span class="sd">            - &quot;mean&quot;: Mean of `y`.</span>
+<span class="sd">            Defaults to &quot;max&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        NRMSE value(s).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If `y` and `y_hat` shapes don’t match or if scale is zero.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3, 4, 5])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 2.2, 3.1, 4.3, 5.2])</span>
+<span class="sd">        &gt;&gt;&gt; nrmse(y, y_hat)</span>
+<span class="sd">        0.03898720291794133  # RMSE / max(y)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">y_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y_hat</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shapes of y </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> and y_hat </span><span class="si">{</span><span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> must match.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">scale_method</span> <span class="o">==</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">scale_method</span> <span class="o">==</span> <span class="s2">&quot;range&quot;</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ptp</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">scale_method</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown scale_method &#39;</span><span class="si">{</span><span class="n">scale_method</span><span class="si">}</span><span class="s2">&#39;. Use &#39;max&#39;, &#39;range&#39;, or &#39;mean&#39;.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">scale</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Scale factor must be non-zero.&quot;</span><span class="p">)</span>
+    <span class="n">rmse_value</span> <span class="o">=</span> <span class="n">rmse</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rmse_value</span> <span class="o">/</span> <span class="n">scale</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">rmsse</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Root Mean Squared Scaled Error (RMSSE) between actual and predicted values.</span>
+
+<span class="sd">    The RMSSE scales the RMSE by the RMSE of a naive forecast:</span>
+<span class="sd">    \[</span>
+<span class="sd">    RMSSE = \frac{\sqrt{\frac{1}{T} \sum_{t=1}^{T} (y_t - \hat{y}_t)^2}}{\sqrt{\frac{1}{n-h}</span>
+<span class="sd">    \sum_{i=h+1}^{n}(y_i - y_{i-h})^2}}</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the forecast period length, \( n \) is the total observations, and \( h \) is the lag.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        h: Lag or horizon for scaling computation.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        RMSSE, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If shapes of `y` and `y_hat` do not match.</span>
+<span class="sd">        ValueError: If `h` is invalid or scale is zero/NaN.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3, 4, 5])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 2.2, 3.1, 4.3, 5.2])</span>
+<span class="sd">        &gt;&gt;&gt; rmsse(y, y_hat, h=1)</span>
+<span class="sd">        0.19518001458970666  # sqrt(0.038) / sqrt(1.0)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">get_scaled</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">scale</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">scale</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Scale factor is zero or NaN, cannot compute scaled error.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rmse</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">absolute_percentage_error</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Absolute Percentage Error (APE) between actual and predicted values.</span>
+
+<span class="sd">    The APE is the absolute error as a percentage of the actual value:</span>
+<span class="sd">    \[</span>
+<span class="sd">    APE = 100 \times \frac{|y_t - \hat{y}_t|}{|y_t|}</span>
+<span class="sd">    \]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        APE values in percent, same shape as inputs.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If any `y` value is zero.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; absolute_percentage_error(y, y_hat)</span>
+<span class="sd">        array([10.0, 5.0, 6.66666667])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">y</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`actual_series` must be strictly positive to compute the MAPE.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">abs_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mape</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Mean Absolute Percentage Error (MAPE) between actual and predicted values.</span>
+
+<span class="sd">    The MAPE is the mean of the absolute percentage errors:</span>
+<span class="sd">    \[</span>
+<span class="sd">    MAPE = \frac{1}{T} \sum_{t=1}^{T} 100 \times \frac{|y_t - \hat{y}_t|}{|y_t|}</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the number of samples.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        MAPE in percent, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If any `y` value is zero.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; mape(y, y_hat)</span>
+<span class="sd">        7.222222222222222  # Mean of [10.0, 5.0, 6.66666667]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">absolute_percentage_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">wmape</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Weighted Mean Absolute Percentage Error (WMAPE) between actual and predicted values.</span>
+
+<span class="sd">    The WMAPE is the sum of absolute errors divided by the sum of actual values, expressed as a percentage:</span>
+<span class="sd">    \[</span>
+<span class="sd">    WMAPE = 100 \times \frac{\sum_{t=1}^{T} |y_t - \hat{y}_t|}{\sum_{t=1}^{T} |y_t|}</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the number of samples.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        axis: Axis along which to compute the sums. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        WMAPE in percent, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the sum of `y` along the axis is zero.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; wmape(y, y_hat)</span>
+<span class="sd">        6.666666666666667  # 100 * (0.1 + 0.1 + 0.2) / (1 + 2 + 3)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="n">y_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">y_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sum of actual values must be non-zero to compute WMAPE.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">abs_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span> <span class="o">/</span> <span class="n">y_sum</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">symmetrical_abs_percent_error</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Symmetrical Absolute Percentage Error (SAPE) between actual and predicted values.</span>
+
+<span class="sd">    The SAPE adjusts for asymmetry in percentage errors:</span>
+<span class="sd">    \[</span>
+<span class="sd">    SAPE = 200 \times \frac{|y_t - \hat{y}_t|}{|y_t| + |\hat{y}_t|}</span>
+<span class="sd">    \]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        SAPE values in percent, same shape as inputs.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If both `y` and `y_hat` are zero at any point.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; symmetrical_abs_percent_error(y, y_hat)</span>
+<span class="sd">        array([9.52380952, 5.12820513, 6.4516129 ])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y_hat</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">denominator</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Both `y` and `y_hat` must not be zero simultaneously to compute sMAPE.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mf">200.0</span> <span class="o">*</span> <span class="n">abs_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span> <span class="o">/</span> <span class="n">denominator</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">smape</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Symmetric Mean Absolute Percentage Error (sMAPE) between actual and predicted values.</span>
+
+<span class="sd">    The sMAPE is the mean of the symmetrical absolute percentage errors:</span>
+<span class="sd">    \[</span>
+<span class="sd">    sMAPE = \frac{1}{T} \sum_{t=1}^{T} 200 \times \frac{|y_t - \hat{y}_t|}{|y_t| + |\hat{y}_t|}</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the number of samples.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        sMAPE in percent, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If both `y` and `y_hat` are zero at any point.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; smape(y, y_hat)</span>
+<span class="sd">        7.034542516666667  # Mean of [9.52380952, 5.12820513, 6.4516129]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">symmetrical_abs_percent_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ope</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Overall Percentage Error (OPE) between actual and predicted values.</span>
+
+<span class="sd">    The OPE is the percentage error of the summed actual and predicted values:</span>
+<span class="sd">    \[</span>
+<span class="sd">    OPE = 100 \times \left| \frac{\sum_{t=1}^{T} y_t - \sum_{t=1}^{T} \hat{y}_t}{\sum_{t=1}^{T} y_t} \right|</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the number of samples.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        axis: Axis along which to compute the sums. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        OPE in percent, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the sum of `y` along the axis is zero.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; overall_percentage_error(y, y_hat)</span>
+<span class="sd">        3.3333333333333335  # |6 - 6.2| / 6 * 100</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="n">y_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="n">y_hat_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">y_hat</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">y_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sum of actual values must be non-zero to compute OPE.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mf">100.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">y_sum</span> <span class="o">-</span> <span class="n">y_hat_sum</span><span class="p">)</span> <span class="o">/</span> <span class="n">y_sum</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">corr</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the Pearson Correlation Coefficient between actual and predicted values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, must be 1D.</span>
+<span class="sd">        y_hat: Predicted values, must be 1D and same shape as `y`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Pearson correlation coefficient between -1 and 1.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If inputs are not 1D or have incompatible shapes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">require_1d</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">nbias</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Normalised Bias Error (NBE) between actual and predicted values.</span>
+
+<span class="sd">    The NBE normalizes the bias by the sum of actual and predicted values:</span>
+<span class="sd">    \[</span>
+<span class="sd">    NBE = \sum_{t=1}^{T} \frac{y_t - \hat{y}_t}{y_t + \hat{y}_t}</span>
+<span class="sd">    \]</span>
+<span class="sd">    where \( T \) is the number of samples.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+<span class="sd">        axis: Axis along which to compute the sum. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        NBE, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the denominator (y + y_hat) is zero at any point.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1, 2, 3])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; normalised_bias_error(y, y_hat)</span>
+<span class="sd">        -0.029304029304029298  # Sum of [-0.04761905, 0.02564103, -0.03076923]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">y_hat</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">scale</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Scale (y + y_hat) must be non-zero to compute NBE.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_pointwise_metrics</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">metric_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute specified metrics for actual and predicted values.</span>
+
+<span class="sd">    This function takes actual values `y`, predicted values `y_hat`, and a list of metric names,</span>
+<span class="sd">    and returns a DataFrame with metric names as columns and their computed aggregate values</span>
+<span class="sd">    (mean or sum) as values. If a metric computation fails (e.g., due to division by zero),</span>
+<span class="sd">    that metric is skipped and a warning is logged.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, must be a 1D array or Series.</span>
+<span class="sd">        y_hat: Predicted values, must be a 1D array or Series with the same shape as `y`.</span>
+<span class="sd">        metric_names: List of metric names to compute. Supported metrics that return</span>
+<span class="sd">            aggregate values are: &#39;res&#39;, &#39;mae&#39;, &#39;mase&#39;, &#39;mse&#39;, &#39;msse&#39;, &#39;rmse&#39;, &#39;rmsse&#39;,</span>
+<span class="sd">            &#39;mape&#39;, &#39;wmape&#39;, &#39;smape&#39;, &#39;ope&#39;, &#39;corr&#39;, &#39;nbias&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: A DataFrame with one row containing the computed metric values for all</span>
+<span class="sd">        successfully computed metrics.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If `y` or `y_hat` are not 1D arrays, have different shapes, or if an unknown</span>
+<span class="sd">                    metric name is provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Validate inputs using the general validation function</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">require_1d</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Dictionary mapping metric names to their functions.</span>
+    <span class="c1"># These functions should be defined elsewhere and imported as needed.</span>
+    <span class="n">metric_functions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;res&quot;</span><span class="p">:</span> <span class="n">res</span><span class="p">,</span>  <span class="c1"># Mean error</span>
+        <span class="s2">&quot;mae&quot;</span><span class="p">:</span> <span class="n">mae</span><span class="p">,</span>  <span class="c1"># Mean absolute error</span>
+        <span class="s2">&quot;mase&quot;</span><span class="p">:</span> <span class="n">mase</span><span class="p">,</span>  <span class="c1"># Mean absolute scaled error (uses h=1 by default)</span>
+        <span class="s2">&quot;mse&quot;</span><span class="p">:</span> <span class="n">mse</span><span class="p">,</span>  <span class="c1"># Mean squared error</span>
+        <span class="s2">&quot;msse&quot;</span><span class="p">:</span> <span class="n">msse</span><span class="p">,</span>  <span class="c1"># Mean squared scaled error (uses h=1 by default)</span>
+        <span class="s2">&quot;rmse&quot;</span><span class="p">:</span> <span class="n">rmse</span><span class="p">,</span>  <span class="c1"># Root mean squared error</span>
+        <span class="s2">&quot;rmsse&quot;</span><span class="p">:</span> <span class="n">rmsse</span><span class="p">,</span>  <span class="c1"># Root mean squared scaled error (uses h=1 by default)</span>
+        <span class="s2">&quot;mape&quot;</span><span class="p">:</span> <span class="n">mape</span><span class="p">,</span>  <span class="c1"># Mean absolute percentage error</span>
+        <span class="s2">&quot;wmape&quot;</span><span class="p">:</span> <span class="n">wmape</span><span class="p">,</span>  <span class="c1"># Weighted mean absolute percentage error</span>
+        <span class="s2">&quot;smape&quot;</span><span class="p">:</span> <span class="n">smape</span><span class="p">,</span>  <span class="c1"># Symmetric mean absolute percentage error</span>
+        <span class="s2">&quot;ope&quot;</span><span class="p">:</span> <span class="n">ope</span><span class="p">,</span>  <span class="c1"># Aggregate percentage error</span>
+        <span class="s2">&quot;corr&quot;</span><span class="p">:</span> <span class="n">corr</span><span class="p">,</span>  <span class="c1"># Correlation coefficient (scalar for 1D)</span>
+        <span class="s2">&quot;nbias&quot;</span><span class="p">:</span> <span class="n">nbias</span><span class="p">,</span>  <span class="c1"># Normalized bias (sum-based)</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Initialize the results dictionary.</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">metric_names</span> <span class="o">=</span> <span class="n">metric_names</span> <span class="ow">or</span> <span class="nb">list</span><span class="p">(</span><span class="n">metric_functions</span><span class="p">)</span>
+    <span class="c1"># Compute each specified metric.</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">metric_names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metric_functions</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown metric name: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">metric_func</span> <span class="o">=</span> <span class="n">metric_functions</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Compute the metric with y and y_hat.</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">metric_func</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+            <span class="n">results</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># Log a warning and skip the metric if computation fails.</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Skipping metric </span><span class="si">%r</span><span class="s2"> due to error: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+    <span class="c1"># Return the results as a single-row DataFrame.</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">orient</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+
+<div class="viewcode-block" id="evaluate_point_forecast">
+<a class="viewcode-back" href="../../../../core/metrics.html#twiga.core.metrics.point.evaluate_point_forecast">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_point_forecast</span><span class="p">(</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n">ForecastResult</span><span class="p">,</span>
+    <span class="n">metric_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate point forecasts by computing daily pointwise metrics.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        result: :class:`~twiga.forecaster.result.ForecastResult` with</span>
+<span class="sd">            ``ground_truth`` set, ``kind=ForecastKind.POINT``.</span>
+<span class="sd">        metric_names: Metric names to compute.  When ``None`` all supported</span>
+<span class="sd">            point metrics are computed.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame of per-day, per-target metrics indexed by daily timestamp.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">_evaluate_loop</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_fn</span><span class="p">(</span><span class="n">day_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">target_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">true_vals</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">ground_truth</span><span class="p">[</span><span class="n">day_idx</span><span class="p">,</span> <span class="p">:,</span> <span class="n">target_idx</span><span class="p">]</span>  <span class="c1"># type: ignore[index]</span>
+        <span class="n">pred_vals</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">day_idx</span><span class="p">,</span> <span class="p">:,</span> <span class="n">target_idx</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">get_pointwise_metrics</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">true_vals</span><span class="p">,</span> <span class="n">y_hat</span><span class="o">=</span><span class="n">pred_vals</span><span class="p">,</span> <span class="n">metric_names</span><span class="o">=</span><span class="n">metric_names</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_evaluate_loop</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">metric_fn</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

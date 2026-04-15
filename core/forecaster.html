@@ -1,0 +1,1775 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>TwigaForecaster &amp; Forecaster Architecture &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/twiga.css?v=724e8a05" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'core/forecaster';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Configuration System" href="config.html" />
+    <link rel="prev" title="User Guide" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">TwigaForecaster &amp; Forecaster Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-pipeline.html">Data Processing Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="feature-analysis.html">Feature Analysis &amp; Statistical Toolkit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backtesting.html">Backtesting &amp; Time-Based Cross-Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explain.html">Feature Attribution (SHAP)</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">TwigaForecaster &amp; Forecaster Architecture</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="twigaforecaster-forecaster-architecture">
+<h1>TwigaForecaster &amp; Forecaster Architecture<a class="headerlink" href="#twigaforecaster-forecaster-architecture" title="Link to this heading">#</a></h1>
+<details>
+<summary>Source Files</summary>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/core.py</span></code> – <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> (user-facing entry point)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/abstract.py</span></code> – <code class="docutils literal notranslate"><span class="pre">AbstractForecaster</span></code> (fit / predict / evaluate / tune orchestration)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/base.py</span></code> – <code class="docutils literal notranslate"><span class="pre">BaseForecaster</span></code> (checkpointing, feature preparation, Optuna integration)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/registry.py</span></code> – Dynamic model loading</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/ensemble.py</span></code> – Ensemble prediction strategies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/utils.py</span></code> – Shape validation, DataFrame construction helpers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/config/base.py</span></code> – <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span></code></p></li>
+</ul>
+</details>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> is the primary interface for building, training, and evaluating time series forecasting models in Twiga. It accepts configuration objects, dynamically loads model implementations from a registry, and exposes a unified API that covers:</p>
+<ul class="simple">
+<li><p><strong>Multi-model training</strong> – fit one or many models (ML and/or neural network) in a single call.</p></li>
+<li><p><strong>Point and interval predictions</strong> – generate raw forecasts or conformal prediction intervals.</p></li>
+<li><p><strong>Evaluation</strong> – compute metrics against held-out data for both point and interval forecasts.</p></li>
+<li><p><strong>Backtesting</strong> – walk-forward cross-validation over expanding or rolling windows.</p></li>
+<li><p><strong>Hyperparameter tuning</strong> – Optuna-powered search with Hyperband pruning and TPE sampling.</p></li>
+<li><p><strong>Ensemble strategies</strong> – combine predictions from multiple models via mean, median, or weighted aggregation.</p></li>
+</ul>
+<p>For a hands-on introduction see the <a class="reference internal" href="../getting-started/quickstart.html"><span class="std std-doc">Quick Start Guide</span></a>.</p>
+</section>
+<section id="class-hierarchy">
+<h2>Class Hierarchy<a class="headerlink" href="#class-hierarchy" title="Link to this heading">#</a></h2>
+<pre  class="mermaid">
+        classDiagram
+    direction TB
+
+    class TimeBasedCV {
+        +split_freq: str
+        +train_size: int
+        +test_size: int
+        +gap: int
+        +stride: int
+        +window: str
+        +split(data, start_dt, end_dt)
+    }
+
+    class AbstractForecaster {
+        &lt;&lt;abstract&gt;&gt;
+        +get_model_from_registry(model_params)
+        +fit(train_df, val_df, train_ratio)
+        +predict(test_df, ...) dict, dict
+        +predict_interval(test_df, ...) dict, dict
+        +evaluate(test_df, ...) DataFrame, DataFrame
+        +evaluate_point_forecast(test_df, ...)
+        +evaluate_interval_forecast(test_df, ...)
+        +backtesting(data, ...)
+        +tune(train_df, val_df, ...)
+        #_fit()*
+        #_predict()*
+        #_evaluate()*
+        #_tune()*
+        #_backtester()*
+        #_create_folder()*
+    }
+
+    class BaseForecaster {
+        +models: list
+        +data_pipeline: DataPipeline
+        +conformals: dict
+        +conformal_params
+        +checkpoints_path: Path
+        +logs_path: Path
+        +results_path: Path
+        +figures_path: Path
+        +_create_folder()
+        +on_save_checkpoint()
+        +on_load_checkpoint()
+        +_fit(train_df, val_df, train_ratio, trial)
+        +_predict(test_df, covariate_df, daily_feature)
+        +_evaluate(test_df, covariate_df, daily_feature)
+        +_tune(train_df, val_df, ...)
+        +_backtester(data, ...)
+        +create_optuna_study(...)
+        +prepare_test_data(test_df)
+        +get_ground_truth(test_df, daily_feature)
+    }
+
+    class TwigaForecaster {
+        +data_pipeline: DataPipeline
+        +models: list
+        +conformal: dict
+        +domain: str
+        +__init__(data_params, model_params, train_params, conformal_params)
+        +calibrate(calibrate_df, ...)
+    }
+
+    TimeBasedCV &lt;|-- BaseForecaster
+    AbstractForecaster &lt;|-- BaseForecaster
+    BaseForecaster &lt;|-- TwigaForecaster
+    </pre><p><code class="docutils literal notranslate"><span class="pre">AbstractForecaster</span></code> defines the orchestration logic (loops over models, builds DataFrames), while <code class="docutils literal notranslate"><span class="pre">BaseForecaster</span></code> supplies the concrete single-model implementations (<code class="docutils literal notranslate"><span class="pre">_fit</span></code>, <code class="docutils literal notranslate"><span class="pre">_predict</span></code>, <code class="docutils literal notranslate"><span class="pre">_evaluate</span></code>, <code class="docutils literal notranslate"><span class="pre">_tune</span></code>, <code class="docutils literal notranslate"><span class="pre">_backtester</span></code>) together with checkpointing, feature preparation, and Optuna study creation. <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> wires everything together through configuration objects.</p>
+</section>
+<section id="constructing-a-forecaster">
+<h2>Constructing a Forecaster<a class="headerlink" href="#constructing-a-forecaster" title="Link to this heading">#</a></h2>
+<section id="twigaforecaster-init">
+<h3><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.__init__</span></code><a class="headerlink" href="#twigaforecaster-init" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>        <span class="c1"># DataPipelineConfig</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">xgb_config</span><span class="p">],</span>      <span class="c1"># BaseModelConfig | list | dict | list[dict]</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>      <span class="c1"># ForecasterConfig</span>
+    <span class="n">conformal_params</span><span class="o">=</span><span class="n">conf_config</span><span class="p">,</span>   <span class="c1"># ConformalConfig | None</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">data_params</span></code></p></td>
+<td><p><a class="reference internal" href="config.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code></span></a></p></td>
+<td><p>Defines target features, feature engineering, scaling, and temporal settings for the <a class="reference internal" href="data-pipeline.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code></span></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model_params</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span> <span class="pre">|</span> <span class="pre">list[BaseModelConfig]</span> <span class="pre">|</span> <span class="pre">dict</span> <span class="pre">|</span> <span class="pre">list[dict]</span></code></p></td>
+<td><p>One or more model configurations. Each configuration is validated against the model’s registered config class. Accepts Pydantic models or plain dictionaries.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">train_params</span></code></p></td>
+<td><p><a class="reference internal" href="config.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code></span></a></p></td>
+<td><p>Cross-validation split parameters (<code class="docutils literal notranslate"><span class="pre">split_freq</span></code>, <code class="docutils literal notranslate"><span class="pre">train_size</span></code>, <code class="docutils literal notranslate"><span class="pre">test_size</span></code>, <code class="docutils literal notranslate"><span class="pre">gap</span></code>, <code class="docutils literal notranslate"><span class="pre">window</span></code>), project naming, paths, and evaluation metrics.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">conformal_params</span></code></p></td>
+<td><p><a class="reference internal" href="../probabilistic/conformal-prediction.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code></span></a> <code class="docutils literal notranslate"><span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p>Optional. Enables conformal prediction intervals when provided. Requires a subsequent <code class="docutils literal notranslate"><span class="pre">calibrate()</span></code> call before <code class="docutils literal notranslate"><span class="pre">predict_interval</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>During construction the forecaster:</p>
+<ol class="arabic simple">
+<li><p>Copies the <code class="docutils literal notranslate"><span class="pre">date_column</span></code> from <code class="docutils literal notranslate"><span class="pre">data_params</span></code> into <code class="docutils literal notranslate"><span class="pre">train_params</span></code>.</p></li>
+<li><p>Initialises the <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> from <code class="docutils literal notranslate"><span class="pre">data_params</span></code>.</p></li>
+<li><p>Iterates over <code class="docutils literal notranslate"><span class="pre">model_params</span></code>, calling <code class="docutils literal notranslate"><span class="pre">get_model_from_registry</span></code> to dynamically load each model class and instantiate it.</p></li>
+</ol>
+<div class="tip admonition">
+<p class="admonition-title">Mixing ML and NN models</p>
+<p>You can pass both ML configs (e.g. <code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig</span></code>) and neural network configs (e.g. <code class="docutils literal notranslate"><span class="pre">NHITSConfig</span></code>) in a single <code class="docutils literal notranslate"><span class="pre">model_params</span></code> list. The registry resolves each model independently from <code class="docutils literal notranslate"><span class="pre">twiga.models.ml.*</span></code> or <code class="docutils literal notranslate"><span class="pre">twiga.models.nn.*</span></code>. See <a class="reference internal" href="../models/index.html"><span class="std std-doc">Models</span></a> for the full catalogue.</p>
+</div>
+</section>
+</section>
+<section id="core-workflow">
+<h2>Core Workflow<a class="headerlink" href="#core-workflow" title="Link to this heading">#</a></h2>
+<p>The typical lifecycle is <strong>configure -&gt; fit -&gt; predict / evaluate -&gt; (optionally) backtest or tune</strong>.</p>
+<pre  class="mermaid">
+        sequenceDiagram
+    participant User
+    participant TF as TwigaForecaster
+    participant DP as DataPipeline
+    participant Reg as ModelRegistry
+    participant Model as Model(s)
+    participant Conf as Conformal
+
+    User-&gt;&gt;TF: __init__(data_params, model_params, train_params, conformal_params)
+    TF-&gt;&gt;DP: DataPipeline(**data_params)
+    TF-&gt;&gt;Reg: get_model_from_registry(model_params)
+    Reg--&gt;&gt;TF: [model_1, model_2, ...]
+
+    User-&gt;&gt;TF: fit(train_df, val_df)
+    TF-&gt;&gt;DP: fit(train_df)
+    loop each model
+        TF-&gt;&gt;TF: _create_folder()
+        TF-&gt;&gt;DP: transform(train_split)
+        TF-&gt;&gt;Model: model.fit(features, targets)
+        TF-&gt;&gt;TF: on_save_checkpoint()
+    end
+
+    User-&gt;&gt;TF: calibrate(calibrate_df)
+    TF-&gt;&gt;TF: predict(calibrate_df)
+    loop each model
+        TF-&gt;&gt;Conf: Conformal.calibrate(forecast, ground_truth)
+    end
+
+    User-&gt;&gt;TF: evaluate_point_forecast(test_df)
+    TF-&gt;&gt;TF: prepare_test_data(test_df)
+    TF-&gt;&gt;TF: get_ground_truth(test_df)
+    loop each model
+        TF-&gt;&gt;DP: transform_features(test_df)
+        TF-&gt;&gt;Model: model.forecast(features)
+        TF-&gt;&gt;TF: _rescale_predictions(forecast)
+    end
+    TF--&gt;&gt;User: (results_df, metrics_df)
+    </pre></section>
+<section id="method-reference">
+<h2>Method Reference<a class="headerlink" href="#method-reference" title="Link to this heading">#</a></h2>
+<section id="training">
+<h3>Training<a class="headerlink" href="#training" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Signature</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fit</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fit(train_df,</span> <span class="pre">val_df=None,</span> <span class="pre">train_ratio=1.0)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code></p></td>
+<td><p>Fits the data pipeline (if not already fitted) and trains every registered model. For each model it creates the artifact directory, prepares features via <code class="docutils literal notranslate"><span class="pre">_prepare_features</span></code>, and delegates to <code class="docutils literal notranslate"><span class="pre">model.fit</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">fit</span></code> method applies temporal filtering internally: it keeps only the last <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span> <span class="pre">+</span> <span class="pre">max_data_drop</span></code> rows of training data to limit memory use.</p>
+<div class="note admonition">
+<p class="admonition-title">Note</p>
+<p>The data pipeline is fitted <strong>once</strong> on the first call. Subsequent calls to <code class="docutils literal notranslate"><span class="pre">fit</span></code> (e.g. during backtesting) skip the pipeline fit if it has already been initialised.</p>
+</div>
+</section>
+<section id="prediction">
+<h3>Prediction<a class="headerlink" href="#prediction" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Signature</p></th>
+<th class="head"><p>Returns</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">predict</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">predict(test_df,</span> <span class="pre">covariate_df=None,</span> <span class="pre">daily_feature=True,</span> <span class="pre">ensemble_strategy=None,</span> <span class="pre">ensemble_weights=None,</span> <span class="pre">prepare_test_data=True)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tuple[dict[str,</span> <span class="pre">np.ndarray],</span> <span class="pre">dict[str,</span> <span class="pre">float]]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">predict_interval</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">predict_interval(test_df,</span> <span class="pre">covariate_df=None,</span> <span class="pre">daily_feature=True,</span> <span class="pre">ensemble_strategy=None,</span> <span class="pre">ensemble_weights=None,</span> <span class="pre">prepare_test_data=True)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tuple[dict[str,</span> <span class="pre">tuple[np.ndarray,</span> <span class="pre">np.ndarray,</span> <span class="pre">np.ndarray]],</span> <span class="pre">dict[str,</span> <span class="pre">float]]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Both methods return a two-element tuple:</p>
+<ol class="arabic simple">
+<li><p><strong>Prediction dictionary</strong> – keys are model names (and optionally <code class="docutils literal notranslate"><span class="pre">&quot;Ensemble&quot;</span></code>), values are 3-D NumPy arrays <code class="docutils literal notranslate"><span class="pre">(num_samples,</span> <span class="pre">horizon,</span> <span class="pre">num_targets)</span></code> for point forecasts, or <code class="docutils literal notranslate"><span class="pre">(lower,</span> <span class="pre">point,</span> <span class="pre">upper)</span></code> tuples for intervals.</p></li>
+<li><p><strong>Inference time dictionary</strong> – keys are model names, values are wall-clock seconds.</p></li>
+</ol>
+<p><code class="docutils literal notranslate"><span class="pre">predict_interval</span></code> requires that <code class="docutils literal notranslate"><span class="pre">conformal_params</span></code> was supplied at construction and that <code class="docutils literal notranslate"><span class="pre">calibrate()</span></code> has been called.</p>
+<div class="warning admonition">
+<p class="admonition-title">Warning</p>
+<p>Calling <code class="docutils literal notranslate"><span class="pre">predict_interval</span></code> before <code class="docutils literal notranslate"><span class="pre">calibrate()</span></code> raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>. Always calibrate on a held-out calibration set that was <strong>not</strong> used during training.</p>
+</div>
+</section>
+<section id="calibration">
+<h3>Calibration<a class="headerlink" href="#calibration" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Signature</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">calibrate</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">calibrate(calibrate_df=None,</span> <span class="pre">covariate_df=None,</span> <span class="pre">daily_feature=False,</span> <span class="pre">ensemble_strategy=None,</span> <span class="pre">ensemble_weights=None)</span></code></p></td>
+<td><p>Generates point predictions on the calibration set and fits a <code class="docutils literal notranslate"><span class="pre">Conformal</span></code> model per registered model, storing them in <code class="docutils literal notranslate"><span class="pre">self.conformal</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>See <a class="reference internal" href="../probabilistic/conformal-prediction.html"><span class="std std-doc">Conformal Prediction</span></a> for the available <code class="docutils literal notranslate"><span class="pre">method</span></code> and <code class="docutils literal notranslate"><span class="pre">score_type</span></code> options in <code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code>.</p>
+</section>
+<section id="evaluation">
+<h3>Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Signature</p></th>
+<th class="head"><p>Returns</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">evaluate</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">evaluate(test_df=None,</span> <span class="pre">covariate_df=None,</span> <span class="pre">daily_feature=True,</span> <span class="pre">ensemble_strategy=None,</span> <span class="pre">ensemble_weights=None,</span> <span class="pre">prediction_fn=...,</span> <span class="pre">evaluation_fn=...,</span> <span class="pre">is_interval=False)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tuple[pd.DataFrame,</span> <span class="pre">pd.DataFrame]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast(test_df=None,</span> <span class="pre">covariate_df=None,</span> <span class="pre">daily_feature=True,</span> <span class="pre">ensemble_strategy=None,</span> <span class="pre">ensemble_weights=None)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tuple[pd.DataFrame,</span> <span class="pre">pd.DataFrame]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">evaluate_interval_forecast</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">evaluate_interval_forecast(test_df=None,</span> <span class="pre">covariate_df=None,</span> <span class="pre">daily_feature=True,</span> <span class="pre">ensemble_strategy=None,</span> <span class="pre">ensemble_weights=None)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tuple[pd.DataFrame,</span> <span class="pre">pd.DataFrame]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast</span></code> and <code class="docutils literal notranslate"><span class="pre">evaluate_interval_forecast</span></code> are convenience wrappers around <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> that pre-bind the appropriate prediction and evaluation functions.</p>
+<p>The returned DataFrames have the following structure:</p>
+<p><strong>Results DataFrame</strong> (<code class="docutils literal notranslate"><span class="pre">results_df</span></code>):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Column</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>index (timestamp)</p></td>
+<td><p>Date column set as the index</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Model</span></code></p></td>
+<td><p>Model name (uppercased)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">target</span></code></p></td>
+<td><p>Target variable name</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">forecast</span></code></p></td>
+<td><p>Point forecast value</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Actual</span></code></p></td>
+<td><p>Ground truth value</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lower</span></code></p></td>
+<td><p>Lower bound (interval evaluation only)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">upper</span></code></p></td>
+<td><p>Upper bound (interval evaluation only)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Metrics DataFrame</strong> (<code class="docutils literal notranslate"><span class="pre">metrics_df</span></code>):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Column</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Model</span></code></p></td>
+<td><p>Model name (uppercased)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">target</span></code></p></td>
+<td><p>Target variable name</p></td>
+</tr>
+<tr class="row-even"><td><p>metric columns</p></td>
+<td><p>One column per metric (e.g. <code class="docutils literal notranslate"><span class="pre">mae</span></code>, <code class="docutils literal notranslate"><span class="pre">rmse</span></code>, <code class="docutils literal notranslate"><span class="pre">smape</span></code>, <code class="docutils literal notranslate"><span class="pre">corr</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">inference-time</span></code></p></td>
+<td><p>Wall-clock prediction time in seconds</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>See <a class="reference internal" href="metrics.html"><span class="std std-doc">Metrics</span></a> for the full list of supported evaluation metrics.</p>
+</section>
+<section id="backtesting">
+<h3>Backtesting<a class="headerlink" href="#backtesting" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Signature</p></th>
+<th class="head"><p>Returns</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">backtesting</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">backtesting(data,</span> <span class="pre">train_ratio=1.0,</span> <span class="pre">start_dt=None,</span> <span class="pre">end_dt=None,</span> <span class="pre">verbose=True,</span> <span class="pre">trial=None,</span> <span class="pre">daily_feature=True,</span> <span class="pre">ensemble_strategy=None,</span> <span class="pre">ensemble_weights=None)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tuple[pd.DataFrame,</span> <span class="pre">pd.DataFrame]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Backtesting performs walk-forward cross-validation by iterating over temporal splits produced by the inherited <code class="docutils literal notranslate"><span class="pre">TimeBasedCV.split()</span></code> method. For each fold it:</p>
+<ol class="arabic simple">
+<li><p>Calls <code class="docutils literal notranslate"><span class="pre">fit(train_df)</span></code> to retrain on the expanding (or rolling) training window.</p></li>
+<li><p>Calls <code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast(test_df)</span></code> on the held-out test window.</p></li>
+<li><p>Tags results with a <code class="docutils literal notranslate"><span class="pre">Folds</span></code> column.</p></li>
+</ol>
+<p>The split behaviour is controlled by <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code> parameters:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">split_freq</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;months&quot;</span></code></p></td>
+<td><p>Time unit: <code class="docutils literal notranslate"><span class="pre">&quot;days&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;hours&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;weeks&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;months&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;years&quot;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">train_size</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1</span></code></p></td>
+<td><p>Length of the training window in <code class="docutils literal notranslate"><span class="pre">split_freq</span></code> units</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">test_size</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1</span></code></p></td>
+<td><p>Length of the test window in <code class="docutils literal notranslate"><span class="pre">split_freq</span></code> units</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">gap</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>Gap between training end and test start</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">stride</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>Step size between folds (defaults to <code class="docutils literal notranslate"><span class="pre">test_size</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">window</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;expanding&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;expanding&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;rolling&quot;</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>See <a class="reference internal" href="backtesting.html"><span class="std std-doc">Backtesting</span></a> for a detailed explanation of the cross-validation scheme.</p>
+</section>
+<section id="hyperparameter-tuning">
+<h3>Hyperparameter Tuning<a class="headerlink" href="#hyperparameter-tuning" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Signature</p></th>
+<th class="head"><p>Returns</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tune</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tune(train_df,</span> <span class="pre">val_df,</span> <span class="pre">num_trials=10,</span> <span class="pre">reduction_factor=3,</span> <span class="pre">patience=10,</span> <span class="pre">load_if_exists=True,</span> <span class="pre">initial_params=None,</span> <span class="pre">direction=&quot;minimize&quot;,</span> <span class="pre">sampler=None,</span> <span class="pre">base_pruner=None)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">tune</span></code> performs Optuna-based hyperparameter optimisation for every registered model. For each model it:</p>
+<ol class="arabic simple">
+<li><p>Creates an Optuna study (or loads an existing one from a <code class="docutils literal notranslate"><span class="pre">JournalFileBackend</span></code> log).</p></li>
+<li><p>Configures a <code class="docutils literal notranslate"><span class="pre">HyperbandPruner</span></code> wrapped in a <code class="docutils literal notranslate"><span class="pre">PatientPruner</span></code> and a <code class="docutils literal notranslate"><span class="pre">TPESampler</span></code> (seeded with <code class="docutils literal notranslate"><span class="pre">self.seed</span></code>).</p></li>
+<li><p>Enqueues <code class="docutils literal notranslate"><span class="pre">initial_params</span></code> if provided.</p></li>
+<li><p>Runs <code class="docutils literal notranslate"><span class="pre">num_trials</span></code> trials. Each trial calls <code class="docutils literal notranslate"><span class="pre">model.update(trial)</span></code> to sample hyperparameters, then <code class="docutils literal notranslate"><span class="pre">_fit</span></code> and <code class="docutils literal notranslate"><span class="pre">_evaluate</span></code> to compute a cost (mean MAE across targets).</p></li>
+<li><p>Replaces each model instance with a new one instantiated from the best parameters.</p></li>
+</ol>
+<p>After tuning, call <code class="docutils literal notranslate"><span class="pre">fit</span></code> again to train with the optimised configuration.</p>
+<div class="tip admonition">
+<p class="admonition-title">Resuming studies</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">load_if_exists=True</span></code> (the default) the study is persisted to <code class="docutils literal notranslate"><span class="pre">{logs_path}/{project_name}_{model_type}.log</span></code>. Re-running <code class="docutils literal notranslate"><span class="pre">tune</span></code> continues from where the previous run left off, which is useful for incremental search.</p>
+</div>
+<p>See <a class="reference internal" href="../advanced/hyperparameter-tuning.html"><span class="std std-doc">Hyperparameter Tuning</span></a> for advanced recipes.</p>
+</section>
+</section>
+<section id="model-registry">
+<h2>Model Registry<a class="headerlink" href="#model-registry" title="Link to this heading">#</a></h2>
+<p>Models are loaded dynamically at construction time through the registry in <code class="docutils literal notranslate"><span class="pre">twiga/forecaster/registry.py</span></code>. The registry uses the <code class="docutils literal notranslate"><span class="pre">name</span></code> field from each config to resolve a module at <code class="docutils literal notranslate"><span class="pre">twiga.models.{domain}.{name}_model</span></code>, then retrieves <code class="docutils literal notranslate"><span class="pre">{NAME}Model</span></code> and <code class="docutils literal notranslate"><span class="pre">{NAME}Config</span></code> from that module.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Internally called during TwigaForecaster.__init__</span>
+<span class="n">model_cls</span><span class="p">,</span> <span class="n">config_cls</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="s2">&quot;xgboost&quot;</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="s2">&quot;ml&quot;</span><span class="p">)</span>
+<span class="c1"># Imports twiga.models.ml.xgboost_model -&gt; (XGBOOSTModel, XGBOOSTConfig)</span>
+</pre></div>
+</div>
+<p>Results are cached after the first load. If <code class="docutils literal notranslate"><span class="pre">domain</span></code> is not specified, the registry searches both <code class="docutils literal notranslate"><span class="pre">ml</span></code> and <code class="docutils literal notranslate"><span class="pre">nn</span></code> directories.</p>
+<p>When configs are supplied as dictionaries, <code class="docutils literal notranslate"><span class="pre">get_model_from_dict</span></code> extracts the <code class="docutils literal notranslate"><span class="pre">&quot;name&quot;</span></code> key and follows the same resolution path:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;lightgbm&quot;</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;ml&quot;</span><span class="p">},</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="../models/index.html"><span class="std std-doc">Models</span></a> for all available model implementations.</p>
+</section>
+<section id="ensemble-strategies">
+<h2>Ensemble Strategies<a class="headerlink" href="#ensemble-strategies" title="Link to this heading">#</a></h2>
+<p>When more than one model is registered and an <code class="docutils literal notranslate"><span class="pre">ensemble_strategy</span></code> is passed to <code class="docutils literal notranslate"><span class="pre">predict</span></code>, <code class="docutils literal notranslate"><span class="pre">predict_interval</span></code>, or the evaluation methods, predictions are combined into an additional <code class="docutils literal notranslate"><span class="pre">&quot;Ensemble&quot;</span></code> entry.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Strategy</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">EnsembleStrategy</span></code></p></th>
+<th class="head"><p>Formula</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Mean</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;mean&quot;</span></code></p></td>
+<td><p>Element-wise mean across models</p></td>
+</tr>
+<tr class="row-odd"><td><p>Median</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;median&quot;</span></code></p></td>
+<td><p>Element-wise median across models</p></td>
+</tr>
+<tr class="row-even"><td><p>Weighted</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;weighted&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">np.einsum(&quot;ntcm,m-&gt;ntc&quot;,</span> <span class="pre">preds,</span> <span class="pre">weights)</span></code> with normalised weights</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For the weighted strategy, pass a <code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">float]</span></code> mapping model names to weights:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">predictions</span><span class="p">,</span> <span class="n">times</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+    <span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">,</span>
+    <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;weighted&quot;</span><span class="p">,</span>
+    <span class="n">ensemble_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;xgboost&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span> <span class="s2">&quot;lightgbm&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>For interval predictions, the ensemble is computed independently over the lower, point, and upper arrays.</p>
+</section>
+<section id="checkpointing-directory-structure">
+<h2>Checkpointing &amp; Directory Structure<a class="headerlink" href="#checkpointing-directory-structure" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">BaseForecaster._create_folder()</span></code> creates a standardised directory layout under <code class="docutils literal notranslate"><span class="pre">root_dir</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">root_dir</span><span class="p">}</span><span class="o">/</span>
+  <span class="n">results</span><span class="o">/</span><span class="p">{</span><span class="n">project_name</span><span class="p">}</span><span class="o">/</span><span class="p">{</span><span class="n">model_type</span><span class="p">}</span><span class="o">/</span>
+  <span class="n">logs</span><span class="o">/</span><span class="p">{</span><span class="n">project_name</span><span class="p">}</span><span class="o">/</span><span class="p">{</span><span class="n">model_type</span><span class="p">}</span><span class="o">/</span>
+  <span class="n">figures</span><span class="o">/</span><span class="p">{</span><span class="n">project_name</span><span class="p">}</span><span class="o">/</span><span class="p">{</span><span class="n">model_type</span><span class="p">}</span><span class="o">/</span>
+  <span class="n">checkpoints</span><span class="o">/</span><span class="p">{</span><span class="n">project_name</span><span class="p">}</span><span class="o">/</span><span class="p">{</span><span class="n">model_type</span><span class="p">}</span><span class="o">/</span><span class="p">[</span><span class="n">file_name</span><span class="p">]</span><span class="o">/</span>
+</pre></div>
+</div>
+<p>Checkpoint persistence differs by domain:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Domain</p></th>
+<th class="head"><p>Save</p></th>
+<th class="head"><p>Load</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ml</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">joblib.dump</span></code> of <code class="docutils literal notranslate"><span class="pre">{&quot;model&quot;:</span> <span class="pre">...,</span> <span class="pre">&quot;data_pipeline&quot;:</span> <span class="pre">...}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">joblib.load</span></code> of the most recent file in <code class="docutils literal notranslate"><span class="pre">checkpoints_path</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nn</span></code></p></td>
+<td><p>Delegated to the model’s own save logic</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">model.load_checkpoint()</span></code>, then copies <code class="docutils literal notranslate"><span class="pre">model.data_pipeline</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="inverse-scaling">
+<h2>Inverse Scaling<a class="headerlink" href="#inverse-scaling" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">BaseForecaster._rescale_predictions</span></code> automatically reverses the target scaling applied by the data pipeline. It supports three input formats:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Format</p></th>
+<th class="head"><p>Handling</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></p></td>
+<td><p>Direct inverse transform via the pipeline’s target scaler</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tuple[np.ndarray,</span> <span class="pre">...]</span></code></p></td>
+<td><p>Each element is inverse-transformed individually; 4-D arrays (e.g. quantile or sample dimensions) are reshaped appropriately</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dict</span></code> with <code class="docutils literal notranslate"><span class="pre">&quot;loc&quot;</span></code> key</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;loc&quot;</span></code> is inverse-transformed; <code class="docutils literal notranslate"><span class="pre">&quot;scale&quot;</span></code> uses scale-only inversion; <code class="docutils literal notranslate"><span class="pre">&quot;quantiles&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;samples&quot;</span></code> are reshaped before inversion</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="twiga.forecaster.core.TwigaForecaster">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.forecaster.core.</span></span><span class="sig-name descname"><span class="pre">TwigaForecaster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/forecaster/core.html#TwigaForecaster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.forecaster.core.TwigaForecaster" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseForecaster</span></code></p>
+<p>Machine Learning Forecaster for time series predictions.</p>
+<p>This forecaster initializes a data pipeline and dynamically loads machine learning
+models based on provided configurations. The configurations can be specified as Pydantic
+models or dictionaries. Once the models are loaded, they can be trained, evaluated,
+and backtested.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModelConfig</span><span class="p">,</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data_params</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span><span class="n">date_column</span><span class="o">=</span><span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model_config</span> <span class="o">=</span> <span class="n">BaseModelConfig</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">train_params</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span><span class="n">data_params</span><span class="p">,</span> <span class="n">model_config</span><span class="p">,</span> <span class="n">train_params</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.forecaster.core.TwigaForecaster.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/forecaster/core.html#TwigaForecaster.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.forecaster.core.TwigaForecaster.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize TwigaForecaster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.DataPipelineConfig" title="twiga.core.config.data.DataPipelineConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code></a></span>) – Configuration for the data pipeline.</p></li>
+<li><p><strong>model_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.BaseModelConfig" title="twiga.core.config.base.BaseModelConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModelConfig</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="config.html#twiga.core.config.BaseModelConfig" title="twiga.core.config.base.BaseModelConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModelConfig</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span>) – Configuration for the model(s). Can be a single Pydantic config,
+a dictionary, or a list of either. Neural network configs with unset dims
+(<code class="docutils literal notranslate"><span class="pre">num_target_feature</span></code>, <code class="docutils literal notranslate"><span class="pre">forecast_horizon</span></code>, <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code> equal
+to 0) are auto-populated from <em>data_params</em>. Base arch configs with a
+<code class="docutils literal notranslate"><span class="pre">distribution</span></code> field set are automatically resolved to the corresponding
+probabilistic variant (e.g. <code class="docutils literal notranslate"><span class="pre">MLPFConfig(distribution='normal')</span></code> becomes
+an <code class="docutils literal notranslate"><span class="pre">MLPFNormalConfig</span></code>).</p></li>
+<li><p><strong>train_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.ForecasterConfig" title="twiga.core.config.forecaster.ForecasterConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecasterConfig</span></code></a></span>) – Training configuration parameters.</p></li>
+<li><p><strong>conformal_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.ConformalConfig" title="twiga.core.config.conformal.ConformalConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConformalConfig</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Optional conformal prediction configuration.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.forecaster.core.TwigaForecaster.calibrate">
+<span class="sig-name descname"><span class="pre">calibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calibrate_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covariate_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/forecaster/core.html#TwigaForecaster.calibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.forecaster.core.TwigaForecaster.calibrate" title="Link to this definition">#</a></dt>
+<dd><p>Calibrate conformal prediction models using calibration data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>calibrate_df</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Calibration dataset. If None, uses the stored training data.</p></li>
+<li><p><strong>covariate_df</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Optional covariate dataset.</p></li>
+<li><p><strong>ensemble_strategy</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Strategy for combining model predictions.</p></li>
+<li><p><strong>ensemble_weights</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Weights for weighted ensemble strategy.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">conformal_params</span></code> is not set.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.forecaster.core.TwigaForecaster.explain">
+<span class="sig-name descname"><span class="pre">explain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_background</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/forecaster/core.html#TwigaForecaster.explain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.forecaster.core.TwigaForecaster.explain" title="Link to this definition">#</a></dt>
+<dd><p>Compute SHAP feature attributions for a fitted ML model.</p>
+<p>Builds a <code class="xref py py-class docutils literal notranslate"><span class="pre">ShapExplainer</span></code> for the model at
+position <em>model_idx</em> in <code class="docutils literal notranslate"><span class="pre">self.models</span></code>, runs SHAP over <em>X</em>, and returns
+a <code class="xref py py-class docutils literal notranslate"><span class="pre">ShapResult</span></code> with values reshaped to
+<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code> — one attribution per sample, per lookback step, per feature.</p>
+<p>Only ML models (<code class="docutils literal notranslate"><span class="pre">domain=&quot;ml&quot;</span></code>) are supported.  Neural-network models
+require gradient-based attribution and are not currently handled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Feature array of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code> as produced by the data
+pipeline (e.g. from <code class="docutils literal notranslate"><span class="pre">DataPipeline.transform()</span></code>).</p></li>
+<li><p><strong>model_idx</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Index into <code class="docutils literal notranslate"><span class="pre">self.models</span></code> of the model to explain.
+Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code> (the first / only model).</p></li>
+<li><p><strong>n_background</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Number of background samples for <code class="docutils literal notranslate"><span class="pre">LinearExplainer</span></code>
+and <code class="docutils literal notranslate"><span class="pre">KernelExplainer</span></code>.  Ignored for tree models.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapResult</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapResult</span></code> with –</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">values</span></code>  — SHAP array <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feature_names</span></code>  — original F feature names</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">timestep_labels</span></code>  — L lookback labels (<code class="docutils literal notranslate"><span class="pre">'t-L+1'</span></code> … <code class="docutils literal notranslate"><span class="pre">'t0'</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">expected_value</span></code>  — SHAP base value (mean prediction)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IndexError" title="(in Python v3.14)"><strong>IndexError</strong></a> – If <em>model_idx</em> is out of range.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – If no models are fitted or the domain is not <code class="docutils literal notranslate"><span class="pre">&quot;ml&quot;</span></code>.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ImportError" title="(in Python v3.14)"><strong>ImportError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">shap</span></code> is not installed.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">plot_importance</span><span class="p">(</span><span class="n">top_n</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">importance</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">mean_importance</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>options:
+  show_root_heading: true
+  show_source: true
+  members_order: source
+  heading_level: 3
+</pre></div>
+</div>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../getting-started/quickstart.html"><span class="std std-doc">Quick Start Guide</span></a> – end-to-end walkthrough</p></li>
+<li><p><a class="reference internal" href="config.html"><span class="std std-doc">Configuration System</span></a> – <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code></p></li>
+<li><p><a class="reference internal" href="data-pipeline.html"><span class="std std-doc">Data Pipeline</span></a> – feature engineering and scaling</p></li>
+<li><p><a class="reference internal" href="metrics.html"><span class="std std-doc">Metrics</span></a> – point and interval evaluation functions</p></li>
+<li><p><a class="reference internal" href="backtesting.html"><span class="std std-doc">Backtesting</span></a> – cross-validation strategy</p></li>
+<li><p><a class="reference internal" href="../models/index.html"><span class="std std-doc">Models</span></a> – available model implementations</p></li>
+<li><p><a class="reference internal" href="../probabilistic/conformal-prediction.html"><span class="std std-doc">Conformal Prediction</span></a> – prediction intervals</p></li>
+<li><p><a class="reference internal" href="../advanced/hyperparameter-tuning.html"><span class="std std-doc">Hyperparameter Tuning</span></a> – Optuna integration</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">User Guide</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="config.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Configuration System</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#class-hierarchy">Class Hierarchy</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#constructing-a-forecaster">Constructing a Forecaster</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twigaforecaster-init"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.__init__</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#core-workflow">Core Workflow</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#method-reference">Method Reference</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#training">Training</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prediction">Prediction</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#calibration">Calibration</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluation">Evaluation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#backtesting">Backtesting</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hyperparameter-tuning">Hyperparameter Tuning</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model-registry">Model Registry</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ensemble-strategies">Ensemble Strategies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#checkpointing-directory-structure">Checkpointing &amp; Directory Structure</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inverse-scaling">Inverse Scaling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api-reference">API Reference</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.core.TwigaForecaster"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.core.TwigaForecaster.__init__"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.core.TwigaForecaster.calibrate"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.calibrate()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.core.TwigaForecaster.explain"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.explain()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#see-also">See Also</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/core/forecaster.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

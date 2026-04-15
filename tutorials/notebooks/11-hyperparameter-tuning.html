@@ -1,0 +1,1237 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>12. 11 — Hyperparameter Tuning with Optuna &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=724e8a05" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/11-hyperparameter-tuning';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="13. 12 — Ensemble Strategies" href="12-ensemble-strategies.html" />
+    <link rel="prev" title="11. 10 — Conformal Prediction &amp; Guaranteed Coverage" href="10-conformal-prediction.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../../_static/searchtools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="01-getting-started.html">1. 01 — Getting Started with Twiga</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02-forecastability-analysis.html">2. 02 — Forecastability Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03-feature-engineering.html">3. 03 — Feature Engineering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04-time-series-differencing.html">4. 04 — Time Series Differencing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05-ml-point-forecasting.html">5. 05 — ML Point Forecasting with Multiple Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="06-backtesting-and-evaluation.html">6. 06 — Backtesting &amp; Robust Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15-baseline-benchmarking.html">7. 15 — Baseline Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="07-neural-networks.html">8. 07 — Neural Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="08-quantile-regression.html">9. 08 — Quantile Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="09-parametric-distributions.html">10. 09 — Parametric Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="10-conformal-prediction.html">11. 10 — Conformal Prediction &amp; Guaranteed Coverage</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">12. 11 — Hyperparameter Tuning with Optuna</a></li>
+<li class="toctree-l1"><a class="reference internal" href="12-ensemble-strategies.html">13. 12 — Ensemble Strategies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="13-custom-models.html">14. 13 — Custom Models &amp; Extension Points</a></li>
+<li class="toctree-l1"><a class="reference internal" href="14-typed-forecast-results.html">15. 14 — Typed Forecast Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="16-shap-feature-attribution.html">16. 16 — SHAP Feature Attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="17-mlops-tracking-serving.html">17. 17 — MLOps: Tracking, Serving &amp; Monitoring</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">12. </span>11 — Hyperparameter Tuning with Optuna</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="11-—-Hyperparameter-Tuning-with-Optuna">
+<h1><span class="section-number">12. </span>11 — Hyperparameter Tuning with Optuna<a class="headerlink" href="#11-—-Hyperparameter-Tuning-with-Optuna" title="Link to this heading">#</a></h1>
+<p><img alt="Level" src="https://img.shields.io/badge/level-advanced-red" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~30%20min-lightgrey" /></p>
+<hr class="docutils" />
+<p><strong>What you’ll build</strong></p>
+<p>An Optuna-backed hyperparameter search for LightGBM using a typed <code class="docutils literal notranslate"><span class="pre">SearchSpace</span></code>, persisted to a resumable SQLite study, with a default-vs-tuned comparison table showing the metric improvement.</p>
+<p><strong>Prerequisites</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="05-ml-point-forecasting.html"><span class="doc">05 — ML Point Forecasting</span></a> (LightGBM, metric interpretation)</p></li>
+<li><p><a class="reference internal" href="06-backtesting-and-evaluation.html"><span class="doc">06 — Backtesting &amp; Evaluation</span></a> (cross-validation strategy)</p></li>
+<li><p>Python: basic familiarity with hyperparameters</p></li>
+</ul>
+<p><strong>Learning objectives</strong></p>
+<p>By the end of this notebook you will be able to:</p>
+<ol class="arabic simple">
+<li><p>Explain Bayesian optimisation (TPE) and why it outperforms random/grid search</p></li>
+<li><p>Define a typed search space using <code class="docutils literal notranslate"><span class="pre">SearchSpace</span></code> fields (int, float, categorical)</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">forecaster.tune()</span></code> with a configurable number of Optuna trials</p></li>
+<li><p>Resume an interrupted study from an SQLite database without losing prior trials</p></li>
+<li><p>Compare default vs. tuned model performance and decide when further tuning has diminishing returns</p></li>
+</ol>
+<section id="1.-Setup">
+<h2><span class="section-number">12.1. </span>1. Setup<a class="headerlink" href="#1.-Setup" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
+
+<span class="n">LetsPlot</span><span class="o">.</span><span class="n">setup_html</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.basic_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_metrics_bar</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span><span class="p">,</span> <span class="n">get_logger</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+<span class="n">configure</span><span class="p">()</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;tutorials&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Load-data">
+<h3><span class="section-number">12.1.1. </span>Load data<a class="headerlink" href="#Load-data" title="Link to this heading">#</a></h3>
+<p>The dataset covers Madeira, Portugal (32.37 °N, 16.27 °W) at 30-minute resolution. We keep only the columns we need: timestamp, net load (target), and two exogenous drivers.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">GT</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Train-/-val-/-test-splits">
+<h3><span class="section-number">12.1.2. </span>Train / val / test splits<a class="headerlink" href="#Train-/-val-/-test-splits" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Split</p></th>
+<th class="head"><p>Period</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>train</p></td>
+<td><p>before 2021-01-01</p></td>
+</tr>
+<tr class="row-odd"><td><p>val</p></td>
+<td><p>2021-01-01 – 2021-06-30</p></td>
+</tr>
+<tr class="row-even"><td><p>test</p></td>
+<td><p>2021-07-01 onwards</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2021-01-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">val_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2021-01-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2021-07-01&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">test_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2021-07-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;train : </span><span class="si">{</span><span class="n">train_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows  &quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">train_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">train_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;val   : </span><span class="si">{</span><span class="n">val_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows  (</span><span class="si">{</span><span class="n">val_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">val_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;test  : </span><span class="si">{</span><span class="n">test_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows  (</span><span class="si">{</span><span class="n">test_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">test_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Shared-DataPipelineConfig">
+<h3><span class="section-number">12.1.3. </span>Shared <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code><a class="headerlink" href="#Shared-DataPipelineConfig" title="Link to this heading">#</a></h3>
+<p>All experiments in this notebook use the same data configuration. We define it once here and reuse it throughout.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">,</span>
+    <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
+    <span class="n">longitude</span><span class="o">=-</span><span class="mf">16.274998</span><span class="p">,</span>
+    <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">],</span>
+    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">],</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+<span class="p">)</span>
+
+<span class="n">data_config</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="2.-What-gets-tuned-—-the-search-space">
+<h2><span class="section-number">12.2. </span>2. What gets tuned — the search space<a class="headerlink" href="#2.-What-gets-tuned-—-the-search-space" title="Link to this heading">#</a></h2>
+<p>Every Twiga model config carries a <code class="docutils literal notranslate"><span class="pre">search_space</span></code> field of type <code class="docutils literal notranslate"><span class="pre">BaseSearchSpace</span></code>. This object declares which parameters Optuna is allowed to sample, and within what ranges or from what categorical lists.</p>
+<p><strong>Fixed parameters</strong> are set directly on the config object and are never changed by the optimizer (e.g. <code class="docutils literal notranslate"><span class="pre">boosting_type</span></code>, <code class="docutils literal notranslate"><span class="pre">objective</span></code>, <code class="docutils literal notranslate"><span class="pre">metric</span></code>, <code class="docutils literal notranslate"><span class="pre">verbose</span></code>).</p>
+<p><strong>Tunable parameters</strong> are declared inside <code class="docutils literal notranslate"><span class="pre">search_space</span></code>. When <code class="docutils literal notranslate"><span class="pre">tune()</span></code> is called the <code class="docutils literal notranslate"><span class="pre">get_optuna_params(trial)</span></code> method merges both: fixed values form the baseline, and any key present in the search space overrides that baseline with a value sampled by the Optuna trial.</p>
+<blockquote>
+<div><p><strong>Key concept — Bayesian optimisation</strong></p>
+<p>Random search and grid search evaluate hyperparameter configurations independently — each trial ignores the outcomes of previous ones. This is wasteful when training is expensive.</p>
+<p>Optuna’s <strong>TPE (Tree-structured Parzen Estimator)</strong> sampler builds a probabilistic surrogate model of the objective function from all previously evaluated trials. It then proposes the next configuration in a region where the surrogate predicts a good outcome — effectively learning <em>where</em> in the search space to look next.</p>
+<p>A <strong>trial</strong> is one complete evaluation of the objective: sample a config → train the model on CV folds → report the mean validation RMSE → store the result. After ~20 trials the surrogate is warm enough to focus exploration on promising regions, outperforming random search for the same compute budget.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">optuna</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
+
+<span class="n">optuna</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">set_verbosity</span><span class="p">(</span><span class="n">optuna</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+
+<span class="n">lg_config</span> <span class="o">=</span> <span class="n">LIGHTGBMConfig</span><span class="p">()</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Fixed parameters (passed directly to LightGBM) ===&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">lg_config</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Tunable search space (sampled by Optuna each trial) ===&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">lg_config</span><span class="o">.</span><span class="n">search_space</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><strong>Key tunable fields for LightGBM</strong> — displayed via the search space configured above.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">search_space_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Parameter&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;n_estimators&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;learning_rate&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;num_leaves&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;subsample&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;colsample_bytree&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;min_data_in_leaf&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;reg_alpha&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;reg_lambda&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Search range&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;(100, 2000)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;(0.001, 0.3)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;(16, 256)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;(0.5, 1.0)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;(0.3, 1.0)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;(5, 100)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;(0.0, 10.0)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;(0.0, 10.0)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;float (log)&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Effect&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Number of boosting rounds — more rounds reduce bias at the cost of training time&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Step-size shrinkage — lower values need more estimators but generalise better&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Maximum leaf nodes per tree — primary complexity knob in LightGBM&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Fraction of rows used per tree — stochastic regularisation&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Fraction of features per tree — similar to random forests&#39; feature subsampling&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Minimum samples per leaf — prevents overfitting on tiny leaf nodes&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;L1 regularisation — promotes sparsity in leaf weights&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;L2 regularisation — shrinks leaf weights toward zero&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">search_space_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**LightGBM Tunable Search Space**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Parameters sampled by Optuna&#39;s TPE sampler each trial&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">search_space_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Fixed params (boosting_type, objective, metric, verbose) are never modified by the optimizer&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">search_space_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>Key concept — search space definition</strong></p>
+<p>Twiga’s <code class="docutils literal notranslate"><span class="pre">BaseSearchSpace</span></code> maps parameter names to their sampling specifications:</p>
+<ul class="simple">
+<li><p><strong>Categorical</strong> — a Python list, e.g. <code class="docutils literal notranslate"><span class="pre">linear_tree=[True,</span> <span class="pre">False]</span></code>. Optuna uses <code class="docutils literal notranslate"><span class="pre">trial.suggest_categorical()</span></code> and can select any element.</p></li>
+<li><p><strong>Integer range</strong> — a <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high)</span></code> tuple of integers, e.g. <code class="docutils literal notranslate"><span class="pre">num_leaves=(16,</span> <span class="pre">256)</span></code>. Sampled with <code class="docutils literal notranslate"><span class="pre">trial.suggest_int(low,</span> <span class="pre">high)</span></code>.</p></li>
+<li><p><strong>Float range</strong> — a <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high)</span></code> tuple of floats, e.g. <code class="docutils literal notranslate"><span class="pre">learning_rate=(0.001,</span> <span class="pre">0.3)</span></code>. Log-scale sampling is applied automatically when <code class="docutils literal notranslate"><span class="pre">low</span> <span class="pre">&gt;</span> <span class="pre">0</span></code> and the ratio <code class="docutils literal notranslate"><span class="pre">high</span> <span class="pre">/</span> <span class="pre">low</span> <span class="pre">&gt;</span> <span class="pre">5</span></code>, which is appropriate for learning rates and regularisation strengths.</p></li>
+</ul>
+<p><strong>Fixed parameters</strong> — anything set directly on the config object (<code class="docutils literal notranslate"><span class="pre">boosting_type</span></code>, <code class="docutils literal notranslate"><span class="pre">objective</span></code>, <code class="docutils literal notranslate"><span class="pre">metric</span></code>, <code class="docutils literal notranslate"><span class="pre">verbose</span></code>) bypasses the search space entirely and is passed unchanged to the model. This lets you freeze architectural choices while tuning only numerical knobs.</p>
+</div></blockquote>
+</section>
+<section id="3.-ForecasterConfig-with-project_name">
+<h2><span class="section-number">12.3. </span>3. ForecasterConfig with <code class="docutils literal notranslate"><span class="pre">project_name</span></code><a class="headerlink" href="#3.-ForecasterConfig-with-project_name" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">project_name</span></code> field in <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code> does two things:</p>
+<ol class="arabic simple">
+<li><p><strong>Names the Optuna study</strong> — Twiga creates (or reopens) a SQLite file at <code class="docutils literal notranslate"><span class="pre">studies/&lt;project_name&gt;.db</span></code>. Every trial’s parameters and objective value are persisted there automatically.</p></li>
+<li><p><strong>Names the checkpoint directory</strong> — for neural-network models, Lightning checkpoints are saved under a path derived from <code class="docutils literal notranslate"><span class="pre">project_name</span></code>, so the best weights survive process restarts.</p></li>
+</ol>
+<p>Because the study is stored in SQLite, you can <strong>interrupt a tuning run at any time and resume it later</strong> simply by using the same <code class="docutils literal notranslate"><span class="pre">project_name</span></code>. Optuna will pick up exactly where it left off, reusing the already-evaluated trials to warm-start the surrogate model.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+    <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">project_name</span><span class="o">=</span><span class="s2">&quot;tuning-tutorial&quot;</span><span class="p">,</span>  <span class="c1"># -&gt; studies/tuning-tutorial.db</span>
+<span class="p">)</span>
+
+<span class="n">train_config</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>Key concept — overfitting HPO</strong></p>
+<p>A common mistake is to run HPO and evaluate on the <strong>same test set</strong> you use to report final metrics. This leaks information: you are effectively choosing the hyperparameters that happen to work best on that particular test period, not hyperparameters that generalise.</p>
+<p>The correct protocol has three non-overlapping splits:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Split</p></th>
+<th class="head"><p>Used for</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Train</strong></p></td>
+<td><p>Model fitting during each trial</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Validation</strong></p></td>
+<td><p>Optuna objective — the RMSE reported per trial</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Test</strong></p></td>
+<td><p>Final honest evaluation, never seen during HPO</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>In Twiga, <code class="docutils literal notranslate"><span class="pre">forecaster.tune(train_df,</span> <span class="pre">val_df,</span> <span class="pre">...)</span></code> uses the validation set as the HPO objective, leaving <code class="docutils literal notranslate"><span class="pre">test_df</span></code> untouched until the very end. This is the same reason <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code> distinguishes <code class="docutils literal notranslate"><span class="pre">train_size</span></code> from <code class="docutils literal notranslate"><span class="pre">test_size</span></code> — the test folds are reserved and never influence the surrogate model.</p>
+</div></blockquote>
+</section>
+<section id="4.-Running-tune()">
+<h2><span class="section-number">12.4. </span>4. Running <code class="docutils literal notranslate"><span class="pre">tune()</span></code><a class="headerlink" href="#4.-Running-tune()" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">forecaster.tune(train_df,</span> <span class="pre">val_df,</span> <span class="pre">num_trials)</span></code> runs Bayesian optimisation over the declared search space. Under the hood each trial:</p>
+<ol class="arabic simple">
+<li><p>Samples a parameter set using the TPE (Tree-structured Parzen Estimator) sampler.</p></li>
+<li><p>Trains the model on the cross-validation folds defined by <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>.</p></li>
+<li><p>Reports the mean validation RMSE to the Optuna study.</p></li>
+<li><p>Persists the result to SQLite.</p></li>
+</ol>
+<p>We use <code class="docutils literal notranslate"><span class="pre">num_trials=5</span></code> here for demonstration speed. In practice 50–200 trials give meaningful gains for tree models.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
+
+<span class="n">lg_config</span> <span class="o">=</span> <span class="n">LIGHTGBMConfig</span><span class="p">()</span>
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">lg_config</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Run HPO — 5 trials for demonstration (increase for real experiments)</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">tune</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Tuning complete.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="5.-Fitting-with-tuned-parameters">
+<h2><span class="section-number">12.5. </span>5. Fitting with tuned parameters<a class="headerlink" href="#5.-Fitting-with-tuned-parameters" title="Link to this heading">#</a></h2>
+<p>After <code class="docutils literal notranslate"><span class="pre">tune()</span></code> finishes, the forecaster internally loads the best trial’s parameters. Calling <code class="docutils literal notranslate"><span class="pre">fit()</span></code> then trains the final model with those parameters on the full train + val data before evaluating on the test set.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+<span class="n">pred_tuned</span><span class="p">,</span> <span class="n">metric_tuned</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;After tuning:&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metric_tuned</span><span class="p">[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<section id="Compare-with-default-(no-tuning)">
+<h3><span class="section-number">12.5.1. </span>Compare with default (no tuning)<a class="headerlink" href="#Compare-with-default-(no-tuning)" title="Link to this heading">#</a></h3>
+<p>We train an identical model using factory-default hyperparameters to quantify the benefit of HPO on this dataset.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">lg_default</span> <span class="o">=</span> <span class="n">LIGHTGBMConfig</span><span class="p">()</span>
+<span class="n">forecaster_default</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">lg_default</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">ForecasterConfig</span><span class="p">(</span><span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span> <span class="n">train_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">forecaster_default</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+<span class="n">pred_default</span><span class="p">,</span> <span class="n">metric_default</span> <span class="o">=</span> <span class="n">forecaster_default</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Default (no tuning):&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metric_default</span><span class="p">[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Side-by-side-comparison-—-Default-vs.-Tuned">
+<h3><span class="section-number">12.5.2. </span>Side-by-side comparison — Default vs. Tuned<a class="headerlink" href="#Side-by-side-comparison-—-Default-vs.-Tuned" title="Link to this heading">#</a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">summary</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;Default&quot;</span><span class="p">:</span> <span class="n">metric_default</span><span class="p">[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+    <span class="s2">&quot;Tuned&quot;</span><span class="p">:</span> <span class="n">metric_tuned</span><span class="p">[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="n">summary_df</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;Configuration&quot;</span><span class="p">,</span> <span class="s2">&quot;mae&quot;</span><span class="p">:</span> <span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">:</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">:</span> <span class="s2">&quot;Corr&quot;</span><span class="p">})</span>
+<span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">summary_df</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_model_performance_table</span><span class="p">,</span> <span class="n">twiga_gt</span>
+
+<span class="n">create_model_performance_table</span><span class="p">(</span>
+    <span class="n">summary_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Configuration&quot;</span><span class="p">:</span> <span class="s2">&quot;Model&quot;</span><span class="p">}),</span>
+    <span class="p">[</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">,</span> <span class="s2">&quot;Corr&quot;</span><span class="p">],</span>
+    <span class="n">minimize_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">],</span>
+    <span class="n">maximize_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Corr&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="6.-Tuning-a-neural-network-model">
+<h2><span class="section-number">12.6. </span>6. Tuning a neural-network model<a class="headerlink" href="#6.-Tuning-a-neural-network-model" title="Link to this heading">#</a></h2>
+<p>The same <code class="docutils literal notranslate"><span class="pre">tune()</span></code> API works for NN models. The key differences are:</p>
+<ul class="simple">
+<li><p>NN configs are initialised with <code class="docutils literal notranslate"><span class="pre">from_data_config(data_config)</span></code> so that sequence dimensions are set automatically from the data pipeline.</p></li>
+<li><p>We cap <code class="docutils literal notranslate"><span class="pre">max_epochs=5</span></code> to keep the demo fast. In production use 50–200.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rich_progress_bar=False</span></code> suppresses Lightning’s per-step progress bars inside the notebook.</p></li>
+</ul>
+<p>The search space for <code class="docutils literal notranslate"><span class="pre">MLPGAMConfig</span></code> covers architecture choices (<code class="docutils literal notranslate"><span class="pre">hidden_dim</span></code>, <code class="docutils literal notranslate"><span class="pre">num_layers</span></code>, <code class="docutils literal notranslate"><span class="pre">embedding_size</span></code>, <code class="docutils literal notranslate"><span class="pre">dropout</span></code>), optimizer settings (<code class="docutils literal notranslate"><span class="pre">learning_rate</span></code>, <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>), and the L1 sparsity coefficient (<code class="docutils literal notranslate"><span class="pre">lambda_lasso</span></code>).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPGAMConfig</span>
+
+<span class="n">nn_config</span> <span class="o">=</span> <span class="n">MLPGAMConfig</span><span class="o">.</span><span class="n">from_data_config</span><span class="p">(</span><span class="n">data_config</span><span class="p">)</span>
+<span class="n">nn_config</span><span class="o">.</span><span class="n">max_epochs</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">nn_config</span><span class="o">.</span><span class="n">rich_progress_bar</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">nn_train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+    <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">project_name</span><span class="o">=</span><span class="s2">&quot;tuning-nn-tutorial&quot;</span><span class="p">,</span>  <span class="c1"># separate study from the ML one</span>
+<span class="p">)</span>
+
+<span class="n">forecaster_nn</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">nn_config</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">nn_train_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># 3 trials — just enough to verify the pipeline works end-to-end</span>
+<span class="n">forecaster_nn</span><span class="o">.</span><span class="n">tune</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;NN tuning complete.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="7.-Study-persistence-—-resuming-a-study">
+<h2><span class="section-number">12.7. </span>7. Study persistence — resuming a study<a class="headerlink" href="#7.-Study-persistence-—-resuming-a-study" title="Link to this heading">#</a></h2>
+<p>Optuna stores every trial in a SQLite database located at <code class="docutils literal notranslate"><span class="pre">studies/&lt;project_name&gt;.db</span></code>. This means:</p>
+<ul class="simple">
+<li><p>You can <strong>interrupt a run</strong> (Ctrl-C, kernel restart, VM shutdown) at any point without losing progress.</p></li>
+<li><p>To <strong>resume</strong>, simply construct <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code> with the <strong>same ``project_name``</strong> and call <code class="docutils literal notranslate"><span class="pre">tune()</span></code> again. Optuna will reopen the existing study, load all previously evaluated trials, and continue sampling from where it left off.</p></li>
+<li><p>The TPE surrogate is rebuilt from the stored trial history, so later trials benefit from all the information gathered in earlier runs.</p></li>
+</ul>
+<p>This makes it practical to spread a large search (e.g., 200 trials) across multiple notebook sessions or overnight batch jobs without any manual bookkeeping.</p>
+</section>
+<section id="8.-Optuna-Dashboard-(optional)">
+<h2><span class="section-number">12.8. </span>8. Optuna Dashboard (optional)<a class="headerlink" href="#8.-Optuna-Dashboard-(optional)" title="Link to this heading">#</a></h2>
+<p>Optuna ships with an interactive web dashboard that lets you inspect trial history, parameter importances, and the objective landscape without writing any extra code.</p>
+<p>Launch it from a terminal in the project root:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>optuna-dashboard<span class="w"> </span>sqlite:///studies/tuning-tutorial.db
+</pre></div>
+</div>
+<p>Or for the NN study:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>optuna-dashboard<span class="w"> </span>sqlite:///studies/tuning-nn-tutorial.db
+</pre></div>
+</div>
+<p>The dashboard will open at <code class="docutils literal notranslate"><span class="pre">http://localhost:8080</span></code> and shows:</p>
+<ul class="simple">
+<li><p><strong>Trial history</strong> — objective value per trial, with best-so-far overlay</p></li>
+<li><p><strong>Parameter importances</strong> — which hyperparameters influenced the objective most</p></li>
+<li><p><strong>Parallel coordinate plot</strong> — relationships between parameter values and performance</p></li>
+<li><p><strong>Pareto front</strong> — for multi-objective studies (not used here)</p></li>
+</ul>
+<p>No installation is needed if you installed the optional <code class="docutils literal notranslate"><span class="pre">optuna-dashboard</span></code> package (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">optuna-dashboard</span></code>).</p>
+</section>
+<section id="9.-Interpreting-results-—-when-to-tune-and-when-not-to">
+<h2><span class="section-number">12.9. </span>9. Interpreting results — when to tune and when not to<a class="headerlink" href="#9.-Interpreting-results-—-when-to-tune-and-when-not-to" title="Link to this heading">#</a></h2>
+<section id="When-tuning-is-worth-the-cost">
+<h3><span class="section-number">12.9.1. </span>When tuning is worth the cost<a class="headerlink" href="#When-tuning-is-worth-the-cost" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Large datasets with long training folds</strong> — each trial is expensive but the data provides enough signal to reliably distinguish good from bad configurations.</p></li>
+<li><p><strong>Production models</strong> — a one-time tuning investment amortises quickly across many inference calls.</p></li>
+<li><p><strong>Neural network architectures</strong> — the landscape is highly non-convex and defaults rarely perform well out of the box.</p></li>
+</ul>
+</section>
+<section id="When-to-skip-tuning">
+<h3><span class="section-number">12.9.2. </span>When to skip tuning<a class="headerlink" href="#When-to-skip-tuning" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Small datasets (fewer than ~100 samples per fold)</strong> — cross-validation estimates of the objective are noisy; the optimizer will over-fit to noise in the fold splits rather than discover genuinely better hyperparameters.</p></li>
+<li><p><strong>Time-constrained deployments</strong> — if you need a model in production within minutes, default tree-model configs are already competitive and tuning adds latency without a guaranteed payoff.</p></li>
+<li><p><strong>Heavily regularised models</strong> — if the model is already underfitting, tuning hyperparameters without first improving feature engineering will have limited impact.</p></li>
+</ul>
+</section>
+<section id="Trade-off-rule-of-thumb">
+<h3><span class="section-number">12.9.3. </span>Trade-off rule of thumb<a class="headerlink" href="#Trade-off-rule-of-thumb" title="Link to this heading">#</a></h3>
+<p>Start with <code class="docutils literal notranslate"><span class="pre">num_trials=20</span></code> for a quick sanity check. If the best trial improves on the default by more than 3–5 % on your key metric, extend to 100+ trials. If the improvement is marginal, invest the compute in richer features or a larger ensemble instead.</p>
+</section>
+</section>
+<section id="Wrapping-up">
+<h2><span class="section-number">12.10. </span>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<p><strong>What you did</strong></p>
+<ul class="simple">
+<li><p>☒ Inspected the LightGBM typed search space — integer, float, and categorical ranges</p></li>
+<li><p>☒ Added a <code class="docutils literal notranslate"><span class="pre">project_name</span></code> to <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code> to bind tuning to a SQLite study</p></li>
+<li><p>☒ Ran <code class="docutils literal notranslate"><span class="pre">forecaster.tune()</span></code> with Bayesian (TPE) optimisation across CV folds</p></li>
+<li><p>☒ Fit the final model with the best trial’s parameters and evaluated on the held-out test set</p></li>
+<li><p>☒ Compared tuned vs. default performance with a styled metric table</p></li>
+<li><p>☒ Tuned an NN model using the same API (<code class="docutils literal notranslate"><span class="pre">MLPGAMConfig</span></code>)</p></li>
+<li><p>☒ Understood how to resume a study by reusing <code class="docutils literal notranslate"><span class="pre">project_name</span></code></p></li>
+</ul>
+<p><strong>Key takeaways</strong></p>
+<ol class="arabic simple">
+<li><p>Bayesian (TPE) optimisation learns <em>where</em> to sample next from prior trials — outperforming random search for the same compute budget after ~20 trials.</p></li>
+<li><p>Always use a <strong>separate validation set</strong> as the HPO objective; never optimise directly against the test set.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">project_name</span></code> maps to a SQLite file at <code class="docutils literal notranslate"><span class="pre">studies/&lt;name&gt;.db</span></code> — tuning is interruptible and resumable at no cost.</p></li>
+<li><p>The same <code class="docutils literal notranslate"><span class="pre">forecaster.tune()</span></code> API works for ML and NN models; NN configs add architecture dimensions like <code class="docutils literal notranslate"><span class="pre">hidden_dim</span></code> and <code class="docutils literal notranslate"><span class="pre">dropout</span></code> to the search space.</p></li>
+<li><p>If tuned improvement is below 3 % on your key metric, invest compute in richer features or a larger ensemble instead.</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="What's-next?">
+<h2><span class="section-number">12.11. </span>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<p>Notebook 11 shows how to combine several models — LightGBM, XGBoost, CatBoost — into mean, median, and weighted ensembles, and explains when ensembles outperform any single well-tuned model.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
+
+<span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
+<span class="n">_TEAL_MID</span> <span class="o">=</span> <span class="s2">&quot;#069fac&quot;</span>
+<span class="n">_TEAL_LIGHT</span> <span class="o">=</span> <span class="s2">&quot;#e8f5f8&quot;</span>
+<span class="n">_TEAL_BEST</span> <span class="o">=</span> <span class="s2">&quot;#d0ecf1&quot;</span>
+<span class="n">_TEXT_DARK</span> <span class="o">=</span> <span class="s2">&quot;#2d3748&quot;</span>
+<span class="n">_TEXT_MUTED</span> <span class="o">=</span> <span class="s2">&quot;#718096&quot;</span>
+<span class="n">_WHITE</span> <span class="o">=</span> <span class="s2">&quot;#ffffff&quot;</span>
+
+<span class="n">steps</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;06&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Backtesting &amp; Evaluation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Rolling-window backtesting · fold-level metrics&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;backtesting&quot;</span><span class="p">,</span> <span class="s2">&quot;evaluation&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;10&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Conformal Prediction&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;CQR · CRC — coverage-guaranteed intervals&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;conformal&quot;</span><span class="p">,</span> <span class="s2">&quot;CQR&quot;</span><span class="p">,</span> <span class="s2">&quot;coverage&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;11&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Hyperparameter Tuning&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Optuna TPE · typed search spaces · resumable SQLite study&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;optuna&quot;</span><span class="p">,</span> <span class="s2">&quot;HPO&quot;</span><span class="p">,</span> <span class="s2">&quot;Bayesian&quot;</span><span class="p">,</span> <span class="s2">&quot;tuning&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;12&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Ensemble Strategies&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Mean · median · weighted-mean ensembles&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ensemble&quot;</span><span class="p">,</span> <span class="s2">&quot;weighted&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;13&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Custom Models&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Register your own model class in the Twiga registry&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;custom&quot;</span><span class="p">,</span> <span class="s2">&quot;registry&quot;</span><span class="p">,</span> <span class="s2">&quot;sklearn&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+<span class="n">track_name</span> <span class="o">=</span> <span class="s2">&quot;Advanced Track&quot;</span>
+<span class="n">footer</span> <span class="o">=</span> <span class="s1">&#39;Next: combine tuned models with &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;Ensemble Strategies&lt;/span&gt; (12) or extend the library with &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;Custom Models&lt;/span&gt; (13).&#39;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bg</span><span class="p">,</span> <span class="n">fg</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;display:inline-block;background:</span><span class="si">{</span><span class="n">bg</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">fg</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;&quot;&gt;</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s1">&lt;/span&gt;&#39;</span>
+
+
+<span class="n">ch</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;active&quot;</span><span class="p">]</span>
+    <span class="n">cb</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_WHITE</span>
+    <span class="n">cbo</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="s2">&quot;#d1ecf1&quot;</span>
+    <span class="n">nb</span> <span class="o">=</span> <span class="n">_TEAL_MID</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_LIGHT</span>
+    <span class="n">nf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">tf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_DARK</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="s2">&quot;#cce8ef&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_MUTED</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="s2">&quot;#0d5f75&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_BEST</span>
+    <span class="n">bf</span> <span class="o">=</span> <span class="s2">&quot;#b8e4ed&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">yh</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;float:right;background:</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:700;padding:2px 10px;border-radius:12px;&quot;&gt;★ you are here&lt;/span&gt;&#39;</span>
+        <span class="k">if</span> <span class="n">a</span>
+        <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">bdg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">bf</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">])</span>
+    <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;background:</span><span class="si">{</span><span class="n">cb</span><span class="si">}</span><span class="s1">;border:2px solid </span><span class="si">{</span><span class="n">cbo</span><span class="si">}</span><span class="s1">;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:</span><span class="si">{</span><span class="s2">&quot;0 4px 14px rgba(16,117,145,.25)&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;0 1px 4px rgba(0,0,0,.06)&quot;</span><span class="si">}</span><span class="s1">;&quot;&gt;&lt;div style=&quot;min-width:44px;height:44px;background:</span><span class="si">{</span><span class="n">nb</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">nf</span><span class="si">}</span><span class="s1">;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;flex:1;&quot;&gt;&lt;div style=&quot;font-size:15px;font-weight:700;color:</span><span class="si">{</span><span class="n">tf</span><span class="si">}</span><span class="s1">;margin-bottom:4px;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="si">}{</span><span class="n">yh</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;font-size:12.5px;color:</span><span class="si">{</span><span class="n">df</span><span class="si">}</span><span class="s1">;margin-bottom:8px;line-height:1.5;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;desc&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div&gt;</span><span class="si">{</span><span class="n">bdg</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;display:flex;justify-content:center;height:32px;&quot;&gt;&lt;svg width=&quot;24&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 32&quot; fill=&quot;none&quot;&gt;&lt;line x1=&quot;12&quot; y1=&quot;0&quot; x2=&quot;12&quot; y2=&quot;24&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot; stroke-dasharray=&quot;4 3&quot;/&gt;&lt;polygon points=&quot;6,20 18,20 12,30&quot; fill=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;&#39;</span>
+
+<span class="n">HTML</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;font-family:Inter,</span><span class="se">\&#39;</span><span class="s1">Segoe UI</span><span class="se">\&#39;</span><span class="s1">,sans-serif;max-width:640px;margin:8px 0;&quot;&gt;&lt;div style=&quot;background:linear-gradient(135deg,</span><span class="si">{</span><span class="n">_TEAL</span><span class="si">}</span><span class="s1"> 0%,</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1"> 100%);border-radius:12px 12px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px;&quot;&gt;&lt;svg width=&quot;22&quot; height=&quot;22&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot;&gt;&lt;path d=&quot;M12 2L2 7l10 5 10-5-10-5z&quot;/&gt;&lt;path d=&quot;M2 17l10 5 10-5&quot;/&gt;&lt;path d=&quot;M2 12l10 5 10-5&quot;/&gt;&lt;/svg&gt;&lt;span style=&quot;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:14px;font-weight:700;&quot;&gt;Twiga Learning Path — </span><span class="si">{</span><span class="n">track_name</span><span class="si">}</span><span class="s1">&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;border:2px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;border-top:none;border-radius:0 0 12px 12px;padding:20px 20px 16px;background:#f9fdfe;display:flex;flex-direction:column;&quot;&gt;</span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s1">&lt;div style=&quot;margin-top:16px;font-size:11.5px;color:</span><span class="si">{</span><span class="n">_TEXT_MUTED</span><span class="si">}</span><span class="s1">;text-align:center;border-top:1px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;padding-top:12px;&quot;&gt;</span><span class="si">{</span><span class="n">footer</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="10-conformal-prediction.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">11. </span>10 — Conformal Prediction &amp; Guaranteed Coverage</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="12-ensemble-strategies.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">13. </span>12 — Ensemble Strategies</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Setup">12.1. 1. Setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Load-data">12.1.1. Load data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Train-/-val-/-test-splits">12.1.2. Train / val / test splits</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Shared-DataPipelineConfig">12.1.3. Shared <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-What-gets-tuned-—-the-search-space">12.2. 2. What gets tuned — the search space</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-ForecasterConfig-with-project_name">12.3. 3. ForecasterConfig with <code class="docutils literal notranslate"><span class="pre">project_name</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Running-tune()">12.4. 4. Running <code class="docutils literal notranslate"><span class="pre">tune()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Fitting-with-tuned-parameters">12.5. 5. Fitting with tuned parameters</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Compare-with-default-(no-tuning)">12.5.1. Compare with default (no tuning)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Side-by-side-comparison-—-Default-vs.-Tuned">12.5.2. Side-by-side comparison — Default vs. Tuned</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Tuning-a-neural-network-model">12.6. 6. Tuning a neural-network model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-Study-persistence-—-resuming-a-study">12.7. 7. Study persistence — resuming a study</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-Optuna-Dashboard-(optional)">12.8. 8. Optuna Dashboard (optional)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9.-Interpreting-results-—-when-to-tune-and-when-not-to">12.9. 9. Interpreting results — when to tune and when not to</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#When-tuning-is-worth-the-cost">12.9.1. When tuning is worth the cost</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#When-to-skip-tuning">12.9.2. When to skip tuning</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Trade-off-rule-of-thumb">12.9.3. Trade-off rule of thumb</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">12.10. Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">12.11. What’s next?</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../_sources/tutorials/notebooks/11-hyperparameter-tuning.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

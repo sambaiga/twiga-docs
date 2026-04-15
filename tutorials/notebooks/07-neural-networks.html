@@ -1,0 +1,1373 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>8. 07 — Neural Network Models &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=724e8a05" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/07-neural-networks';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="9. 08 — Quantile Regression" href="08-quantile-regression.html" />
+    <link rel="prev" title="7. 15 — Baseline Benchmarking" href="15-baseline-benchmarking.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../../_static/searchtools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="01-getting-started.html">1. 01 — Getting Started with Twiga</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02-forecastability-analysis.html">2. 02 — Forecastability Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03-feature-engineering.html">3. 03 — Feature Engineering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04-time-series-differencing.html">4. 04 — Time Series Differencing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05-ml-point-forecasting.html">5. 05 — ML Point Forecasting with Multiple Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="06-backtesting-and-evaluation.html">6. 06 — Backtesting &amp; Robust Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15-baseline-benchmarking.html">7. 15 — Baseline Benchmarking</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">8. 07 — Neural Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="08-quantile-regression.html">9. 08 — Quantile Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="09-parametric-distributions.html">10. 09 — Parametric Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="10-conformal-prediction.html">11. 10 — Conformal Prediction &amp; Guaranteed Coverage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="11-hyperparameter-tuning.html">12. 11 — Hyperparameter Tuning with Optuna</a></li>
+<li class="toctree-l1"><a class="reference internal" href="12-ensemble-strategies.html">13. 12 — Ensemble Strategies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="13-custom-models.html">14. 13 — Custom Models &amp; Extension Points</a></li>
+<li class="toctree-l1"><a class="reference internal" href="14-typed-forecast-results.html">15. 14 — Typed Forecast Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="16-shap-feature-attribution.html">16. 16 — SHAP Feature Attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="17-mlops-tracking-serving.html">17. 17 — MLOps: Tracking, Serving &amp; Monitoring</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">8. </span>07 — Neural Network Models</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="07-—-Neural-Network-Models">
+<h1><span class="section-number">8. </span>07 — Neural Network Models<a class="headerlink" href="#07-—-Neural-Network-Models" title="Link to this heading">#</a></h1>
+<p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~30%20min-lightgrey" /></p>
+<hr class="docutils" />
+<p><strong>What you’ll build</strong></p>
+<p>Two neural network forecasters — a multi-layer perceptron (<code class="docutils literal notranslate"><span class="pre">MLPF</span></code>) and N-HiTS — trained with PyTorch Lightning on the MLVS-PT net-load dataset, benchmarked against the LightGBM baseline from NB05, and compared on MAE and training speed.</p>
+<p><strong>Prerequisites</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="01-getting-started.html"><span class="doc">01 — Getting Started</span></a> (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)</p></li>
+<li><p><a class="reference internal" href="03-feature-engineering.html"><span class="doc">03 — Feature Engineering</span></a> (understanding the (B, L, F) tensor)</p></li>
+<li><p><a class="reference internal" href="05-ml-point-forecasting.html"><span class="doc">05 — ML Point Forecasting</span></a> (ML baseline to beat)</p></li>
+<li><p><a class="reference internal" href="06-backtesting-and-evaluation.html"><span class="doc">06 — Backtesting &amp; Evaluation</span></a> (metric interpretation)</p></li>
+<li><p>Python: basic PyTorch awareness (not required to write any)</p></li>
+</ul>
+<p><strong>Learning objectives</strong></p>
+<p>By the end of this notebook you will be able to:</p>
+<ol class="arabic simple">
+<li><p>Explain when neural networks outperform gradient-boosted trees and when they do not</p></li>
+<li><p>Configure <code class="docutils literal notranslate"><span class="pre">MLPFConfig</span></code> and <code class="docutils literal notranslate"><span class="pre">NHiTSConfig</span></code> including embedding types and sequence dimensions</p></li>
+<li><p>Train a neural network forecaster with PyTorch Lightning using early stopping</p></li>
+<li><p>Compare neural and ML model metrics fairly using a shared <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code></p></li>
+<li><p>Interpret training curves and understand what 5-epoch results mean vs. fully converged results</p></li>
+</ol>
+<blockquote>
+<div><p><strong>Key concept — why neural networks?</strong></p>
+<p>Gradient boosting (LightGBM, XGBoost, CatBoost) is hard to beat on tabular data with hand-crafted features. Neural networks earn their keep when:</p>
+<ul class="simple">
+<li><p><strong>The dataset is large</strong> — NNs scale better with data volume; tree models plateau.</p></li>
+<li><p><strong>Raw sequences matter</strong> — NNs can learn from the full look-back window without manual lag selection.</p></li>
+<li><p><strong>You need probabilistic outputs</strong> — distribution heads (NB07–08) attach naturally to NN backbones.</p></li>
+<li><p><strong>Transfer learning is on the table</strong> — pretrained NN weights can be fine-tuned on new sites.</p></li>
+</ul>
+<p>With only <code class="docutils literal notranslate"><span class="pre">max_epochs=5</span></code> in this tutorial, LightGBM will likely win. That is intentional — it illustrates the training-budget trade-off. With ≥ 50 epochs and a proper learning-rate schedule the NN models typically match or surpass tree-based models on this dataset.</p>
+</div></blockquote>
+<section id="1.-Setup">
+<h2><span class="section-number">8.1. </span>1. Setup<a class="headerlink" href="#1.-Setup" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">LetsPlot</span><span class="o">.</span><span class="n">setup_html</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.basic_plot</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">plot_forecast</span><span class="p">,</span>
+    <span class="n">plot_forecast_grid</span><span class="p">,</span>
+    <span class="n">plot_metrics_bar</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span><span class="p">,</span> <span class="n">get_logger</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+<span class="n">configure</span><span class="p">()</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;tutorials&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Load-data">
+<h3><span class="section-number">8.1.1. </span>Load data<a class="headerlink" href="#Load-data" title="Link to this heading">#</a></h3>
+<p>The dataset covers Madeira, Portugal (32.37°N, 16.27°W) at 30-minute resolution. We only load the columns we need.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">GT</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Train-/-val-/-test-splits">
+<h3><span class="section-number">8.1.2. </span>Train / val / test splits<a class="headerlink" href="#Train-/-val-/-test-splits" title="Link to this heading">#</a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">splits_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Split&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span> <span class="s2">&quot;Validation&quot;</span><span class="p">,</span> <span class="s2">&quot;Test&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Period&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;before 2021-01-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-01-01 – 2021-06-30&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-07-01 onwards&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Purpose&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Model learning&quot;</span><span class="p">,</span> <span class="s2">&quot;Early-stopping / overfitting guard&quot;</span><span class="p">,</span> <span class="s2">&quot;Final honest evaluation&quot;</span><span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">splits_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Data Splits**&quot;</span><span class="p">),</span> <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Chronological — no shuffling, no overlap&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">splits_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">splits_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2021-01-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">val_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2021-01-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2021-07-01&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">test_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2021-07-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;train : </span><span class="si">{</span><span class="n">train_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows  (</span><span class="si">{</span><span class="n">train_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">train_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;val   : </span><span class="si">{</span><span class="n">val_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows  (</span><span class="si">{</span><span class="n">val_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">val_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;test  : </span><span class="si">{</span><span class="n">test_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows  (</span><span class="si">{</span><span class="n">test_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">test_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="2.-Data-config">
+<h2><span class="section-number">8.2. </span>2. Data config<a class="headerlink" href="#2.-Data-config" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> is identical to previous notebooks — same target, resolution, location, features, and horizon. This ensures that all models are evaluated on the exact same problem setup.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+
+<span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">,</span>
+    <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
+    <span class="n">longitude</span><span class="o">=-</span><span class="mf">16.274998</span><span class="p">,</span>
+    <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">],</span>
+    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">],</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+<span class="p">)</span>
+
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span><span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span> <span class="n">train_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">data_config</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="3.-NN-Config-Dimensions-—-Auto-populated">
+<h2><span class="section-number">8.3. </span>3. NN Config Dimensions — Auto-populated<a class="headerlink" href="#3.-NN-Config-Dimensions-—-Auto-populated" title="Link to this heading">#</a></h2>
+<p>ML model configs (e.g. <code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig</span></code>) need no knowledge of input shape — the library infers it at training time.</p>
+<p>NN configs are different. A neural network must know:</p>
+<ul class="simple">
+<li><p><strong>``num_target_feature``</strong> — number of target variables to forecast</p></li>
+<li><p><strong>``forecast_horizon``</strong> — how many steps ahead to predict</p></li>
+<li><p><strong>``lookback_window_size``</strong> — length of the input sequence</p></li>
+<li><p><strong>``num_historical_features``</strong>, <strong>``num_calendar_features``</strong>, <strong>``num_exogenous_features``</strong>, <strong>``num_future_covariates``</strong></p></li>
+</ul>
+<div class="line-block">
+<div class="line"><strong>In the current API, all of these default to ``0`` and are auto-populated by ``TwigaForecaster``</strong> from <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>.</div>
+<div class="line">You simply construct the config with any training hyperparameters you want to override:</div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span>
+
+<span class="c1"># Dims are filled automatically — just set training knobs</span>
+<span class="n">mlpf_config</span> <span class="o">=</span> <span class="n">MLPFConfig</span><span class="p">(</span><span class="n">max_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rich_progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The legacy <code class="docutils literal notranslate"><span class="pre">MLPFConfig.from_data_config(data_config)</span></code> class method still works and is useful when you need a standalone config object outside a <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> (e.g., inspection or debugging).</p>
+<blockquote>
+<div><p><strong>Key concept — sequence embedding and the (B, L, F) tensor</strong></p>
+<p>Every Twiga NN model receives inputs as a 3-D tensor of shape <strong>(B, L, F)</strong>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Axis</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>Example (this notebook)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>B</p></td>
+<td><p>Batch size — number of windows processed simultaneously</p></td>
+<td><p>32 windows</p></td>
+</tr>
+<tr class="row-odd"><td><p>L</p></td>
+<td><p>Lookback length — time steps in the input sequence</p></td>
+<td><p>96 steps = 48 h</p></td>
+</tr>
+<tr class="row-even"><td><p>F</p></td>
+<td><p>Feature count — target + calendar + exogenous features per step</p></td>
+<td><p>~5 features</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Before entering the MLP encoder, each time step can optionally be projected into a richer latent space via a <strong>value embedding</strong> (e.g. <code class="docutils literal notranslate"><span class="pre">LinearEmb</span></code> applies a shared linear layer across all L steps), and <strong>positional information</strong> is injected via a <strong>positional embedding</strong> (e.g. <code class="docutils literal notranslate"><span class="pre">LearnPosEmb</span></code> adds a trained vector to each position). Section 8 of this notebook shows how to toggle these with config knobs.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span>
+
+<span class="n">mlpf_config</span> <span class="o">=</span> <span class="n">MLPFConfig</span><span class="p">(</span><span class="n">max_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rich_progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;forecast_horizon (before fit): </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mlpf_config</span><span class="o">.</span><span class="n">forecast_horizon</span><span class="p">)</span>  <span class="c1"># 0 — sentinel</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;max_epochs      : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mlpf_config</span><span class="o">.</span><span class="n">max_epochs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="4.-MLPF-—-Plain-MLP-backbone">
+<h2><span class="section-number">8.4. </span>4. MLPF — Plain MLP backbone<a class="headerlink" href="#4.-MLPF-—-Plain-MLP-backbone" title="Link to this heading">#</a></h2>
+<p><strong>MLPF</strong> (MLP Fusion) is the baseline neural architecture. It encodes past and future covariates with separate MLP branches and fuses them via attention, weighted sum, or addition before predicting the horizon.</p>
+<p>Key config knob: <code class="docutils literal notranslate"><span class="pre">combination_type</span></code> (<code class="docutils literal notranslate"><span class="pre">&quot;attn-comb&quot;</span></code> | <code class="docutils literal notranslate"><span class="pre">&quot;weighted-comb&quot;</span></code> | <code class="docutils literal notranslate"><span class="pre">&quot;addition-comb&quot;</span></code>)</p>
+<blockquote>
+<div><p><strong>Key concept — Lightning training loop</strong></p>
+<p>Twiga NN models are trained with <a class="reference external" href="https://lightning.ai/">PyTorch Lightning</a>, which manages the boilerplate (device placement, gradient steps, logging) so you only set high-level knobs:</p>
+<ul class="simple">
+<li><p><strong>``max_epochs``</strong> — how many full passes over the training set. More epochs = more learning time, but also more risk of overfitting. In production, 50–200 epochs is typical.</p></li>
+<li><p><strong>Early stopping</strong> — Lightning monitors the validation loss after each epoch. If it does not improve for <code class="docutils literal notranslate"><span class="pre">patience</span></code> consecutive epochs the run terminates early, saving the best checkpoint automatically.</p></li>
+<li><p><strong>Checkpoint</strong> — the weights at the epoch with the lowest validation loss are saved to <code class="docutils literal notranslate"><span class="pre">checkpoints/&lt;project_name&gt;/&lt;model&gt;/best_*.ckpt</span></code>. You can reload them at any time (Section 9).</p></li>
+<li><p><strong>``rich_progress_bar=False``</strong> — we disable the progress bar here to keep notebook output clean. Set it to <code class="docutils literal notranslate"><span class="pre">True</span></code> to watch loss values epoch-by-epoch during development.</p></li>
+</ul>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span>
+
+<span class="n">mlpf_config</span> <span class="o">=</span> <span class="n">MLPFConfig</span><span class="p">(</span><span class="n">max_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rich_progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">forecaster_mlpf</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">mlpf_config</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">forecaster_mlpf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">pred_mlpf</span><span class="p">,</span> <span class="n">metric_mlpf</span> <span class="o">=</span> <span class="n">forecaster_mlpf</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;MLPF — mean metrics across folds:&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metric_mlpf</span><span class="p">[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<p><strong>Reading the MLPF metrics</strong></p>
+<p>With <code class="docutils literal notranslate"><span class="pre">max_epochs=5</span></code>, MLPF is severely under-trained. A Pearson correlation near 0 means the forecast is almost uncorrelated with the actuals — the model has not yet learned the daily cycle. This is expected at 5 epochs and will improve significantly with more training. Use it as a baseline lower bound, not a performance ceiling.</p>
+</section>
+<section id="5.-MLPGAM-—-MLP-+-Group-Additive-Model">
+<h2><span class="section-number">8.5. </span>5. MLPGAM — MLP + Group Additive Model<a class="headerlink" href="#5.-MLPGAM-—-MLP-+-Group-Additive-Model" title="Link to this heading">#</a></h2>
+<p><strong>MLPGAM</strong> augments the MLP backbone with a Additive Model (GAM) branch. The GAM branch learns per-feature additive effects (similar in spirit to classical GAMs), which are then combined with the MLP’s global representation. This often improves interpretability and generalisation on structured tabular-temporal data.</p>
+<p>The key addition is a Lasso penalty on the final projection weights, encouraging sparse feature selection.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPGAMConfig</span>
+
+<span class="n">mlpgam_config</span> <span class="o">=</span> <span class="n">MLPGAMConfig</span><span class="p">(</span><span class="n">max_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rich_progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">forecaster_mlpgam</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">mlpgam_config</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">forecaster_mlpgam</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">pred_mlpgam</span><span class="p">,</span> <span class="n">metric_mlpgam</span> <span class="o">=</span> <span class="n">forecaster_mlpgam</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;MLPGAM — mean metrics across folds:&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metric_mlpgam</span><span class="p">[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="6.-MLPGAF-—-MLP-+-Group-Additive-Neural-Forecast">
+<h2><span class="section-number">8.6. </span>6. MLPGAF — MLP + Group Additive Neural Forecast<a class="headerlink" href="#6.-MLPGAF-—-MLP-+-Group-Additive-Neural-Forecast" title="Link to this heading">#</a></h2>
+<p><strong>MLPGAF</strong> replaces the simple combination step with a Gated Attention Fusion (GAF) mechanism. A learned gate decides, for each position and feature group, how much weight to give to each input stream. This can capture non-linear inter-feature interactions that the plain MLP fusion misses.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPGAFConfig</span>
+
+<span class="n">mlpgaf_config</span> <span class="o">=</span> <span class="n">MLPGAFConfig</span><span class="p">(</span><span class="n">max_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rich_progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">forecaster_mlpgaf</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">mlpgaf_config</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">forecaster_mlpgaf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">pred_mlpgaf</span><span class="p">,</span> <span class="n">metric_mlpgaf</span> <span class="o">=</span> <span class="n">forecaster_mlpgaf</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;MLPGAF — mean metrics across folds:&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metric_mlpgaf</span><span class="p">[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="7.-N-HiTS-—-Hierarchical-interpolation">
+<h2><span class="section-number">8.7. </span>7. N-HiTS — Hierarchical interpolation<a class="headerlink" href="#7.-N-HiTS-—-Hierarchical-interpolation" title="Link to this heading">#</a></h2>
+<p><strong>N-HiTS</strong> (Neural Hierarchical Interpolation for Time Series) decomposes the forecast horizon into multiple scales using a stack of MLP blocks, each operating at a different temporal resolution. Long-range trends are captured by blocks with low sampling rates; short-range patterns by blocks with high sampling rates. The outputs are summed (residual connections) to produce the final forecast.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">NHITSConfig</span>
+
+<span class="n">nhits_config</span> <span class="o">=</span> <span class="n">NHITSConfig</span><span class="p">(</span><span class="n">max_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rich_progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">forecaster_nhits</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">nhits_config</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">forecaster_nhits</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">pred_nhits</span><span class="p">,</span> <span class="n">metric_nhits</span> <span class="o">=</span> <span class="n">forecaster_nhits</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;N-HiTS — mean metrics across folds:&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metric_nhits</span><span class="p">[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<p><strong>Reading the N-HiTS metrics</strong></p>
+<p>N-HiTS typically converges faster than plain MLPF because its multi-scale decomposition provides an implicit curriculum: coarse blocks learn long-range trends early while fine-grained blocks refine short-term patterns. Even at 5 epochs you should see a non-trivial correlation and an MAE well below the naive mean forecast. MLPGAM and N-HiTS are the recommended starting architectures for new energy datasets.</p>
+</section>
+<section id="8.-Embedding-options">
+<h2><span class="section-number">8.8. </span>8. Embedding options<a class="headerlink" href="#8.-Embedding-options" title="Link to this heading">#</a></h2>
+<p>All MLP-based configs expose two embedding knobs that control how raw input features are represented before entering the network. These are config-level settings — no architecture changes required.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">value_emb_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;value_embed_type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;&quot;LinearEmb&quot;&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;ConvEmb&quot;&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;PatchEmb&quot;&#39;</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;What it does&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Simple linear projection per time step&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;1-D convolution — captures local temporal patterns&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Splits the sequence into non-overlapping patches (requires patch_len and stride)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;No value embedding; raw features passed directly&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">pos_emb_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;embedding_type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;&quot;LearnPosEmb&quot;&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;RotaryEmb&quot;&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;TimeEmb&quot;&#39;</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;What it does&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Learnable positional encoding (trained end-to-end)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Rotary positional encoding (RoPE) — encodes relative positions&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Projects calendar/time features into embedding space&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;No positional encoding&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Value embedding (value_embed_type)&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span>
+    <span class="n">twiga_gt</span><span class="p">(</span>
+        <span class="n">GT</span><span class="p">(</span><span class="n">value_emb_df</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Value Embedding**&quot;</span><span class="p">),</span> <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;How raw features are projected before the MLP encoder&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">value_emb_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+        <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+        <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">value_emb_df</span><span class="p">),</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Positional embedding (embedding_type)&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span>
+    <span class="n">twiga_gt</span><span class="p">(</span>
+        <span class="n">GT</span><span class="p">(</span><span class="n">pos_emb_df</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Positional Embedding**&quot;</span><span class="p">),</span> <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;How position information is injected into the sequence&quot;</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">pos_emb_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+        <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
+        <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">pos_emb_df</span><span class="p">),</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPGAMConfig</span>
+
+<span class="n">mlpgam_config_emb</span> <span class="o">=</span> <span class="n">MLPGAMConfig</span><span class="p">(</span>
+    <span class="n">max_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">rich_progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">value_embed_type</span><span class="o">=</span><span class="s2">&quot;LinearEmb&quot;</span><span class="p">,</span>
+    <span class="n">embedding_type</span><span class="o">=</span><span class="s2">&quot;LearnPosEmb&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;value_embed_type : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mlpgam_config_emb</span><span class="o">.</span><span class="n">value_embed_type</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;embedding_type   : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mlpgam_config_emb</span><span class="o">.</span><span class="n">embedding_type</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_config</span><span class="o">.</span><span class="n">project_name</span> <span class="o">=</span> <span class="s2">&quot;MLPGAF_Linear_emb&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_mlpgam_emb</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">mlpgam_config_emb</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">forecaster_mlpgam_emb</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">pred_mlpgam_emb</span><span class="p">,</span> <span class="n">metric_mlpgam_emb</span> <span class="o">=</span> <span class="n">forecaster_mlpgam_emb</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;MLPGAM + LinearEmb + LearnPosEmb — mean metrics:&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metric_mlpgam_emb</span><span class="p">[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="9.-Checkpoint-loading">
+<h2><span class="section-number">8.9. </span>9. Checkpoint loading<a class="headerlink" href="#9.-Checkpoint-loading" title="Link to this heading">#</a></h2>
+<p>After training, Twiga saves a Lightning checkpoint automatically. You can reload it at any time — this is useful when you want to avoid retraining or when resuming a session.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_mlpf</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_checkpoint</span><span class="p">()</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Model in eval mode: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="ow">not</span> <span class="n">forecaster_mlpf</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="10.-Results-comparison-—-all-NN-models">
+<h2><span class="section-number">8.10. </span>10. Results comparison — all NN models<a class="headerlink" href="#10.-Results-comparison-—-all-NN-models" title="Link to this heading">#</a></h2>
+<p>Concatenate per-fold metrics from each model and display a unified comparison table.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_model_performance_table</span>
+
+<span class="c1"># Assign human-readable model labels</span>
+<span class="n">metric_mlpf</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MLPF&quot;</span>
+<span class="n">metric_mlpgam</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MLPGAM&quot;</span>
+<span class="n">metric_mlpgaf</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MLPGAF&quot;</span>
+<span class="n">metric_nhits</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;N-HiTS&quot;</span>
+<span class="n">metric_mlpgam_emb</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MLPGAM+Emb&quot;</span>
+
+<span class="n">all_metrics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">metric_mlpf</span><span class="p">,</span> <span class="n">metric_mlpgam</span><span class="p">,</span> <span class="n">metric_mlpgaf</span><span class="p">,</span> <span class="n">metric_nhits</span><span class="p">,</span> <span class="n">metric_mlpgam_emb</span><span class="p">],</span>
+    <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">summary</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">all_metrics</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;wmape&quot;</span><span class="p">,</span> <span class="s2">&quot;smape&quot;</span><span class="p">]]</span>
+    <span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mae&quot;</span><span class="p">:</span> <span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">:</span> <span class="s2">&quot;Corr&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">:</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">,</span> <span class="s2">&quot;wmape&quot;</span><span class="p">:</span> <span class="s2">&quot;WMAPE&quot;</span><span class="p">,</span> <span class="s2">&quot;smape&quot;</span><span class="p">:</span> <span class="s2">&quot;SMAPE&quot;</span><span class="p">})</span>
+<span class="p">)</span>
+
+<span class="n">metric_name</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;Corr&quot;</span><span class="p">,</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">,</span> <span class="s2">&quot;SMAPE&quot;</span><span class="p">]</span>
+<span class="n">minimize_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">,</span> <span class="s2">&quot;SMAPE&quot;</span><span class="p">]</span>
+<span class="n">maximize_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Corr&quot;</span><span class="p">]</span>
+
+<span class="n">create_model_performance_table</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">metric_name</span><span class="p">,</span> <span class="n">minimize_cols</span><span class="p">,</span> <span class="n">maximize_cols</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Forecast-plot-—-first-7-days-of-test-set">
+<h3><span class="section-number">8.10.1. </span>Forecast plot — first 7 days of test set<a class="headerlink" href="#Forecast-plot-—-first-7-days-of-test-set" title="Link to this heading">#</a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build a combined DataFrame for multi-model comparison</span>
+<span class="n">pred_mlpf_copy</span> <span class="o">=</span> <span class="n">pred_mlpf</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">pred_mlpf_copy</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MLPF&quot;</span>
+<span class="n">pred_mlpgam_copy</span> <span class="o">=</span> <span class="n">pred_mlpgam</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">pred_mlpgam_copy</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MLPGAM&quot;</span>
+<span class="n">pred_mlpgaf_copy</span> <span class="o">=</span> <span class="n">pred_mlpgaf</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">pred_mlpgaf_copy</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MLPGAF&quot;</span>
+<span class="n">pred_nhits_copy</span> <span class="o">=</span> <span class="n">pred_nhits</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">pred_nhits_copy</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;N-HiTS&quot;</span>
+
+<span class="n">all_preds</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">pred_mlpf_copy</span><span class="p">,</span> <span class="n">pred_mlpgam_copy</span><span class="p">,</span> <span class="n">pred_nhits_copy</span><span class="p">,</span> <span class="n">pred_mlpgaf_copy</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast_grid</span><span class="p">(</span>
+    <span class="n">all_preds</span><span class="p">,</span>
+    <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
+    <span class="n">forecast_col</span><span class="o">=</span><span class="s2">&quot;forecast&quot;</span><span class="p">,</span>
+    <span class="n">model_col</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
+    <span class="n">n_samples_per_model</span><span class="o">=</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;Net Load (kW)&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;NN point forecasts — first 7 days of test set (max_epochs=5)&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="11.-NN-vs-ML-comparison">
+<h2><span class="section-number">8.11. </span>11. NN vs ML comparison<a class="headerlink" href="#11.-NN-vs-ML-comparison" title="Link to this heading">#</a></h2>
+<p>With only 5 epochs, NNs may not outperform a well-tuned gradient boosting model. The cell below adds a LightGBM baseline so you can see the gap and understand how much more training the NNs would need.</p>
+<blockquote>
+<div><p>With <code class="docutils literal notranslate"><span class="pre">max_epochs</span> <span class="pre">&gt;=</span> <span class="pre">50</span></code> and a proper learning-rate schedule, the NN models typically match or surpass tree-based models on this dataset.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
+
+<span class="n">lgbm_config</span> <span class="o">=</span> <span class="n">LIGHTGBMConfig</span><span class="p">()</span>
+
+<span class="n">forecaster_lgbm</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">lgbm_config</span><span class="p">],</span>
+    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">forecaster_lgbm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">pred_lgbm</span><span class="p">,</span> <span class="n">metric_lgbm</span> <span class="o">=</span> <span class="n">forecaster_lgbm</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;LightGBM — mean metrics across folds:&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metric_lgbm</span><span class="p">[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metric_lgbm</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;LightGBM&quot;</span>
+
+<span class="n">all_metrics_with_ml</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">metric_mlpf</span><span class="p">,</span> <span class="n">metric_mlpgam</span><span class="p">,</span> <span class="n">metric_mlpgaf</span><span class="p">,</span> <span class="n">metric_nhits</span><span class="p">,</span> <span class="n">metric_lgbm</span><span class="p">],</span>
+    <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">summary_vs_ml</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">all_metrics_with_ml</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;wmape&quot;</span><span class="p">,</span> <span class="s2">&quot;smape&quot;</span><span class="p">]]</span>
+    <span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mae&quot;</span><span class="p">:</span> <span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">:</span> <span class="s2">&quot;Corr&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">:</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">,</span> <span class="s2">&quot;wmape&quot;</span><span class="p">:</span> <span class="s2">&quot;WMAPE&quot;</span><span class="p">,</span> <span class="s2">&quot;smape&quot;</span><span class="p">:</span> <span class="s2">&quot;SMAPE&quot;</span><span class="p">})</span>
+<span class="p">)</span>
+
+<span class="n">create_model_performance_table</span><span class="p">(</span><span class="n">summary_vs_ml</span><span class="p">,</span> <span class="n">metric_name</span><span class="p">,</span> <span class="n">minimize_cols</span><span class="p">,</span> <span class="n">maximize_cols</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="NN-vs-ML-—-MAE-bar-chart">
+<h3><span class="section-number">8.11.1. </span>NN vs ML — MAE bar chart<a class="headerlink" href="#NN-vs-ML-—-MAE-bar-chart" title="Link to this heading">#</a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_metrics_bar</span><span class="p">(</span>
+    <span class="n">summary_vs_ml</span><span class="p">,</span>
+    <span class="n">metric_col</span><span class="o">=</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span>
+    <span class="n">model_col</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
+    <span class="n">lower_is_better</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;NN vs ML — Mean Absolute Error (lower is better)</span><span class="se">\n</span><span class="s2">NN models trained with max_epochs=5&quot;</span><span class="p">,</span>
+    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;MAE (mean across folds)&quot;</span><span class="p">,</span>
+    <span class="n">horizontal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Wrapping-up">
+<h2><span class="section-number">8.12. </span>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<p><strong>What you did</strong></p>
+<ul class="simple">
+<li><p>☒ Understood when and why neural networks beat gradient boosting (and vice versa)</p></li>
+<li><p>☒ Learned the (B, L, F) tensor format consumed by all Twiga NN models</p></li>
+<li><p>☒ Trained four NN architectures — MLPF, MLPGAM, MLPGAF, N-HiTS — using the Lightning training loop</p></li>
+<li><p>☒ Configured value embeddings (<code class="docutils literal notranslate"><span class="pre">LinearEmb</span></code>, <code class="docutils literal notranslate"><span class="pre">ConvEmb</span></code>, <code class="docutils literal notranslate"><span class="pre">PatchEmb</span></code>) and positional embeddings (<code class="docutils literal notranslate"><span class="pre">LearnPosEmb</span></code>, <code class="docutils literal notranslate"><span class="pre">RotaryEmb</span></code>) via config knobs</p></li>
+<li><p>☒ Compared NN vs ML (LightGBM) performance on the same test data and understood the epoch-budget trade-off</p></li>
+<li><p>☒ Reloaded a saved Lightning checkpoint without retraining</p></li>
+</ul>
+<p><strong>Key takeaways</strong></p>
+<ol class="arabic simple">
+<li><p>At low epoch counts, gradient boosting almost always wins — NNs need sufficient training time to beat tabular baselines.</p></li>
+<li><p>MLPGAM and N-HiTS tend to converge faster than plain MLPF; they are the recommended starting architectures for energy data.</p></li>
+<li><p>All NN dims (<code class="docutils literal notranslate"><span class="pre">forecast_horizon</span></code>, <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code>, feature counts) are auto-populated by <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> — you only need to set training hyperparameters in the config.</p></li>
+<li><p>Lightning checkpointing is automatic: the best-validation-loss weights are saved and can be reloaded with <code class="docutils literal notranslate"><span class="pre">.load_checkpoint()</span></code>.</p></li>
+<li><p>Value and positional embeddings are orthogonal knobs — experiment with them independently before combining.</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="What's-next?">
+<h2><span class="section-number">8.13. </span>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<p><a class="reference external" href="07-quantile-regression.ipynb">07 — Quantile Regression</a> — Add probabilistic outputs to your forecasts by training QR-LightGBM, QR-XGBoost, and FPQR models that produce calibrated prediction intervals instead of single point values.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
+
+<span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
+<span class="n">_TEAL_MID</span> <span class="o">=</span> <span class="s2">&quot;#069fac&quot;</span>
+<span class="n">_TEAL_LIGHT</span> <span class="o">=</span> <span class="s2">&quot;#e8f5f8&quot;</span>
+<span class="n">_TEAL_BEST</span> <span class="o">=</span> <span class="s2">&quot;#d0ecf1&quot;</span>
+<span class="n">_TEXT_DARK</span> <span class="o">=</span> <span class="s2">&quot;#2d3748&quot;</span>
+<span class="n">_TEXT_MUTED</span> <span class="o">=</span> <span class="s2">&quot;#718096&quot;</span>
+<span class="n">_WHITE</span> <span class="o">=</span> <span class="s2">&quot;#ffffff&quot;</span>
+
+<span class="n">steps</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;05&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;ML Point Forecasting&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;CatBoost · XGBoost · LightGBM — ML baseline to beat&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;catboost&quot;</span><span class="p">,</span> <span class="s2">&quot;xgboost&quot;</span><span class="p">,</span> <span class="s2">&quot;lightgbm&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;06&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Backtesting &amp; Evaluation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Rolling-window backtesting · fold-level metrics&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;backtesting&quot;</span><span class="p">,</span> <span class="s2">&quot;evaluation&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;07&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Neural Networks&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;MLPF · N-HiTS · Lightning training · sequence embeddings&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;neural network&quot;</span><span class="p">,</span> <span class="s2">&quot;pytorch&quot;</span><span class="p">,</span> <span class="s2">&quot;lightning&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;08&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Quantile Regression&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;First probabilistic step — prediction intervals&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;probabilistic&quot;</span><span class="p">,</span> <span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="s2">&quot;intervals&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;09&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Parametric Distributions&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Normal · Laplace · Gamma heads — NLL training&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;parametric&quot;</span><span class="p">,</span> <span class="s2">&quot;NLL&quot;</span><span class="p">,</span> <span class="s2">&quot;distributions&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+<span class="n">track_name</span> <span class="o">=</span> <span class="s2">&quot;Neural Network Track&quot;</span>
+<span class="n">footer</span> <span class="o">=</span> <span class="s1">&#39;Next: add uncertainty to your NN with &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;Quantile Regression&lt;/span&gt; (08) or &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;Parametric Distributions&lt;/span&gt; (09).&#39;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bg</span><span class="p">,</span> <span class="n">fg</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;display:inline-block;background:</span><span class="si">{</span><span class="n">bg</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">fg</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;&quot;&gt;</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s1">&lt;/span&gt;&#39;</span>
+
+
+<span class="n">ch</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;active&quot;</span><span class="p">]</span>
+    <span class="n">cb</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_WHITE</span>
+    <span class="n">cbo</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="s2">&quot;#d1ecf1&quot;</span>
+    <span class="n">nb</span> <span class="o">=</span> <span class="n">_TEAL_MID</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_LIGHT</span>
+    <span class="n">nf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">tf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_DARK</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="s2">&quot;#cce8ef&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_MUTED</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="s2">&quot;#0d5f75&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_BEST</span>
+    <span class="n">bf</span> <span class="o">=</span> <span class="s2">&quot;#b8e4ed&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">yh</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;float:right;background:</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:700;padding:2px 10px;border-radius:12px;&quot;&gt;★ you are here&lt;/span&gt;&#39;</span>
+        <span class="k">if</span> <span class="n">a</span>
+        <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">bdg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">bf</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">])</span>
+    <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;background:</span><span class="si">{</span><span class="n">cb</span><span class="si">}</span><span class="s1">;border:2px solid </span><span class="si">{</span><span class="n">cbo</span><span class="si">}</span><span class="s1">;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:</span><span class="si">{</span><span class="s2">&quot;0 4px 14px rgba(16,117,145,.25)&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;0 1px 4px rgba(0,0,0,.06)&quot;</span><span class="si">}</span><span class="s1">;&quot;&gt;&lt;div style=&quot;min-width:44px;height:44px;background:</span><span class="si">{</span><span class="n">nb</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">nf</span><span class="si">}</span><span class="s1">;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;flex:1;&quot;&gt;&lt;div style=&quot;font-size:15px;font-weight:700;color:</span><span class="si">{</span><span class="n">tf</span><span class="si">}</span><span class="s1">;margin-bottom:4px;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="si">}{</span><span class="n">yh</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;font-size:12.5px;color:</span><span class="si">{</span><span class="n">df</span><span class="si">}</span><span class="s1">;margin-bottom:8px;line-height:1.5;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;desc&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div&gt;</span><span class="si">{</span><span class="n">bdg</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;display:flex;justify-content:center;height:32px;&quot;&gt;&lt;svg width=&quot;24&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 32&quot; fill=&quot;none&quot;&gt;&lt;line x1=&quot;12&quot; y1=&quot;0&quot; x2=&quot;12&quot; y2=&quot;24&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot; stroke-dasharray=&quot;4 3&quot;/&gt;&lt;polygon points=&quot;6,20 18,20 12,30&quot; fill=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;&#39;</span>
+
+<span class="n">HTML</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;font-family:Inter,</span><span class="se">\&#39;</span><span class="s1">Segoe UI</span><span class="se">\&#39;</span><span class="s1">,sans-serif;max-width:640px;margin:8px 0;&quot;&gt;&lt;div style=&quot;background:linear-gradient(135deg,</span><span class="si">{</span><span class="n">_TEAL</span><span class="si">}</span><span class="s1"> 0%,</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1"> 100%);border-radius:12px 12px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px;&quot;&gt;&lt;svg width=&quot;22&quot; height=&quot;22&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot;&gt;&lt;path d=&quot;M12 2L2 7l10 5 10-5-10-5z&quot;/&gt;&lt;path d=&quot;M2 17l10 5 10-5&quot;/&gt;&lt;path d=&quot;M2 12l10 5 10-5&quot;/&gt;&lt;/svg&gt;&lt;span style=&quot;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:14px;font-weight:700;&quot;&gt;Twiga Learning Path — </span><span class="si">{</span><span class="n">track_name</span><span class="si">}</span><span class="s1">&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;border:2px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;border-top:none;border-radius:0 0 12px 12px;padding:20px 20px 16px;background:#f9fdfe;display:flex;flex-direction:column;&quot;&gt;</span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s1">&lt;div style=&quot;margin-top:16px;font-size:11.5px;color:</span><span class="si">{</span><span class="n">_TEXT_MUTED</span><span class="si">}</span><span class="s1">;text-align:center;border-top:1px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;padding-top:12px;&quot;&gt;</span><span class="si">{</span><span class="n">footer</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="15-baseline-benchmarking.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">7. </span>15 — Baseline Benchmarking</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="08-quantile-regression.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">9. </span>08 — Quantile Regression</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Setup">8.1. 1. Setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Load-data">8.1.1. Load data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Train-/-val-/-test-splits">8.1.2. Train / val / test splits</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Data-config">8.2. 2. Data config</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-NN-Config-Dimensions-—-Auto-populated">8.3. 3. NN Config Dimensions — Auto-populated</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-MLPF-—-Plain-MLP-backbone">8.4. 4. MLPF — Plain MLP backbone</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-MLPGAM-—-MLP-+-Group-Additive-Model">8.5. 5. MLPGAM — MLP + Group Additive Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-MLPGAF-—-MLP-+-Group-Additive-Neural-Forecast">8.6. 6. MLPGAF — MLP + Group Additive Neural Forecast</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-N-HiTS-—-Hierarchical-interpolation">8.7. 7. N-HiTS — Hierarchical interpolation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-Embedding-options">8.8. 8. Embedding options</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9.-Checkpoint-loading">8.9. 9. Checkpoint loading</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#10.-Results-comparison-—-all-NN-models">8.10. 10. Results comparison — all NN models</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Forecast-plot-—-first-7-days-of-test-set">8.10.1. Forecast plot — first 7 days of test set</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#11.-NN-vs-ML-comparison">8.11. 11. NN vs ML comparison</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#NN-vs-ML-—-MAE-bar-chart">8.11.1. NN vs ML — MAE bar chart</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">8.12. Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">8.13. What’s next?</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../_sources/tutorials/notebooks/07-neural-networks.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

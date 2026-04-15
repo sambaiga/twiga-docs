@@ -1,0 +1,201 @@
+# Evaluation Metrics
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/core/metrics/point.py`
+- `twiga/core/metrics/interval.py`
+- `twiga/core/metrics/prob.py`
+
+</details>
+
+Twiga provides a comprehensive set of metrics for evaluating point forecasts, prediction intervals, and probabilistic forecasts. All metrics operate on NumPy arrays and are used internally by [`TwigaForecaster.evaluate_point_forecast()`](forecaster.md) and [`TwigaForecaster.evaluate_interval_forecast()`](forecaster.md).
+
+## Point Forecast Metrics
+
+Defined in `twiga/core/metrics/point.py`. Used via `evaluate_point_forecast()`.
+
+| Metric | Function | Formula | Description |
+|---|---|---|---|
+| Mean Error | `res` | $\frac{1}{T}\sum(y_t - \hat{y}_t)$ | Average signed error (bias indicator) |
+| MAE | `mae` | $\frac{1}{T}\sum\|y_t - \hat{y}_t\|$ | Mean Absolute Error |
+| MSE | `mse` | $\frac{1}{T}\sum(y_t - \hat{y}_t)^2$ | Mean Squared Error |
+| RMSE | `rmse` | $\sqrt{MSE}$ | Root Mean Squared Error |
+| NRMSE | `nrmse` | $\frac{RMSE}{scale}$ | Normalized RMSE (scale: max, range, or mean) |
+| MAPE | `mape` | $\frac{100}{T}\sum\frac{\|y_t - \hat{y}_t\|}{\|y_t\|}$ | Mean Absolute Percentage Error |
+| sMAPE | `smape` | $\frac{200}{T}\sum\frac{\|y_t - \hat{y}_t\|}{\|y_t\| + \|\hat{y}_t\|}$ | Symmetric MAPE |
+| WMAPE | `wmape` | $100 \times \frac{\sum\|y_t - \hat{y}_t\|}{\sum\|y_t\|}$ | Weighted MAPE |
+| OPE | `ope` | $100 \times \frac{\|\sum y_t - \sum \hat{y}_t\|}{\sum y_t}$ | Overall Percentage Error |
+| MASE | `mase` | $\frac{MAE}{MAE_{naive}}$ | Mean Absolute Scaled Error (naive = lag-1) |
+| MSSE | `msse` | $\frac{MSE}{MSE_{naive}}$ | Mean Squared Scaled Error |
+| RMSSE | `rmsse` | $\frac{RMSE}{RMSE_{naive}}$ | Root Mean Squared Scaled Error |
+| Correlation | `corr` | Pearson $\rho(y, \hat{y})$ | Pearson correlation coefficient |
+| Normalized Bias | `nbias` | $\sum\frac{y_t - \hat{y}_t}{y_t + \hat{y}_t}$ | Normalized bias error |
+
+### Using Point Metrics
+
+The `evaluate_point_forecast()` function computes metrics per forecast day and target:
+
+```python
+from twiga.core.metrics.point import evaluate_point_forecast
+
+outputs = {
+    "true": ground_truth,       # shape: (num_days, time_steps, num_targets)
+    "loc": predictions,         # shape: (num_days, time_steps, num_targets)
+    "index": timestamps,        # shape: (num_days, time_steps, num_targets)
+    "targets": ["load_mw"],     # list of target names
+}
+
+metrics_df = evaluate_point_forecast(outputs, metric_names=["mae", "rmse", "smape", "corr"])
+```
+
+To compute individual metrics directly:
+
+```python
+from twiga.core.metrics.point import mae, rmse, smape, corr
+
+y = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+y_hat = np.array([1.1, 2.2, 3.1, 4.3, 5.2])
+
+print(f"MAE: {mae(y, y_hat):.4f}")
+print(f"RMSE: {rmse(y, y_hat):.4f}")
+print(f"sMAPE: {smape(y, y_hat):.4f}")
+print(f"Corr: {corr(y, y_hat):.4f}")
+```
+
+### Selecting Metrics
+
+Pass a list of metric names to `evaluate_point_forecast()` or to `get_pointwise_metrics()`:
+
+```python
+# Available metric names:
+# "res", "mae", "mase", "mse", "msse", "rmse", "rmsse",
+# "mape", "wmape", "smape", "ope", "corr", "nbias"
+
+metrics_df = evaluate_point_forecast(outputs, metric_names=["mae", "corr", "wmape"])
+```
+
+If `metric_names` is `None`, all available metrics are computed.
+
+
+## Interval Forecast Metrics
+
+Defined in `twiga/core/metrics/interval.py`. Used via `evaluate_interval_forecast()`.
+
+| Metric | Function | Description |
+|---|---|---|
+| Winkler Score | `winkler_score` | Penalizes intervals for width and missed coverage |
+| Coverage (PICP) | `interval_coverage` | Proportion of true values within prediction intervals |
+| ACE | `ace` | Average Coverage Error: `coverage - (1 - alpha)` |
+| NMPI | `nmpi` | Normalized Median Prediction Interval width |
+| CWE | `cwe_score` | Combined Weighting Index balancing coverage and width |
+| Gamma Coverage | `gamma_coverage_score` | Exponential coverage penalty score |
+| Gamma NMPI | `gamma_nmpi_score` | Width quality score relative to true NMPI |
+
+### Using Interval Metrics
+
+```python
+from twiga.core.metrics.interval import evaluate_interval_forecast
+
+outputs = {
+    "true": ground_truth,       # shape: (num_days, time_steps, num_targets)
+    "loc": predictions,         # shape: (num_days, time_steps, num_targets)
+    "lower": lower_bounds,      # shape: (num_days, time_steps, num_targets)
+    "upper": upper_bounds,      # shape: (num_days, time_steps, num_targets)
+    "index": timestamps,
+    "targets": ["load_mw"],
+}
+
+metrics_df = evaluate_interval_forecast(outputs, alpha=0.1)
+# Returns: timestamp | target | res | mae | ... | winkle-score | picp | ace | nmpi | cwe
+```
+
+:::{admonition} Note
+:class: note
+
+`evaluate_interval_forecast()` computes both point metrics and interval metrics for each forecast day. The alpha parameter should match the significance level used during [conformal calibration](../probabilistic/conformal-prediction.md).
+:::
+
+
+## Probabilistic Metrics
+
+Defined in `twiga/core/metrics/prob.py`.
+
+| Metric | Function | Description |
+|---|---|---|
+| Pinball Loss | `pinball_loss(y, q, tau)` | Quantile-specific loss: asymmetric penalty for over/under-prediction |
+| Pinball Score | `pinball_score(true, q_values, taus)` | Mean pinball loss across multiple quantiles |
+| CRPS | `continuous_ranked_probability_score(true, samples)` | Continuous Ranked Probability Score |
+| CRPS (PWM) | `continuous_ranked_probability_score_pwm(true, samples)` | CRPS via Probability Weighted Moments |
+
+### Pinball Loss
+
+The pinball loss evaluates quantile predictions asymmetrically:
+
+$$
+L_\tau(y, q) = \begin{cases} \tau(y - q) & \text{if } y \geq q \\ (1 - \tau)(q - y) & \text{if } y < q \end{cases}
+$$
+
+```python
+from twiga.core.metrics.prob import pinball_loss, pinball_score
+
+# Single quantile
+loss = pinball_loss(y=true_values, q=quantile_predictions, tau=0.5)
+
+# Aggregated across quantiles
+score = pinball_score(
+    true=true_values,
+    q_values=[q10_predictions, q50_predictions, q90_predictions],
+    taus=[0.1, 0.5, 0.9],
+)
+```
+
+### CRPS
+
+The Continuous Ranked Probability Score generalizes MAE to probabilistic forecasts:
+
+```python
+from twiga.core.metrics.prob import continuous_ranked_probability_score
+
+# samples shape: (num_predictions, num_observations)
+crps = continuous_ranked_probability_score(true=true_values, samples=forecast_samples)
+```
+
+
+## Integration with TwigaForecaster
+
+The [TwigaForecaster](forecaster.md) uses these metrics automatically during evaluation:
+
+```python
+# Point forecast evaluation
+predictions_df, metrics_df = forecaster.evaluate_point_forecast(test_df=test_df)
+
+# Interval forecast evaluation (requires conformal calibration)
+predictions_df, metrics_df = forecaster.evaluate_interval_forecast(test_df=test_df)
+```
+
+The `ForecasterConfig.metrics` field controls which point metrics are computed:
+
+```python
+from twiga.core.config import ForecasterConfig
+
+config = ForecasterConfig(
+    metrics=["mae", "rmse", "smape", "corr"],
+    # ... other params
+)
+```
+
+If `metrics` is empty or `None`, all available metrics are computed by default.
+
+
+## API Reference
+
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.point.evaluate_point_forecast
+```
+
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.interval.evaluate_interval_forecast
+```

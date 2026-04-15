@@ -1,0 +1,511 @@
+# Data Processing Pipeline
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/core/data/pipeline.py` -- `DataPipeline` orchestrator
+- `twiga/core/data/temporal.py` -- `TemporalFeatureTransformer`
+- `twiga/core/data/autores.py` -- `AutoregressTransformer`
+- `twiga/core/data/feature.py` -- Fourier series, day/night, net-load helpers
+- `twiga/core/data/selection.py` -- Feature selection utilities
+- `twiga/core/data/processing.py` -- Sequence creation, lag/rolling augmentation
+- `twiga/core/data/loader.py` -- `TimeseriesDataModule` (PyTorch Lightning)
+
+</details>
+
+The **Data Pipeline** is responsible for transforming a raw pandas `DataFrame` into model-ready NumPy arrays. It handles temporal feature extraction, autoregressive feature engineering, column-wise scaling, and sliding-window sequence creation -- all behind a single scikit-learn-compatible transformer.
+
+
+## Pipeline Overview
+
+The following diagram shows the end-to-end flow from raw data to the arrays consumed by ML and NN models.
+
+```{mermaid}
+flowchart LR
+    A["Raw DataFrame\n(timestamp + features)"] --> B["TemporalFeatureTransformer\n(calendar & Fourier features)"]
+    B --> C["AutoregressTransformer\n(lags & rolling windows)"]
+    C --> D["ColumnTransformer\n(target + input scaling)"]
+    D --> E["Sequence Creation\n(sliding window)"]
+    E --> F["Model-ready arrays\n(features, targets)"]
+```
+
+1. **TemporalFeatureTransformer** -- Extracts calendar features (`hour`, `dayofweek`, `month`, ...), adds Fourier-encoded cyclical features, and optionally adds a binary `day_night` indicator based on geographic coordinates.
+2. **AutoregressTransformer** -- Creates lagged copies of the target variable and computes rolling-window statistics (mean, std, etc.).
+3. **ColumnTransformer (Scaling)** -- Applies separate scalers to target columns and numerical input columns via scikit-learn's `ColumnTransformer`.
+4. **Sequence Creation** -- Uses NumPy stride tricks to build overlapping `(lookback_window, num_features)` input windows and `(forecast_horizon, num_targets)` target windows.
+
+The `DataPipeline` class wires these stages together into a single `sklearn.pipeline.Pipeline` and exposes a familiar `fit` / `transform` / `fit_transform` API.
+
+
+## DataPipeline
+
+`DataPipeline` extends `TransformerMixin` and `BaseEstimator`, so it slots directly into scikit-learn workflows.
+
+### Constructor Parameters
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `target_feature` | `list[str] \| str` | *required* | Column name(s) of the variable(s) to forecast. |
+| `period` | `str` | *required* | Sampling frequency as a pandas offset alias (e.g. `"30min"`, `"1h"`). |
+| `lookback_window_size` | `int` | *required* | Number of past time steps used as input features. |
+| `forecast_horizon` | `int` | *required* | Number of future time steps to predict. |
+| `latitude` | `float \| None` | `None` | Latitude for day/night feature calculation (required when `"day_night"` is in `calendar_features`). |
+| `longitude` | `float \| None` | `None` | Longitude for day/night feature calculation. |
+| `historical_features` | `list[str] \| None` | `None` | Columns with unknown future values (past-only context). |
+| `calendar_features` | `list[str] \| None` | `None` | Temporal features to extract (see table below). |
+| `exogenous_features` | `list[str] \| None` | `None` | External columns available for both past and future windows. |
+| `future_covariates` | `list[str] \| None` | `None` | External columns available only for the future horizon window. |
+| `input_scaler` | `object \| None` | `FunctionTransformer()` | Scaler applied to numerical input features. |
+| `target_scaler` | `object \| None` | `FunctionTransformer()` | Scaler applied to target column(s). |
+| `lags` | `list[int] \| None` | `None` | Lag intervals for autoregressive features (in periods). |
+| `windows` | `list[int] \| int \| None` | `None` | Rolling-window sizes for statistics (in periods). |
+| `window_funcs` | `list[str] \| str \| None` | `None` | Aggregation functions for rolling windows (e.g. `"mean"`, `"std"`). |
+| `date_column` | `str` | `"timestamp"` | Name of the datetime column. |
+| `daily_features` | `bool` | `False` | When `True`, use day-aligned (non-overlapping) sequence extraction. |
+
+:::{admonition} Configuration shortcut
+:class: tip
+
+In practice you rarely construct `DataPipeline` directly. Instead, create a [`DataPipelineConfig`](config.md) and pass it to [`TwigaForecaster`](forecaster.md), which builds the pipeline for you.
+:::
+
+
+### Methods
+
+| Method | Signature | Description |
+|---|---|---|
+| `fit` | `fit(data: pd.DataFrame, y=None) -> DataPipeline` | Builds the internal `sklearn.pipeline.Pipeline` (feature extraction + scaling) and fits it on the provided DataFrame. |
+| `transform` | `transform(data: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]` | Applies the fitted pipeline and returns `(features, targets)` as 3-D NumPy arrays. |
+| `fit_transform` | `fit_transform(X: pd.DataFrame, y=None) -> tuple[np.ndarray, np.ndarray]` | Convenience method: calls `fit` then `transform`. |
+| `transform_features` | `transform_features(data: pd.DataFrame) -> np.ndarray` | Returns only the feature array (past features stacked with future covariates). |
+| `transform_targets` | `transform_targets(data: pd.DataFrame) -> np.ndarray` | Returns only the target array. |
+| `get_ground_truth_sequences` | `get_ground_truth_sequences(data: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]` | Returns `(timestamps, targets)` aligned with the feature extraction window for evaluation. |
+| `prepare_data` | `prepare_data(data: pd.DataFrame) -> None` | Runs the internal pipeline and stores the transformed DataFrame on `self.data`. Raises `NotFittedError` if `fit()` has not been called. |
+
+
+## Feature Engineering Stages
+
+### TemporalFeatureTransformer
+
+Adds calendar and cyclical features derived from the datetime column.
+
+```python
+from twiga.core.data.temporal import TemporalFeatureTransformer
+
+transformer = TemporalFeatureTransformer(
+    calendar_features=["hour", "dayofweek", "month", "day_night"],
+    latitude=-6.8,
+    longitude=39.3,
+    date_column="timestamp",
+)
+
+df_transformed = transformer.fit_transform(df)
+```
+
+#### Supported Calendar Features
+
+The transformer delegates to `augment_timeseries_signature` which extracts 29 datetime-based features from the date column. You select which ones to keep via `calendar_features`. The most commonly used are:
+
+| Feature | Type | Description |
+|---|---|---|
+| `hour` | Trigonometric | Hour of day (0--23). Fourier-encoded as `hour_sin`, `hour_cos`, `hour_cosin`. |
+| `dayofweek` / `wday` | Trigonometric | Day of week (1=Monday ... 7=Sunday). Fourier-encoded. |
+| `month` | Trigonometric | Month number (1--12). Fourier-encoded. |
+| `quarter` | Trigonometric | Quarter (1--4). Fourier-encoded. |
+| `day_night` | Binary | 1 during daylight, 0 at night. Computed from sunrise/sunset using the `astral` library. Requires `latitude` and `longitude`. |
+| `weekend` | Binary | 1 for Saturday/Sunday, 0 otherwise. |
+| `am_pm` | Categorical | `"am"` or `"pm"`. |
+| `yday` | Integer | Day of the year (1--366). |
+| `mday` | Integer | Day of the month (1--31). |
+| `yweek` | Integer | ISO week of the year. |
+| `mweek` | Integer | Week of the month (1--5). |
+
+:::{admonition} Fourier encoding
+:class: info
+
+Trigonometric features are automatically Fourier-encoded using `get_fourier_series()`. For each feature, three columns are added: `<feature>_sin`, `<feature>_cos`, and `<feature>_cosin` (the sum of sine and cosine). This captures cyclical patterns without introducing artificial discontinuities (e.g. hour 23 is close to hour 0).
+:::
+
+
+### AutoregressTransformer
+
+Adds lagged values and rolling-window statistics of the target variable.
+
+```python
+from twiga.core.data.autores import AutoregressTransformer
+
+transformer = AutoregressTransformer(
+    n_samples=48,              # 48 samples/day for 30-min data
+    lags=[1, 24, 48, 168],    # lag by 1, 24, 48, 168 periods
+    windows=[24, 48],          # rolling windows of 24 and 48 periods
+    window_funcs=["mean", "std"],
+    date_column="timestamp",
+    value_column="load_mw",
+)
+
+df_transformed = transformer.fit_transform(df)
+```
+
+#### Lag Features
+
+Lags are specified in *natural units* (e.g. hours for hourly data) and are internally multiplied by `n_samples` to convert to row indices. For example, with `period="30min"` (`n_samples=48` per day) and `lags=[1, 24]`:
+
+| Specified Lag | Scaled Lag | Column Created |
+|---|---|---|
+| 1 | 48 | `load_mw_lag_48` |
+| 24 | 1152 | `load_mw_lag_1152` |
+
+:::{admonition} Note
+:class: note
+
+Rows at the beginning of the DataFrame that cannot be filled (due to the lag offset) are dropped. The number of dropped rows is tracked in `max_data_drop`.
+:::
+
+
+#### Rolling-Window Statistics
+
+Windows are also specified in natural units and scaled by `n_samples`. Each combination of window size and aggregation function produces a new column:
+
+| Window | Function | Column Created |
+|---|---|---|
+| 24 | `mean` | `load_mw_rolling_mean_win_1152` |
+| 24 | `std` | `load_mw_rolling_std_win_1152` |
+| 48 | `mean` | `load_mw_rolling_mean_win_2304` |
+| 48 | `std` | `load_mw_rolling_std_win_2304` |
+
+Supported rolling functions include any method available on a pandas `Rolling` object: `mean`, `std`, `sum`, `min`, `max`, `median`, `var`, `quantile`, `skew`, `kurt`, and custom callables passed as `(name, func)` tuples.
+
+
+## Scaling
+
+The pipeline uses scikit-learn's `ColumnTransformer` to apply **separate scalers** to different column groups:
+
+| Column Group | Scaler Parameter | Default |
+|---|---|---|
+| Target column(s) | `target_scaler` | `FunctionTransformer()` (identity) |
+| Numerical inputs (historical + exogenous) | `input_scaler` | `FunctionTransformer()` (identity) |
+| Everything else (calendar, lags, rolling) | `remainder="passthrough"` | No transformation |
+
+Common scaler choices:
+
+```python
+from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
+
+# Z-score normalization
+input_scaler = StandardScaler()
+
+# Robust to outliers
+target_scaler = RobustScaler()
+
+# Scale to [0, 1]
+input_scaler = MinMaxScaler()
+```
+
+:::{admonition} Warning
+:class: warning
+
+The pipeline calls `fit` on the scaler only during `DataPipeline.fit()`. At inference time (`transform`), the scaler uses the statistics learned during training. Always fit on training data only to prevent data leakage.
+:::
+
+
+## Sequence Creation
+
+After feature engineering and scaling, the pipeline converts the flat DataFrame into 3-D arrays of overlapping windows using NumPy stride tricks.
+
+### How It Works
+
+Given a time series of length `N`, a `lookback_window_size` of `L`, and a `forecast_horizon` of `H`:
+
+```
+Time index:  0   1   2   ...   L-1   L   L+1   ...   L+H-1   L+H  ...  N-1
+
+Window 0:    [--- features (L) ---]  [--- targets (H) ---]
+Window 1:      [--- features (L) ---]  [--- targets (H) ---]
+Window 2:        [--- features (L) ---]  [--- targets (H) ---]
+  ...
+Window K:                                [--- features (L) ---]  [--- targets (H) ---]
+```
+
+- **Feature sequences**: shape `(K, L, num_features)` -- each sample is a lookback window of all input features.
+- **Target sequences**: shape `(K, H, num_targets)` -- each sample is the corresponding future window of target values.
+- **K** = `N - L - H + 1` (number of valid windows with stride 1).
+
+When `daily_features=True`, the stride equals `forecast_horizon` instead of 1, producing non-overlapping day-aligned windows.
+
+### Feature Stacking
+
+When future covariates are present, the pipeline combines past features and future covariates into a single array using `stack_features()`:
+
+```
+Past features:   (K, L, num_past_features)
+Future covariates: (K, H, num_covariate_features)
+
+Combined:        (K, L + H, max(num_past_features, num_covariate_features))
+```
+
+The smaller feature dimension is zero-padded to match the larger one. Neural network models can then split the combined array back into past and future segments using `unstack_features()`.
+
+
+## Feature Selection
+
+The `selection` module provides utilities to rank and select the most relevant features before training. For a deeper exploration of association methods and the full statistical toolkit, see [Feature Analysis & Statistical Toolkit](feature-analysis.md).
+
+### `AssociationAnalyzer`
+
+`AssociationAnalyzer` computes feature-target association scores using eight different methods in a single, consistent interface:
+
+| Method | Key | Task |
+| --- | --- | --- |
+| Pearson correlation | `"pearson"` | Regression |
+| Spearman rank correlation | `"spearman"` | Both |
+| Kendall tau | `"kendall"` | Both |
+| Xi-correlation (Chatterjee) | `"xicor"` | Both |
+| Predictive Power Score | `"pps"` | Both |
+| Mutual Information | `"mi"` | Both |
+| ANOVA F-score | `"anova"` | Regression |
+| Chi-squared | `"chi2"` | Classification |
+
+```python
+from twiga.core.data import AssociationAnalyzer
+
+analyzer = AssociationAnalyzer(
+    data=df,
+    features=["temperature", "ghi", "hour_sin", "hour_cos"],
+    target="load_mw",
+    task="regression",
+)
+
+# Run a single method
+scores_pearson = analyzer.compute(method="pearson")
+
+# Run all methods and compare
+all_scores = analyzer.compute_all()
+
+# Visualise as a heatmap
+fig = analyzer.plot_heatmap(method="spearman")
+```
+
+### `select_top_features`
+
+A comprehensive ensemble feature-ranking function that combines six signals:
+
+- **Spearman** rank correlation (regression) or ANOVA F-score (classification)
+- **Mutual information** (non-linear dependency)
+- **Xi-correlation** (non-parametric, detects arbitrary functional relationships)
+- **Predictive Power Score** (asymmetric, model-based)
+- **Random Forest MDI** importance (`compute_rf_importance`)
+- **Chi-squared** statistics (classification only, optional)
+
+Rankings from each method are merged via **Borda count** rank aggregation (default) or alternative strategies (`geom_rank`, `arith_rank`, `med_rank`, `sum_rank`), producing a stable, ensemble-ranked feature list that is robust to the idiosyncrasies of any single metric.
+
+```python
+from twiga.core.data.selection import select_top_features
+
+top = select_top_features(
+    data=df,
+    features=feature_columns,
+    target="load_mw",
+    task="regression",
+    top_k=10,
+    alpha=0.05,          # optional p-value filter
+    return_scores=True,  # include per-method scores in output
+)
+```
+
+### `compute_rf_importance`
+
+Returns Random Forest feature importances (mean decrease in impurity) as a tidy DataFrame:
+
+```python
+from twiga.core.data.selection import compute_rf_importance
+
+importance_df = compute_rf_importance(
+    data=df,
+    features=feature_columns,
+    target="load_mw",
+    task="regression",
+)
+# Returns a long-format DataFrame with columns: feature, importance
+```
+
+
+## TimeseriesDataModule
+
+For neural network models, the pipeline's NumPy arrays are fed into a PyTorch Lightning `DataModule` that handles batching, shuffling, and GPU transfer.
+
+```python
+from twiga.core.data.loader import TimeseriesDataModule
+
+dm = TimeseriesDataModule(
+    train_inputs=train_features,    # np.ndarray
+    train_targets=train_targets,    # np.ndarray
+    val_inputs=val_features,        # np.ndarray (optional)
+    val_targets=val_targets,        # np.ndarray (optional)
+    batch_size=64,
+    num_workers=4,
+    pin_memory=True,
+)
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `train_inputs` | `np.ndarray` | *required* | Feature array for training. |
+| `train_targets` | `np.ndarray` | *required* | Target array for training. |
+| `val_inputs` | `np.ndarray \| None` | `None` | Feature array for validation. |
+| `val_targets` | `np.ndarray \| None` | `None` | Target array for validation. |
+| `batch_size` | `int` | `64` | Samples per batch. |
+| `num_workers` | `int` | `1` | Parallel data-loading workers. |
+| `persistent_workers` | `bool` | `True` | Keep worker processes alive between epochs (requires `num_workers > 0`). |
+| `pin_memory` | `bool` | `True` | Pin tensors in page-locked memory for faster GPU transfer. |
+
+:::{admonition} Note
+:class: note
+
+`TimeseriesDataModule` is used internally by [`TwigaForecaster`](forecaster.md) when training [neural network models](../models/nn-models.md). You typically do not need to instantiate it directly.
+:::
+
+
+## Complete Example
+
+```python
+import pandas as pd
+from sklearn.preprocessing import StandardScaler, RobustScaler
+
+from twiga.core.data.pipeline import DataPipeline
+
+# 1. Load data
+df = pd.read_parquet("data/load_timeseries.parquet")
+# Expected columns: timestamp, load_mw, temperature, ghi
+
+# 2. Create the pipeline
+pipeline = DataPipeline(
+    target_feature="load_mw",
+    period="30min",
+    lookback_window_size=96,       # 2 days of 30-min data
+    forecast_horizon=48,           # predict 1 day ahead
+    latitude=-6.8,
+    longitude=39.3,
+    historical_features=["temperature"],
+    calendar_features=["hour", "dayofweek", "day_night"],
+    exogenous_features=["ghi"],
+    input_scaler=StandardScaler(),
+    target_scaler=RobustScaler(),
+    lags=[1, 24, 48],
+    windows=[24],
+    window_funcs=["mean", "std"],
+)
+
+# 3. Fit on training data
+train_df = df[df.timestamp <= "2024-06-01"]
+pipeline.fit(train_df)
+
+# 4. Transform training and test data
+train_features, train_targets = pipeline.transform(train_df)
+print(f"Train features: {train_features.shape}")
+# e.g. (num_samples, 96, num_features)
+print(f"Train targets:  {train_targets.shape}")
+# e.g. (num_samples, 48, 1)
+
+test_df = df[df.timestamp > "2024-06-01"]
+test_features, test_targets = pipeline.transform(test_df)
+
+# 5. Get aligned ground truth for evaluation
+timestamps, ground_truth = pipeline.get_ground_truth_sequences(test_df)
+```
+
+:::{admonition} Typical workflow
+:class: tip
+
+The example above shows the low-level API. In most cases you will use [`DataPipelineConfig`](config.md) together with [`TwigaForecaster`](forecaster.md), which handles pipeline construction, fitting, and transformation automatically:
+:::
+
+
+    ```python
+    from twiga.core.config import DataPipelineConfig
+
+    data_config = DataPipelineConfig(
+        target_feature="load_mw",
+        period="30min",
+        lookback_window_size=96,
+        forecast_horizon=48,
+        calendar_features=["hour", "dayofweek", "day_night"],
+        exogenous_features=["ghi"],
+        latitude=-6.8,
+        longitude=39.3,
+        input_scaler=StandardScaler(),
+        target_scaler=RobustScaler(),
+    )
+    ```
+
+    See the [Quick Start Guide](../getting-started/quickstart.md) for the full workflow.
+
+
+## API Reference
+
+
+```{eval-rst}
+.. autoclass:: twiga.core.data.pipeline.DataPipeline
+   :members:
+   :show-inheritance:
+```
+
+    options:
+      show_root_heading: true
+      show_source: true
+      members:
+        - fit
+        - transform
+        - fit_transform
+        - transform_features
+        - transform_targets
+        - get_ground_truth_sequences
+        - prepare_data
+        - set_feature_covariate_column
+
+
+```{eval-rst}
+.. autoclass:: twiga.core.data.temporal.TemporalFeatureTransformer
+   :members:
+   :show-inheritance:
+```
+
+    options:
+      show_root_heading: true
+      show_source: true
+      members:
+        - fit
+        - transform
+        - fit_transform
+
+
+```{eval-rst}
+.. autoclass:: twiga.core.data.autores.AutoregressTransformer
+   :members:
+   :show-inheritance:
+```
+
+    options:
+      show_root_heading: true
+      show_source: true
+      members:
+        - fit
+        - transform
+        - fit_transform
+
+
+```{eval-rst}
+.. autoclass:: twiga.core.data.loader.TimeseriesDataModule
+   :members:
+   :show-inheritance:
+```
+
+    options:
+      show_root_heading: true
+      show_source: true
+      members:
+        - setup
+        - train_dataloader
+        - val_dataloader
+
+
+**Next:** [Configuration System](config.md) | [TwigaForecaster](forecaster.md) | [Neural Network Models](../models/nn-models.md)

@@ -1,0 +1,352 @@
+# Testing
+
+<details>
+<summary>Source Files</summary>
+
+- `tests/unit/`
+- `pyproject.toml` (`[tool.pytest.ini_options]`)
+- `.github/workflows/check_pullrequest.yaml`
+
+</details>
+
+Twiga uses [pytest](https://docs.pytest.org/) for testing with a minimum coverage requirement of **80%**. Tests are organized as unit tests mirroring the source package structure.
+
+## Test Structure
+
+```
+tests/
+└── unit/
+    ├── config/                  # Configuration validation
+    │   └── test_config_base.py
+    ├── conformal/               # Conformal prediction methods
+    │   ├── base.py
+    │   ├── split.py
+    │   ├── cqr.py
+    │   ├── crc.py
+    │   └── test_residual_fitting.py
+    ├── data/                    # Data pipeline & feature engineering
+    │   ├── test_autores.py
+    │   ├── test_data_loader.py
+    │   ├── test_data_pipeline.py
+    │   ├── test_feature.py
+    │   ├── test_feature_engeering.py
+    │   ├── test_processing.py
+    │   └── test_temporal.py
+    ├── eval/                    # Backtesting
+    │   └── test_backtester.py
+    ├── forecaster/              # Forecaster orchestration
+    │   ├── test_abstract_forecaster.py
+    │   ├── test_base_forecaster.py
+    │   ├── test_core_forecaster.py
+    │   ├── test_ensemble.py
+    │   ├── test_registry.py
+    │   └── test_utils.py
+    ├── metrics/                 # Evaluation metrics
+    │   ├── test_point_metrics.py
+    │   ├── test_core_metrics_interval.py
+    │   └── test_core_metrics_prob.py
+    ├── models/                  # Model implementations
+    │   ├── ml/
+    │   │   ├── test_base_regressor.py
+    │   │   ├── test_catboost.py
+    │   │   ├── test_catboostgauss.py
+    │   │   ├── test_lightgbm.py
+    │   │   ├── test_lineareg.py
+    │   │   └── test_xgboost.py
+    │   └── nn/
+    │       ├── core/
+    │       │   ├── test_base.py
+    │       │   ├── test_base_arch.py
+    │       │   ├── test_base_model.py
+    │       │   ├── test_embending.py
+    │       │   └── test_linear.py
+    │       ├── mlpf/
+    │       │   ├── test_mlpf.py
+    │       │   ├── test_mlpf_model.py
+    │       │   ├── test_mlpfgam.py
+    │       │   └── test_mlpfgam_model.py
+    │       ├── nhits/
+    │       │   ├── test_nhits.py
+    │       │   └── test_nhits_model.py
+    │       ├── ganf/
+    │       │   └── test_ganf_network.py
+    │       └── prob/
+    │           └── test_mplfqr_model.py
+    ├── quantile/                # Quantile distributions & losses
+    │   ├── test_fpquantile.py
+    │   ├── test_quantile.py
+    │   └── test_quantile_loss.py
+    ├── plot/                    # Visualisation suite
+    │   ├── conftest.py          # Shared fixtures (forecast_df, acf_series, ...)
+    │   ├── test_timeseries.py
+    │   ├── test_exploration.py
+    │   ├── test_distribution.py
+    │   ├── test_stats_plots.py
+    │   └── test_residuals.py
+    └── stats/                   # Statistical analysis
+        ├── test_corr.py         # rank_correlation, compute_anova_f, compute_chi2
+        ├── test_mutual_information.py
+        ├── test_ppscore.py
+        └── test_xicorr.py
+```
+
+### Test Categories
+
+| Category | Tests | Covers |
+| --- | --- | --- |
+| **config** | 1 file | Pydantic config validation, search space inference |
+| **conformal** | 5 files | Split conformal, CQR, CRC, residual fitting |
+| **data** | 9 files | Pipeline, autoregressive features, temporal features, data loader, feature selection, AssociationAnalyzer |
+| **eval** | 1 file | Time-based cross-validation splits |
+| **forecaster** | 6 files | Abstract, base, core forecaster, ensemble, registry, utilities |
+| **metrics** | 3 files | Point, interval, and probabilistic metrics |
+| **models/ml** | 6 files | BaseRegressor, CatBoost, XGBoost, LightGBM, Linear, Gaussian CatBoost |
+| **models/nn** | 10 files | Base classes, embeddings, MLPF, MLPGAM, NHITS, GANF, quantile |
+| **plot** | 5 files + conftest | lets-plot forecast, exploration, distribution, stats, and residual plots |
+| **quantile** | 3 files | Quantile distributions, losses, interpolation |
+| **stats** | 4 files | Association, mutual information, PPS, xi-correlation |
+
+
+## Running Tests
+
+### Full Test Suite
+
+```bash
+uv run pytest
+```
+
+This uses the default configuration from `pyproject.toml`:
+
+```toml
+[tool.pytest.ini_options]
+norecursedirs = ["examples"]
+addopts = "--cov=twiga --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc --cov-fail-under=80"
+```
+
+**Default behavior:**
+- Measures coverage of the `twiga` package
+- Reports missing lines in terminal output
+- Generates `coverage.xml` for CI upload
+- **Fails if coverage drops below 80%**
+
+### Run Specific Tests
+
+```bash
+# Single test file
+uv run pytest tests/unit/metrics/test_point_metrics.py
+
+# Single test category
+uv run pytest tests/unit/models/ml/
+
+# Pattern matching
+uv run pytest -k "test_catboost"
+
+# Verbose output
+uv run pytest -v tests/unit/forecaster/
+```
+
+### Coverage Report
+
+```bash
+# Terminal report with missing lines
+uv run pytest --cov=twiga --cov-report=term-missing
+
+# HTML report for detailed browsing
+uv run pytest --cov=twiga --cov-report=html
+# Open htmlcov/index.html in a browser
+```
+
+
+## CI/CD Pipeline
+
+The GitHub Actions workflow (`.github/workflows/check_pullrequest.yaml`) runs on every push to `main` and all pull requests.
+
+### Pipeline Architecture
+
+```{mermaid}
+graph TD
+    A[Push / Pull Request] --> B{Event Type}
+    B -->|PR or non-main push| C[pre-commit Job]
+    B -->|Any| D[test-and-lint Job]
+
+    C --> C1[Checkout + Python 3.11]
+    C1 --> C2[Install uv]
+    C2 --> C3[Cache pre-commit envs]
+    C3 --> C4[Run pre-commit hooks]
+
+    D --> D1[Checkout + Python 3.11]
+    D1 --> D2[Install uv]
+    D2 --> D3[Cache .venv dependencies]
+    D3 --> D4["uv sync --all-extras --dev"]
+    D4 --> D5[Ruff linting + format check]
+    D5 --> D6[ty type checking]
+    D6 --> D7["pytest --cov-fail-under=80"]
+    D7 --> D8[Upload coverage to Codecov]
+```
+
+### Jobs
+
+#### 1. `pre-commit`
+
+Runs on PRs and non-main pushes. Executes all pre-commit hooks defined in `.pre-commit-config.yaml`:
+
+- Commitizen validation
+- YAML/JSON/TOML checks
+- Large file detection
+- Merge conflict detection
+- Codespell
+- Ruff linting & formatting
+- Notebook cleaning
+- Interrogate docstring check
+
+#### 2. `test-and-lint`
+
+Runs on all events:
+
+| Step | Command |
+| --- | --- |
+| Install dependencies | `uv sync --all-extras --dev` |
+| Lint | `uv run ruff check . --fix` |
+| Format check | `uv run ruff format --check .` |
+| Type check | `uv run ty check twiga` |
+| Test | `uv run pytest --cov=twiga --cov-report=xml --cov-config=.coveragerc --cov-fail-under=80` |
+| Coverage upload | Codecov with `coverage.xml` |
+
+
+## Writing Tests
+
+### Conventions
+
+- Test files follow the naming pattern `test_*.py`
+- Test directory structure mirrors the source package structure
+- Use `pytest` fixtures for shared setup
+- The `examples/` directory is excluded from test discovery (`norecursedirs = ["examples"]`)
+- Security-related assertions (`S101`) are allowed in test files via `ruff` per-file ignore
+
+### Example Test
+
+```python
+import numpy as np
+import pytest
+
+from twiga.core.metrics.point import mae, rmse
+
+
+class TestPointMetrics:
+    """Tests for point forecast metrics."""
+
+    def test_mae_perfect_forecast(self):
+        y_true = np.array([1.0, 2.0, 3.0])
+        y_pred = np.array([1.0, 2.0, 3.0])
+        assert mae(y_true, y_pred) == 0.0
+
+    def test_mae_with_errors(self):
+        y_true = np.array([1.0, 2.0, 3.0])
+        y_pred = np.array([1.5, 2.5, 3.5])
+        assert mae(y_true, y_pred) == pytest.approx(0.5)
+
+    def test_rmse_greater_than_mae(self):
+        y_true = np.array([1.0, 2.0, 3.0])
+        y_pred = np.array([1.1, 2.5, 3.0])
+        assert rmse(y_true, y_pred) >= mae(y_true, y_pred)
+```
+
+### Testing Plot Functions
+
+Twiga uses two complementary approaches for plot tests:
+
+**1. `PlotSpec` assertion (lets-plot functions)**
+
+All lets-plot functions return a `PlotSpec` object. Tests import it from the internal module and assert the return type:
+
+```python
+from lets_plot.plot.core import PlotSpec
+from twiga.core.plot import plot_forecast
+
+def test_returns_plot_spec(forecast_df):
+    p = plot_forecast(forecast_df, actual_col="Actual", forecast_col="forecast")
+    assert isinstance(p, PlotSpec)
+```
+
+**2. `pytest-mpl` image comparison (Matplotlib functions)**
+
+Matplotlib-based functions (e.g., `plot_prediction` in `matplot_theme.py`) use `pytest-mpl` for pixel-level regression testing:
+
+```python
+import pytest
+import matplotlib.pyplot as plt
+from twiga.core.plot.matplot_theme import plot_prediction
+
+@pytest.mark.mpl_image_compare(baseline_dir="baseline", tolerance=10, style="default")
+def test_plot_prediction_basic():
+    fig, ax = plt.subplots(figsize=(6, 3))
+    plot_prediction(ax, true=[1, 2, 3, 4, 5], mu=[1.1, 2.0, 2.9, 4.2, 5.1])
+    return fig
+```
+
+**Workflow for pytest-mpl:**
+
+1. Generate baseline images once:
+
+   ```bash
+   uv run pytest --mpl-generate-path=tests/unit/plot/baseline tests/unit/plot/test_residuals.py
+   ```
+
+2. Commit the `baseline/` directory to version control.
+3. On subsequent runs, compare against baselines:
+
+   ```bash
+   uv run pytest --mpl tests/unit/plot/test_residuals.py
+   ```
+
+:::{admonition} Note
+:class: note
+
+pytest-mpl image comparison tests are skipped unless `--mpl` is explicitly passed. This means `uv run pytest` (no flag) always passes on missing baselines  -  generate baselines before reviewing changes.
+:::
+
+---
+
+### Testing Models
+
+When adding a new model, create tests that verify:
+
+1. **Config validation**  -  required fields, type checking, search space defaults
+2. **Fit/predict cycle**  -  model trains without errors and produces correct output shapes
+3. **Forecast format**  -  `forecast()` returns the expected dictionary structure
+4. **Feature formatting**  -  `format_features()` produces correct array shapes
+5. **Serialization**  -  model can be saved and loaded (if applicable)
+
+
+## Coverage Requirements
+
+| Metric | Threshold |
+|---|---|
+| Overall line coverage | **≥ 80%** |
+| Coverage tool | `pytest-cov` |
+| CI enforcement | `--cov-fail-under=80` |
+| Reporting | Codecov (XML upload) |
+
+:::{admonition} Warning
+:class: warning
+
+Pull requests that reduce coverage below 80% will fail the CI pipeline. Always add tests when introducing new functionality.
+:::
+
+
+## Useful Commands
+
+| Task | Command |
+| --- | --- |
+| Run all tests | `uv run pytest` |
+| Run with verbose output | `uv run pytest -v` |
+| Run specific file | `uv run pytest tests/unit/path/test_file.py` |
+| Run by keyword | `uv run pytest -k "keyword"` |
+| Show coverage in terminal | `uv run pytest --cov=twiga --cov-report=term-missing` |
+| Generate HTML coverage | `uv run pytest --cov=twiga --cov-report=html` |
+| Run linter | `uv run ruff check .` |
+| Run formatter | `uv run ruff format .` |
+| Run type checker | `uv run ty check twiga` |
+| Generate plot baselines | `uv run pytest --mpl-generate-path=tests/unit/plot/baseline tests/unit/plot/test_residuals.py` |
+| Run image comparison tests | `uv run pytest --mpl tests/unit/plot/test_residuals.py` |
+| Run all pre-commit hooks | `uv run pre-commit run --all-files` |

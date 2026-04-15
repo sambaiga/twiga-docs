@@ -1,0 +1,450 @@
+# Baseline Models
+
+:::{dropdown} Source Files
+
+- `twiga/models/baseline/naive_model.py`  -  `NAIVEModel` / `NAIVEConfig`
+- `twiga/models/baseline/seasonal_naive_model.py`  -  `SEASONALNAIVEModel` / `SEASONALNAIVEConfig`
+- `twiga/models/baseline/window_average_model.py`  -  `WINDOWAVERAGEModel` / `WINDOWAVERAGEConfig`
+- `twiga/models/baseline/drift_model.py`  -  `DRIFTModel` / `DRIFTConfig`
+
+:::
+
+Twiga's **baseline domain** provides four classical reference models that require no training data beyond shape information. They serve as lower-bound benchmarks when evaluating learned models, as inputs to skill score calculations, and as lightweight forecast components for rapid prototyping. All baseline models share the same interface as ML and NN models and can be composed freely with [TwigaForecaster](../core/forecaster.md).
+
+For the full model catalogue see the [Model Catalog Overview](index.md).
+
+:::{admonition} When to use baseline models
+:class: tip
+
+| Use case | Recommended model |
+|---|---|
+| Standard persistence benchmark | `NAIVEModel(strategy="window_last")` |
+| Fixed-value reference (e.g. training mean) | `NAIVEModel(strategy="mean")` |
+| Daily or weekly seasonality benchmark | `SEASONALNAIVEModel(period="1D")` / `SEASONALNAIVEModel(period="7D")` |
+| Level-adapted mean baseline | `WINDOWAVERAGEModel(window_size=24)` |
+| Trending signal benchmark | `DRIFTModel()` |
+| Skill score denominator | Any of the above, chosen to match the naive reference in your domain |
+
+Baseline models are especially valuable in energy forecasting: a well-tuned seasonal naive forecast is a strong competitor for load, and any learned model that does not clearly outperform it on skill score should be scrutinised before production use.
+:::
+
+
+## Common Interface
+
+All four baseline models extend `BaseRegressor` and override its key methods with statistic-only logic. There are no trainable parameters.
+
+### Constructor Pattern
+
+```python
+Model(model_config: Config | None = None)
+```
+
+Each model defaults to its own config class when `model_config` is omitted.
+
+### Shared Attributes
+
+| Attribute | Type | Description |
+|---|---|---|
+| `model` | `None` | Always `None`  -  no underlying sklearn estimator. |
+| `num_targets` | `int \| None` | Number of target variables. Set during `fit()` from `y.shape`. |
+| `horizon` | `int \| None` | Forecast horizon length. Set during `fit()` from `y.shape`. |
+
+### Shared Methods
+
+| Method | Signature | Description |
+|---|---|---|
+| `fit` | `fit(X, y, eval_set=None, verbose=False) -> self` | Stores `num_targets` and `horizon` from `y.shape`. Validates that `X` and `y` are 3-D arrays. `eval_set` is accepted for API compatibility and silently ignored. |
+| `predict` | `predict(x: np.ndarray) -> np.ndarray` | Returns predictions of shape `(B, horizon, num_targets)`. Raises `ValueError` if the model has not been fitted or if `x` is not 3-D. |
+| `forecast` | `forecast(x: np.ndarray) -> np.ndarray` | Returns the raw prediction array, identical to `predict`. Baseline models do not return a dict. |
+| `update` | `update(trial) -> None` | Rebuilds the config from an Optuna trial's sampled parameters (or no-op for models with no hyperparameters). |
+
+:::{admonition} Feature-column convention
+:class: important
+
+All baseline models read the observed target series directly from the input array `X`. They assume that `X[:, t, :num_targets]` contains the raw target values at time step `t` within the lookback window  -  i.e. the **first** `num_targets` feature columns at every step are the target variable(s) in chronological order.
+
+Twiga's `DataPipeline` satisfies this convention by default: target lag features are placed as the leading columns of the feature matrix. This must be preserved when using custom pipelines with baseline models.
+:::
+
+
+## NAIVEModel
+
+`NAIVEModel` implements four persistence strategies, ranging from the classical per-window naive forecast (`"window_last"`) to a fixed zero reference (`"zero"`). It is the simplest and most commonly used baseline.
+
+### Prediction Strategies
+
+| Strategy | Formula | Description |
+|---|---|---|
+| `"window_last"` *(default)* | `ŷ_{t+h} = x[:, -1, :num_targets]` for all h | True persistence: repeats the last observed value in each input window across all forecast steps. |
+| `"last"` | `ŷ = y_train[-1, :]` broadcast | Uses the very last value seen during training, constant across all test samples and steps. |
+| `"mean"` | `ŷ = mean(y_train)` broadcast | Per-output training-set mean, constant across all test samples and steps. |
+| `"zero"` | `ŷ = 0` | Predicts zero everywhere. Useful for centred or differenced targets. |
+
+The `"window_last"` and `"window_average"` strategies adapt to the local level of each test window; `"last"` and `"mean"` are global constants derived from the training set.
+
+### NAIVEConfig
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["naive"]` | `"naive"` | Model identifier. Excluded from parameter dumps. |
+| `domain` | `Literal["baseline"]` | `"baseline"` | Domain identifier. Excluded from parameter dumps. |
+| `strategy` | `Literal["last", "window_last", "mean", "zero"]` | `"window_last"` | Prediction strategy. |
+| `search_space` | `BaseSearchSpace` | *(see below)* | Default hyperparameter search space. Excluded from parameter dumps. |
+
+**Default Search Space:**
+
+| Parameter | Values | Type |
+|---|---|---|
+| `strategy` | `["last", "window_last", "mean", "zero"]` | categorical |
+
+### Predict Logic
+
+For `"window_last"`:
+
+```python
+last_obs = x[:, -1, :num_targets]              # (B, num_targets)
+preds = broadcast(last_obs, (B, horizon, num_targets))
+```
+
+For `"last"`, `"mean"`, and `"zero"`, a constant vector stored at fit time is broadcast to all samples and horizon steps.
+
+### API Reference
+
+```{eval-rst}
+.. autoclass:: twiga.models.baseline.naive_model.NAIVEModel
+   :members:
+   :show-inheritance:
+```
+
+
+## SEASONALNAIVEModel
+
+`SEASONALNAIVEModel` implements the classical seasonal naive forecast. For each forecast step `h`, the prediction is the value observed exactly `m` steps before that step in the input window, where `m` is the resolved seasonal period. For forecast horizons longer than one season (H > m), the pattern wraps modularly.
+
+### Period Resolution
+
+The `period` parameter accepts either a raw integer (number of data steps) or a pandas duration string, which is resolved against the `freq` sampling frequency via `_resolve_period(period, freq)`.
+
+| `period` | `freq` | Resolved steps | Interpretation |
+|---|---|---|---|
+| `"1D"` | `"1h"` | 24 | Daily periodicity, hourly data |
+| `"1D"` | `"30min"` | 48 | Daily periodicity, 30-min data |
+| `"7D"` | `"1h"` | 168 | Weekly periodicity, hourly data |
+| `"7D"` | `"30min"` | 336 | Weekly periodicity, 30-min data |
+| `48` | *(ignored)* | 48 | Direct integer specification |
+
+`_resolve_period` raises `ValueError` if `period` is not a whole multiple of `freq`, or if the resolved step count is not positive.
+
+### SEASONALNAIVEConfig
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["seasonal_naive"]` | `"seasonal_naive"` | Model identifier. Excluded from parameter dumps. |
+| `domain` | `Literal["baseline"]` | `"baseline"` | Domain identifier. Excluded from parameter dumps. |
+| `period` | `int \| str` | `"1D"` | Seasonal period: positive integer or pandas duration string. |
+| `freq` | `str` | `"1h"` | Data sampling frequency, used to resolve string periods. |
+| `search_space` | `BaseSearchSpace` | *(see below)* | Default hyperparameter search space. Excluded from parameter dumps. |
+
+**Default Search Space:**
+
+| Parameter | Values | Type |
+|---|---|---|
+| `period` | `["1D", "7D"]` | categorical |
+
+### Fit Validation
+
+`fit()` resolves and stores the period in steps, then validates:
+
+```
+seq_len >= period_steps
+```
+
+A `ValueError` is raised if the lookback window is shorter than the resolved period. Increase `lookback_window_size` in `DataPipelineConfig` or reduce the period to fix this.
+
+### Predict Logic
+
+For each forecast step `h` (0-indexed), the source index into the input window is:
+
+```python
+indices = [seq_len - m + (h % m) for h in range(horizon)]
+preds = x[:, indices, :num_targets].copy()   # (B, horizon, num_targets)
+```
+
+The modular wrap `h % m` ensures that when `horizon > m`, the seasonal pattern repeats correctly.
+
+```{mermaid}
+flowchart LR
+    X["x&#58; (B, L, F)"] --> IDX["indices&#58; [L-m, L-m+1, ..., L-1,\n L-m, L-m+1, ...]"]
+    IDX --> GATHER["gather x[:, indices, :T]"]
+    GATHER --> PRED["preds&#58; (B, H, T)"]
+```
+
+### API Reference
+
+```{eval-rst}
+.. autoclass:: twiga.models.baseline.seasonal_naive_model.SEASONALNAIVEModel
+   :members:
+   :show-inheritance:
+```
+
+
+## WINDOWAVERAGEModel
+
+`WINDOWAVERAGEModel` predicts the local mean of the last `window_size` observed target steps in the input context, broadcast to all forecast horizon steps. Because it adapts to the current level of each window, it is a stronger baseline than the global `NAIVEModel(strategy="mean")`.
+
+### WINDOWAVERAGEConfig
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["window_average"]` | `"window_average"` | Model identifier. Excluded from parameter dumps. |
+| `domain` | `Literal["baseline"]` | `"baseline"` | Domain identifier. Excluded from parameter dumps. |
+| `window_size` | `int \| None` | `None` | Number of most-recent steps to average. `None` uses the full lookback window. Must be a positive integer when specified. |
+| `search_space` | `BaseSearchSpace` | *(see below)* | Default hyperparameter search space. Excluded from parameter dumps. |
+
+**Default Search Space:**
+
+| Parameter | Values | Type |
+|---|---|---|
+| `window_size` | `[4, 8, 12, 24, 48, 96, 168]` | categorical |
+
+### Predict Logic
+
+```python
+w = window_size or seq_len          # None → full window
+window = x[:, -w:, :num_targets]    # (B, w, num_targets)
+avg = window.mean(axis=1)           # (B, num_targets)
+preds = broadcast(avg, (B, horizon, num_targets))
+```
+
+All forecast horizon steps receive the same local mean. `fit()` validates that `window_size <= seq_len` when specified.
+
+:::{admonition} Choosing window_size
+:class: note
+
+The default search space covers common hourly and sub-hourly granularities: 4h, 8h, 12h, 24h (daily), 48h, 96h, and 168h (weekly). Use Optuna HPO with `tune()` to select the best `window_size` for your target signal. For trending signals consider `DRIFTModel` instead, which captures the local slope.
+:::
+
+### API Reference
+
+```{eval-rst}
+.. autoclass:: twiga.models.baseline.window_average_model.WINDOWAVERAGEModel
+   :members:
+   :show-inheritance:
+```
+
+
+## DRIFTModel
+
+`DRIFTModel` implements the *random walk with drift* forecast. It computes the per-window linear slope from the first to the last observed value in the input context, then extrapolates that slope forward for all forecast horizon steps.
+
+### Formula
+
+For each sample `b` and target `t`:
+
+```
+slope   = (x[b, -1, t] − x[b, 0, t]) / max(L − 1, 1)
+pred[b, h, t] = x[b, -1, t] + (h + 1) * slope    for h = 0, …, H−1
+```
+
+When `L = 1`, the denominator `max(L − 1, 1) = 1`, making the slope zero, and the model falls back to pure persistence: `ŷ_{t+h} = y_t` for all `h`.
+
+### DRIFTConfig
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["drift"]` | `"drift"` | Model identifier. Excluded from parameter dumps. |
+| `domain` | `Literal["baseline"]` | `"baseline"` | Domain identifier. Excluded from parameter dumps. |
+| `search_space` | `BaseSearchSpace` | *(empty)* | Empty search space  -  drift has no tunable hyperparameters. |
+
+`DRIFTModel.update(trial)` is a no-op: it calls `get_optuna_params` to satisfy the interface but makes no config changes.
+
+### Predict Logic
+
+```python
+last  = x[:, -1, :num_targets]          # (B, num_targets)
+first = x[:,  0, :num_targets]          # (B, num_targets)
+slope = (last - first) / max(L - 1, 1)  # (B, num_targets)
+steps = np.arange(1, horizon + 1)        # (horizon,)
+
+# Vectorised outer product
+preds = last[:, np.newaxis, :] + steps[np.newaxis, :, np.newaxis] * slope[:, np.newaxis, :]
+# shape: (B, horizon, num_targets)
+```
+
+```{mermaid}
+flowchart LR
+    X["x&#58; (B, L, F)"] --> FIRST["first = x[:,0,:T]"]
+    X --> LAST["last = x[:,-1,:T]"]
+    FIRST --> SLOPE["slope = (last - first) / max(L-1,1)"]
+    LAST --> SLOPE
+    SLOPE --> PRED["pred[b,h,t] = last + (h+1) * slope"]
+    LAST --> PRED
+```
+
+:::{admonition} Drift vs. persistence
+:class: note
+
+`DRIFTModel` is most valuable when the target signal has a consistent local trend within the lookback window (e.g. a ramp-up at dawn for solar irradiance, or a weekday morning load rise). When the signal is mean-reverting or stationary, the drift extrapolation will overshoot, and `NAIVEModel` or `WINDOWAVERAGEModel` will typically be more accurate.
+:::
+
+### API Reference
+
+```{eval-rst}
+.. autoclass:: twiga.models.baseline.drift_model.DRIFTModel
+   :members:
+   :show-inheritance:
+```
+
+
+## Model Comparison
+
+| Model | Config Class | Hyperparameters | Adapts to window | Typical use |
+|---|---|---|---|---|
+| `NAIVEModel` | `NAIVEConfig` | `strategy` (categorical) | Only `"window_last"` | Universal persistence benchmark |
+| `SEASONALNAIVEModel` | `SEASONALNAIVEConfig` | `period` (categorical) | Yes  -  per-window seasonal lookup | Signals with strong daily/weekly periodicity |
+| `WINDOWAVERAGEModel` | `WINDOWAVERAGEConfig` | `window_size` (categorical) | Yes  -  local mean | Stationary signals with variable level |
+| `DRIFTModel` | `DRIFTConfig` | *(none)* | Yes  -  per-window slope | Trending signals, ramp events |
+
+
+## Usage Example
+
+The following example shows the complete baseline workflow: train multiple baselines alongside an ML model, evaluate all of them, then compute skill scores.
+
+```python
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.baseline.naive_model import NAIVEConfig
+from twiga.models.baseline.seasonal_naive_model import SEASONALNAIVEConfig
+from twiga.models.baseline.window_average_model import WINDOWAVERAGEConfig
+from twiga.models.baseline.drift_model import DRIFTConfig
+from twiga.models.ml.lightgbm_model import LIGHTGBMConfig
+
+# --- Data pipeline ---
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,   # 7 days at hourly resolution
+    forecast_horizon=24,
+    calendar_features=["hour", "dayofweek", "month"],
+    input_scaler=StandardScaler(),
+)
+
+# --- Baseline configs ---
+naive_config = NAIVEConfig(strategy="window_last")
+seasonal_daily = SEASONALNAIVEConfig(period="1D", freq="1h")
+seasonal_weekly = SEASONALNAIVEConfig(period="7D", freq="1h")
+window_avg_config = WINDOWAVERAGEConfig(window_size=24)
+drift_config = DRIFTConfig()
+
+# --- ML model for comparison ---
+lgbm_config = LIGHTGBMConfig(boosting_type="gbdt")
+
+# --- Training orchestration ---
+train_config = ForecasterConfig(
+    split_freq="months",
+    train_size=6,
+    test_size=1,
+    window="expanding",
+    project_name="BaselineBenchmark",
+    seed=42,
+)
+
+# --- Build forecaster with all models ---
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[
+        naive_config,
+        seasonal_daily,
+        seasonal_weekly,
+        window_avg_config,
+        drift_config,
+        lgbm_config,
+    ],
+    train_params=train_config,
+)
+
+data = pd.read_parquet("data/load.parquet")
+train_df = data[data.timestamp <= "2024-06-01"]
+test_df  = data[data.timestamp > "2024-06-01"]
+
+forecaster.fit(train_df=train_df)
+results_df, metrics_df = forecaster.evaluate_point_forecast(test_df=test_df)
+
+print(metrics_df)
+```
+
+### Tuning Baseline Hyperparameters
+
+Baselines with search spaces (`NAIVEModel`, `SEASONALNAIVEModel`, `WINDOWAVERAGEModel`) support Optuna-based HPO via `tune()`. This is useful for selecting the best seasonal period or window size without manual trial-and-error.
+
+```python
+# Tune the window size for WINDOWAVERAGEModel
+window_forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[WINDOWAVERAGEConfig()],
+    train_params=train_config,
+)
+window_forecaster.fit(train_df=train_df)
+window_forecaster.tune(train_df=train_df, val_df=test_df, num_trials=7)
+
+# Retrain with best window_size
+window_forecaster.fit(train_df=train_df)
+results_df, metrics_df = window_forecaster.evaluate_point_forecast(test_df=test_df)
+```
+
+Since `WINDOWAVERAGEConfig`'s default search space has 7 candidates, a full grid search requires only 7 trials.
+
+
+## Skill Score Section
+
+A **skill score** measures the relative improvement of a learned model over a naive reference. The standard formulation is:
+
+```
+SS = 1 - (error_model / error_baseline)
+```
+
+Where `error` is any positively-oriented error metric (MAE, RMSE, MAPE, etc.). A skill score of 0 means the model performs identically to the baseline; 1.0 is a perfect forecast; negative values indicate the model is worse than the baseline.
+
+### Computing Skill Scores from Twiga Metrics
+
+```python
+import pandas as pd
+
+# Evaluate all models
+results_df, metrics_df = forecaster.evaluate_point_forecast(test_df=test_df)
+
+# metrics_df has index=model_name, columns include "mae", "rmse", etc.
+baseline_mae = metrics_df.loc["naive", "mae"]
+
+# Skill score relative to naive persistence
+metrics_df["skill_score_mae"] = 1 - (metrics_df["mae"] / baseline_mae)
+
+print(metrics_df[["mae", "skill_score_mae"]].sort_values("skill_score_mae", ascending=False))
+```
+
+### Choosing the Reference Baseline
+
+| Signal type | Recommended reference |
+|---|---|
+| Load (AC or heating) | `SEASONALNAIVEModel(period="1D")` or `period="7D"` |
+| Solar PV / irradiance | `NAIVEModel(strategy="window_last")` (persistence) |
+| Wind power | `NAIVEModel(strategy="window_last")` |
+| Price (day-ahead) | `SEASONALNAIVEModel(period="1D")` |
+| Differenced / centred series | `NAIVEModel(strategy="zero")` |
+
+:::{admonition} Reporting skill scores
+:class: tip
+
+When publishing or reporting forecast results, always state which baseline was used as the reference and over which evaluation period the skill score was computed. A skill score computed against a weak baseline (e.g. `"zero"`) can be misleadingly high; prefer the strongest relevant naive model as the denominator.
+:::
+
+
+## See Also
+
+- [Machine Learning Models](ml-models.md)  -  gradient-boosted and linear models sharing the same interface
+- [TwigaForecaster](../core/forecaster.md)  -  training, prediction, and evaluation orchestration
+- [Model Catalog Overview](index.md)  -  complete list of all domains and models
+- [Hyperparameter Tuning](../advanced/hyperparameter-tuning.md)  -  Optuna-based search space configuration and tuning workflows

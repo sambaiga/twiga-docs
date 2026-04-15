@@ -1,0 +1,258 @@
+# Backtesting & Time-Based Cross-Validation
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/core/backtester.py`
+- `twiga/forecaster/core.py`
+
+</details>
+
+Standard k-fold cross-validation does not work for time series because it breaks temporal ordering  -  a model could train on future data and predict the past. Twiga implements **time-based cross-validation** through the `TimeBasedCV` class, which generates chronologically ordered train/test splits.
+
+## How It Works
+
+```{mermaid}
+graph TD
+    subgraph "Rolling Window Strategy"
+        A["Fold 1: Train [t0..t3] → Test [t3..t4]"]
+        B["Fold 2: Train [t1..t4] → Test [t4..t5]"]
+        C["Fold 3: Train [t2..t5] → Test [t5..t6]"]
+    end
+
+    subgraph "Expanding Window Strategy"
+        D["Fold 1: Train [t0..t3] → Test [t3..t4]"]
+        E["Fold 2: Train [t0..t4] → Test [t4..t5]"]
+        F["Fold 3: Train [t0..t5] → Test [t5..t6]"]
+    end
+```
+
+- **Rolling window**: Training window has a fixed size and slides forward each fold
+- **Expanding window**: Training window starts from the beginning and grows each fold
+
+## Class Hierarchy
+
+```{mermaid}
+classDiagram
+    class TimeBasedSplit {
+        <<abstract>>
+        +split_freq: str
+        +train_size: int
+        +test_size: int
+        +gap: int
+        +stride: int
+        +window: str
+        +train_delta: relativedelta
+        +forecast_delta: relativedelta
+        +gap_delta: relativedelta
+        +stride_delta: relativedelta
+        #_splits_from_period()
+        +split()*
+    }
+
+    class TimeBasedCV {
+        +date_column: str
+        +num_splits: int
+        +split(data, start_dt, end_dt)
+        +get_splits(data)
+        +set_split_scheme()
+        +get_scheme()
+        +plot_split_scheme()
+    }
+
+    class SplitState {
+        +train_start: Timestamp
+        +train_end: Timestamp
+        +forecast_start: Timestamp
+        +forecast_end: Timestamp
+    }
+
+    TimeBasedSplit <|-- TimeBasedCV
+    TimeBasedSplit ..> SplitState : creates
+```
+
+## Configuration
+
+Backtesting behavior is controlled by [`ForecasterConfig`](config.md) parameters:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `split_freq` | `Literal["days", "minutes", "hours", "weeks", "months", "years"]` | `"months"` | Unit for train/test/gap/stride sizes |
+| `train_size` | `int` | `1` | Training window length (in `split_freq` units) |
+| `test_size` | `int` | `1` | Test window length (in `split_freq` units) |
+| `gap` | `int` | `0` | Gap between training end and test start |
+| `stride` | `int \| None` | `None` | Step size between folds (defaults to `test_size`) |
+| `window` | `Literal["expanding", "rolling"]` | `"expanding"` | Window strategy |
+| `num_splits` | `int \| None` | `None` | Maximum number of splits (None = all possible) |
+
+### Example Configuration
+
+```python
+from twiga.core.config import ForecasterConfig
+
+# Monthly backtesting: 6 months train, 1 month test, expanding window
+config = ForecasterConfig(
+    split_freq="months",
+    train_size=6,
+    test_size=1,
+    gap=0,
+    window="expanding",
+)
+
+# Daily backtesting: 14 days train, 7 days test, rolling window
+config = ForecasterConfig(
+    split_freq="days",
+    train_size=14,
+    test_size=7,
+    gap=0,
+    window="rolling",
+    stride=7,  # move 7 days between folds
+)
+```
+
+## Using TimeBasedCV Directly
+
+The `TimeBasedCV` class can be used independently for custom splitting logic:
+
+```python
+from twiga.core.backtester import TimeBasedCV
+
+cv = TimeBasedCV(
+    split_freq="months",
+    train_size=6,
+    test_size=1,
+    gap=0,
+    window="expanding",
+    date_column="timestamp",
+)
+
+for train_df, test_df, scheme, fold_idx in cv.split(data):
+    print(f"Fold {fold_idx + 1}:")
+    print(f"  Train: {scheme['train_period'][0]} to {scheme['train_period'][1]}")
+    print(f"  Test:  {scheme['test_period'][0]} to {scheme['test_period'][1]}")
+```
+
+The `split()` method yields tuples of `(train_df, test_df, scheme_dict, fold_index)` where `scheme_dict` contains:
+
+```python
+{
+    "train_idx": np.ndarray,        # indices into original DataFrame
+    "test_idx": np.ndarray,
+    "train_period": (start_dt, end_dt),
+    "test_period": (start_dt, end_dt),
+}
+```
+
+## Backtesting with TwigaForecaster
+
+The [`TwigaForecaster.backtesting()`](forecaster.md) method runs the full train → evaluate cycle over each fold:
+
+```python
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.ml.xgboost_model import XGBOOSTConfig
+
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,
+    forecast_horizon=48,
+)
+
+train_config = ForecasterConfig(
+    split_freq="months",
+    train_size=3,
+    test_size=1,
+    window="expanding",
+)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[XGBOOSTConfig()],
+    train_params=train_config,
+)
+
+predictions_df, metrics_df = forecaster.backtesting(
+    data=full_dataset,
+    train_ratio=1.0,
+    verbose=True,
+    ensemble_strategy="mean",
+)
+```
+
+### What Happens per Fold
+
+For each fold, `backtesting()`:
+
+1. Calls `self.fit(train_df)`  -  fits the data pipeline and all models
+2. Calls `self.evaluate_point_forecast(test_df)`  -  generates predictions and computes metrics
+3. Adds a `Folds` column to track which fold produced each result
+4. Concatenates all results across folds
+
+```{mermaid}
+sequenceDiagram
+    participant B as backtesting()
+    participant CV as TimeBasedCV.split()
+    participant F as fit()
+    participant E as evaluate_point_forecast()
+
+    B->>CV: Generate train/test splits
+    loop For each fold
+        CV-->>B: (train_df, test_df, scheme, fold_idx)
+        B->>F: fit(train_df)
+        F-->>B: Models trained
+        B->>E: evaluate_point_forecast(test_df)
+        E-->>B: (predictions_df, metrics_df)
+        B->>B: Append fold results
+    end
+    B-->>B: pd.concat(all_predictions), pd.concat(all_metrics)
+```
+
+### Aggregating Results
+
+```python
+# Average metrics across folds
+avg_metrics = metrics_df.groupby("Model")[["mae", "rmse", "smape"]].mean().round(3)
+
+# Metrics per fold
+fold_metrics = metrics_df.groupby(["Model", "Folds"])[["mae", "rmse"]].mean()
+```
+
+## SplitState
+
+The `SplitState` class holds the time boundaries for a single split:
+
+```python
+class SplitState:
+    train_start: pd.Timestamp
+    train_end: pd.Timestamp
+    forecast_start: pd.Timestamp
+    forecast_end: pd.Timestamp
+```
+
+The gap between `train_end` and `forecast_start` is controlled by the `gap` parameter.
+
+## Visualizing Splits
+
+`TimeBasedCV` provides a built-in visualization method (requires the `plots` dependency group):
+
+```python
+cv.plot_split_scheme(data, train_ratio=1.0)
+```
+
+
+## API Reference
+
+
+```{eval-rst}
+.. autoclass:: twiga.core.backtester.TimeBasedCV
+   :members:
+   :show-inheritance:
+```
+
+
+```{eval-rst}
+.. autoclass:: twiga.core.backtester.TimeBasedSplit
+   :members:
+   :show-inheritance:
+```

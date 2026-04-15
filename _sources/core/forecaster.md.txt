@@ -1,0 +1,421 @@
+# TwigaForecaster & Forecaster Architecture
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/forecaster/core.py` -- `TwigaForecaster` (user-facing entry point)
+- `twiga/forecaster/abstract.py` -- `AbstractForecaster` (fit / predict / evaluate / tune orchestration)
+- `twiga/forecaster/base.py` -- `BaseForecaster` (checkpointing, feature preparation, Optuna integration)
+- `twiga/forecaster/registry.py` -- Dynamic model loading
+- `twiga/forecaster/ensemble.py` -- Ensemble prediction strategies
+- `twiga/forecaster/utils.py` -- Shape validation, DataFrame construction helpers
+- `twiga/core/config/base.py` -- `DataPipelineConfig`, `ForecasterConfig`, `ConformalConfig`, `BaseModelConfig`
+
+</details>
+
+
+## Overview
+
+`TwigaForecaster` is the primary interface for building, training, and evaluating time series forecasting models in Twiga. It accepts configuration objects, dynamically loads model implementations from a registry, and exposes a unified API that covers:
+
+- **Multi-model training** -- fit one or many models (ML and/or neural network) in a single call.
+- **Point and interval predictions** -- generate raw forecasts or conformal prediction intervals.
+- **Evaluation** -- compute metrics against held-out data for both point and interval forecasts.
+- **Backtesting** -- walk-forward cross-validation over expanding or rolling windows.
+- **Hyperparameter tuning** -- Optuna-powered search with Hyperband pruning and TPE sampling.
+- **Ensemble strategies** -- combine predictions from multiple models via mean, median, or weighted aggregation.
+
+For a hands-on introduction see the [Quick Start Guide](../getting-started/quickstart.md).
+
+
+## Class Hierarchy
+
+```{mermaid}
+classDiagram
+    direction TB
+
+    class TimeBasedCV {
+        +split_freq: str
+        +train_size: int
+        +test_size: int
+        +gap: int
+        +stride: int
+        +window: str
+        +split(data, start_dt, end_dt)
+    }
+
+    class AbstractForecaster {
+        <<abstract>>
+        +get_model_from_registry(model_params)
+        +fit(train_df, val_df, train_ratio)
+        +predict(test_df, ...) dict, dict
+        +predict_interval(test_df, ...) dict, dict
+        +evaluate(test_df, ...) DataFrame, DataFrame
+        +evaluate_point_forecast(test_df, ...)
+        +evaluate_interval_forecast(test_df, ...)
+        +backtesting(data, ...)
+        +tune(train_df, val_df, ...)
+        #_fit()*
+        #_predict()*
+        #_evaluate()*
+        #_tune()*
+        #_backtester()*
+        #_create_folder()*
+    }
+
+    class BaseForecaster {
+        +models: list
+        +data_pipeline: DataPipeline
+        +conformals: dict
+        +conformal_params
+        +checkpoints_path: Path
+        +logs_path: Path
+        +results_path: Path
+        +figures_path: Path
+        +_create_folder()
+        +on_save_checkpoint()
+        +on_load_checkpoint()
+        +_fit(train_df, val_df, train_ratio, trial)
+        +_predict(test_df, covariate_df, daily_feature)
+        +_evaluate(test_df, covariate_df, daily_feature)
+        +_tune(train_df, val_df, ...)
+        +_backtester(data, ...)
+        +create_optuna_study(...)
+        +prepare_test_data(test_df)
+        +get_ground_truth(test_df, daily_feature)
+    }
+
+    class TwigaForecaster {
+        +data_pipeline: DataPipeline
+        +models: list
+        +conformal: dict
+        +domain: str
+        +__init__(data_params, model_params, train_params, conformal_params)
+        +calibrate(calibrate_df, ...)
+    }
+
+    TimeBasedCV <|-- BaseForecaster
+    AbstractForecaster <|-- BaseForecaster
+    BaseForecaster <|-- TwigaForecaster
+```
+
+`AbstractForecaster` defines the orchestration logic (loops over models, builds DataFrames), while `BaseForecaster` supplies the concrete single-model implementations (`_fit`, `_predict`, `_evaluate`, `_tune`, `_backtester`) together with checkpointing, feature preparation, and Optuna study creation. `TwigaForecaster` wires everything together through configuration objects.
+
+
+## Constructing a Forecaster
+
+### `TwigaForecaster.__init__`
+
+```python
+from twiga.forecaster.core import TwigaForecaster
+
+forecaster = TwigaForecaster(
+    data_params=data_config,        # DataPipelineConfig
+    model_params=[xgb_config],      # BaseModelConfig | list | dict | list[dict]
+    train_params=train_config,      # ForecasterConfig
+    conformal_params=conf_config,   # ConformalConfig | None
+)
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `data_params` | [`DataPipelineConfig`](config.md) | Defines target features, feature engineering, scaling, and temporal settings for the [`DataPipeline`](data-pipeline.md). |
+| `model_params` | `BaseModelConfig \| list[BaseModelConfig] \| dict \| list[dict]` | One or more model configurations. Each configuration is validated against the model's registered config class. Accepts Pydantic models or plain dictionaries. |
+| `train_params` | [`ForecasterConfig`](config.md) | Cross-validation split parameters (`split_freq`, `train_size`, `test_size`, `gap`, `window`), project naming, paths, and evaluation metrics. |
+| `conformal_params` | [`ConformalConfig`](../probabilistic/conformal-prediction.md) `\| None` | Optional. Enables conformal prediction intervals when provided. Requires a subsequent `calibrate()` call before `predict_interval`. |
+
+During construction the forecaster:
+
+1. Copies the `date_column` from `data_params` into `train_params`.
+2. Initialises the `DataPipeline` from `data_params`.
+3. Iterates over `model_params`, calling `get_model_from_registry` to dynamically load each model class and instantiate it.
+
+:::{admonition} Mixing ML and NN models
+:class: tip
+
+You can pass both ML configs (e.g. `XGBOOSTConfig`) and neural network configs (e.g. `NHITSConfig`) in a single `model_params` list. The registry resolves each model independently from `twiga.models.ml.*` or `twiga.models.nn.*`. See [Models](../models/index.md) for the full catalogue.
+:::
+
+
+## Core Workflow
+
+The typical lifecycle is **configure -> fit -> predict / evaluate -> (optionally) backtest or tune**.
+
+```{mermaid}
+sequenceDiagram
+    participant User
+    participant TF as TwigaForecaster
+    participant DP as DataPipeline
+    participant Reg as ModelRegistry
+    participant Model as Model(s)
+    participant Conf as Conformal
+
+    User->>TF: __init__(data_params, model_params, train_params, conformal_params)
+    TF->>DP: DataPipeline(**data_params)
+    TF->>Reg: get_model_from_registry(model_params)
+    Reg-->>TF: [model_1, model_2, ...]
+
+    User->>TF: fit(train_df, val_df)
+    TF->>DP: fit(train_df)
+    loop each model
+        TF->>TF: _create_folder()
+        TF->>DP: transform(train_split)
+        TF->>Model: model.fit(features, targets)
+        TF->>TF: on_save_checkpoint()
+    end
+
+    User->>TF: calibrate(calibrate_df)
+    TF->>TF: predict(calibrate_df)
+    loop each model
+        TF->>Conf: Conformal.calibrate(forecast, ground_truth)
+    end
+
+    User->>TF: evaluate_point_forecast(test_df)
+    TF->>TF: prepare_test_data(test_df)
+    TF->>TF: get_ground_truth(test_df)
+    loop each model
+        TF->>DP: transform_features(test_df)
+        TF->>Model: model.forecast(features)
+        TF->>TF: _rescale_predictions(forecast)
+    end
+    TF-->>User: (results_df, metrics_df)
+```
+
+
+## Method Reference
+
+### Training
+
+| Method | Signature | Description |
+|---|---|---|
+| `fit` | `fit(train_df, val_df=None, train_ratio=1.0) -> None` | Fits the data pipeline (if not already fitted) and trains every registered model. For each model it creates the artifact directory, prepares features via `_prepare_features`, and delegates to `model.fit`. |
+
+The `fit` method applies temporal filtering internally: it keeps only the last `lookback_window_size + max_data_drop` rows of training data to limit memory use.
+
+:::{admonition} Note
+:class: note
+
+The data pipeline is fitted **once** on the first call. Subsequent calls to `fit` (e.g. during backtesting) skip the pipeline fit if it has already been initialised.
+:::
+
+
+### Prediction
+
+| Method | Signature | Returns |
+|---|---|---|
+| `predict` | `predict(test_df, covariate_df=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None, prepare_test_data=True)` | `tuple[dict[str, np.ndarray], dict[str, float]]` |
+| `predict_interval` | `predict_interval(test_df, covariate_df=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None, prepare_test_data=True)` | `tuple[dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]], dict[str, float]]` |
+
+Both methods return a two-element tuple:
+
+1. **Prediction dictionary** -- keys are model names (and optionally `"Ensemble"`), values are 3-D NumPy arrays `(num_samples, horizon, num_targets)` for point forecasts, or `(lower, point, upper)` tuples for intervals.
+2. **Inference time dictionary** -- keys are model names, values are wall-clock seconds.
+
+`predict_interval` requires that `conformal_params` was supplied at construction and that `calibrate()` has been called.
+
+:::{admonition} Warning
+:class: warning
+
+Calling `predict_interval` before `calibrate()` raises a `ValueError`. Always calibrate on a held-out calibration set that was **not** used during training.
+:::
+
+
+### Calibration
+
+| Method | Signature | Description |
+|---|---|---|
+| `calibrate` | `calibrate(calibrate_df=None, covariate_df=None, daily_feature=False, ensemble_strategy=None, ensemble_weights=None)` | Generates point predictions on the calibration set and fits a `Conformal` model per registered model, storing them in `self.conformal`. |
+
+See [Conformal Prediction](../probabilistic/conformal-prediction.md) for the available `method` and `score_type` options in `ConformalConfig`.
+
+### Evaluation
+
+| Method | Signature | Returns |
+|---|---|---|
+| `evaluate` | `evaluate(test_df=None, covariate_df=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None, prediction_fn=..., evaluation_fn=..., is_interval=False)` | `tuple[pd.DataFrame, pd.DataFrame]` |
+| `evaluate_point_forecast` | `evaluate_point_forecast(test_df=None, covariate_df=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
+| `evaluate_interval_forecast` | `evaluate_interval_forecast(test_df=None, covariate_df=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
+
+`evaluate_point_forecast` and `evaluate_interval_forecast` are convenience wrappers around `evaluate` that pre-bind the appropriate prediction and evaluation functions.
+
+The returned DataFrames have the following structure:
+
+**Results DataFrame** (`results_df`):
+
+| Column | Description |
+|---|---|
+| index (timestamp) | Date column set as the index |
+| `Model` | Model name (uppercased) |
+| `target` | Target variable name |
+| `forecast` | Point forecast value |
+| `Actual` | Ground truth value |
+| `lower` | Lower bound (interval evaluation only) |
+| `upper` | Upper bound (interval evaluation only) |
+
+**Metrics DataFrame** (`metrics_df`):
+
+| Column | Description |
+|---|---|
+| `Model` | Model name (uppercased) |
+| `target` | Target variable name |
+| metric columns | One column per metric (e.g. `mae`, `rmse`, `smape`, `corr`) |
+| `inference-time` | Wall-clock prediction time in seconds |
+
+See [Metrics](metrics.md) for the full list of supported evaluation metrics.
+
+### Backtesting
+
+| Method | Signature | Returns |
+|---|---|---|
+| `backtesting` | `backtesting(data, train_ratio=1.0, start_dt=None, end_dt=None, verbose=True, trial=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
+
+Backtesting performs walk-forward cross-validation by iterating over temporal splits produced by the inherited `TimeBasedCV.split()` method. For each fold it:
+
+1. Calls `fit(train_df)` to retrain on the expanding (or rolling) training window.
+2. Calls `evaluate_point_forecast(test_df)` on the held-out test window.
+3. Tags results with a `Folds` column.
+
+The split behaviour is controlled by `ForecasterConfig` parameters:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `split_freq` | `str` | `"months"` | Time unit: `"days"`, `"hours"`, `"weeks"`, `"months"`, `"years"` |
+| `train_size` | `int` | `1` | Length of the training window in `split_freq` units |
+| `test_size` | `int` | `1` | Length of the test window in `split_freq` units |
+| `gap` | `int` | `0` | Gap between training end and test start |
+| `stride` | `int \| None` | `None` | Step size between folds (defaults to `test_size`) |
+| `window` | `str` | `"expanding"` | `"expanding"` or `"rolling"` |
+
+See [Backtesting](backtesting.md) for a detailed explanation of the cross-validation scheme.
+
+### Hyperparameter Tuning
+
+| Method | Signature | Returns |
+|---|---|---|
+| `tune` | `tune(train_df, val_df, num_trials=10, reduction_factor=3, patience=10, load_if_exists=True, initial_params=None, direction="minimize", sampler=None, base_pruner=None)` | `None` |
+
+`tune` performs Optuna-based hyperparameter optimisation for every registered model. For each model it:
+
+1. Creates an Optuna study (or loads an existing one from a `JournalFileBackend` log).
+2. Configures a `HyperbandPruner` wrapped in a `PatientPruner` and a `TPESampler` (seeded with `self.seed`).
+3. Enqueues `initial_params` if provided.
+4. Runs `num_trials` trials. Each trial calls `model.update(trial)` to sample hyperparameters, then `_fit` and `_evaluate` to compute a cost (mean MAE across targets).
+5. Replaces each model instance with a new one instantiated from the best parameters.
+
+After tuning, call `fit` again to train with the optimised configuration.
+
+:::{admonition} Resuming studies
+:class: tip
+
+When `load_if_exists=True` (the default) the study is persisted to `{logs_path}/{project_name}_{model_type}.log`. Re-running `tune` continues from where the previous run left off, which is useful for incremental search.
+:::
+
+
+See [Hyperparameter Tuning](../advanced/hyperparameter-tuning.md) for advanced recipes.
+
+
+## Model Registry
+
+Models are loaded dynamically at construction time through the registry in `twiga/forecaster/registry.py`. The registry uses the `name` field from each config to resolve a module at `twiga.models.{domain}.{name}_model`, then retrieves `{NAME}Model` and `{NAME}Config` from that module.
+
+```python
+# Internally called during TwigaForecaster.__init__
+model_cls, config_cls = get_model("xgboost", domain="ml")
+# Imports twiga.models.ml.xgboost_model -> (XGBOOSTModel, XGBOOSTConfig)
+```
+
+Results are cached after the first load. If `domain` is not specified, the registry searches both `ml` and `nn` directories.
+
+When configs are supplied as dictionaries, `get_model_from_dict` extracts the `"name"` key and follows the same resolution path:
+
+```python
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params={"name": "lightgbm", "domain": "ml"},
+    train_params=train_config,
+)
+```
+
+See [Models](../models/index.md) for all available model implementations.
+
+
+## Ensemble Strategies
+
+When more than one model is registered and an `ensemble_strategy` is passed to `predict`, `predict_interval`, or the evaluation methods, predictions are combined into an additional `"Ensemble"` entry.
+
+| Strategy | `EnsembleStrategy` | Formula |
+|---|---|---|
+| Mean | `"mean"` | Element-wise mean across models |
+| Median | `"median"` | Element-wise median across models |
+| Weighted | `"weighted"` | `np.einsum("ntcm,m->ntc", preds, weights)` with normalised weights |
+
+For the weighted strategy, pass a `dict[str, float]` mapping model names to weights:
+
+```python
+predictions, times = forecaster.predict(
+    test_df=test_df,
+    ensemble_strategy="weighted",
+    ensemble_weights={"xgboost": 0.6, "lightgbm": 0.4},
+)
+```
+
+For interval predictions, the ensemble is computed independently over the lower, point, and upper arrays.
+
+
+## Checkpointing & Directory Structure
+
+`BaseForecaster._create_folder()` creates a standardised directory layout under `root_dir`:
+
+```
+{root_dir}/
+  results/{project_name}/{model_type}/
+  logs/{project_name}/{model_type}/
+  figures/{project_name}/{model_type}/
+  checkpoints/{project_name}/{model_type}/[file_name]/
+```
+
+Checkpoint persistence differs by domain:
+
+| Domain | Save | Load |
+|---|---|---|
+| `ml` | `joblib.dump` of `{"model": ..., "data_pipeline": ...}` | `joblib.load` of the most recent file in `checkpoints_path` |
+| `nn` | Delegated to the model's own save logic | `model.load_checkpoint()`, then copies `model.data_pipeline` |
+
+
+## Inverse Scaling
+
+`BaseForecaster._rescale_predictions` automatically reverses the target scaling applied by the data pipeline. It supports three input formats:
+
+| Format | Handling |
+|---|---|
+| `np.ndarray` | Direct inverse transform via the pipeline's target scaler |
+| `tuple[np.ndarray, ...]` | Each element is inverse-transformed individually; 4-D arrays (e.g. quantile or sample dimensions) are reshaped appropriately |
+| `dict` with `"loc"` key | `"loc"` is inverse-transformed; `"scale"` uses scale-only inversion; `"quantiles"` and `"samples"` are reshaped before inversion |
+
+
+## API Reference
+
+
+```{eval-rst}
+.. autoclass:: twiga.forecaster.core.TwigaForecaster
+   :members:
+   :show-inheritance:
+```
+
+    options:
+      show_root_heading: true
+      show_source: true
+      members_order: source
+      heading_level: 3
+
+
+## See Also
+
+- [Quick Start Guide](../getting-started/quickstart.md) -- end-to-end walkthrough
+- [Configuration System](config.md) -- `DataPipelineConfig`, `ForecasterConfig`, `ConformalConfig`
+- [Data Pipeline](data-pipeline.md) -- feature engineering and scaling
+- [Metrics](metrics.md) -- point and interval evaluation functions
+- [Backtesting](backtesting.md) -- cross-validation strategy
+- [Models](../models/index.md) -- available model implementations
+- [Conformal Prediction](../probabilistic/conformal-prediction.md) -- prediction intervals
+- [Hyperparameter Tuning](../advanced/hyperparameter-tuning.md) -- Optuna integration

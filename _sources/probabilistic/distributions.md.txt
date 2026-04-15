@@ -1,0 +1,243 @@
+# Distribution Families
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/distributions/nn/parametric.py`
+- `twiga/distributions/nn/quantile.py`
+- `twiga/distributions/nn/fpquantile.py`
+- `twiga/models/nn/prob/core.py`
+- `twiga/distributions/ml/utils.py`
+
+</details>
+
+Twiga implements several distribution families for probabilistic neural forecasting. All NN distributions slot into the composable **backbone/head architecture** described below.
+
+## Backbone/Head Architecture
+
+Probabilistic neural models in Twiga decouple the backbone (which learns to encode the time series) from the distribution head (which maps the latent vector to a forecast). This separation lives in `twiga/models/nn/prob/core.py`.
+
+```{mermaid}
+graph LR
+    X["Input (B, T, F)"] --> BB["Backbone\n(NHITSNetwork / MLPFNetwork / …)"]
+    BB -->|"encode(x) → z (B, encode_size)"| HEAD["Distribution Head\n(Normal / QR / …)"]
+    HEAD --> OUT["Distribution Parameters\n(loc, scale) / quantiles / …"]
+```
+
+**Backbone contract**  -  any backbone must implement:
+
+- `encode(x) → Tensor`  -  maps raw input `(B, T, F)` to latent `(B, encode_size)`
+- `encode_size: int` property  -  width of the latent vector
+- `penalty_dict(epoch) → dict`  -  returns regularisation terms (Lasso, gate sparsity …)
+
+**Head contract**  -  any distribution head must implement:
+
+- `forward(z) → tuple`  -  maps latent `z` to distribution parameters
+- `step(z, y, metric_fn, epoch) → (loss, metric)`  -  computes training loss in one call
+
+`ProbabilisticModel` (a `LightningModule`) wires them together and automatically injects `hidden_size=backbone.encode_size` into the head constructor so callers never specify it manually.
+
+```python
+# Under the hood  -  TwigaForecaster does this for you when you pass a config like MLPFNormalConfig
+from twiga.models.nn.prob.core import ProbabilisticModel
+from twiga.models.nn.net.mlpf import MLPFNetwork
+from twiga.distributions.nn.parametric import NormalDistribution
+
+model = ProbabilisticModel(
+    backbone_cls=MLPFNetwork,
+    backbone_kwargs={...},          # num_target_feature, forecast_horizon, etc.
+    head_cls=NormalDistribution,
+    head_kwargs={"num_target_output": 1, "forecast_horizon": 48},
+    # hidden_size injected automatically from backbone.encode_size
+)
+```
+
+Adding a new distribution requires implementing only the head interface  -  the backbone and training loop are unchanged.
+
+
+## NN Distributions
+
+### Parametric Distributions
+
+All parametric heads live in `twiga/distributions/nn/parametric.py`. Each maps the latent vector `z (B, encode_size)` to two (or three for Student-T) distribution parameters and trains via negative log-likelihood.
+
+| Class | Distribution | Output params | Constraint | Best for |
+|---|---|---|---|---|
+| `NormalDistribution` | Normal | `(μ, σ)` | σ > 0 | Symmetric, unbounded targets |
+| `LaplaceDistribution` | Laplace | `(μ, b)` | b > 0 | Heavy-tailed, outlier-robust |
+| `LogNormalDistribution` | LogNormal | `(μ, σ)` | σ > 0 | Strictly positive, right-skewed |
+| `GammaDistribution` | Gamma | `(α, β)` | α, β > 0 | Strictly positive, flexible skew |
+| `BetaDistribution` | Beta | `(α, β)` | α, β > 0 | Bounded [0, 1] targets |
+| `StudentTDistribution` | Student-T | `(μ, σ, ν)` | σ > 0, ν > 2 | Very heavy tails |
+
+All share the same interface:
+
+```python
+from twiga.distributions.nn.parametric import NormalDistribution
+
+dist = NormalDistribution(
+    num_target_output=1,
+    hidden_size=256,      # injected automatically by ProbabilisticModel
+    forecast_horizon=48,
+    out_activation_function=None,
+)
+
+# Forward pass → distribution parameters
+loc, scale = dist(z)  # z shape: (B, encode_size)
+
+# Get PyTorch distribution object
+d = dist.get_distribution(loc, scale)
+
+# Negative log-likelihood for training
+nll = dist.get_log_likelihood(loc, scale, targets)
+
+# training_step equivalent
+loss, metric = dist.step(z, targets, metric_fn, epoch)
+```
+
+:::{admonition} Student-T requires `min_df`
+:class: note
+
+`StudentTDistribution` accepts an additional `min_df: float` parameter (default 2.1) that clips the predicted degrees-of-freedom from below to ensure finite variance.
+:::
+
+
+### Quantile Distribution
+
+The `QRDistribution` class (`twiga/distributions/nn/quantile.py`) outputs quantile predictions from a neural network.
+
+```python
+from twiga.distributions.nn.quantile import QRDistribution
+
+dist = QRDistribution(
+    quantiles=[0.05, 0.25, 0.5, 0.75, 0.95],
+    num_outputs=1,
+    hidden_size=256,
+    horizon=48,
+    loss_fn="pinball",    # or "huber-pinball"
+    kappa=0.5,
+    conf_level=0.05,
+)
+
+# Forward pass: shape (batch, num_quantiles, horizon, num_outputs)
+quantile_values = dist(hidden_repr)
+
+# Forecast: returns (loc, quantile_values)
+loc, quantiles = dist.forecast(hidden_repr)
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `quantiles` | `list[float] \| None` | `None` | Quantile levels to predict |
+| `num_outputs` | `int` | `1` | Number of target variables |
+| `hidden_size` | `int` | `256` | Input hidden dimension |
+| `horizon` | `int` | `48` | Forecast horizon |
+| `loss_fn` | `str` | `"pinball"` | Loss function: `"pinball"` or `"huber-pinball"` |
+| `kappa` | `float` | `0.5` | Huber transition parameter |
+| `conf_level` | `float` | `0.05` | Confidence level for bounds |
+| `eps` | `float` | `1e-6` | Numerical stability |
+| `output_activation` | `nn.Module \| None` | `None` | Optional output activation |
+
+The `step()` method computes quantile loss and metrics during training:
+
+```python
+loss, metric = dist.step(batch, metric_fn, epoch)
+```
+
+#### Median Extraction
+
+```python
+from twiga.distributions.nn.quantile import get_median_quantile
+
+# Extract median from quantile predictions
+median = get_median_quantile(quantile_hats, probs=[0.05, 0.25, 0.5, 0.75, 0.95])
+# Shape: (batch, horizon, num_targets)
+```
+
+If $\tau = 0.5$ is in the quantile list, it is extracted directly. Otherwise, linear interpolation between the two closest quantiles is used.
+
+
+## ML Distribution Utilities
+
+The `twiga/distributions/ml/utils.py` module provides utilities for post-processing quantile predictions from ML models.
+
+### `interpolate_quantile()`
+
+Linearly interpolates to extract a specific quantile from a set of predicted quantiles.
+
+```python
+from twiga.distributions.ml.utils import interpolate_quantile
+
+# predictions shape: (batch, num_quantiles, num_targets)
+q30 = interpolate_quantile(
+    predictions=predictions,
+    sorted_quantiles=[0.05, 0.25, 0.5, 0.75, 0.95],
+    target_quantile=0.3,
+)
+# Output shape: (batch, num_targets)
+```
+
+### `get_median_prediction()`
+
+Extracts the median prediction (quantile 0.5).
+
+```python
+from twiga.distributions.ml.utils import get_median_prediction
+
+median = get_median_prediction(predictions, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95])
+```
+
+### `get_sigma_prediction()`
+
+Estimates the standard deviation from the interquartile range:
+
+$$\sigma = \frac{Q_{0.75} - Q_{0.25}}{2 \times 0.6745}$$
+
+```python
+from twiga.distributions.ml.utils import get_sigma_prediction
+
+sigma = get_sigma_prediction(predictions, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95])
+```
+
+:::{admonition} Note
+:class: note
+
+The constant 0.6745 is the 75th percentile of the standard normal distribution. This conversion assumes approximate normality of the residuals.
+:::
+
+
+## How Distributions Connect to Models
+
+```{mermaid}
+graph TD
+    subgraph "Point Models"
+        A[CatBoost / XGBoost / LightGBM / MLPF / NHITS] --> B["predict() → loc array"]
+    end
+
+    subgraph "Parametric NN Models"
+        C["ProbabilisticModel\n(backbone + head)"] --> D["predict() → (loc, scale, …)"]
+        D --> E["NormalDistribution / LaplaceDistribution\nGammaDistribution / BetaDistribution / …"]
+    end
+
+    subgraph "Quantile Models"
+        G[QRCatBoost / QRXGBoost / QRLightGBM] --> H["predict() → quantile array"]
+        I["MLPFQR / NHITSQRModel / …"] --> H
+        H --> J[QRDistribution / FPQRDistribution]
+    end
+
+    subgraph "ML Parametric (Gaussian)"
+        K["GAUSSCATBOOSTModel"] --> L["predict() → (μ, σ)"]
+    end
+
+    B --> CP[Conformal Prediction]
+    D --> CP
+    H --> CP
+    L --> CP
+    CP --> PI[Prediction Intervals]
+```
+
+**Point models** produce a single prediction per time step and can be wrapped with [split conformal prediction](conformal-prediction.md).
+
+**Parametric NN models** (via `ProbabilisticModel`) produce full distribution parameters and train via NLL. They can be used stand-alone or combined with [conformal residual fitting](conformal-prediction.md).
+
+**Quantile models** produce multiple quantile predictions and can be used with [conformal quantile regression](conformal-prediction.md) or taken directly as prediction intervals.

@@ -1,0 +1,435 @@
+# Feature Analysis & Statistical Toolkit
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/core/data/relevance.py`  -  `AssociationAnalyzer` class
+- `twiga/core/data/selection.py`  -  `select_top_features`, `compute_rf_importance`
+- `twiga/core/stats/association.py`  -  `rank_correlation`, `compute_anova_f`, `compute_chi2`
+- `twiga/core/stats/autocorr.py`  -  `get_pacf_values`, `estimate_ar_order`, `calculate_durbin_watson`
+- `twiga/core/stats/entropy.py`  -  entropy & complexity measures
+- `twiga/core/stats/mutual_information.py`  -  `compute_mutual_information`
+- `twiga/core/stats/ppscore.py`  -  `compute_ppscore`
+- `twiga/core/stats/residual.py`  -  `cooks_distance`, `leverage_statistic`, `get_standardized_residual`
+- `twiga/core/stats/seasonality.py`  -  `get_acf_values`
+- `twiga/core/stats/stationarity.py`  -  `adf_test`, `kpss_test`
+- `twiga/core/stats/utils.py`  -  `get_optimal_lags`, `normalise_series`, `get_entropy_parameters`
+- `twiga/core/stats/xicorr.py`  -  `compute_xicorr`
+
+</details>
+
+Twiga provides a comprehensive statistical analysis toolkit for understanding and preparing time series data before modelling. All functions are accessible through a flat import API:
+
+```python
+from twiga.core.stats import rank_correlation, adf_test, get_acf_values, compute_xicorr
+from twiga.core.data import AssociationAnalyzer, select_top_features, compute_rf_importance
+```
+
+---
+
+## Association Analysis
+
+### `AssociationAnalyzer`
+
+The `AssociationAnalyzer` class provides a single interface to compute feature-target association using eight methods spanning linear, rank-based, information-theoretic, and model-based approaches. All methods return a tidy `DataFrame` with columns `feature`, `target`, and a score column, making results easy to visualise and compare.
+
+```python
+from twiga.core.data import AssociationAnalyzer
+
+analyzer = AssociationAnalyzer(
+    data=df,
+    features=["temperature", "ghi", "hour_sin", "hour_cos", "wind_speed"],
+    target="load_mw",
+    task="regression",   # "regression" or "classification"
+)
+
+# Single method
+pearson_df = analyzer.compute(method="pearson")
+
+# All eight methods at once
+all_df = analyzer.compute_all()
+
+# Heatmap of scores
+fig = analyzer.plot_heatmap(method="spearman", top_k=20)
+```
+
+#### Supported Methods
+
+| Method | Key | Strength |
+| --- | --- | --- |
+| Pearson correlation | `"pearson"` | Fast, interpretable for linear relationships |
+| Spearman rank correlation | `"spearman"` | Robust to outliers, monotonic relationships |
+| Kendall tau | `"kendall"` | Small-sample stability, concordance-based |
+| Xi-correlation (Chatterjee) | `"xicor"` | Detects arbitrary functional relationships |
+| Predictive Power Score | `"pps"` | Asymmetric, model-based, captures non-linearity |
+| Mutual Information | `"mi"` | Non-parametric, captures any statistical dependency |
+| ANOVA F-score | `"anova"` | Regression  -  linear effect of continuous feature on target |
+| Chi-squared | `"chi2"` | Classification  -  independence test for categorical/binned features |
+
+:::{admonition} Choosing a method
+:class: tip
+
+For energy forecasting with continuous features, **Spearman** is a safe default (robust, interpretable). Add **xi-correlation** or **PPS** when you suspect non-monotonic relationships (e.g. solar generation vs. temperature in high-irradiance regimes). Use **MI** to catch interactions that linear methods miss.
+:::
+
+---
+
+### `rank_correlation`
+
+Computes pairwise rank-based correlation (Pearson, Spearman, or Kendall) between features and a target, returning a sorted DataFrame.
+
+```python
+from twiga.core.stats import rank_correlation
+
+scores = rank_correlation(
+    data=df,
+    target="load_mw",
+    features=["temperature", "ghi", "wind_speed"],
+    method="spearman",   # "pearson" | "spearman" | "kendall"
+    threshold=0.2,       # optional: drop features below this absolute score
+)
+# Returns DataFrame with columns: feature, target, correlation  -  sorted descending
+```
+
+### `compute_anova_f`
+
+Computes the ANOVA F-score between continuous features and a target for regression tasks.
+
+```python
+from twiga.core.stats import compute_anova_f
+
+scores = compute_anova_f(
+    data=df,
+    target="load_mw",
+    features=feature_columns,
+    task="regression",
+    normalize=True,  # normalise scores to [0, 1]
+)
+```
+
+### `compute_chi2`
+
+Computes Chi-squared statistics between (non-negative) features and a categorical target. Useful as a fast filter before applying heavier methods.
+
+```python
+from twiga.core.stats import compute_chi2
+
+scores = compute_chi2(
+    data=df,
+    target="category",
+    features=feature_columns,
+)
+# Returns DataFrame with columns: feature, target, chi2, p_value
+```
+
+### `compute_xicorr`
+
+Computes Chatterjee's Xi-correlation  -  a non-parametric measure that is zero for independent variables and tends to one for functional (deterministic) relationships. Unlike Pearson/Spearman, it detects non-monotonic dependencies.
+
+```python
+from twiga.core.stats import compute_xicorr
+
+scores = compute_xicorr(
+    data=df,
+    target="load_mw",
+    features=feature_columns,
+)
+# Returns DataFrame sorted descending by xi score
+```
+
+### `compute_mutual_information`
+
+Estimates mutual information between features and a target using k-NN density estimation. Works for both regression and classification.
+
+```python
+from twiga.core.stats import compute_mutual_information
+
+scores = compute_mutual_information(
+    data=df,
+    target="load_mw",
+    features=feature_columns,
+    task="regression",
+    threshold=0.01,   # optional: drop near-zero MI scores
+    pivot=False,      # True → wide matrix; False → long DataFrame
+)
+```
+
+### `compute_ppscore`
+
+Computes the Predictive Power Score (PPS)  -  an asymmetric, normalised score in [0, 1] that measures how well a feature predicts a target using a decision tree. A score of 0 means no predictive value; 1 means perfect prediction.
+
+```python
+from twiga.core.stats import compute_ppscore
+
+scores = compute_ppscore(
+    data=df,
+    target="load_mw",
+    features=feature_columns,
+    catch_errors=True,  # return error dict instead of raising on failure
+)
+# Returns a dict: {feature_name: {"ppscore": float, "model_score": float, ...}}
+```
+
+---
+
+## Feature Selection
+
+### `select_top_features`
+
+Ensemble feature ranking that combines six association signals into a single ranked list using Borda count (or other aggregation strategies). Robust to the noise and bias of any individual metric.
+
+```python
+from twiga.core.data.selection import select_top_features
+
+top_features = select_top_features(
+    data=df,
+    features=feature_columns,
+    target="load_mw",
+    task="regression",
+    top_k=15,           # return the top-k ranked features
+    alpha=0.05,         # optional p-value threshold (spearman/anova)
+    return_scores=True, # include per-method score columns in output
+    rank_method="borda_rank",  # "borda_rank" | "geom_rank" | "arith_rank" | "med_rank" | "sum_rank"
+    include_chi2=False, # set True for classification tasks
+)
+```
+
+The six signals combined:
+
+| Signal | Method |
+| --- | --- |
+| Rank correlation | Spearman (regression) / ANOVA (classification) |
+| Mutual information | k-NN density estimation |
+| Xi-correlation | Chatterjee's ξ |
+| Predictive Power Score | Decision-tree PPS |
+| RF feature importance | Mean Decrease in Impurity |
+| Chi-squared (optional) | χ² independence test |
+
+### `compute_rf_importance`
+
+Computes Random Forest mean-decrease-in-impurity (MDI) importance as a long-format DataFrame.
+
+```python
+from twiga.core.data.selection import compute_rf_importance
+
+importance_df = compute_rf_importance(
+    data=df,
+    features=feature_columns,
+    target="load_mw",
+    task="regression",   # "regression" or "classification"
+)
+# Returns DataFrame with columns: feature, importance (sums to ~1.0)
+```
+
+---
+
+## Time Series Diagnostics
+
+### Stationarity Tests
+
+```python
+from twiga.core.stats import adf_test, kpss_test
+
+# Augmented Dickey-Fuller test
+# H0: unit root present (non-stationary)
+adf_result = adf_test(series, max_lag=None, autolag="AIC")
+# Returns dict: {"statistic", "p_value", "critical_values", "is_stationary"}
+
+# KPSS test
+# H0: series is stationary (trend- or level-stationary)
+kpss_result = kpss_test(series, regression="c", nlags="auto")
+# Returns dict: {"statistic", "p_value", "critical_values", "is_stationary"}
+```
+
+:::{admonition} Combining ADF and KPSS
+:class: tip
+
+Use both tests together: if ADF rejects the unit-root null and KPSS does not reject stationarity, you have strong evidence of stationarity. Conflicting results suggest trend-stationarity or structural breaks.
+:::
+
+### ACF / PACF
+
+```python
+from twiga.core.stats import get_acf_values, get_pacf_values, estimate_ar_order
+
+# Autocorrelation function
+acf_df = get_acf_values(series, max_lag=48, alpha=0.05)
+# Returns DataFrame: lag, acf, lower_ci, upper_ci
+
+# Partial autocorrelation function
+pacf_df = get_pacf_values(series, max_lag=48, alpha=0.05)
+# Returns DataFrame: lag, pacf, lower_ci, upper_ci
+
+# Suggest AR order from PACF
+p = estimate_ar_order(series, max_lag=48)
+```
+
+### Durbin-Watson
+
+```python
+from twiga.core.stats import calculate_durbin_watson
+
+dw = calculate_durbin_watson(residuals)
+# Returns float in [0, 4]; ~2 means no autocorrelation
+```
+
+---
+
+## Entropy & Complexity Measures
+
+The entropy module characterises time series complexity, which is useful for diagnosing predictability and selecting model types.
+
+```python
+from twiga.core.stats import (
+    get_permutation_entropy,
+    get_approx_entropy,
+    get_sample_entropy,
+    get_hurst_exponent,
+    get_dfa_exponent,
+    get_entropy_parameters,
+)
+
+# Permutation entropy  -  fast, robust to noise
+pe = get_permutation_entropy(series, order=3, delay=1, normalize=True)
+
+# Approximate entropy  -  regularity measure
+ae = get_approx_entropy(series, order=2, metric="chebyshev")
+
+# Sample entropy  -  less biased than ApEn for short series
+se = get_sample_entropy(series, order=2, metric="chebyshev")
+
+# Hurst exponent  -  long-range dependence (0.5 = random walk, >0.5 = trending)
+h = get_hurst_exponent(series)
+
+# Detrended Fluctuation Analysis exponent
+dfa = get_dfa_exponent(series)
+
+# Auto-select appropriate entropy parameters for a given series
+params = get_entropy_parameters(series)
+```
+
+| Measure | Range | Interpretation |
+| --- | --- | --- |
+| Permutation entropy | [0, 1] | 0 = fully regular, 1 = maximally complex |
+| Approximate entropy | ≥ 0 | Higher = less regular |
+| Sample entropy | ≥ 0 | Higher = less regular, less biased than ApEn |
+| Hurst exponent | (0, 1) | < 0.5 anti-persistent, 0.5 random, > 0.5 persistent |
+| DFA exponent | ≥ 0 | Similar to Hurst; robust to non-stationarity |
+
+---
+
+## Residual Diagnostics
+
+After model fitting, residual diagnostics help identify influential observations and model misspecification.
+
+```python
+from twiga.core.stats import (
+    cooks_distance,
+    leverage_statistic,
+    get_standardized_residual,
+)
+
+# Cook's distance  -  influence of each observation on fitted coefficients
+cd = cooks_distance(fitted_values, residuals, n_params)
+# Returns np.ndarray; values > 4/n are typically flagged
+
+# Leverage  -  how far each point is from the design-matrix centroid
+lev = leverage_statistic(X)
+# Returns np.ndarray of hat-matrix diagonals
+
+# Standardised residuals
+std_resid = get_standardized_residual(residuals)
+```
+
+---
+
+## Utilities
+
+```python
+from twiga.core.stats import normalise_series, get_optimal_lags, prepare_data
+
+# Normalise a series to [0, 1] or standardise to zero mean / unit variance
+norm = normalise_series(series, method="minmax")   # "minmax" | "zscore"
+
+# Estimate optimal lag order (AIC/BIC information criterion)
+lag = get_optimal_lags(series, max_lag=48, criterion="aic")
+
+# Prepare a feature matrix and target vector from a DataFrame
+X, y = prepare_data(df, target="load_mw", features=feature_columns)
+```
+
+---
+
+## API Reference
+
+```{eval-rst}
+.. autoclass:: twiga.core.data.relevance.AssociationAnalyzer
+   :members:
+   :show-inheritance:
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.data.selection.select_top_features
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.data.selection.compute_rf_importance
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.association.rank_correlation
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.association.compute_anova_f
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.association.compute_chi2
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.xicorr.compute_xicorr
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.mutual_information.compute_mutual_information
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.ppscore.compute_ppscore
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.stationarity.adf_test
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.stationarity.kpss_test
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.seasonality.get_acf_values
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.autocorr.get_pacf_values
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.autocorr.estimate_ar_order
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.entropy.get_permutation_entropy
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.entropy.get_hurst_exponent
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.residual.cooks_distance
+```
+
+**Next:** [Data Pipeline](data-pipeline.md) | [Metrics](metrics.md) | [Visualization](../advanced/visualization.md)

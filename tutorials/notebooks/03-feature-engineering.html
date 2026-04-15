@@ -1,0 +1,1785 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>3. 03 — Feature Engineering &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=724e8a05" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/03-feature-engineering';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="4. 04 — Time Series Differencing" href="04-time-series-differencing.html" />
+    <link rel="prev" title="2. 02 — Forecastability Analysis" href="02-forecastability-analysis.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../../_static/searchtools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="01-getting-started.html">1. 01 — Getting Started with Twiga</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02-forecastability-analysis.html">2. 02 — Forecastability Analysis</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">3. 03 — Feature Engineering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04-time-series-differencing.html">4. 04 — Time Series Differencing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05-ml-point-forecasting.html">5. 05 — ML Point Forecasting with Multiple Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="06-backtesting-and-evaluation.html">6. 06 — Backtesting &amp; Robust Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15-baseline-benchmarking.html">7. 15 — Baseline Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="07-neural-networks.html">8. 07 — Neural Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="08-quantile-regression.html">9. 08 — Quantile Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="09-parametric-distributions.html">10. 09 — Parametric Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="10-conformal-prediction.html">11. 10 — Conformal Prediction &amp; Guaranteed Coverage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="11-hyperparameter-tuning.html">12. 11 — Hyperparameter Tuning with Optuna</a></li>
+<li class="toctree-l1"><a class="reference internal" href="12-ensemble-strategies.html">13. 12 — Ensemble Strategies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="13-custom-models.html">14. 13 — Custom Models &amp; Extension Points</a></li>
+<li class="toctree-l1"><a class="reference internal" href="14-typed-forecast-results.html">15. 14 — Typed Forecast Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="16-shap-feature-attribution.html">16. 16 — SHAP Feature Attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="17-mlops-tracking-serving.html">17. 17 — MLOps: Tracking, Serving &amp; Monitoring</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">3. </span>03 — Feature Engineering</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="03-—-Feature-Engineering">
+<h1><span class="section-number">3. </span>03 — Feature Engineering<a class="headerlink" href="#03-—-Feature-Engineering" title="Link to this heading">#</a></h1>
+<p><img alt="Level" src="https://img.shields.io/badge/level-beginner-green" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
+<hr class="docutils" />
+<p><strong>What you’ll build</strong></p>
+<p>A fully-engineered feature matrix from the MLVS-PT net-load signal — including lag features, rolling-window statistics, cyclic calendar encodings, and Fourier terms — wired into a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> that any Twiga forecaster can consume directly.</p>
+<p><strong>Prerequisites</strong></p>
+<ul class="simple">
+<li><p>Basic Python (lists, dicts, imports)</p></li>
+<li><p><a class="reference internal" href="01-getting-started.html"><span class="doc">NB01 — Getting Started</span></a></p></li>
+<li><p><a class="reference internal" href="02-forecastability-analysis.html"><span class="doc">NB02 — Forecastability Analysis</span></a> <em>(recommended — provides the parameter rationale)</em></p></li>
+</ul>
+<p><strong>Learning objectives</strong></p>
+<p>By the end of this notebook you will be able to:</p>
+<ol class="arabic simple">
+<li><p>Add cyclic calendar signals (hour, weekday, month, day/night) using <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code></p></li>
+<li><p>Build lag features and rolling-window statistics using <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code></p></li>
+<li><p>Rank and select the most informative features using <code class="docutils literal notranslate"><span class="pre">select_top_features</span></code></p></li>
+<li><p>Encode cyclic variables with Fourier (sin/cos) terms to avoid discontinuities</p></li>
+<li><p>Wire all feature choices into a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> and pass it to <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code></p></li>
+</ol>
+<p><strong>The five-step workflow</strong></p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Raw data  →  Temporal features  →  AR features  →  Feature selection  →  DataPipelineConfig
+(parquet)    (calendar signals)    (lags, windows)   (rank &amp; filter)       (pipeline-ready)
+</pre></div>
+</div>
+<p>Each section in this notebook maps to one step in the pipeline — by the end you will have a complete, reproducible feature-engineering configuration.</p>
+<section id="1.-Setup">
+<h2><span class="section-number">3.1. </span>1. Setup<a class="headerlink" href="#1.-Setup" title="Link to this heading">#</a></h2>
+<p>We import four groups of libraries:</p>
+<ul class="simple">
+<li><p><strong>``warnings``</strong> — suppress noisy deprecation messages so output stays readable.</p></li>
+<li><p><strong>``great_tables`` / ``lets_plot``</strong> — rendering styled tables and interactive plots inside the notebook.</p></li>
+<li><p><strong>``numpy`` / ``pandas``</strong> — array maths and tabular data manipulation.</p></li>
+<li><p><strong>Twiga utilities</strong> — <code class="docutils literal notranslate"><span class="pre">configure()</span></code> sets up logging; <code class="docutils literal notranslate"><span class="pre">get_logger()</span></code> gives us a labelled logger for clean output.</p></li>
+<li><p><strong>Twiga feature transformers</strong> — <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> adds calendar features; <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> builds lag and rolling-window columns.</p></li>
+<li><p><strong>Twiga plot helpers</strong> — <code class="docutils literal notranslate"><span class="pre">plot_timeseries</span></code>, <code class="docutils literal notranslate"><span class="pre">line_plot</span></code>, and <code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code> are thin wrappers around LetsPlot tuned for time series work.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
+
+<span class="n">LetsPlot</span><span class="o">.</span><span class="n">setup_html</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">plot_acf</span><span class="p">,</span>
+    <span class="n">plot_metrics_bar</span><span class="p">,</span>
+    <span class="n">plot_timeseries</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span><span class="p">,</span> <span class="n">get_logger</span>
+
+<span class="n">configure</span><span class="p">()</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;tutorials&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load dataset — only the columns we need</span>
+<span class="n">COLUMNS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]</span>
+
+<span class="n">raw</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">COLUMNS</span><span class="p">)</span>
+<span class="n">raw</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+
+<span class="c1"># Filter to the study period</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">raw</span><span class="p">[(</span><span class="n">raw</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2019-02-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="s2">&quot;2021-12-31&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shape : </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Period: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">twiga_gt</span><span class="p">(</span><span class="n">GT</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()))</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="2.-Temporal-Features">
+<h2><span class="section-number">3.2. </span>2. Temporal Features<a class="headerlink" href="#2.-Temporal-Features" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p><strong>Key concept — Calendar features</strong></p>
+<p>A time series model sees numbers, not timestamps. Calendar features translate the human notion of time (“it’s 8 am on a Monday”) into numbers a model can use as inputs. The trick is to encode <em>cyclic</em> variables (hour 23 is close to hour 0, not far from it) using sin/cos pairs so the model sees the circular structure rather than a linear scale.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> adds calendar signals to a DataFrame. It wraps three building blocks:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hour</span></code></p></td>
+<td><p>trigonometric (sin/cos)</p></td>
+<td><p>Hour of day (0–23)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">wday</span></code></p></td>
+<td><p>trigonometric (sin/cos)</p></td>
+<td><p>Day of week (0–6)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">month</span></code></p></td>
+<td><p>trigonometric (sin/cos)</p></td>
+<td><p>Month of year (1–12)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">day_night</span></code></p></td>
+<td><p>binary</p></td>
+<td><p>1 = daytime, 0 = night</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<div><div class="line-block">
+<div class="line"><strong>``day_night`` and solar geometry:</strong> Twiga uses the <code class="docutils literal notranslate"><span class="pre">`astral</span></code> &lt;<a class="reference external" href="https://astral.readthedocs.io/">https://astral.readthedocs.io/</a>&gt;`__ library to compute accurate sunrise/sunset times per day for the specified location.</div>
+<div class="line">Latitude and longitude are therefore <strong>required</strong> whenever <code class="docutils literal notranslate"><span class="pre">day_night</span></code> is listed in <code class="docutils literal notranslate"><span class="pre">calendar_features</span></code>. The Madeira Island coordinates below correspond to the MLVS-PT measurement site.</div>
+</div>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">temporal_ref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Feature&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;`hour`&quot;</span><span class="p">,</span> <span class="s2">&quot;`wday`&quot;</span><span class="p">,</span> <span class="s2">&quot;`month`&quot;</span><span class="p">,</span> <span class="s2">&quot;`day_night`&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;trigonometric (sin/cos)&quot;</span><span class="p">,</span> <span class="s2">&quot;trigonometric (sin/cos)&quot;</span><span class="p">,</span> <span class="s2">&quot;trigonometric (sin/cos)&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Description&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Hour of day (0–23)&quot;</span><span class="p">,</span> <span class="s2">&quot;Day of week (0–6)&quot;</span><span class="p">,</span> <span class="s2">&quot;Month of year (1–12)&quot;</span><span class="p">,</span> <span class="s2">&quot;1 = daytime, 0 = night&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Why it matters&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Captures the daily demand cycle — morning peak, midday lull, evening peak&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Captures weekend vs. weekday demand differences&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Captures seasonal heating/cooling patterns across the year&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Direct proxy for solar generation (GHI ≈ 0 at night)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">temporal_ref</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Calendar Features — Reference Guide**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;All cyclic features are encoded as sin/cos pairs to preserve circular structure&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Feature</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Feature**&quot;</span><span class="p">),</span>
+        <span class="n">Type</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Type**&quot;</span><span class="p">),</span>
+        <span class="n">Description</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Description**&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="p">{</span><span class="s2">&quot;Why it matters&quot;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Why it matters**&quot;</span><span class="p">)},</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast · NB03 — Feature Engineering&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">temporal_ref</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>Key concept — Temporal features</strong></p>
+<p>Raw timestamps carry rich information, but a model cannot interpret a datetime object directly. Temporal features extract the useful dimensions:</p>
+<ul class="simple">
+<li><p><strong>Calendar features</strong> (<code class="docutils literal notranslate"><span class="pre">hour</span></code>, <code class="docutils literal notranslate"><span class="pre">weekday</span></code>, <code class="docutils literal notranslate"><span class="pre">month</span></code>) — tell the model where in the daily or weekly cycle a sample falls. Net load is typically higher on weekday mornings than Sunday nights; a model with no <code class="docutils literal notranslate"><span class="pre">hour</span></code> feature cannot learn this.</p></li>
+<li><p><strong>Day/night flag</strong> — Madeira Island receives meaningful solar irradiance only during daylight. A binary day/night column lets even a simple tree model split on light vs. dark without needing to reason about solar angles.</p></li>
+<li><p><strong>Solar-angle features</strong> — if you pass latitude and longitude, <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> computes the exact solar elevation angle for each timestamp. This is more precise than a fixed day/night cutoff and captures seasonal variation in sunrise/sunset times.</p></li>
+</ul>
+<p>All of these are computed once during <code class="docutils literal notranslate"><span class="pre">fit_transform()</span></code> and then reproduced identically at prediction time — ensuring train/test consistency.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.temporal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TemporalFeatureTransformer</span>
+
+<span class="n">temporal</span> <span class="o">=</span> <span class="n">TemporalFeatureTransformer</span><span class="p">(</span>
+    <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
+    <span class="n">longitude</span><span class="o">=-</span><span class="mf">16.274998</span><span class="p">,</span>
+    <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">,</span> <span class="s2">&quot;wday&quot;</span><span class="p">,</span> <span class="s2">&quot;month&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">data_with_temporal</span> <span class="o">=</span> <span class="n">temporal</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+<span class="c1"># Which columns were added?</span>
+<span class="n">original_cols</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="n">new_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">data_with_temporal</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">original_cols</span><span class="p">]</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Original columns : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">original_cols</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;New columns added: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">new_cols</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inspect the first few rows of the new temporal columns</span>
+<span class="n">data_with_temporal</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">new_cols</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise day_night assignment over a single week</span>
+<span class="n">one_week</span> <span class="o">=</span> <span class="n">data_with_temporal</span><span class="p">[</span>
+    <span class="p">(</span><span class="n">data_with_temporal</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2020-06-15&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data_with_temporal</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-06-22&quot;</span><span class="p">)</span>
+<span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
+    <span class="n">one_week</span><span class="p">,</span>
+    <span class="n">y_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">],</span>
+    <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span>
+    <span class="n">band_col</span><span class="o">=</span><span class="s2">&quot;day_night&quot;</span><span class="p">,</span>
+    <span class="n">band_labels</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;Night&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;Day&quot;</span><span class="p">},</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW) with day/night context — one week (Jun 2020)&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;NetLoad (kW)&quot;</span><span class="p">,</span>
+    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;Date&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="3.-Autoregressive-Features">
+<h2><span class="section-number">3.3. </span>3. Autoregressive Features<a class="headerlink" href="#3.-Autoregressive-Features" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p><strong>Key concept — Lag features</strong></p>
+<p>A <strong>lag feature</strong> is simply the value of the target variable from some number of steps in the past. If electricity demand follows a daily pattern, then “what was demand exactly 24 hours ago?” is an extremely useful input to predict “what will demand be now?”. Lag features let a machine-learning model exploit this temporal memory without you having to design a recurrence mechanism from scratch.</p>
+</div></blockquote>
+<blockquote>
+<div><p><strong>Key concept — Rolling windows</strong></p>
+<p>A <strong>rolling-window feature</strong> summarises recent history into a single number — the mean, standard deviation, or another aggregate over a sliding window. Where a lag feature answers “what was the value at time t−k?”, a rolling mean answers “what was the <em>typical</em> value over the last k steps?”. Rolling statistics smooth out noise and capture trend shifts that individual lags might miss.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> creates two families of features:</p>
+<ul class="simple">
+<li><p><strong>Lag features</strong> — value of the target <code class="docutils literal notranslate"><span class="pre">n_samples</span> <span class="pre">*</span> <span class="pre">lag</span></code> timesteps ago</p></li>
+<li><p><strong>Rolling features</strong> — aggregate (mean, std, …) over a window of <code class="docutils literal notranslate"><span class="pre">n_samples</span> <span class="pre">*</span> <span class="pre">window</span></code> timesteps</p></li>
+</ul>
+<section id="Understanding-the-n_samples-multiplier">
+<h3><span class="section-number">3.3.1. </span>Understanding the <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> multiplier<a class="headerlink" href="#Understanding-the-n_samples-multiplier" title="Link to this heading">#</a></h3>
+<div class="line-block">
+<div class="line">With <strong>30-minute</strong> data there are <strong>48 samples per day</strong> (<code class="docutils literal notranslate"><span class="pre">n_samples=48</span></code>).</div>
+<div class="line">Specifying <code class="docutils literal notranslate"><span class="pre">lags=[1,</span> <span class="pre">2,</span> <span class="pre">7]</span></code> therefore produces lags at:</div>
+</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">lag</span></code> value</p></th>
+<th class="head"><p>Actual shift</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>1 × 48 = 48 steps</p></td>
+<td><p>1 day ago</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>2 × 48 = 96 steps</p></td>
+<td><p>2 days ago</p></td>
+</tr>
+<tr class="row-even"><td><p>7</p></td>
+<td><p>7 × 48 = 336 steps</p></td>
+<td><p>7 days ago (same weekday)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Similarly, <code class="docutils literal notranslate"><span class="pre">windows=[1,</span> <span class="pre">2,</span> <span class="pre">7]</span></code> produces rolling windows of 48, 96, and 336 steps.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">lag_ref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;lag value&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;7&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Actual shift (30-min data)&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1 × 48 = 48 steps&quot;</span><span class="p">,</span> <span class="s2">&quot;2 × 48 = 96 steps&quot;</span><span class="p">,</span> <span class="s2">&quot;7 × 48 = 336 steps&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Meaning&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1 day ago&quot;</span><span class="p">,</span> <span class="s2">&quot;2 days ago&quot;</span><span class="p">,</span> <span class="s2">&quot;7 days ago (same weekday)&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;Why useful&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Yesterday&#39;s pattern is the strongest single predictor for today&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Short-term trend — captures whether demand is rising or falling&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Same time last week — accounts for weekly seasonality&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">lag_ref</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Lag Multiplier Reference — 30-min data, `n_samples=48`**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Each lag value is multiplied by n_samples to get the actual timestep shift&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="o">**</span><span class="p">{</span>
+            <span class="s2">&quot;lag value&quot;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="s2">&quot;**`lag` value**&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;Actual shift (30-min data)&quot;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Actual shift**&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;Meaning&quot;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Meaning**&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;Why useful&quot;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Why useful**&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast · NB03 — Feature Engineering&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">lag_ref</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>Key concept — Lag features and rolling windows</strong></p>
+<p>Tree-based models (LightGBM, XGBoost, CatBoost) cannot process sequences — they see one flat feature vector per sample. To give them access to the past, we engineer explicit historical features:</p>
+<ul class="simple">
+<li><p><strong>Lag features</strong> — copy the target value from <code class="docutils literal notranslate"><span class="pre">n_samples</span> <span class="pre">×</span> <span class="pre">lag</span></code> steps ago. For 30-min data, <code class="docutils literal notranslate"><span class="pre">lag=1</span></code> means 1 day ago (48 steps), <code class="docutils literal notranslate"><span class="pre">lag=7</span></code> means 1 week ago (336 steps). The forecastability analysis in NB02 showed strong ACF peaks at lags 48 and 336 — those are the lags worth including.</p></li>
+<li><p><strong>Rolling-window statistics</strong> — summarise a window of recent values into a single number (mean, std, min, max). A rolling mean smooths short-term noise; a rolling std captures volatility. Window size should be at least as large as the dominant seasonal period.</p></li>
+</ul>
+<p>Both features are aligned so that at time <em>t</em> the model only sees values from <em>before</em> time <em>t</em> — there is no look-ahead leakage. <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> handles this alignment automatically.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoregressTransformer</span>
+
+<span class="n">auto_res</span> <span class="o">=</span> <span class="n">AutoregressTransformer</span><span class="p">(</span>
+    <span class="n">n_samples</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">lags</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span>  <span class="c1"># 1 day, 2 days, 7 days ago</span>
+    <span class="n">windows</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span>  <span class="c1"># rolling over 1, 2, 7 days</span>
+    <span class="n">window_funcs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">],</span>
+    <span class="n">value_column</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">data_with_ar</span> <span class="o">=</span> <span class="n">auto_res</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Rows before: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">  |  Rows after: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data_with_ar</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(dropped </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">data_with_ar</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows to remove NaN warm-up period)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inspect the lag columns generated</span>
+<span class="n">lag_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">data_with_ar</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s2">&quot;lag&quot;</span> <span class="ow">in</span> <span class="n">c</span><span class="p">]</span>
+<span class="n">rolling_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">data_with_ar</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s2">&quot;rolling&quot;</span> <span class="ow">in</span> <span class="n">c</span><span class="p">]</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Lag columns    : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">lag_cols</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Rolling columns: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">rolling_cols</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show values for a few rows to verify alignment</span>
+<span class="n">data_with_ar</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">lag_cols</span> <span class="o">+</span> <span class="n">rolling_cols</span><span class="p">[:</span><span class="mi">4</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.relevance</span><span class="w"> </span><span class="kn">import</span> <span class="n">AssociationAnalyzer</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">analyzer</span> <span class="o">=</span> <span class="n">AssociationAnalyzer</span><span class="p">()</span>
+<span class="n">mi_df</span> <span class="o">=</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">data_with_ar</span><span class="p">,</span> <span class="n">target_col</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="n">variable_cols</span><span class="o">=</span><span class="n">lag_cols</span> <span class="o">+</span> <span class="n">rolling_cols</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;mi&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_metrics_bar</span><span class="p">(</span>
+    <span class="n">mi_df</span><span class="p">,</span>
+    <span class="n">metric_col</span><span class="o">=</span><span class="s2">&quot;score&quot;</span><span class="p">,</span>  <span class="c1"># This matches the &#39;score&#39; column from AssociationAnalyzer</span>
+    <span class="n">model_col</span><span class="o">=</span><span class="s2">&quot;feature&quot;</span><span class="p">,</span>  <span class="c1"># This matches the &#39;feature&#39; column (your lags/rolling names)</span>
+    <span class="n">lower_is_better</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Mutual Information of AR features with NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;Correlation Score&quot;</span><span class="p">,</span>
+    <span class="n">horizontal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Quick correlation bar chart — lag and rolling features vs target</span>
+<span class="n">corr_data</span> <span class="o">=</span> <span class="n">data_with_ar</span><span class="p">[[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">lag_cols</span> <span class="o">+</span> <span class="n">rolling_cols</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+<span class="n">corr_vals</span> <span class="o">=</span> <span class="n">corr_data</span><span class="o">.</span><span class="n">corr</span><span class="p">()[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+<span class="n">corr_vals</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="s2">&quot;Correlation&quot;</span><span class="p">]</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_metrics_bar</span><span class="p">(</span>
+    <span class="n">corr_vals</span><span class="p">,</span>
+    <span class="n">metric_col</span><span class="o">=</span><span class="s2">&quot;Correlation&quot;</span><span class="p">,</span>
+    <span class="n">model_col</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
+    <span class="n">lower_is_better</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Pearson correlation of AR features with NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;Correlation&quot;</span><span class="p">,</span>
+    <span class="n">horizontal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="4.-Feature-Selection">
+<h2><span class="section-number">3.4. </span>4. Feature Selection<a class="headerlink" href="#4.-Feature-Selection" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p><strong>Key concept — Feature matrix</strong></p>
+<p>After applying temporal and autoregressive transformers, we have a <strong>feature matrix</strong> — a table where each row is one timestep and each column is one input signal the model will see. Feature matrices can easily have 50–200 columns, many of which are redundant or noisy. Feature selection trims this down to the most informative subset, reducing overfitting risk and training time.</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">select_top_features</span></code> ranks candidate features using a <strong>multi-metric ensemble</strong>:</p>
+<ol class="arabic simple">
+<li><p><strong>Pearson correlation</strong> (absolute value)</p></li>
+<li><p><strong>ANOVA F-score</strong> (linear separability)</p></li>
+<li><p><strong>Mutual information</strong> (non-linear dependency)</p></li>
+<li><p><strong>Random Forest importance</strong> (tree-based, captures interactions)</p></li>
+</ol>
+<div class="line-block">
+<div class="line">Individual ranks are aggregated via <strong>Borda count</strong> and the top-k features are returned.</div>
+<div class="line">This multi-metric approach is more robust than any single score, especially for non-linear time series patterns.</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">select_top_features</span>
+
+<span class="c1"># Drop rows with NaN before selection</span>
+<span class="n">ar_clean</span> <span class="o">=</span> <span class="n">data_with_ar</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<span class="n">lag_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">ar_clean</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s2">&quot;lag&quot;</span> <span class="ow">in</span> <span class="n">c</span><span class="p">]</span>
+<span class="n">rolling_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">ar_clean</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s2">&quot;rolling&quot;</span> <span class="ow">in</span> <span class="n">c</span><span class="p">]</span>
+
+<span class="n">top_lags</span> <span class="o">=</span> <span class="n">select_top_features</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">ar_clean</span><span class="p">,</span>
+    <span class="n">features</span><span class="o">=</span><span class="n">lag_cols</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">top_k</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">top_rolling</span> <span class="o">=</span> <span class="n">select_top_features</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">ar_clean</span><span class="p">,</span>
+    <span class="n">features</span><span class="o">=</span><span class="n">rolling_cols</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">top_k</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Top lag features    : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">top_lags</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Top rolling features: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">top_rolling</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise the selected lag features side-by-side with the target</span>
+<span class="n">sample</span> <span class="o">=</span> <span class="n">ar_clean</span><span class="p">[(</span><span class="n">ar_clean</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2021-03-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">ar_clean</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2021-03-08&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
+    <span class="n">sample</span><span class="p">,</span>
+    <span class="n">y_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">top_lags</span><span class="p">,</span>
+    <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Top selected lag features vs target (one week)&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;kW&quot;</span><span class="p">,</span>
+    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;Date&quot;</span><span class="p">,</span>
+    <span class="n">series_line_size</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="o">=</span><span class="p">(</span><span class="mi">960</span><span class="p">,</span> <span class="mi">300</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="5.-Fourier-Features">
+<h2><span class="section-number">3.5. </span>5. Fourier Features<a class="headerlink" href="#5.-Fourier-Features" title="Link to this heading">#</a></h2>
+<div class="line-block">
+<div class="line">Calendar variables like <code class="docutils literal notranslate"><span class="pre">hour</span></code> are <strong>cyclic</strong>: hour 23 is closer to hour 0 than to hour 12, but a plain integer does not express this.</div>
+<div class="line">Fourier encoding projects each value onto a unit circle:</div>
+</div>
+<div class="math notranslate nohighlight">
+\[\text{hour\_sin} = \sin\!\left(\frac{2\pi \cdot h}{24}\right), \quad
+\text{hour\_cos} = \cos\!\left(\frac{2\pi \cdot h}{24}\right)\]</div>
+<p>A third convenience column <code class="docutils literal notranslate"><span class="pre">hour_cosin</span> <span class="pre">=</span> <span class="pre">hour_sin</span> <span class="pre">+</span> <span class="pre">hour_cos</span></code> is also added.</p>
+<blockquote>
+<div><div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> applies this automatically for trigonometric features (hour, wday, month).</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">add_fourier_features</span></code> lets you do it manually for any column.</div>
+</div>
+</div></blockquote>
+<blockquote>
+<div><p><strong>Key concept — Fourier encoding for cyclic variables</strong></p>
+<p>Calendar variables like <code class="docutils literal notranslate"><span class="pre">hour</span></code> (0–23) and <code class="docutils literal notranslate"><span class="pre">month</span></code> (1–12) are <strong>cyclic</strong>: hour 23 is just one step away from hour 0, but the integer 23 is far from 0 in Euclidean space. A tree model or neural network that receives raw integers will not naturally understand this wrap-around.</p>
+<p><strong>Fourier encoding</strong> projects each value onto a unit circle using sine and cosine:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>sin_value = sin(2π × value / period)
+cos_value = cos(2π × value / period)
+</pre></div>
+</div>
+<p>For <code class="docutils literal notranslate"><span class="pre">hour</span></code> with period 24, hours 0 and 23 land at nearly the same point on the circle. The model receives two continuous numbers (sin, cos) per cyclic feature instead of a raw integer — the circular distance is now correctly represented.</p>
+<p>Use Fourier encoding whenever a calendar variable has natural wrap-around: hour (period 24), weekday (period 7), month (period 12), day-of-year (period 365).</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_fourier_features</span>
+
+<span class="c1"># We start from data_with_temporal which already has the &#39;hour&#39; integer column</span>
+<span class="n">data_fourier</span> <span class="o">=</span> <span class="n">add_fourier_features</span><span class="p">(</span>
+    <span class="n">data_with_temporal</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">calendar_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">],</span>
+    <span class="n">periods</span><span class="o">=</span><span class="p">[</span><span class="mi">24</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">fourier_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;hour_sin&quot;</span><span class="p">,</span> <span class="s2">&quot;hour_cos&quot;</span><span class="p">,</span> <span class="s2">&quot;hour_cosin&quot;</span><span class="p">]</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Fourier columns added:&quot;</span><span class="p">)</span>
+<span class="n">data_fourier</span><span class="p">[</span><span class="n">fourier_cols</span><span class="p">]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;hour&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;hour&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise the sin/cos encoding of hour over one full day</span>
+<span class="n">one_day</span> <span class="o">=</span> <span class="n">data_fourier</span><span class="p">[</span><span class="n">fourier_cols</span><span class="p">]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;hour&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;hour&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">one_day</span><span class="p">[</span><span class="s2">&quot;hour_step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">one_day</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
+    <span class="n">one_day</span><span class="p">,</span>
+    <span class="n">y_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour_sin&quot;</span><span class="p">,</span> <span class="s2">&quot;hour_cos&quot;</span><span class="p">,</span> <span class="s2">&quot;hour_cosin&quot;</span><span class="p">],</span>
+    <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;hour_step&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Fourier encoding of &#39;hour&#39; (period = 24)&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;Fourier value&quot;</span><span class="p">,</span>
+    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;Hour of day&quot;</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="o">=</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">250</span><span class="p">),</span>
+    <span class="n">series_line_size</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="6.-Connecting-to-DataPipelineConfig">
+<h2><span class="section-number">3.6. </span>6. Connecting to <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code><a class="headerlink" href="#6.-Connecting-to-DataPipelineConfig" title="Link to this heading">#</a></h2>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> is a <strong>Pydantic model</strong> that acts as the single source of truth for everything the pipeline needs to know.</div>
+<div class="line">The selected features from Section 4 plug directly into <code class="docutils literal notranslate"><span class="pre">historical_features</span></code>.</div>
+</div>
+<blockquote>
+<div><p><strong>Key concept — The feature matrix</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> transforms a raw DataFrame into a pair of 3-D NumPy arrays:</p>
+<ul class="simple">
+<li><p><strong>X</strong> — shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">lookback_window_size,</span> <span class="pre">n_features)</span></code> — the input tensor fed to the model. Each sample is a window of <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code> timesteps, each with <code class="docutils literal notranslate"><span class="pre">n_features</span></code> values (target history + calendar + exogenous + lag + rolling columns).</p></li>
+<li><p><strong>y</strong> — shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">forecast_horizon,</span> <span class="pre">n_targets)</span></code> — the corresponding future target values the model must predict.</p></li>
+</ul>
+<p>This 3-D format is the universal interface between feature engineering and all Twiga models (ML and NN alike). <code class="docutils literal notranslate"><span class="pre">DataPipeline.fit()</span></code> learns the scalers from training data; <code class="docutils literal notranslate"><span class="pre">DataPipeline.transform()</span></code> applies them to any split without refitting — preventing data leakage.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span>
+
+<span class="c1"># Two ways to specify autoregressive features in DataPipelineConfig:</span>
+<span class="c1">#</span>
+<span class="c1">#   Option A — let the pipeline compute them (standard path with TwigaForecaster):</span>
+<span class="c1">#     lags=[1,7,48], windows=[1,7], window_funcs=[&quot;mean&quot;]</span>
+<span class="c1">#     → AutoregressTransformer runs internally; pass raw DataFrames to fit/predict</span>
+<span class="c1">#</span>
+<span class="c1">#   Option B — pre-compute externally and name the columns:</span>
+<span class="c1">#     historical_features=[&quot;lag_48&quot;, &quot;lag_336&quot;, ...]</span>
+<span class="c1">#     → you must pass the enriched DataFrame (with those columns) everywhere</span>
+<span class="c1">#</span>
+<span class="c1"># For TwigaForecaster (the standard path) always use Option A.</span>
+<span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">,</span>
+    <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
+    <span class="n">longitude</span><span class="o">=-</span><span class="mf">16.274998</span><span class="p">,</span>
+    <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">],</span>
+    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">],</span>
+    <span class="n">lags</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">48</span><span class="p">],</span>  <span class="c1"># pipeline computes lag_48, lag_336, lag_2304</span>
+    <span class="n">windows</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span>  <span class="c1"># rolling windows of 48 and 336 steps</span>
+    <span class="n">window_funcs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">],</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+<span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data_config</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;input_scaler&quot;</span><span class="p">,</span> <span class="s2">&quot;target_scaler&quot;</span><span class="p">}))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Summarise what the config holds</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== DataPipelineConfig summary ===&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Target        : </span><span class="si">{</span><span class="n">data_config</span><span class="o">.</span><span class="n">target_feature</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Period        : </span><span class="si">{</span><span class="n">data_config</span><span class="o">.</span><span class="n">period</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Horizon       : </span><span class="si">{</span><span class="n">data_config</span><span class="o">.</span><span class="n">forecast_horizon</span><span class="si">}</span><span class="s2"> steps&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Lookback      : </span><span class="si">{</span><span class="n">data_config</span><span class="o">.</span><span class="n">lookback_window_size</span><span class="si">}</span><span class="s2"> steps&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Calendar feats: </span><span class="si">{</span><span class="n">data_config</span><span class="o">.</span><span class="n">calendar_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Exogenous     : </span><span class="si">{</span><span class="n">data_config</span><span class="o">.</span><span class="n">exogenous_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Historical    : </span><span class="si">{</span><span class="n">data_config</span><span class="o">.</span><span class="n">historical_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Input scaler  : </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data_config</span><span class="o">.</span><span class="n">input_scaler</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Target scaler : </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data_config</span><span class="o">.</span><span class="n">target_scaler</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Validation-at-construction-time">
+<h3><span class="section-number">3.6.1. </span>Validation at construction time<a class="headerlink" href="#Validation-at-construction-time" title="Link to this heading">#</a></h3>
+<p>Because <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> is a Pydantic model, <strong>invalid values are rejected immediately</strong>. Try uncommenting the cell below to see:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Uncomment to see Pydantic validation in action</span>
+<span class="c1"># from twiga.core.config import DataPipelineConfig</span>
+<span class="c1"># bad_config = DataPipelineConfig(</span>
+<span class="c1">#     target_feature=&quot;NetLoad(kW)&quot;,</span>
+<span class="c1">#     period=&quot;not-a-period&quot;,   # &lt;-- invalid</span>
+<span class="c1">#     forecast_horizon=48,</span>
+<span class="c1">#     lookback_window_size=96,</span>
+<span class="c1"># )</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="7.-How-DataPipeline-transforms-internally">
+<h2><span class="section-number">3.7. </span>7. How <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> transforms internally<a class="headerlink" href="#7.-How-DataPipeline-transforms-internally" title="Link to this heading">#</a></h2>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> is a scikit-learn <code class="docutils literal notranslate"><span class="pre">TransformerMixin</span></code> that builds a processing chain from a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>.</div>
+<div class="line">Internally it:</div>
+</div>
+<ol class="arabic simple">
+<li><p>Runs <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> (if <code class="docutils literal notranslate"><span class="pre">calendar_features</span></code> are set)</p></li>
+<li><p>Runs <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> (if <code class="docutils literal notranslate"><span class="pre">lags</span></code> or <code class="docutils literal notranslate"><span class="pre">windows</span></code> are set)</p></li>
+<li><p>Applies <code class="docutils literal notranslate"><span class="pre">input_scaler</span></code> to numerical features and <code class="docutils literal notranslate"><span class="pre">target_scaler</span></code> to the target</p></li>
+<li><p>Slices the scaled data into overlapping (lookback, horizon) sequence windows</p></li>
+</ol>
+<div class="line-block">
+<div class="line">The output <code class="docutils literal notranslate"><span class="pre">X</span></code> has shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">lookback_window_size,</span> <span class="pre">n_features)</span></code> and</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">y</span></code> has shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">forecast_horizon,</span> <span class="pre">n_targets)</span></code> — ready to feed directly into a neural network.</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipeline</span>
+
+<span class="c1"># DataPipeline takes the same individual parameters as DataPipelineConfig fields.</span>
+<span class="c1"># Using lags/windows/window_funcs means the pipeline creates AR features internally</span>
+<span class="c1"># — pass the raw DataFrame (no pre-computation needed).</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">DataPipeline</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">target_feature</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">period</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">lookback_window_size</span><span class="p">,</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">forecast_horizon</span><span class="p">,</span>
+    <span class="n">latitude</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">latitude</span><span class="p">,</span>
+    <span class="n">longitude</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">longitude</span><span class="p">,</span>
+    <span class="n">calendar_features</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">calendar_features</span><span class="p">,</span>
+    <span class="n">exogenous_features</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">exogenous_features</span><span class="p">,</span>
+    <span class="n">lags</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">lags</span><span class="p">,</span>
+    <span class="n">windows</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">windows</span><span class="p">,</span>
+    <span class="n">window_funcs</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">window_funcs</span><span class="p">,</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">input_scaler</span><span class="p">,</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="n">data_config</span><span class="o">.</span><span class="n">target_scaler</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Pass raw train_df — pipeline handles all feature computation internally</span>
+<span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2021-01-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">pipeline</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Pipeline fitted successfully.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;X shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (n_samples, lookback_window_size, n_features)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;y shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (n_samples, forecast_horizon, n_targets)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Each sample provides </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> lookback steps and </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> forecast steps.&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The model sees </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2"> input features per timestep.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise a single training window</span>
+<span class="n">SAMPLE_IDX</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># arbitrary sample</span>
+
+<span class="n">lookback_vals</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">SAMPLE_IDX</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="n">horizon_vals</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">SAMPLE_IDX</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+<span class="n">n_lookback</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">n_horizon</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">window_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_lookback</span><span class="p">))</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_lookback</span><span class="p">,</span> <span class="n">n_lookback</span> <span class="o">+</span> <span class="n">n_horizon</span><span class="p">)),</span>
+        <span class="s2">&quot;lookback&quot;</span><span class="p">:</span> <span class="n">lookback_vals</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_horizon</span><span class="p">,</span>
+        <span class="s2">&quot;horizon&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_lookback</span> <span class="o">+</span> <span class="n">horizon_vals</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
+    <span class="n">window_df</span><span class="p">,</span>
+    <span class="n">y_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;lookback&quot;</span><span class="p">,</span> <span class="s2">&quot;horizon&quot;</span><span class="p">],</span>
+    <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;step&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Training window #</span><span class="si">{</span><span class="n">SAMPLE_IDX</span><span class="si">}</span><span class="s2">: lookback (</span><span class="si">{</span><span class="n">n_lookback</span><span class="si">}</span><span class="s2">) + horizon (</span><span class="si">{</span><span class="n">n_horizon</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;Scaled value&quot;</span><span class="p">,</span>
+    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;Timestep&quot;</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="o">=</span><span class="p">(</span><span class="mi">900</span><span class="p">,</span> <span class="mi">300</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="8.-Summary">
+<h2><span class="section-number">3.8. </span>8. Summary<a class="headerlink" href="#8.-Summary" title="Link to this heading">#</a></h2>
+<p>In this notebook you learned how to:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Step</p></th>
+<th class="head"><p>Tool</p></th>
+<th class="head"><p>Output</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Temporal features</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code></p></td>
+<td><p>hour_sin/cos, wday_sin/cos, month_sin/cos, day_night</p></td>
+</tr>
+<tr class="row-odd"><td><p>Autoregressive features</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code></p></td>
+<td><p>lag_NNN, rolling_NNN_mean/std</p></td>
+</tr>
+<tr class="row-even"><td><p>Feature selection</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">select_top_features</span></code></p></td>
+<td><p>top-k ranked feature names</p></td>
+</tr>
+<tr class="row-odd"><td><p>Fourier encoding</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">add_fourier_features</span></code></p></td>
+<td><p>sin/cos columns for any cyclic variable</p></td>
+</tr>
+<tr class="row-even"><td><p>Pipeline wiring</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> + <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code></p></td>
+<td><p>3-D arrays (n_samples, lookback, features) ready for a model</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr class="docutils" />
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">summary_ref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Step&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Temporal features&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Autoregressive features&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Feature selection&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Fourier encoding&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Pipeline wiring&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Tool&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;`TemporalFeatureTransformer`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`AutoregressTransformer`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`select_top_features`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`add_fourier_features`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`DataPipelineConfig` + `DataPipeline`&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Output&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;hour_sin/cos, wday_sin/cos, month_sin/cos, day_night&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;lag_NNN, rolling_NNN_mean/std&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;top-k ranked feature names&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sin/cos columns for any cyclic variable&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;3-D arrays (n_samples, lookback, features) ready for a model&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">summary_ref</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**NB03 — Feature Engineering Summary**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Every step produces a concrete artifact consumed by the next step&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Step</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Step**&quot;</span><span class="p">),</span>
+        <span class="n">Tool</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Tool**&quot;</span><span class="p">),</span>
+        <span class="n">Output</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Output**&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast · NB03 — Feature Engineering&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">summary_ref</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+
+<span class="n">summary_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;Step&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Temporal features&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Autoregressive features&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Feature selection&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Fourier encoding&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Pipeline wiring&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Tool&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;`TemporalFeatureTransformer`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`AutoregressTransformer`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`select_top_features`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`add_fourier_features`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`DataPipelineConfig` + `DataPipeline`&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Output&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;hour_sin/cos, wday_sin/cos, month_sin/cos, day_night&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;lag_NNN, rolling_NNN_mean/std&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;top-k ranked feature names&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sin/cos columns for any cyclic variable&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;3-D arrays (n_samples, lookback, features) ready for a model&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;Config parameter&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;`calendar_features`, `latitude`, `longitude`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`lags`, `windows`, `window_funcs`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`historical_features`&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Apply before passing to pipeline&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;`DataPipelineConfig` fields&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">twiga_gt</span><span class="p">(</span>
+    <span class="n">GT</span><span class="p">(</span><span class="n">summary_df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**NB03 — Feature Engineering Summary**&quot;</span><span class="p">),</span>
+        <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Five steps from raw DataFrame to model-ready arrays&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span>
+        <span class="n">Step</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Step**&quot;</span><span class="p">),</span>
+        <span class="n">Tool</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Tool**&quot;</span><span class="p">),</span>
+        <span class="n">Output</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Output**&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="p">{</span><span class="s2">&quot;Config parameter&quot;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Config parameter**&quot;</span><span class="p">)},</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast · NB03 — Feature Engineering&quot;</span><span class="p">),</span>
+    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">summary_df</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="9.-EDA-—-Visual-Feature-Inspection">
+<h2><span class="section-number">3.9. </span>9. EDA — Visual Feature Inspection<a class="headerlink" href="#9.-EDA-—-Visual-Feature-Inspection" title="Link to this heading">#</a></h2>
+<p>Before passing engineered features to a model it is worth spending a few minutes on exploratory visualisation. The three helpers below give fast answers to common pre-modelling questions:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Question</p></th>
+<th class="head"><p>Tool</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Does the raw signal look as expected?</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">line_plot</span></code> — any 1-D window, no DataFrame needed</p></td>
+</tr>
+<tr class="row-odd"><td><p>Do my covariates correlate with the target?</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">scatter_plot</span></code> — colour-encoded scatter + LOESS trend</p></td>
+</tr>
+<tr class="row-even"><td><p>Are lag features jointly informative?</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code> — pair-plot grid across features and target</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All three accept the same Twiga theme parameters (<code class="docutils literal notranslate"><span class="pre">font_size</span></code>, <code class="docutils literal notranslate"><span class="pre">grid</span></code>, <code class="docutils literal notranslate"><span class="pre">legend_pos</span></code>, …) as every other plotting utility in the library.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.letsplot.basic_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">line_plot</span><span class="p">,</span> <span class="n">scatter_matrix</span><span class="p">,</span> <span class="n">scatter_plot</span>
+</pre></div>
+</div>
+</div>
+<section id="line_plot-—-one-week-load-profile">
+<h3><span class="section-number">3.9.1. </span><code class="docutils literal notranslate"><span class="pre">line_plot</span></code> — one-week load profile<a class="headerlink" href="#line_plot-—-one-week-load-profile" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">line_plot</span></code> accepts a plain Python list or 1-D NumPy array — no DataFrame required. It is the fastest way to sanity-check a raw signal, inspect seasonality, or verify that a transformation (differencing, scaling) behaved as expected.</p>
+<blockquote>
+<div><p><strong>When to use it:</strong> quick visual check on any univariate sequence before or after feature engineering.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># line_plot takes a plain 1-D sequence — no DataFrame needed</span>
+<span class="n">sample_week</span> <span class="o">=</span> <span class="n">data_with_temporal</span><span class="p">[</span>
+    <span class="p">(</span><span class="n">data_with_temporal</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2021-06-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data_with_temporal</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2021-06-08&quot;</span><span class="p">)</span>
+<span class="p">][</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">line_plot</span><span class="p">(</span>
+    <span class="n">x</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="n">sample_week</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Net Load — one week (Jun 2021)&quot;</span><span class="p">,</span>
+    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;Net Load (kW)&quot;</span><span class="p">,</span>
+    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;30-min step&quot;</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="o">=</span><span class="p">(</span><span class="mi">900</span><span class="p">,</span> <span class="mi">300</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="scatter_plot-—-GHI-vs-Net-Load-by-day/night">
+<h3><span class="section-number">3.9.2. </span><code class="docutils literal notranslate"><span class="pre">scatter_plot</span></code> — GHI vs Net Load by day/night<a class="headerlink" href="#scatter_plot-—-GHI-vs-Net-Load-by-day/night" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">scatter_plot</span></code> renders a 2-D scatter with optional colour grouping and a LOESS smoothing curve. It is ideal for assessing whether a covariate has a meaningful (possibly non-linear) relationship with the target before committing to feature selection.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">hue_col</span></code> parameter expects a <strong>string</strong> column. Numeric flags like <code class="docutils literal notranslate"><span class="pre">day_night</span></code> should be mapped first — see the <code class="docutils literal notranslate"><span class="pre">.assign(group=…)</span></code> call below.</p>
+<blockquote>
+<div><p><strong>When to use it:</strong> check covariate–target correlations and detect regime differences (e.g. day vs night, weekday vs weekend) that a model should learn.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">scatter_df</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">data_with_temporal</span><span class="p">[[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">]]</span>
+    <span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Ghi&quot;</span><span class="p">:</span> <span class="s2">&quot;cycle&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">:</span> <span class="s2">&quot;group&quot;</span><span class="p">})</span>
+    <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;group&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;Night&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;Day&quot;</span><span class="p">}))</span>
+<span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">scatter_plot</span><span class="p">(</span>
+    <span class="n">scatter_df</span><span class="p">,</span>
+    <span class="n">x_col</span><span class="o">=</span><span class="s2">&quot;cycle&quot;</span><span class="p">,</span>
+    <span class="n">y_col</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
+    <span class="n">color_col</span><span class="o">=</span><span class="s2">&quot;group&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;GHI vs Net Load — coloured by day / night&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="scatter_matrix-—-lag-features-vs-target">
+<h3><span class="section-number">3.9.3. </span><code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code> — lag features vs target<a class="headerlink" href="#scatter_matrix-—-lag-features-vs-target" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code> renders a pair-plot grid across the selected feature columns and the target. Each off-diagonal cell is a scatter; the diagonal shows the marginal distribution. Colour groups (e.g. day / night) make regime-specific patterns immediately visible.</p>
+<p>Use this after <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> to confirm that lag features carry signal and to spot multicollinearity between lags before training.</p>
+<blockquote>
+<div><p><strong>When to use it:</strong> validate that autoregressive features are jointly informative and identify any redundant lags you might want to drop.</p>
+</div></blockquote>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">matrix_df</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">data_with_ar</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_with_temporal</span><span class="p">[[</span><span class="s2">&quot;day_night&quot;</span><span class="p">]],</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;day_night&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;Night&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;Day&quot;</span><span class="p">}))</span>
+<span class="p">)</span>
+
+<span class="n">lag_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">matrix_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s2">&quot;_lag_&quot;</span> <span class="ow">in</span> <span class="n">c</span><span class="p">][:</span><span class="mi">3</span><span class="p">]</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">scatter_matrix</span><span class="p">(</span>
+    <span class="n">matrix_df</span><span class="p">,</span>
+    <span class="n">variables</span><span class="o">=</span><span class="n">lag_cols</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">],</span>
+    <span class="n">hue_col</span><span class="o">=</span><span class="s2">&quot;group&quot;</span><span class="p">,</span>
+    <span class="n">n_sample</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Lag features vs Net Load&quot;</span><span class="p">,</span>
+    <span class="n">sort_by_variance</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">diag</span><span class="o">=</span><span class="s2">&quot;density&quot;</span><span class="p">,</span>
+    <span class="n">fig_size</span><span class="o">=</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="Wrapping-up">
+<h2><span class="section-number">3.10. </span>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<p><strong>What you did</strong></p>
+<ul class="simple">
+<li><p>☒ Added cyclic calendar signals (hour, weekday, month, day/night) using <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code></p></li>
+<li><p>☒ Built lag features and rolling-window statistics using <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code></p></li>
+<li><p>☒ Ranked and selected the most informative features using <code class="docutils literal notranslate"><span class="pre">select_top_features</span></code></p></li>
+<li><p>☒ Encoded cyclic variables with Fourier (sin/cos) terms to eliminate boundary discontinuities</p></li>
+<li><p>☒ Wired all feature choices into a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> and verified the pipeline output shape</p></li>
+</ul>
+<p><strong>Key takeaways for beginners</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Calendar features must be encoded cyclically</strong> — plain integer hours (0–23) tell the model that hour 23 and hour 0 are far apart, which is wrong. Sin/cos encoding places them correctly on a circle.</p></li>
+<li><p><strong>Lag = yesterday at this time</strong> — a lag-1 feature on 30-min data is 48 steps back (24 hours). Always multiply your “intuitive” lag by <code class="docutils literal notranslate"><span class="pre">n_samples</span></code>.</p></li>
+<li><p><strong>Rolling means smooth out noise</strong> — individual lag values can be noisy; rolling means give the model a stable picture of recent average demand.</p></li>
+<li><p><strong>Feature selection prevents overfitting</strong> — more features is not always better. <code class="docutils literal notranslate"><span class="pre">select_top_features</span></code> uses four complementary metrics to keep only columns that genuinely predict the target.</p></li>
+<li><p><strong>``DataPipelineConfig`` is the single source of truth</strong> — all feature choices live in one Pydantic config object, making experiments reproducible and easy to share.</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="What's-next?">
+<h2><span class="section-number">3.11. </span>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<p><strong>NB04 — ML Point Forecasting</strong> shows how to pass <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> into <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code>, select an ML model (LightGBM, XGBoost, CatBoost, or Linear Regression), and evaluate point predictions using the built-in metrics module.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
+
+<span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
+<span class="n">_TEAL_MID</span> <span class="o">=</span> <span class="s2">&quot;#069fac&quot;</span>
+<span class="n">_TEAL_LIGHT</span> <span class="o">=</span> <span class="s2">&quot;#e8f5f8&quot;</span>
+<span class="n">_TEAL_BEST</span> <span class="o">=</span> <span class="s2">&quot;#d0ecf1&quot;</span>
+<span class="n">_TEXT_DARK</span> <span class="o">=</span> <span class="s2">&quot;#2d3748&quot;</span>
+<span class="n">_TEXT_MUTED</span> <span class="o">=</span> <span class="s2">&quot;#718096&quot;</span>
+<span class="n">_WHITE</span> <span class="o">=</span> <span class="s2">&quot;#ffffff&quot;</span>
+
+<span class="n">steps</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;01&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Getting Started&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Load data · configure pipeline · train LightGBM · evaluate&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;config&quot;</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;02&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Forecastability Analysis&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Entropy · ACF · stationarity tests&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;entropy&quot;</span><span class="p">,</span> <span class="s2">&quot;ACF&quot;</span><span class="p">,</span> <span class="s2">&quot;stationarity&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;03&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Feature Engineering&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Lag, rolling-window, and calendar features; feature matrix inspection&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="s2">&quot;lags&quot;</span><span class="p">,</span> <span class="s2">&quot;windows&quot;</span><span class="p">,</span> <span class="s2">&quot;calendar&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;04&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Time Series Differencing&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;Stationarity · first-order and seasonal differencing · inversion&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;differencing&quot;</span><span class="p">,</span> <span class="s2">&quot;stationarity&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="s2">&quot;05&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;ML Point Forecasting&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desc&quot;</span><span class="p">:</span> <span class="s2">&quot;CatBoost · XGBoost · LightGBM · model comparison&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;catboost&quot;</span><span class="p">,</span> <span class="s2">&quot;xgboost&quot;</span><span class="p">,</span> <span class="s2">&quot;lightgbm&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+<span class="n">track_name</span> <span class="o">=</span> <span class="s2">&quot;Beginner Track&quot;</span>
+<span class="n">footer</span> <span class="o">=</span> <span class="s1">&#39;Next: handle non-stationarity in &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;04 — Time Series Differencing&lt;/span&gt;, then build your first multi-model comparison in &lt;span style=&quot;color:#107591;font-weight:600;&quot;&gt;05 — ML Point Forecasting&lt;/span&gt;.&#39;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bg</span><span class="p">,</span> <span class="n">fg</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;display:inline-block;background:</span><span class="si">{</span><span class="n">bg</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">fg</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;&quot;&gt;</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s1">&lt;/span&gt;&#39;</span>
+
+
+<span class="n">ch</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;active&quot;</span><span class="p">]</span>
+    <span class="n">cb</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_WHITE</span>
+    <span class="n">cbo</span> <span class="o">=</span> <span class="n">_TEAL</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="s2">&quot;#d1ecf1&quot;</span>
+    <span class="n">nb</span> <span class="o">=</span> <span class="n">_TEAL_MID</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_LIGHT</span>
+    <span class="n">nf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">tf</span> <span class="o">=</span> <span class="n">_WHITE</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_DARK</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="s2">&quot;#cce8ef&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEXT_MUTED</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="s2">&quot;#0d5f75&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL_BEST</span>
+    <span class="n">bf</span> <span class="o">=</span> <span class="s2">&quot;#b8e4ed&quot;</span> <span class="k">if</span> <span class="n">a</span> <span class="k">else</span> <span class="n">_TEAL</span>
+    <span class="n">yh</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;float:right;background:</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:10px;font-weight:700;padding:2px 10px;border-radius:12px;&quot;&gt;★ you are here&lt;/span&gt;&#39;</span>
+        <span class="k">if</span> <span class="n">a</span>
+        <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">bdg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_b</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">bf</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">])</span>
+    <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;background:</span><span class="si">{</span><span class="n">cb</span><span class="si">}</span><span class="s1">;border:2px solid </span><span class="si">{</span><span class="n">cbo</span><span class="si">}</span><span class="s1">;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:</span><span class="si">{</span><span class="s2">&quot;0 4px 14px rgba(16,117,145,.25)&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;0 1px 4px rgba(0,0,0,.06)&quot;</span><span class="si">}</span><span class="s1">;&quot;&gt;&lt;div style=&quot;min-width:44px;height:44px;background:</span><span class="si">{</span><span class="n">nb</span><span class="si">}</span><span class="s1">;color:</span><span class="si">{</span><span class="n">nf</span><span class="si">}</span><span class="s1">;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;flex:1;&quot;&gt;&lt;div style=&quot;font-size:15px;font-weight:700;color:</span><span class="si">{</span><span class="n">tf</span><span class="si">}</span><span class="s1">;margin-bottom:4px;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="si">}{</span><span class="n">yh</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div style=&quot;font-size:12.5px;color:</span><span class="si">{</span><span class="n">df</span><span class="si">}</span><span class="s1">;margin-bottom:8px;line-height:1.5;&quot;&gt;</span><span class="si">{</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;desc&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;div&gt;</span><span class="si">{</span><span class="n">bdg</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ch</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;display:flex;justify-content:center;height:32px;&quot;&gt;&lt;svg width=&quot;24&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 32&quot; fill=&quot;none&quot;&gt;&lt;line x1=&quot;12&quot; y1=&quot;0&quot; x2=&quot;12&quot; y2=&quot;24&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot; stroke-dasharray=&quot;4 3&quot;/&gt;&lt;polygon points=&quot;6,20 18,20 12,30&quot; fill=&quot;</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1">&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;&#39;</span>
+
+<span class="n">HTML</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s1">&#39;&lt;div style=&quot;font-family:Inter,</span><span class="se">\&#39;</span><span class="s1">Segoe UI</span><span class="se">\&#39;</span><span class="s1">,sans-serif;max-width:640px;margin:8px 0;&quot;&gt;&lt;div style=&quot;background:linear-gradient(135deg,</span><span class="si">{</span><span class="n">_TEAL</span><span class="si">}</span><span class="s1"> 0%,</span><span class="si">{</span><span class="n">_TEAL_MID</span><span class="si">}</span><span class="s1"> 100%);border-radius:12px 12px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px;&quot;&gt;&lt;svg width=&quot;22&quot; height=&quot;22&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">&quot; stroke-width=&quot;2&quot;&gt;&lt;path d=&quot;M12 2L2 7l10 5 10-5-10-5z&quot;/&gt;&lt;path d=&quot;M2 17l10 5 10-5&quot;/&gt;&lt;path d=&quot;M2 12l10 5 10-5&quot;/&gt;&lt;/svg&gt;&lt;span style=&quot;color:</span><span class="si">{</span><span class="n">_WHITE</span><span class="si">}</span><span class="s1">;font-size:14px;font-weight:700;&quot;&gt;Twiga Learning Path — </span><span class="si">{</span><span class="n">track_name</span><span class="si">}</span><span class="s1">&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;border:2px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;border-top:none;border-radius:0 0 12px 12px;padding:20px 20px 16px;background:#f9fdfe;display:flex;flex-direction:column;&quot;&gt;</span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s1">&lt;div style=&quot;margin-top:16px;font-size:11.5px;color:</span><span class="si">{</span><span class="n">_TEXT_MUTED</span><span class="si">}</span><span class="s1">;text-align:center;border-top:1px solid </span><span class="si">{</span><span class="n">_TEAL_LIGHT</span><span class="si">}</span><span class="s1">;padding-top:12px;&quot;&gt;</span><span class="si">{</span><span class="n">footer</span><span class="si">}</span><span class="s1">&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#39;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="02-forecastability-analysis.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">2. </span>02 — Forecastability Analysis</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="04-time-series-differencing.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">4. </span>04 — Time Series Differencing</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Setup">3.1. 1. Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Temporal-Features">3.2. 2. Temporal Features</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-Autoregressive-Features">3.3. 3. Autoregressive Features</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Understanding-the-n_samples-multiplier">3.3.1. Understanding the <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> multiplier</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Feature-Selection">3.4. 4. Feature Selection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Fourier-Features">3.5. 5. Fourier Features</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Connecting-to-DataPipelineConfig">3.6. 6. Connecting to <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Validation-at-construction-time">3.6.1. Validation at construction time</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-How-DataPipeline-transforms-internally">3.7. 7. How <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> transforms internally</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-Summary">3.8. 8. Summary</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9.-EDA-—-Visual-Feature-Inspection">3.9. 9. EDA — Visual Feature Inspection</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#line_plot-—-one-week-load-profile">3.9.1. <code class="docutils literal notranslate"><span class="pre">line_plot</span></code> — one-week load profile</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scatter_plot-—-GHI-vs-Net-Load-by-day/night">3.9.2. <code class="docutils literal notranslate"><span class="pre">scatter_plot</span></code> — GHI vs Net Load by day/night</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scatter_matrix-—-lag-features-vs-target">3.9.3. <code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code> — lag features vs target</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">3.10. Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">3.11. What’s next?</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../_sources/tutorials/notebooks/03-feature-engineering.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

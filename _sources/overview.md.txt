@@ -1,0 +1,225 @@
+# Architecture Overview
+
+Twiga is built around a single entry point  -  `TwigaForecaster`  -  that delegates
+to six independent subsystems. Every component is configured through a validated
+Pydantic dataclass: serialisable, diffable, and directly wired to Optuna search
+spaces for hyperparameter optimisation.
+
+---
+
+## System Map
+
+The diagram traces how data and configuration flow through each subsystem.
+Color bands correspond to the subsystem cards below.
+
+```{mermaid}
+%%{init: {"theme": "base", "themeVariables": {
+  "primaryColor":       "#e0f4f7",
+  "primaryBorderColor": "#0f718e",
+  "primaryTextColor":   "#1c2429",
+  "lineColor":          "#069fac",
+  "clusterBkg":         "#f5f9fa",
+  "clusterBorder":      "#c8e0e5",
+  "fontFamily":         "Lato, Helvetica Neue, Arial, sans-serif",
+  "fontSize":           "14px"
+}}}%%
+graph TD
+    FC(["<b>TwigaForecaster</b><br/>fit · predict · evaluate · tune · backtest · calibrate"])
+
+    subgraph PIPE ["① Data Pipeline"]
+        DP1["AutoregressTransformer<br/><small>lag &amp; window features</small>"]
+        DP2["TemporalFeatureTransformer<br/><small>calendar · cyclical encoding</small>"]
+        DP3["Scaler + Sequencer<br/><small>normalisation · sliding windows</small>"]
+        DP1 --> DP3
+        DP2 --> DP3
+    end
+
+    subgraph REG ["② Model Registry"]
+        ML["<b>ML Models</b><br/>CatBoost · XGBoost · LightGBM · Linear<br/>QR-CatBoost · QR-XGBoost · QR-LightGBM"]
+        NN["<b>Neural Networks</b><br/>MLPF · MLPGAM · MLPGAF · NHITS · GANF"]
+        PH["<b>Probabilistic Heads</b><br/>Normal · Laplace · Gamma · Beta · StudentT<br/>QR · FPQR · CRC"]
+        NN --> PH
+    end
+
+    subgraph BTC ["③ Time-Based CV"]
+        BT["Expanding Window · Rolling Window<br/>Configurable split_freq · gap · stride"]
+    end
+
+    subgraph EVAL ["④ Evaluation Metrics"]
+        ME["<b>Point</b>  MAE · RMSE · CORR · WMAPE · SMAPE<br/><b>Interval</b>  Coverage · Width · Winkler<br/><b>Probabilistic</b>  CRPS · Log-score · ECE"]
+    end
+
+    subgraph CONF ["⑤ Conformal Prediction"]
+        CP["CQR  -  Conformal Quantile Regression<br/>CRC  -  Conformal Residual Coverage<br/>Coverage-guaranteed · any model · no retraining"]
+    end
+
+    subgraph MLOP ["⑥ MLOps Stack"]
+        MO["<b>TwigaTracker</b>  MLflow logging<br/><b>Checkpoints</b>  versioned persistence<br/><b>ForecastMonitor</b>  Evidently drift<br/><b>FastAPI</b>  REST prediction service<br/><b>Prefect</b>  retraining orchestration"]
+    end
+
+    FC --> PIPE
+    FC --> REG
+    FC --> BTC
+    FC --> EVAL
+    FC --> CONF
+    FC --> MLOP
+
+    classDef core  fill:#0f718e,stroke:#085f78,color:#ffffff,font-weight:bold
+    classDef pipe  fill:#ddf3f7,stroke:#0f718e,color:#1c2429
+    classDef model fill:#ddf3f7,stroke:#0f718e,color:#1c2429
+    classDef prob  fill:#c8eaf2,stroke:#069fac,color:#1c2429
+    classDef bt    fill:#fef3e2,stroke:#e07b39,color:#1c2429
+    classDef met   fill:#e8f0fe,stroke:#5c6bc0,color:#1c2429
+    classDef conf  fill:#e8f7ef,stroke:#2e9e6b,color:#1c2429
+    classDef mlops fill:#fce4ec,stroke:#c2185b,color:#1c2429
+
+    class FC core
+    class DP1,DP2,DP3 pipe
+    class ML,NN model
+    class PH prob
+    class BT bt
+    class ME met
+    class CP conf
+    class MO mlops
+```
+
+---
+
+## Subsystems
+
+::::{grid} 3
+:gutter: 3
+
+:::{grid-item-card} Data Pipeline
+:class-header: tw-ovr-pipe
+
+Feature engineering and data preparation driven by `DataPipelineConfig`.
+
+- **Autoregressive features**  -  configurable lag and rolling-window statistics
+- **Temporal encoding**  -  calendar fields, sine/cosine cyclical transforms
+- **Scaling**  -  per-target normalisation with inverse-transform on output
+- **Sequences**  -  sliding-window arrays for neural model input
+
++++
+{doc}`User Guide → Data Pipeline <core/data-pipeline>`
+:::
+
+:::{grid-item-card} Model Registry
+:class-header: tw-ovr-model
+
+One `TwigaForecaster` interface across every model type.
+
+- **ML**  -  CatBoost, XGBoost, LightGBM, Linear, and QR/Gaussian variants
+- **Neural**  -  MLPF, MLPGAM, MLPGAF, NHITS, GANF
+- **Probabilistic heads**  -  Normal, Laplace, Gamma, Beta, StudentT, QR, FPQR, CRC
+- Access via `get_model(name, domain="ml"|"nn")`
+
++++
+{doc}`Models → Overview <models/index>`
+:::
+
+:::{grid-item-card} Time-Based CV
+:class-header: tw-ovr-cv
+
+Walk-forward cross-validation with no data leakage.
+
+- **Expanding window**  -  grows training set at each fold
+- **Rolling window**  -  fixed-size sliding training set
+- Configurable `split_freq`, `train_size`, `test_size`, `gap`, `stride`
+- Config: `ForecasterConfig`
+
++++
+{doc}`User Guide → Backtesting <core/backtesting>`
+:::
+
+:::{grid-item-card} Evaluation Metrics
+:class-header: tw-ovr-met
+
+Comprehensive scoring for every forecast type.
+
+- **Point**  -  MAE, RMSE, CORR, WMAPE, SMAPE, NBIAS
+- **Interval**  -  Coverage, Mean Width, Winkler score
+- **Probabilistic**  -  CRPS, Log-score, Expected Calibration Error
+
++++
+{doc}`User Guide → Metrics <core/metrics>`
+:::
+
+:::{grid-item-card} Conformal Prediction
+:class-header: tw-ovr-conf
+
+Distribution-free prediction intervals on any trained model.
+
+- Works with every model in the registry  -  including plain point-forecast ML
+- Finite-sample marginal coverage guarantee  -  no distributional assumptions
+- One call after training: `forecaster.calibrate(cal_df)`
+- Config: `ConformalConfig`
+
++++
+{doc}`Probabilistic → Conformal Prediction <probabilistic/conformal-prediction>`
+:::
+
+:::{grid-item-card} MLOps Stack
+:class-header: tw-ovr-mlops
+
+From first training run to drift-triggered retraining in production.
+
+- **TwigaTracker**  -  MLflow run logging, dataset lineage, PyFunc artefacts
+- **Checkpoints**  -  versioned model + pipeline persistence with manifest
+- **ForecastMonitor**  -  Evidently drift detection and performance tracking
+- **FastAPI**  -  async REST service: `/predict`, `/monitor/*`, `/reload`
+- **Prefect**  -  scheduled drift-check → retrain → promote → hot-reload flow
+
++++
+{doc}`MLOps → Overview <mlops/index>`
+:::
+
+::::
+
+---
+
+## Quick Reference
+
+| Component | Module | Key class / function | Config |
+|---|---|---|---|
+| Forecaster | `twiga.forecaster` | `TwigaForecaster` | `ForecasterConfig` |
+| Data pipeline | `twiga.core.data` | `DataPipeline` | `DataPipelineConfig` |
+| ML models | `twiga.models.ml` | `get_model(name, domain="ml")` | `BaseModelConfig` subclass |
+| Neural models | `twiga.models.nn` | `get_model(name, domain="nn")` | `NeuralModelConfig` subclass |
+| Backtesting | `twiga.core` | `TimeBasedCV` | `ForecasterConfig` |
+| Metrics | `twiga.core.metrics` | `compute_point_metrics()` |  -  |
+| Conformal | `twiga.distributions.conformal` | `CQR`, `CRC` | `ConformalConfig` |
+| Experiment tracking | `twiga.tracking` | `TwigaTracker` | `TwigaSettings` |
+| Model serving | `twiga.serve` | `create_app()` | `TwigaSettings` |
+| Drift monitoring | `twiga.serve.monitor` | `ForecastMonitor` |  -  |
+| Retraining | `twiga.pipeline` | `retraining_flow()` |  -  |
+
+---
+
+## Design Principles
+
+**Configuration-as-code**
+: Every component  -  data pipeline, model, CV strategy, conformal calibration  -  is
+  configured through a Pydantic dataclass with field-level validation. Configs are
+  JSON-serialisable, diffable, and wired directly to Optuna search spaces for
+  hyperparameter optimisation.
+
+**Registry pattern**
+: `get_model(name, domain)` returns `(ModelClass, ConfigClass)` from a central
+  registry. Switching from LightGBM to NHITS means changing a config object;
+  the training, evaluation, and tuning API stays identical.
+
+**Domain separation**
+: ML models (`domain="ml"`) use joblib serialisation and a scikit-learn API.
+  Neural models (`domain="nn"`) use PyTorch Lightning checkpoints with a Trainer.
+  `TwigaForecaster` handles both transparently.
+
+**Post-hoc calibration**
+: Conformal prediction is applied *after* training  -  no backbone changes, no
+  retraining, no distributional assumptions. It upgrades any point-forecast model
+  to coverage-guaranteed interval forecasts in a single `calibrate()` call.
+
+**Typed contracts at every boundary**
+: All inter-module interfaces use typed dataclasses or Pydantic models  -
+  `RawPrediction`, `TrainingResult`, `RetrainingResult`, `DriftSummary`  -  so
+  there are no raw `dict[str, Any]` boundaries to misinterpret.

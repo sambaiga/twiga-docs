@@ -1,0 +1,2022 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>twiga.forecaster.base &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/twiga.css?v=724e8a05" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/twiga/forecaster/base';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../../../_static/searchtools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../../../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting-started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../core/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../mlops/index.html">
+    MLOps
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../developer-guide/index.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../overview.html">
+    Architecture Overview
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../../../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../../../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">twiga.forecaster.base</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for twiga.forecaster.base</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">timeit</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_timer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">joblib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">optuna</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.backtester</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeBasedCV</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.processing</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalise_timestamp_column</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogContext</span><span class="p">,</span> <span class="n">get_logger</span><span class="p">,</span> <span class="n">log_section</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecastKind</span><span class="p">,</span> <span class="n">RawPrediction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_forecast_result</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.abstract</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractForecaster</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseForecaster</span><span class="p">(</span><span class="n">TimeBasedCV</span><span class="p">,</span> <span class="n">AbstractForecaster</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base forecaster class that provides model training, checkpointing,prediction, and evaluation capabilities.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; class MyForecaster(BaseForecaster):</span>
+<span class="sd">        ...     def predict(self, test_df: pd.DataFrame, covariate_df: pd.DataFrame | None) -&gt; dict:</span>
+<span class="sd">        ...         # Implement prediction logic here</span>
+<span class="sd">        ...         return {&quot;loc&quot;: np.zeros((10, 1))}</span>
+<span class="sd">        &gt;&gt;&gt; forecaster = MyForecaster(split_freq=&quot;months&quot;, test_size=1, train_size=1, project_name=&quot;Tanesco&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; forecaster.fit(train_df)</span>
+<span class="sd">        &gt;&gt;&gt; results_df, metrics_df = forecaster.evaluate(test_df)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">split_freq</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;months&quot;</span><span class="p">,</span>
+        <span class="n">test_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">train_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">gap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">domain</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ml&quot;</span><span class="p">,</span>
+        <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">window</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;expanding&quot;</span><span class="p">,</span>
+        <span class="n">date_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">,</span>
+        <span class="n">num_splits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">project_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Tanesco&quot;</span><span class="p">,</span>
+        <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">,</span>
+        <span class="n">root_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;../&quot;</span><span class="p">,</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">checkpoints_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the BaseForecaster.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            split_freq (str): Frequency of the data, e.g., &quot;months&quot;.</span>
+<span class="sd">            test_size (int): Number of periods to forecast.</span>
+<span class="sd">            train_size (int): Training window size.</span>
+<span class="sd">            gap (int): Gap between training and forecast periods.</span>
+<span class="sd">            stride (int | None): Step size between splits.</span>
+<span class="sd">            window (str): Window type (e.g., &quot;expanding&quot;).</span>
+<span class="sd">            date_column (str): Name of the timestamp column.</span>
+<span class="sd">            domain (str): Domain of the data (e.g., &quot;ml&quot;).</span>
+<span class="sd">            num_splits (int | None): Number of splits for cross-validation.</span>
+<span class="sd">            project_name (str): Experiment name.</span>
+<span class="sd">            file_name (str | None): Optional file name for checkpoints.</span>
+<span class="sd">            seed (int): Random seed.</span>
+<span class="sd">            root_dir (str): Root directory for results.</span>
+<span class="sd">            trial (Any | None): Optional trial object (for hyperparameter optimization).</span>
+<span class="sd">            metrics (list[str]): List of metrics to evaluate.</span>
+<span class="sd">            checkpoints_path (str | None): Explicit checkpoint directory.  When</span>
+<span class="sd">                set, overrides the path derived from root_dir/project_name/model_type</span>
+<span class="sd">                and is available immediately — before fit() is called.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">split_freq</span><span class="o">=</span><span class="n">split_freq</span><span class="p">,</span>
+            <span class="n">train_size</span><span class="o">=</span><span class="n">train_size</span><span class="p">,</span>
+            <span class="n">test_size</span><span class="o">=</span><span class="n">test_size</span><span class="p">,</span>
+            <span class="n">gap</span><span class="o">=</span><span class="n">gap</span><span class="p">,</span>
+            <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span>
+            <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">,</span>
+            <span class="n">date_column</span><span class="o">=</span><span class="n">date_column</span><span class="p">,</span>
+            <span class="n">num_splits</span><span class="o">=</span><span class="n">num_splits</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">project_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">file_name</span>  <span class="c1"># type: ignore[assignment]</span>
+        <span class="c1"># Use the explicitly supplied path when provided; _create_folder() will</span>
+        <span class="c1"># fill it in from root_dir/project_name/model_type when fit() runs.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">checkpoints_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">checkpoints_path</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logs_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span> <span class="k">if</span> <span class="n">metrics</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conformals</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conformal_params</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="p">:</span> <span class="n">DataPipeline</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_folder</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create directory structure for experiment artifacts.</span>
+
+<span class="sd">        Initializes the following paths:</span>
+<span class="sd">        - results/: Final model outputs/analyses</span>
+<span class="sd">        - logs/: Training logs/metrics</span>
+<span class="sd">        - figures/: Visualizations/plots</span>
+<span class="sd">        - checkpoints/: Model weight snapshots</span>
+
+<span class="sd">        Directory structure:</span>
+<span class="sd">        {root_dir}/{artifact_type}/{experiment_name}/{model_type}/[file_name]</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            PermissionError: If directory creation fails due to insufficient rights</span>
+<span class="sd">            RuntimeError: If required attributes are missing before invocation</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; forecaster = TimeSeriesForecaster(</span>
+<span class="sd">            ...     root_dir=&quot;experiments&quot;, project_name=&quot;baseline&quot;, model_type=&quot;transformer&quot;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; forecaster._create_folder()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Validate required attributes</span>
+        <span class="n">required_attrs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;root_dir&quot;</span><span class="p">,</span> <span class="s2">&quot;project_name&quot;</span><span class="p">,</span> <span class="s2">&quot;model_type&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">required_attrs</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Missing required directory configuration attributes&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Base path constructor</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="p">)</span>
+        <span class="n">paths</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;results_path&quot;</span><span class="p">:</span> <span class="n">base</span> <span class="o">/</span> <span class="s2">&quot;results&quot;</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_name</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span>
+            <span class="s2">&quot;logs_path&quot;</span><span class="p">:</span> <span class="n">base</span> <span class="o">/</span> <span class="s2">&quot;logs&quot;</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_name</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span>
+            <span class="s2">&quot;figures_path&quot;</span><span class="p">:</span> <span class="n">base</span> <span class="o">/</span> <span class="s2">&quot;figures&quot;</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_name</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span>
+            <span class="c1"># Respect an explicitly configured checkpoints_path; otherwise derive it.</span>
+            <span class="s2">&quot;checkpoints_path&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_path</span>
+                <span class="k">else</span> <span class="n">base</span> <span class="o">/</span> <span class="s2">&quot;checkpoints&quot;</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_name</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span>
+            <span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Add file_name to checkpoints if provided (only when path is derived)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_path</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;file_name&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">:</span>
+            <span class="n">paths</span><span class="p">[</span><span class="s2">&quot;checkpoints_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="p">[</span><span class="s2">&quot;checkpoints_path&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span>
+
+        <span class="c1"># Create directories</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">PermissionError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to create directory </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> due to insufficient permissions&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+<div class="viewcode-block" id="BaseForecaster.on_save_checkpoint">
+<a class="viewcode-back" href="../../../mlops/checkpoints.html#twiga.forecaster.base.BaseForecaster.on_save_checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_save_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the data pipeline and model to a versioned checkpoint file.</span>
+
+<span class="sd">        Writes ``model_and_pipeline.pkl`` for ML/baseline domains alongside a</span>
+<span class="sd">        ``_checkpoint_manifest.json`` that records the version, timestamp, and</span>
+<span class="sd">        model type.  The manifest is the authoritative source for</span>
+<span class="sd">        :meth:`on_load_checkpoint` — avoiding brittle mtime-based selection.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Absolute path to the checkpoint directory as a string.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; path = forecaster.on_save_checkpoint()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTC</span><span class="p">,</span> <span class="n">datetime</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+        <span class="n">checkpoints_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ml&quot;</span><span class="p">,</span> <span class="s2">&quot;baseline&quot;</span><span class="p">):</span>
+            <span class="n">checkpoint_path</span> <span class="o">=</span> <span class="n">checkpoints_dir</span> <span class="o">/</span> <span class="s2">&quot;model_and_pipeline.pkl&quot;</span>
+            <span class="n">save_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;data_pipeline&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="p">}</span>
+            <span class="n">joblib</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">save_dict</span><span class="p">,</span> <span class="n">checkpoint_path</span><span class="p">)</span>
+
+            <span class="n">manifest_path</span> <span class="o">=</span> <span class="n">checkpoints_dir</span> <span class="o">/</span> <span class="s2">&quot;_checkpoint_manifest.json&quot;</span>
+            <span class="c1"># Increment version monotonically from any existing manifest.</span>
+            <span class="n">current_version</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">manifest_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">existing</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">manifest_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+                    <span class="n">current_version</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">existing</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                    <span class="k">pass</span>
+
+            <span class="n">manifest</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">current_version</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;checkpoint_file&quot;</span><span class="p">:</span> <span class="n">checkpoint_path</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;model_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span>
+                <span class="s2">&quot;saved_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">UTC</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="p">}</span>
+            <span class="n">manifest_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">manifest</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Checkpoint saved  path=</span><span class="si">%s</span><span class="s2">  version=</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">checkpoint_path</span><span class="p">,</span>
+                <span class="n">manifest</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">checkpoints_dir</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseForecaster.on_load_checkpoint">
+<a class="viewcode-back" href="../../../mlops/checkpoints.html#twiga.forecaster.base.BaseForecaster.on_load_checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_load_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the model and data pipeline from the versioned checkpoint.</span>
+
+<span class="sd">        Prefers the ``_checkpoint_manifest.json`` written by</span>
+<span class="sd">        :meth:`on_save_checkpoint` to identify the checkpoint file.  Falls</span>
+<span class="sd">        back to mtime-based selection only when no manifest is present</span>
+<span class="sd">        (e.g. checkpoints written by an older version of Twiga).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If ``checkpoints_path`` is not set or the domain is</span>
+<span class="sd">                unsupported.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; forecaster.on_load_checkpoint()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;checkpoints_path&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_path</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;checkpoints_path is not set. Either call fit() first, or supply &quot;</span>
+                <span class="s2">&quot;checkpoints_path in ForecasterConfig so it is available before fit().&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">checkpoint_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">checkpoint_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Checkpoint directory does not exist: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">checkpoint_dir</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># ── Manifest-based selection (preferred) ────────────────────────────</span>
+        <span class="n">manifest_path</span> <span class="o">=</span> <span class="n">checkpoint_dir</span> <span class="o">/</span> <span class="s2">&quot;_checkpoint_manifest.json&quot;</span>
+        <span class="k">if</span> <span class="n">manifest_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">manifest</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">manifest_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+                <span class="n">checkpoint_file</span> <span class="o">=</span> <span class="n">checkpoint_dir</span> <span class="o">/</span> <span class="n">manifest</span><span class="p">[</span><span class="s2">&quot;checkpoint_file&quot;</span><span class="p">]</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Loading checkpoint via manifest  file=</span><span class="si">%s</span><span class="s2">  version=</span><span class="si">%s</span><span class="s2">  saved_at=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">checkpoint_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">manifest</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">),</span>
+                    <span class="n">manifest</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;saved_at&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Checkpoint manifest is corrupt (</span><span class="si">%s</span><span class="s2">); falling back to mtime selection.&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+                <span class="n">checkpoint_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">checkpoint_file</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># ── mtime fallback (legacy checkpoints without a manifest) ──────────</span>
+        <span class="k">if</span> <span class="n">checkpoint_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">checkpoint_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">pkl_files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">checkpoint_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.pkl&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_file</span><span class="p">()],</span>
+                <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_mtime</span><span class="p">,</span>
+                <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pkl_files</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No checkpoint files found in </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">checkpoint_dir</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="n">checkpoint_file</span> <span class="o">=</span> <span class="n">pkl_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading checkpoint via mtime fallback  file=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">checkpoint_file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">load_strategies</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Path</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;ml&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_ml_checkpoint</span><span class="p">,</span>
+            <span class="s2">&quot;baseline&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_ml_checkpoint</span><span class="p">,</span>
+            <span class="s2">&quot;nn&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_nn_checkpoint</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">load_strategies</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported domain: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="si">!r}</span><span class="s2">. Supported: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">load_strategies</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ml&quot;</span><span class="p">,</span> <span class="s2">&quot;baseline&quot;</span><span class="p">):</span>
+                <span class="n">load_strategies</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">](</span><span class="n">checkpoint_file</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">load_strategies</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">]()</span>  <span class="c1"># type: ignore[call-arg]</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checkpoint loaded successfully  file=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">checkpoint_file</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">EOFError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Failed to load checkpoint </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">checkpoint_file</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_ml_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checkpoint_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a machine learning checkpoint using joblib.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            checkpoint_path: Path to the checkpoint file.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError: If the checkpoint is missing required keys.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">joblib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;model&quot;</span> <span class="ow">in</span> <span class="n">data</span> <span class="ow">and</span> <span class="s2">&quot;data_pipeline&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;data_pipeline&quot;</span><span class="p">]</span>
+            <span class="c1"># Restore the full model list so _predict_core iterates over the</span>
+            <span class="c1"># correct fitted models rather than any unfitted models that were</span>
+            <span class="c1"># registered during __init__ of the loaded forecaster.</span>
+            <span class="k">if</span> <span class="s2">&quot;models&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;models&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Legacy checkpoint without &quot;models&quot; key — derive from the single model.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_nn_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a neural network checkpoint using the model&#39;s load method.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: If the model lacks a load_checkpoint method.</span>
+<span class="sd">            RuntimeError: If the model&#39;s data_pipeline is not set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;load_checkpoint&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Model does not support checkpoint loading for neural network domain&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_checkpoint</span><span class="p">()</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;data_pipeline&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">data_pipeline</span>  <span class="c1"># type: ignore[union-attr]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_checkpoint_and_datapipe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the model checkpoint and restore the data pipeline from disk.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_load_checkpoint</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_features</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">train_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">val_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">train_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare training and validation features using the data pipeline.</span>
+
+<span class="sd">        Handles data splitting, transformation, and temporal filtering based on</span>
+<span class="sd">        the configured lookback window and maximum data drop.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            train_df: Training dataset containing features and target</span>
+<span class="sd">            val_df: Optional validation dataset. If not provided and train_ratio &lt; 1.0,</span>
+<span class="sd">                will split training data into train/validation sets</span>
+<span class="sd">            train_ratio: Proportion of training data to use (1.0 = use all data).</span>
+<span class="sd">                Ignored if val_df is provided</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: Contains four elements in order:</span>
+<span class="sd">                - Training features array</span>
+<span class="sd">                - Training targets array</span>
+<span class="sd">                - Validation features array or None</span>
+<span class="sd">                - Validation targets array or None</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If data pipeline is not initialized</span>
+<span class="sd">            RuntimeError: If model is not properly initialized before preprocessing</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; train_feats, train_tgt, val_feats, val_tgt = model._prepare_features(</span>
+<span class="sd">            ...     train_data, val_data=None, train_ratio=0.8</span>
+<span class="sd">            ... )</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">train_df</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">val_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">val_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">train_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Model must be initialized before feature preparation&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="p">,</span> <span class="s2">&quot;transform&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data pipeline must be initialized with transform method&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Fit data pipeline if not already fitted</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">data_pipeline</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data pipeline not initialized. Call data_pipeline.fit() first&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Handle data splitting</span>
+        <span class="k">if</span> <span class="n">val_df</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">train_ratio</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">split_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">train_ratio</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_df</span><span class="p">))</span>
+            <span class="n">train_split</span> <span class="o">=</span> <span class="n">train_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="n">split_idx</span><span class="p">]</span>
+            <span class="n">val_split</span> <span class="o">=</span> <span class="n">train_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">split_idx</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">train_split</span> <span class="o">=</span> <span class="n">train_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">val_split</span> <span class="o">=</span> <span class="n">val_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">val_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="c1"># Transform data</span>
+        <span class="n">train_features</span><span class="p">,</span> <span class="n">train_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">train_split</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="n">val_features</span><span class="p">,</span> <span class="n">val_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">val_split</span><span class="p">)</span> <span class="k">if</span> <span class="n">val_split</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+
+        <span class="c1"># Apply temporal filtering</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_apply_temporal_filtering</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">train_features</span><span class="p">,</span> <span class="n">train_target</span><span class="p">,</span> <span class="n">val_features</span><span class="p">,</span> <span class="n">val_target</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_temporal_filtering</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter training data based on lookback window and data drop parameters.</span>
+
+<span class="sd">        The function sorts the training data by the specified date column and then selects</span>
+<span class="sd">        the required number of data points based on the sum of the lookback window size and</span>
+<span class="sd">        the maximum data drop. If the available data is insufficient, a detailed error message is raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">date_column</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+
+        <span class="n">data_drop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">max_data_drop</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="n">lookback_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">lookback_window_size</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="n">required_samples</span> <span class="o">=</span> <span class="n">data_drop</span> <span class="o">+</span> <span class="n">lookback_size</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_df</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">required_samples</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Not enough data to train the model. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;At least </span><span class="si">{</span><span class="n">required_samples</span><span class="si">}</span><span class="s2"> data points are required, but only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> were provided.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="n">required_samples</span><span class="p">:]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fit</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">train_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">val_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">train_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">trial</span><span class="p">:</span> <span class="n">optuna</span><span class="o">.</span><span class="n">Trial</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the model using the provided training data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            train_df (pd.DataFrame): Training data.</span>
+<span class="sd">            val_df (pd.DataFrame | None): Optional validation data.</span>
+<span class="sd">            train_ratio (float): Proportion of data to use for training (default is 1.0).</span>
+<span class="sd">            trial (object | None): Optional trial object for hyperparameter optimization.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: Training wall time or cost metric (if trial is provided).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the model instance is not initialized.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; wall_time = forecaster.fit(train_df, val_df, train_ratio=0.8)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">train_feature</span><span class="p">,</span> <span class="n">train_target</span><span class="p">,</span> <span class="n">val_feature</span><span class="p">,</span> <span class="n">val_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_features</span><span class="p">(</span>
+            <span class="n">train_df</span><span class="p">,</span>
+            <span class="n">val_df</span><span class="p">,</span>
+            <span class="n">train_ratio</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">default_timer</span><span class="p">()</span>
+        <span class="n">log_section</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Training </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ml&quot;</span><span class="p">,</span> <span class="s2">&quot;baseline&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">val_feature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">val_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>  <span class="c1"># type: ignore[union-attr]</span>
+                    <span class="n">train_feature</span><span class="p">,</span>
+                    <span class="n">train_target</span><span class="p">,</span>
+                    <span class="n">eval_set</span><span class="o">=</span><span class="p">(</span><span class="n">val_feature</span><span class="p">,</span> <span class="n">val_target</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_feature</span><span class="p">,</span> <span class="n">train_target</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">==</span> <span class="s2">&quot;nn&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">checkpoints_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_path</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">logs_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logs_path</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">project_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_name</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">file_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">data_pipeline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_feature</span><span class="p">,</span> <span class="n">train_target</span><span class="p">,</span> <span class="n">val_feature</span><span class="p">,</span> <span class="n">val_target</span><span class="p">,</span> <span class="n">trial</span><span class="o">=</span><span class="n">trial</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown domain: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="si">!r}</span><span class="s2">. Expected &#39;ml&#39;, &#39;baseline&#39;, or &#39;nn&#39;.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_walltime</span> <span class="o">=</span> <span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Training </span><span class="si">%s</span><span class="s2"> complete  duration=</span><span class="si">%.2f</span><span class="s2"> min&quot;</span><span class="p">,</span>  <span class="c1"># ← no f-string</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">train_walltime</span> <span class="o">/</span> <span class="mi">60</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_save_checkpoint</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_walltime</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_objective_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trial</span><span class="p">,</span> <span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">trial</span><span class="p">)</span>
+
+        <span class="c1"># Record parameter count so the post-hoc complexity filter can use it.</span>
+        <span class="c1"># self.model.model is the nn.Module re-initialised inside update().</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+        <span class="n">trial</span><span class="o">.</span><span class="n">set_user_attr</span><span class="p">(</span><span class="s2">&quot;n_params&quot;</span><span class="p">,</span> <span class="n">n_params</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="p">,</span> <span class="n">trial</span><span class="o">=</span><span class="n">trial</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">optuna</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">TrialPruned</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Trial </span><span class="si">%d</span><span class="s2"> pruned&quot;</span><span class="p">,</span> <span class="n">trial</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Trial </span><span class="si">%d</span><span class="s2"> failed during fitting&quot;</span><span class="p">,</span> <span class="n">trial</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">optuna</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">TrialPruned</span><span class="p">()</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate</span><span class="p">(</span><span class="n">val_df</span><span class="p">)</span>
+        <span class="n">cost</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="s2">&quot;mae&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+        <span class="n">trial</span><span class="o">.</span><span class="n">set_user_attr</span><span class="p">(</span><span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;rmse&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()))</span>
+        <span class="n">trial</span><span class="o">.</span><span class="n">set_user_attr</span><span class="p">(</span><span class="s2">&quot;std_dev&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">()))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Trial </span><span class="si">%d</span><span class="s2"> complete  mae=</span><span class="si">%.5f</span><span class="s2">  n_params=</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">trial</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="n">cost</span><span class="p">,</span> <span class="n">n_params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">cost</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_optuna_study</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_trials</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="n">reduction_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">load_if_exists</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">base_pruner</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sampler</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">direction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;minimize&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create or load an Optuna study for hyperparameter optimization.</span>
+
+<span class="sd">        This method configures an Optuna study with a Hyperband pruner wrapped by a PatientPruner</span>
+<span class="sd">        (if no custom pruner is provided) and a TPESampler with the instance&#39;s seed (if no custom</span>
+<span class="sd">        sampler is provided). The study is stored in a SQLite database within the results directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            num_trials (int): Number of trials for the study (unused in study setup).</span>
+<span class="sd">            reduction_factor (int): Reduction factor for HyperbandPruner.</span>
+<span class="sd">            patience (int): Patience for PatientPruner.</span>
+<span class="sd">            load_if_exists (bool): Whether to load an existing study if it exists.</span>
+<span class="sd">            base_pruner (Any | None): Custom pruner to use instead of the default.</span>
+<span class="sd">            sampler (Any | None): Custom sampler to use instead of the default.</span>
+<span class="sd">            direction (str): Direction of optimization, either &quot;minimize&quot; or &quot;maximize&quot;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            optuna.Study: Configured Optuna study.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">num_trials</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;num_trials must be ≥1, got </span><span class="si">{</span><span class="n">num_trials</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">reduction_factor</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;reduction_factor must be ≥2, got </span><span class="si">{</span><span class="n">reduction_factor</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">patience</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;patience must be a non-negative integer, got </span><span class="si">{</span><span class="n">patience</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logs_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;logs_path is not set — call fit() before create_optuna_study().&quot;</span><span class="p">)</span>
+        <span class="n">study_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">project_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">safe_study_name</span> <span class="o">=</span> <span class="n">study_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logs_path</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">safe_study_name</span><span class="si">}</span><span class="s2">.log&quot;</span>
+        <span class="n">file_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">lock_obj</span> <span class="o">=</span> <span class="n">optuna</span><span class="o">.</span><span class="n">storages</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">JournalFileOpenLock</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="n">optuna</span><span class="o">.</span><span class="n">storages</span><span class="o">.</span><span class="n">JournalStorage</span><span class="p">(</span>
+            <span class="n">optuna</span><span class="o">.</span><span class="n">storages</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">JournalFileBackend</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file_path</span><span class="p">),</span> <span class="n">lock_obj</span><span class="o">=</span><span class="n">lock_obj</span><span class="p">),</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">base_pruner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_pruner</span> <span class="o">=</span> <span class="n">optuna</span><span class="o">.</span><span class="n">pruners</span><span class="o">.</span><span class="n">HyperbandPruner</span><span class="p">(</span>
+                <span class="n">min_resource</span><span class="o">=</span><span class="n">patience</span><span class="p">,</span>
+                <span class="n">max_resource</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+                <span class="n">reduction_factor</span><span class="o">=</span><span class="n">reduction_factor</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sampler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sampler</span> <span class="o">=</span> <span class="n">optuna</span><span class="o">.</span><span class="n">samplers</span><span class="o">.</span><span class="n">TPESampler</span><span class="p">(</span>
+                <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+                <span class="n">multivariate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">n_startup_trials</span><span class="o">=</span><span class="n">patience</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="n">constant_liar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">group</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">optuna</span><span class="o">.</span><span class="n">create_study</span><span class="p">(</span>
+            <span class="n">direction</span><span class="o">=</span><span class="n">direction</span><span class="p">,</span>
+            <span class="n">pruner</span><span class="o">=</span><span class="n">base_pruner</span><span class="p">,</span>
+            <span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">,</span>
+            <span class="n">study_name</span><span class="o">=</span><span class="n">study_name</span><span class="p">,</span>
+            <span class="n">storage</span><span class="o">=</span><span class="n">storage</span> <span class="k">if</span> <span class="n">load_if_exists</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">load_if_exists</span><span class="o">=</span><span class="n">load_if_exists</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_tune</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">train_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">val_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">num_trials</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="n">reduction_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">load_if_exists</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">base_pruner</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sampler</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">initial_params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">direction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;minimize&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform hyperparameter tuning using Optuna.</span>
+
+<span class="sd">        This method sets up an Optuna study to perform hyperparameter optimization for the model.</span>
+<span class="sd">        It uses a Hyperband pruner (wrapped by a PatientPruner) with the given reduction factor and</span>
+<span class="sd">        patience. If a study with the given name already exists and load_if_exists is True, the study</span>
+<span class="sd">        is loaded from disk.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            train_df (pd.DataFrame): Training DataFrame.</span>
+<span class="sd">            val_df (pd.DataFrame): Validation DataFrame.</span>
+<span class="sd">            num_trials (int, optional): Number of trials for hyperparameter optimization.</span>
+<span class="sd">                Must be ≥ 1. Defaults to 10.</span>
+<span class="sd">            reduction_factor (int, optional): Reduction factor for the Hyperband pruner.</span>
+<span class="sd">                Must be ≥ 2. Defaults to 3.</span>
+<span class="sd">            patience (int, optional): Patience for the PatientPruner (number of trials to wait before pruning).</span>
+<span class="sd">                Must be a non-negative integer. Defaults to 2.</span>
+<span class="sd">            load_if_exists (bool, optional): If True, load the study from disk if it exists.</span>
+<span class="sd">                Defaults to True.</span>
+<span class="sd">            base_pruner (optional): An optional custom pruner. If None, a Hyperband pruner is used.</span>
+<span class="sd">            sampler (optional): An optional custom sampler. If None, a TPESampler seeded with `self.seed` is used.</span>
+<span class="sd">            initial_params (dict | None): Optional initial hyperparameter configuration to enqueue.</span>
+<span class="sd">            direction (str): Direction of optimization, either &quot;minimize&quot; or &quot;maximize&quot;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: The best hyperparameter configuration found by the study.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If any of the tuning parameters are invalid.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; best_params = forecaster._tune(train_df, val_df, num_trials=20, reduction_factor=3, patience=2)</span>
+<span class="sd">            &gt;&gt;&gt; print(&quot;Best hyperparameters:&quot;, best_params)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Validate input parameters</span>
+        <span class="n">study</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_optuna_study</span><span class="p">(</span>
+            <span class="n">num_trials</span><span class="o">=</span><span class="n">num_trials</span><span class="p">,</span>
+            <span class="n">reduction_factor</span><span class="o">=</span><span class="n">reduction_factor</span><span class="p">,</span>
+            <span class="n">patience</span><span class="o">=</span><span class="n">patience</span><span class="p">,</span>
+            <span class="n">load_if_exists</span><span class="o">=</span><span class="n">load_if_exists</span><span class="p">,</span>
+            <span class="n">base_pruner</span><span class="o">=</span><span class="n">base_pruner</span><span class="p">,</span>
+            <span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">,</span>
+            <span class="n">direction</span><span class="o">=</span><span class="n">direction</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">with</span> <span class="n">LogContext</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span> <span class="n">trials</span><span class="o">=</span><span class="n">num_trials</span><span class="p">):</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting hyperparameter tuning&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">initial_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">study</span><span class="o">.</span><span class="n">enqueue_trial</span><span class="p">(</span><span class="n">initial_params</span><span class="p">,</span> <span class="n">skip_if_exists</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">study</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="k">lambda</span> <span class="n">trial</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_objective_fn</span><span class="p">(</span><span class="n">trial</span><span class="p">,</span> <span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="p">),</span> <span class="n">n_trials</span><span class="o">=</span><span class="n">num_trials</span><span class="p">)</span>
+
+        <span class="n">completed</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">study</span><span class="o">.</span><span class="n">trials</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">optuna</span><span class="o">.</span><span class="n">trial</span><span class="o">.</span><span class="n">TrialState</span><span class="o">.</span><span class="n">COMPLETE</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">completed</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;No trials completed successfully for </span><span class="si">%s</span><span class="s2"> — returning empty params&quot;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="p">{}</span>
+
+        <span class="c1"># ── Complexity-aware selection (strategy 2C) ─────────────────────────</span>
+        <span class="c1"># Among all trials within `complexity_tolerance` of the best MAE,</span>
+        <span class="c1"># prefer the one with the fewest parameters.  Falls back to the</span>
+        <span class="c1"># pure-MAE best when n_params was not recorded (e.g. ML models).</span>
+        <span class="n">best_mae</span> <span class="o">=</span> <span class="n">study</span><span class="o">.</span><span class="n">best_trial</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">tolerance</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;complexity_tolerance&quot;</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">)</span>
+
+        <span class="n">eligible</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">completed</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">value</span> <span class="o">&lt;=</span> <span class="n">best_mae</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">tolerance</span><span class="p">)]</span>
+
+        <span class="n">has_complexity</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="s2">&quot;n_params&quot;</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">user_attrs</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">eligible</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">has_complexity</span><span class="p">:</span>
+            <span class="n">best_trial</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">eligible</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">user_attrs</span><span class="p">[</span><span class="s2">&quot;n_params&quot;</span><span class="p">])</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Complexity filter applied  tolerance=</span><span class="si">%.0f%%</span><span class="s2">  eligible=</span><span class="si">%d</span><span class="s2">  &quot;</span>
+                <span class="s2">&quot;selected_trial=</span><span class="si">%d</span><span class="s2">  mae=</span><span class="si">%.5f</span><span class="s2">  n_params=</span><span class="si">%d</span><span class="s2">  &quot;</span>
+                <span class="s2">&quot;(best_mae=</span><span class="si">%.5f</span><span class="s2">  delta=</span><span class="si">%.5f</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="n">tolerance</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">eligible</span><span class="p">),</span>
+                <span class="n">best_trial</span><span class="o">.</span><span class="n">number</span><span class="p">,</span>
+                <span class="n">best_trial</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                <span class="n">best_trial</span><span class="o">.</span><span class="n">user_attrs</span><span class="p">[</span><span class="s2">&quot;n_params&quot;</span><span class="p">],</span>
+                <span class="n">best_mae</span><span class="p">,</span>
+                <span class="n">best_trial</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="n">best_mae</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">best_trial</span> <span class="o">=</span> <span class="n">study</span><span class="o">.</span><span class="n">best_trial</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Tuning complete  best_trial=</span><span class="si">%d</span><span class="s2">  mae=</span><span class="si">%.5f</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">best_trial</span><span class="o">.</span><span class="n">number</span><span class="p">,</span>
+                <span class="n">best_trial</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">best_params</span> <span class="o">=</span> <span class="n">best_trial</span><span class="o">.</span><span class="n">params</span>
+
+        <span class="c1"># Save the best parameters to a file</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">results_path</span><span class="si">}</span><span class="s2">/best_params.npy&quot;</span><span class="p">,</span> <span class="n">best_params</span><span class="p">)</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="k">return</span> <span class="n">best_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_test_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_df</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepares and returns a formatted test DataFrame for prediction.</span>
+
+<span class="sd">        This method checks the consistency of the training DataFrame and test DataFrame,</span>
+<span class="sd">        concatenates them if both are provided, and sorts the resulting DataFrame by the</span>
+<span class="sd">        date column defined in the data pipeline.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            test_df (pandas.DataFrame, optional): A DataFrame containing test data.</span>
+<span class="sd">                If not provided, the training DataFrame is used as test data.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the training DataFrame length does not match the expected</span>
+<span class="sd">                lookback window size plus maximum data drop.</span>
+<span class="sd">            ValueError: If neither training data nor test data is provided.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pandas.DataFrame: A sorted DataFrame ready for prediction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">test_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">test_df</span> <span class="o">=</span> <span class="n">test_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Retrieve parameters from the data pipeline.</span>
+        <span class="n">max_data_drop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">max_data_drop</span>
+        <span class="n">lookback_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">lookback_window_size</span>
+
+        <span class="c1"># Validate the training DataFrame length if it exists.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_df</span><span class="p">)</span> <span class="o">!=</span> <span class="n">lookback_window</span> <span class="o">+</span> <span class="n">max_data_drop</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The length of the training DataFrame does not match &quot;</span>
+                <span class="s2">&quot;the expected lookback_window_size + max_data_drop.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Ensure that at least one of train_df or test_df is provided.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">test_df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;You cannot call prediction without specifying test data.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Sort the DataFrame based on the date column from the data pipeline.</span>
+        <span class="n">date_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">date_column</span>
+
+        <span class="c1"># Normalise timestamps on both sides to tz-naive before any concat/sort.</span>
+        <span class="c1"># train_df may be tz-aware when loaded from an old checkpoint; test_df may</span>
+        <span class="c1"># arrive tz-aware from an external caller.  This is a no-op when both are</span>
+        <span class="c1"># already tz-naive (the common path after normalise_timestamp_column is</span>
+        <span class="c1"># applied at all ingestion points).</span>
+        <span class="k">if</span> <span class="n">test_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">date_column</span> <span class="ow">in</span> <span class="n">test_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">test_df</span> <span class="o">=</span> <span class="n">normalise_timestamp_column</span><span class="p">(</span><span class="n">test_df</span><span class="p">,</span> <span class="n">date_column</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">date_column</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span> <span class="o">=</span> <span class="n">normalise_timestamp_column</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_df</span><span class="p">,</span> <span class="n">date_column</span><span class="p">)</span>
+
+        <span class="c1"># If both training and test data are provided, concatenate them.</span>
+        <span class="k">if</span> <span class="n">test_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">test_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">train_df</span><span class="p">,</span> <span class="n">test_df</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># If only training data is available, use it as test data.</span>
+        <span class="k">elif</span> <span class="n">test_df</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">test_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_df</span>
+
+        <span class="n">test_df</span> <span class="o">=</span> <span class="n">test_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="n">date_column</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">test_df</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_results_df</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">time_stamp</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">ground_truth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">predictions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">target_feature</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">date_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a results DataFrame with the timestamp index, ground truth, and forecasted values.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            time_stamp (np.ndarray): Timestamp index.</span>
+<span class="sd">            ground_truth (np.ndarray): Ground truth values.</span>
+<span class="sd">            predictions (np.ndarray): Forecasted values.</span>
+<span class="sd">            target_feature (list[str]): List of target series names.</span>
+<span class="sd">            date_column (str): Name of the date column.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: DataFrame with ground truth and forecasted values indexed by timestamp.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; results_df = forecaster.create_results_df(ts, gt, pred, [&quot;temp&quot;], &quot;Date&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">time_stamp</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shape mismatch: timestamps (</span><span class="si">{</span><span class="n">time_stamp</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">) vs ground truth (</span><span class="si">{</span><span class="n">ground_truth</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="n">results_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">time_stamp</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;ns&quot;</span><span class="p">,</span> <span class="n">utc</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="n">results_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">date_column</span>
+
+        <span class="k">for</span> <span class="n">target_idx</span><span class="p">,</span> <span class="n">target_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">target_feature</span><span class="p">):</span>
+            <span class="n">results_df</span><span class="p">[</span><span class="n">target_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">ground_truth</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">target_idx</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">results_df</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_name</span><span class="si">}</span><span class="s2">_forecast&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">target_idx</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">results_df</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_ground_truth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the latest checkpoint and return inverse-scaled ground truth sequences.</span>
+
+<span class="sd">        **Side effect**: calls :meth:`load_checkpoint_and_datapipe`, which</span>
+<span class="sd">        calls :meth:`on_load_checkpoint` and may overwrite ``self.model`` and</span>
+<span class="sd">        ``self.data_pipeline`` from disk.  Use this method during evaluation</span>
+<span class="sd">        (where the checkpoint state is desired).  For pure data extraction</span>
+<span class="sd">        without checkpoint side effects — e.g. inside :meth:`forecast` — use</span>
+<span class="sd">        ``self.data_pipeline.get_ground_truth_sequences()`` directly instead.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            test_df: Test DataFrame. If ``None``, uses ``self.train_df``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of:</span>
+<span class="sd">                - time_stamp: Timestamp array aligned with prediction sequences.</span>
+<span class="sd">                - ground_truth: Inverse-scaled ground truth array of shape</span>
+<span class="sd">                  ``(num_sequences, forecast_horizon, num_targets)``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_checkpoint_and_datapipe</span><span class="p">()</span>
+        <span class="n">time_stamp</span><span class="p">,</span> <span class="n">ground_truth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">get_ground_truth_sequences</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="n">ground_truth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rescale_predictions</span><span class="p">(</span><span class="n">ground_truth</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">time_stamp</span><span class="p">,</span> <span class="n">ground_truth</span>  <span class="c1"># type: ignore[return-value]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_inverse_scale_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scaled_predictions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">is_scale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reverse feature scaling on model predictions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            scaled_predictions: Predictions in scaled space</span>
+<span class="sd">            is_scale: Flag indicating whether to apply inverse scaling</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Predictions in original data space</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">scaler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">named_steps</span><span class="p">[</span><span class="s2">&quot;scaling&quot;</span><span class="p">]</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="n">target_scaler</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">named_transformers_</span><span class="p">[</span><span class="s2">&quot;target_scaling&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing pipeline component: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+        <span class="n">original_shape</span> <span class="o">=</span> <span class="n">scaled_predictions</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">scaled_predictions</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">original_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">is_scale</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_scaler</span><span class="p">,</span> <span class="s2">&quot;scale_&quot;</span><span class="p">):</span>
+            <span class="n">rescaled</span> <span class="o">=</span> <span class="n">reshaped</span> <span class="o">*</span> <span class="n">target_scaler</span><span class="o">.</span><span class="n">scale_</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rescaled</span> <span class="o">=</span> <span class="n">target_scaler</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">reshaped</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rescaled</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">original_shape</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_rescale_predictions</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">predictions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="n">RawPrediction</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RawPrediction</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inverse-transform scaled model output to the original data scale.</span>
+
+<span class="sd">        Accepts either a :class:`~twiga.forecaster.result.RawPrediction` (preferred)</span>
+<span class="sd">        or the legacy ``ndarray | dict | tuple`` union for backward compatibility.</span>
+<span class="sd">        Plain ``np.ndarray`` inputs (e.g. from :meth:`get_ground_truth`) are</span>
+<span class="sd">        returned as ``np.ndarray``; all other inputs return a :class:`RawPrediction`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            predictions: Scaled model output in any supported format.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Rescaled :class:`RawPrediction`, or a plain ``np.ndarray`` when a</span>
+<span class="sd">            bare array is supplied.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If *predictions* is not a supported type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Fast path: plain array (used by get_ground_truth)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse_scale_predictions</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+
+        <span class="c1"># Convert legacy formats to RawPrediction once</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">RawPrediction</span><span class="p">):</span>
+            <span class="n">predictions</span> <span class="o">=</span> <span class="n">RawPrediction</span><span class="o">.</span><span class="n">from_model_output</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rescale_raw</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_rescale_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">RawPrediction</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RawPrediction</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inverse-scale a :class:`RawPrediction` in-place and return it.</span>
+
+<span class="sd">        Each field is rescaled according to its semantic role:</span>
+<span class="sd">        - ``loc`` and bounds use full inverse transform.</span>
+<span class="sd">        - ``scale`` uses the scale-only path (multiply by ``scale_`` factor).</span>
+<span class="sd">        - ``quantiles`` / ``samples`` are flattened to 3-D, rescaled, reshaped.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            raw: Unscaled typed prediction container.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The same :class:`RawPrediction` instance with all arrays rescaled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">raw</span><span class="o">.</span><span class="n">loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse_scale_predictions</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">loc</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">raw</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">ForecastKind</span><span class="o">.</span><span class="n">INTERVAL</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">raw</span><span class="o">.</span><span class="n">lower</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">raw</span><span class="o">.</span><span class="n">lower</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse_scale_predictions</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">raw</span><span class="o">.</span><span class="n">upper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">raw</span><span class="o">.</span><span class="n">upper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse_scale_predictions</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">raw</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">ForecastKind</span><span class="o">.</span><span class="n">PARAMETRIC</span> <span class="ow">and</span> <span class="n">raw</span><span class="o">.</span><span class="n">scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">raw</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse_scale_predictions</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="n">is_scale</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">raw</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">ForecastKind</span><span class="o">.</span><span class="n">QUANTILE</span> <span class="ow">and</span> <span class="n">raw</span><span class="o">.</span><span class="n">quantiles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_batch</span><span class="p">,</span> <span class="n">n_q</span><span class="p">,</span> <span class="n">n_h</span><span class="p">,</span> <span class="n">n_c</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">quantiles</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">raw</span><span class="o">.</span><span class="n">quantiles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse_scale_predictions</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">quantiles</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_batch</span> <span class="o">*</span> <span class="n">n_q</span><span class="p">,</span> <span class="n">n_h</span><span class="p">,</span> <span class="n">n_c</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                <span class="n">n_batch</span><span class="p">,</span> <span class="n">n_q</span><span class="p">,</span> <span class="n">n_h</span><span class="p">,</span> <span class="n">n_c</span>
+            <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">raw</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">ForecastKind</span><span class="o">.</span><span class="n">SAMPLES</span> <span class="ow">and</span> <span class="n">raw</span><span class="o">.</span><span class="n">samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_batch</span><span class="p">,</span> <span class="n">n_s</span><span class="p">,</span> <span class="n">n_h</span><span class="p">,</span> <span class="n">n_c</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">raw</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse_scale_predictions</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_batch</span> <span class="o">*</span> <span class="n">n_s</span><span class="p">,</span> <span class="n">n_h</span><span class="p">,</span> <span class="n">n_c</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                <span class="n">n_batch</span><span class="p">,</span> <span class="n">n_s</span><span class="p">,</span> <span class="n">n_h</span><span class="p">,</span> <span class="n">n_c</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">raw</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">covariate_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RawPrediction</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute prediction workflow with data transformation and scaling inversion.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            test_df: Test DataFrame containing input features.</span>
+<span class="sd">            covariate_df: Optional DataFrame containing external covariates.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Rescaled :class:`~twiga.forecaster.result.RawPrediction` containing</span>
+<span class="sd">            ``loc`` and any kind-specific fields (``scale``, ``quantiles``, etc.).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError: If data pipeline components are not properly initialized.</span>
+<span class="sd">            ValueError: For invalid input data formats.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_data_pipeline</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">transform_features</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="n">features</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ml&quot;</span><span class="p">,</span> <span class="s2">&quot;baseline&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Feature transformation failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">raw_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_walltime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Prediction completed in </span><span class="si">%.2f</span><span class="s2"> seconds&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_walltime</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rescale_predictions</span><span class="p">(</span><span class="n">raw_output</span><span class="p">)</span>
+        <span class="c1"># _rescale_predictions guarantees RawPrediction when input is not a bare ndarray</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">RawPrediction</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_data_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensure data pipeline is properly configured before transformations.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="p">,</span> <span class="s2">&quot;data_pipeline&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Data pipeline component structure is invalid&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">data_pipeline</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Data pipeline not initialized. Required steps:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;1. Prepare data preprocessing steps</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;2. Call .fit() with training data</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Missing pipeline: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">test_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">covariate_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">time_stamp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ground_truth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform prediction on the test DataFrame and return results and evaluation metrics.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            test_df (pd.DataFrame | None): Test DataFrame with prediction inputs.</span>
+<span class="sd">            covariate_df (pd.DataFrame | None): DataFrame with covariate features.</span>
+<span class="sd">            time_stamp (pd.DataFrame|None): timestamp for creating results dataframe</span>
+<span class="sd">            ground_truth (pd.DataFrame|None): dataframe with ground truth for computing metrics.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[pd.DataFrame, pd.DataFrame]: Tuple containing:</span>
+<span class="sd">                - results_df: DataFrame with ground truth and forecasted values.</span>
+<span class="sd">                - metrics_df: DataFrame with evaluation metrics.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span><span class="p">(</span><span class="n">test_df</span><span class="p">,</span> <span class="n">covariate_df</span><span class="p">)</span>
+        <span class="n">forecast</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">loc</span>
+        <span class="k">if</span> <span class="n">time_stamp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">ground_truth</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">time_stamp</span><span class="p">,</span> <span class="n">ground_truth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ground_truth</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">forecast</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Shape mismatch: &#39;forecast&#39; and &#39;ground_truth&#39; must have the same shape.&quot;</span><span class="p">)</span>
+
+        <span class="n">target_feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">target_feature</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="p">[</span><span class="n">target_feature</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_feature</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">target_feature</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">build_forecast_result</span><span class="p">(</span>
+            <span class="n">model_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span>
+            <span class="n">pred</span><span class="o">=</span><span class="n">forecast</span><span class="p">,</span>
+            <span class="n">timestamps</span><span class="o">=</span><span class="n">time_stamp</span><span class="p">,</span>
+            <span class="n">targets</span><span class="o">=</span><span class="n">targets</span><span class="p">,</span>
+            <span class="n">ground_truth</span><span class="o">=</span><span class="n">ground_truth</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">metrics_df</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">metric_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">)</span>
+        <span class="n">metrics_df</span><span class="p">[</span><span class="s2">&quot;test-time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_walltime</span>
+        <span class="n">metrics_df</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+        <span class="n">results_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_results_df</span><span class="p">(</span>
+            <span class="n">time_stamp</span><span class="p">,</span>
+            <span class="n">ground_truth</span><span class="p">,</span>
+            <span class="n">forecast</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">target_feature</span><span class="p">,</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">date_column</span><span class="p">,</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="p">)</span>
+        <span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">results_df</span><span class="p">,</span> <span class="n">metrics_df</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_backtester</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">train_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">start_dt</span><span class="p">:</span> <span class="nb">object</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">end_dt</span><span class="p">:</span> <span class="nb">object</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform backtesting by iterating over splits of the dataset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (pd.DataFrame): DataFrame containing the full dataset.</span>
+<span class="sd">            train_ratio (float): Proportion of data to use for training.</span>
+<span class="sd">            start_dt (object | None): Optional start date for splitting.</span>
+<span class="sd">            end_dt (object | None): Optional end date for splitting.</span>
+<span class="sd">            verbose (bool): If True, logs information about each fold.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[pd.DataFrame, pd.DataFrame]: Tuple containing:</span>
+<span class="sd">                - metrics: DataFrame of metrics for all folds.</span>
+<span class="sd">                - forecast: DataFrame of forecasts for all folds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">metrics_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">forecast_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">train_df</span><span class="p">,</span> <span class="n">test_df</span><span class="p">,</span> <span class="n">scheme</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">start_dt</span><span class="p">,</span> <span class="n">end_dt</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Backtesting — Fold </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">key</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Train window: </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">scheme</span><span class="p">[</span><span class="s2">&quot;train_period&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">scheme</span><span class="p">[</span><span class="s2">&quot;train_period&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Test window: </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">scheme</span><span class="p">[</span><span class="s2">&quot;test_period&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">scheme</span><span class="p">[</span><span class="s2">&quot;test_period&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>  <span class="c1"># type: ignore[union-attr]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">train_ratio</span><span class="o">=</span><span class="n">train_ratio</span><span class="p">)</span>
+                <span class="n">pred</span><span class="p">,</span> <span class="n">metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+                <span class="n">metric</span><span class="p">[</span><span class="s2">&quot;Folds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">pred</span><span class="p">[</span><span class="s2">&quot;Folds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">metrics_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
+                <span class="n">forecast_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Unexpected error in fold </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">key</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">metrics_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">metrics_list</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="n">forecast</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">forecast_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">forecast_list</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">forecast</span><span class="p">,</span> <span class="n">metrics</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

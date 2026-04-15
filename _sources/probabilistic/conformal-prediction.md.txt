@@ -1,0 +1,296 @@
+# Conformal Prediction & Uncertainty Quantification
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/distributions/conformal/core.py`
+- `twiga/distributions/conformal/base.py`
+- `twiga/distributions/conformal/cqr.py`
+- `twiga/distributions/conformal/crc.py`
+- `twiga/core/config/base.py`
+
+</details>
+
+Conformal prediction provides **distribution-free prediction intervals** with finite-sample coverage guarantees. Unlike Bayesian methods, conformal prediction makes no assumptions about the data distribution  -  it only requires exchangeability of calibration data.
+
+Because calibration needs only a set of predictions and ground truth from a held-out split, conformal prediction **wraps any trained Twiga model without retraining**  -  including plain point-forecast ML models like CatBoost or XGBoost. This makes it the recommended path for adding uncertainty estimates to an existing point forecaster.
+
+## How It Works
+
+```{mermaid}
+graph LR
+    A[Train Model] --> B[Calibrate on Held-Out Data]
+    B --> C[Compute Non-Conformity Scores]
+    C --> D["Calculate Threshold q̂ at (1-α) quantile"]
+    D --> E[Generate Intervals on New Data]
+    E --> F["[prediction - q̂, prediction + q̂]"]
+```
+
+1. **Train** the model on training data
+2. **Calibrate** using held-out data to compute non-conformity scores
+3. **Calculate threshold** $\hat{q}$ as the $(1-\alpha)$-quantile of the scores
+4. **Generate intervals** on new data using the calibrated threshold
+
+The resulting intervals have guaranteed marginal coverage of at least $1-\alpha$.
+
+## Class Hierarchy
+
+```{mermaid}
+classDiagram
+    class BaseConformal {
+        <<abstract>>
+        +alpha: float
+        +q_hat: float | ndarray
+        +calibrate(*calib_args, axis)
+        +calculate_conformal_quantile(scores, axis)
+        +get_scores()*
+        +generate_intervals()*
+    }
+
+    class SplitConformal {
+        +score_type: "res" | "sign-res"
+        +get_scores(predicts, targets)
+        +generate_intervals(mu_pred)
+    }
+
+    class ConformalQuantileRegressor {
+        +score_type: "scaled" | "unscaled"
+        +get_scores(lower_q, upper_q, targets)
+        +generate_intervals(lower_q, upper_q)
+    }
+
+    class ConformalResidualFitting {
+        +score_type: "res" | "sign-res"
+        +get_scores(predicts, sigma, targets)
+        +generate_intervals(loc, sigma)
+    }
+
+    class Conformal {
+        <<factory>>
+        +__new__(method, score_type, alpha)
+    }
+
+    BaseConformal <|-- SplitConformal
+    BaseConformal <|-- ConformalQuantileRegressor
+    BaseConformal <|-- ConformalResidualFitting
+    Conformal ..> SplitConformal : creates
+    Conformal ..> ConformalQuantileRegressor : creates
+    Conformal ..> ConformalResidualFitting : creates
+```
+
+## Factory: `Conformal`
+
+The `Conformal` class in `twiga/distributions/conformal/core.py` is a factory that selects the appropriate method:
+
+```python
+from twiga.distributions.conformal.core import Conformal
+
+# Creates a SplitConformal instance
+cp = Conformal(method="residual", score_type="res", alpha=0.1)
+
+# Creates a ConformalQuantileRegressor instance
+cqr = Conformal(method="quantile", score_type="scaled", alpha=0.1)
+
+# Creates a ConformalResidualFitting instance
+crf = Conformal(method="residual-fitting", score_type="res", alpha=0.1)
+```
+
+## Configuration
+
+Conformal prediction is configured via [`ConformalConfig`](../core/config.md):
+
+```python
+from twiga.core.config import ConformalConfig
+
+config = ConformalConfig(
+    method="residual",       # "residual", "quantile", "residual-fitting"
+    score_type="res",        # method-dependent (see table below)
+    alpha=0.1,               # significance level (0 < alpha < 1)
+)
+```
+
+| Parameter | Type | Constraints | Description |
+|---|---|---|---|
+| `method` | `Literal["residual", "quantile", "residual-fitting"]` | Required | Conformal prediction method |
+| `score_type` | `Literal["scaled", "unscaled", "res", "sign-res"]` | Required | Non-conformity score type |
+| `alpha` | `float` | `0 < alpha < 1` | Significance level ($1-\alpha$ = target coverage) |
+
+### Valid Score Types per Method
+
+| Method | Class | Valid Score Types | Description |
+|---|---|---|---|
+| `"residual"` | `SplitConformal` | `"res"`, `"sign-res"` | Absolute or signed residuals |
+| `"quantile"` | `ConformalQuantileRegressor` | `"scaled"`, `"unscaled"` | CQR with or without scaling |
+| `"residual-fitting"` | `ConformalResidualFitting` | `"res"`, `"sign-res"` | Scale-adapted residuals |
+
+
+## Methods
+
+### Split Conformal (`method="residual"`)
+
+The simplest method. Computes non-conformity scores as residuals between predictions and targets.
+
+**Score types:**
+
+- `"res"`: $s_i = |y_i - \hat{y}_i|$ (absolute residuals)
+- `"sign-res"`: $s_i = y_i - \hat{y}_i$ (signed residuals)
+
+**Intervals:** $[\hat{y} - \hat{q}, \; \hat{y} + \hat{q}]$
+
+```python
+from twiga.distributions.conformal.base import SplitConformal
+
+cp = SplitConformal(score_type="res", alpha=0.1)
+cp.calibrate(predictions, targets)
+lower, upper = cp.generate_intervals(new_predictions)
+```
+
+:::{admonition} Tip
+:class: tip
+
+Split conformal works with any point prediction model and is the easiest to set up. Use this as a starting point.
+:::
+
+
+### Conformal Quantile Regression (`method="quantile"`)
+
+Requires a quantile regression model that produces lower and upper quantile predictions.
+
+**Score types:**
+
+- `"unscaled"`: $s_i = \max(q_{lo,i} - y_i, \; y_i - q_{hi,i})$
+- `"scaled"`: $s_i = \max\left(\frac{q_{lo,i} - y_i}{q_{hi,i} - q_{lo,i}}, \; \frac{y_i - q_{hi,i}}{q_{hi,i} - q_{lo,i}}\right)$
+
+**Intervals (unscaled):** $[q_{lo} - \hat{q}, \; q_{hi} + \hat{q}]$
+
+**Intervals (scaled):** $[q_{lo} - \hat{q} \cdot (q_{hi} - q_{lo}), \; q_{hi} + \hat{q} \cdot (q_{hi} - q_{lo})]$
+
+```python
+from twiga.distributions.conformal.cqr import ConformalQuantileRegressor
+
+cqr = ConformalQuantileRegressor(score_type="scaled", alpha=0.1)
+cqr.calibrate(lower_quantile, upper_quantile, targets)
+lower, upper = cqr.generate_intervals(lower_quantile_new, upper_quantile_new)
+```
+
+:::{admonition} Note
+:class: note
+
+Scaled CQR adapts interval width based on the model's quantile spread, producing narrower intervals where the model is more confident. Use with [quantile regression models](quantile-regression.md).
+:::
+
+
+### Conformal Residual Fitting (`method="residual-fitting"`)
+
+Requires a model that produces both a point prediction ($\mu$) and a scale estimate ($\sigma$).
+
+**Score types:**
+
+- `"res"`: $s_i = \frac{\hat{y}_i - y_i}{\sigma_i}$ (signed)
+- `"sign-res"`: $s_i = \frac{|\hat{y}_i - y_i|}{\sigma_i}$ (absolute)
+
+**Intervals:** $[\mu - \sigma \cdot \hat{q}, \; \mu + \sigma \cdot \hat{q}]$
+
+```python
+from twiga.distributions.conformal.crc import ConformalResidualFitting
+
+crf = ConformalResidualFitting(score_type="res", alpha=0.1)
+crf.calibrate(predictions, sigma, targets)
+lower, upper = crf.generate_intervals(new_predictions, new_sigma)
+```
+
+:::{admonition} Note
+:class: note
+
+Use residual-fitting with probabilistic models like [`GAUSSCATBOOSTModel`](../models/ml-models.md) or neural models with sigma outputs like [`MLPGAFModel`](../models/nn-models.md).
+:::
+
+
+## Integration with TwigaForecaster
+
+The [`TwigaForecaster`](../core/forecaster.md) manages conformal prediction end-to-end:
+
+```python
+from twiga.core.config import (
+    ConformalConfig, DataPipelineConfig, ForecasterConfig,
+)
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.ml.xgboost_model import XGBOOSTConfig
+
+# 1. Configure with conformal prediction
+conformal_config = ConformalConfig(
+    method="residual",
+    score_type="res",
+    alpha=0.1,
+)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[XGBOOSTConfig()],
+    train_params=train_config,
+    conformal_params=conformal_config,
+)
+
+# 2. Train
+forecaster.fit(train_df=train_df, val_df=val_df)
+
+# 3. Calibrate on held-out data
+forecaster.calibrate(calibrate_df=calibration_df)
+
+# 4. Generate prediction intervals
+interval_dict, times = forecaster.predict_interval(test_df=test_df)
+
+for model_name, (lower, point, upper) in interval_dict.items():
+    print(f"{model_name}: coverage target = {1 - conformal_config.alpha:.0%}")
+
+# 5. Evaluate interval quality
+predictions_df, metrics_df = forecaster.evaluate_interval_forecast(test_df=test_df)
+# metrics_df includes: picp (coverage), winkle-score, ace, nmpi, cwe
+```
+
+### Calibration Flow
+
+```{mermaid}
+sequenceDiagram
+    participant User
+    participant TF as TwigaForecaster
+    participant Conf as Conformal Factory
+    participant Model
+
+    User->>TF: calibrate(calibrate_df)
+    TF->>Model: predict(calibrate_df)
+    Model-->>TF: predictions
+    TF->>TF: get_ground_truth()
+    loop For each model
+        TF->>Conf: Conformal(method, score_type, alpha)
+        Conf-->>TF: conformal_instance
+        TF->>Conf: calibrate(predictions, targets)
+        Conf->>Conf: get_scores() → calculate_conformal_quantile()
+        Conf-->>TF: calibrated (q_hat set)
+        TF->>TF: store in self.conformal[model_name]
+    end
+```
+
+
+## API Reference
+
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.conformal.core.Conformal
+   :members:
+   :show-inheritance:
+```
+
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.conformal.base.BaseConformal
+   :members:
+   :show-inheritance:
+```
+
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.conformal.base.SplitConformal
+   :members:
+   :show-inheritance:
+```
