@@ -7,16 +7,7 @@
 - `twiga/models/ml/xgboost_model.py`  -  `XGBOOSTModel` / `XGBOOSTConfig`
 - `twiga/models/ml/lightgbm_model.py`  -  `LIGHTGBMModel` / `LIGHTGBMConfig`
 - `twiga/models/ml/lineareg_model.py`  -  `LINEAREGModel` / `LINEAREGConfig`
-- `twiga/models/ml/gausscatboost_model.py`  -  `GAUSSCATBOOSTModel` / `GAUSSCATBOOSTConfig`
-- `twiga/models/ml/prob/base_quantile.py`  -  `BaseQuantileRegressor` (quantile regression base)
-- `twiga/models/ml/qrcatboost_model.py`  -  `QRCATBOOSTModel` / `QRCATBOOSTConfig`
-- `twiga/models/ml/qrxgboost_model.py`  -  `QRXGBOOSTModel` / `QRXGBOOSTConfig`
-- `twiga/models/ml/qrlightgbm_model.py`  -  `QRLIGHTGBMModel` / `QRLIGHTGBMConfig`
 - `twiga/models/ml/randomforest_model.py`  -  `RANDOMFORESTModel` / `RANDOMFORESTConfig`
-- `twiga/models/ml/qrrandomforest_model.py`  -  `QRRANDOMFORESTModel` / `QRRANDOMFORESTConfig`
-- `twiga/models/ml/ngboostnormal_model.py`  -  `NGBOOSTNORMALModel` / `NGBOOSTNORMALConfig`
-- `twiga/models/ml/ngboostlognormal_model.py`  -  `NGBOOSTLOGNORMALModel` / `NGBOOSTLOGNORMALConfig`
-- `twiga/models/ml/ngboostexponential_model.py`  -  `NGBOOSTEXPONENTIALModel` / `NGBOOSTEXPONENTIALConfig`
 
 :::
 
@@ -105,7 +96,7 @@ Set `task_type="GPU"` to enable CUDA-based training. CatBoost's GPU implementati
 
 ### XGBOOSTModel
 
-XGBoost provides regularized gradient boosting with efficient histogram-based splits. Unlike CatBoost, the Twiga wrapper uses `XGBRegressor` directly -- XGBoost handles multi-output regression natively.
+XGBoost provides regularized gradient boosting with efficient histogram-based splits. Unlike CatBoost, the Twiga wrapper uses `XGBRegressor` directly - XGBoost handles multi-output regression natively.
 
 #### XGBOOSTConfig
 
@@ -165,7 +156,7 @@ LightGBM uses histogram-based gradient boosting with leaf-wise tree growth, maki
 | `min_data_in_leaf` | `(1, 100)` | `int` | Linear |
 | `n_estimators` | `(10, 200)` | `int` | Linear |
 | `max_depth` | `(1, 10)` | `int` | Linear |
-| `linear_tree` | `[True, False]` | `categorical` | -- |
+| `linear_tree` | `[True, False]` | `categorical` | - |
 | `iterations` | `(20, 1000)` | `int` | Linear |
 
 **Underlying estimator:** `MultiOutputRegressor(LGBMRegressor(**config.dict()))`
@@ -173,9 +164,9 @@ LightGBM uses histogram-based gradient boosting with leaf-wise tree growth, maki
 :::{admonition} Boosting strategies
 :class: note
 
-- **GBDT** (Gradient Boosted Decision Trees) -- the standard approach, generally the most robust.
-- **DART** (Dropouts meet Multiple Additive Regression Trees) -- applies dropout to trees for regularisation, can reduce overfitting at the cost of slower training.
-- **GOSS** (Gradient-based One-Side Sampling) -- keeps instances with large gradients and randomly samples those with small gradients, trading accuracy for speed on very large datasets.
+- **GBDT** (Gradient Boosted Decision Trees) - the standard approach, generally the most robust.
+- **DART** (Dropouts meet Multiple Additive Regression Trees) - applies dropout to trees for regularisation, can reduce overfitting at the cost of slower training.
+- **GOSS** (Gradient-based One-Side Sampling) - keeps instances with large gradients and randomly samples those with small gradients, trading accuracy for speed on very large datasets.
 :::
 
 
@@ -196,7 +187,7 @@ Ordinary least squares linear regression wrapped in `MultiOutputRegressor`. Serv
 
 | Parameter | Range | Type | Scale |
 |---|---|---|---|
-| `fit_intercept` | `[True, False]` | `categorical` | -- |
+| `fit_intercept` | `[True, False]` | `categorical` | - |
 
 **Underlying estimator:** `MultiOutputRegressor(LinearRegression(**config.dict()))`
 
@@ -223,7 +214,7 @@ Random Forest is an ensemble of decision trees trained via bagging with feature 
 | `max_depth` | `(1, 30)` | `int` | Linear |
 | `min_samples_split` | `(2, 20)` | `int` | Linear |
 | `min_samples_leaf` | `(1, 10)` | `int` | Linear |
-| `max_features` | `["sqrt", "log2", None]` | `categorical` | -- |
+| `max_features` | `["sqrt", "log2", None]` | `categorical` | - |
 
 **Underlying estimator:** `RandomForestRegressor(**config.dict())` (native multi-output, no `MultiOutputRegressor` needed).
 
@@ -234,315 +225,25 @@ Unlike most other ML models in Twiga, `RandomForestRegressor` natively handles m
 :::
 
 
-## Probabilistic Forecast Models
+## Probabilistic ML Models
 
-### GAUSSCATBOOSTModel
+All ML probabilistic models (GaussCatBoost, NGBoost Normal/LogNormal/Exponential, QR CatBoost/XGBoost/LightGBM/RandomForest) are documented on the [Probabilistic Forecasting](../probabilistic/index.md) pages:
 
-A two-stage Gaussian output model built on CatBoost. It trains separate `MultiOutputRegressor` estimators for the **mean** and **log-standard-deviation** of a Gaussian distribution, enabling native uncertainty estimation without quantile regression.
-
-#### GAUSSCATBOOSTConfig
-
-`GAUSSCATBOOSTConfig` extends [`CATBOOSTConfig`](#catboostconfig) with one additional field:
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `name` | `Literal["gausscatboost"]` | `"gausscatboost"` | Model identifier. |
-| `eval_metric` | `Literal["RMSE", "MAE", "SMAPE"]` | `"RMSE"` | Evaluation metric used by CatBoost when training with custom loss functions. |
-
-All other fields (including `task_type`, `random_state`, `verbose`, `allow_writing_files`, and `search_space`) are inherited from `CATBOOSTConfig`.
-
-#### Architecture
-
-```{mermaid}
-flowchart LR
-    X["Input Features"] --> MU["model_mu\n(GaussianMeanLoss)"]
-    MU --> Y_MU["Predicted Mean"]
-    Y_MU --> RESIDUAL["Residuals\nlog(|y - mean| + eps)"]
-    X --> SIGMA["model_sigma\n(GaussianSigmaLoss)"]
-    RESIDUAL --> SIGMA
-    SIGMA --> Y_SIGMA["Predicted log(sigma)"]
-    Y_MU --> OUTPUT["Output: (mean, sigma)"]
-    Y_SIGMA --> OUTPUT
-```
-
-1. **Stage 1 -- Mean model** (`model_mu`): A `MultiOutputRegressor(CatBoostRegressor)` trained with `GaussianMeanLoss`, a custom CatBoost loss that computes gradients for the mean of a Gaussian likelihood.
-2. **Stage 2 -- Sigma model** (`model_sigma`): A second `MultiOutputRegressor(CatBoostRegressor)` trained on `log(|residuals| + epsilon)` using `GaussianSigmaLoss`, which computes gradients for `log(sigma)`.
-
-The `predict()` method returns a **tuple** `(mean, sigma)` instead of a single array, where `sigma = exp(log_sigma_prediction)`.
-
-:::{admonition} Custom loss functions
-:class: warning
-
-`GaussianMeanLoss` and `GaussianSigmaLoss` implement `calc_ders_range` for CatBoost's custom objective interface. The `eval_metric` field must be set to a standard CatBoost metric (e.g., `"RMSE"`) because custom losses do not provide their own evaluation metric.
-:::
-
-
-:::{admonition} Gaussian ML vs. Quantile Regression
-:class: tip
-
-| Approach | Assumption | Output | When to use |
-| --- | --- | --- | --- |
-| `GAUSSCATBOOSTModel` | Gaussian residuals | `(μ, σ)` | When residuals are approximately symmetric; interval width adapts to local variance |
-| `QRLIGHTGBMModel` / `QRXGBOOSTModel` / `QRCATBOOSTModel` | Distribution-free | Quantile array | When residuals are skewed or heavy-tailed; quantiles are learned directly |
-
-For skewed targets (PV output, price spikes) prefer quantile regression. For near-symmetric load signals prefer the Gaussian approach  -  it is more sample-efficient and produces smoother intervals.
-:::
-
-
-## Quantile Regression Models
-
-Quantile regression models produce prediction intervals by fitting separate quantile estimates rather than a single point forecast. Twiga provides quantile variants for all three gradient-boosted tree engines.
-
-For more on probabilistic forecasting approaches, see [Quantile Regression](../probabilistic/quantile-regression.md).
-
-### BaseQuantileRegressor
-
-`BaseQuantileRegressor` extends `BaseRegressor` with per-quantile model management. It serves as the base class for `QRCATBOOSTModel`, `QRXGBOOSTModel`, and `QRLIGHTGBMModel`.
-
-#### Constructor
-
-```python
-BaseQuantileRegressor(
-    data_pipeline: Any | None = None,
-    model_instance: Any = None,
-    model_config: dict | None = None,
-    quantiles: list[float] | None = None,
-    conf_level: float = 0.05,
-)
-```
-
-| Attribute | Type | Description |
-|---|---|---|
-| `quantiles` | `list[float]` | Sorted list of quantile fractions, automatically includes `conf_level / 2` and `1 - conf_level / 2`. |
-| `conf_level` | `float` | Confidence level for interval bounds (e.g., `0.1` produces a 90% prediction interval). |
-| `supports_multi_output` | `bool` | Whether the underlying engine supports multi-output natively. |
-| `models` | `dict[float, Any]` | One trained model per quantile (LightGBM), or a single `MultiOutputRegressor` (CatBoost, XGBoost). |
-
-#### Per-Engine Handling
-
-Each gradient-boosted engine uses a different mechanism for quantile regression:
-
-| Engine | Strategy | Implementation |
-|---|---|---|
-| **CatBoost** | Multi-quantile loss | Single `MultiOutputRegressor(CatBoostRegressor)` with `loss_function="MultiQuantile:alpha=q1,q2,..."` -- all quantiles are predicted in one model. |
-| **XGBoost** | Quantile alpha | Single `MultiOutputRegressor(XGBRegressor)` with `objective="reg:quantileerror"` and `quantile_alpha=[q1, q2, ...]`. |
-| **LightGBM** | Per-quantile models | A separate `MultiOutputRegressor(LGBMRegressor)` is trained for each quantile with `objective="quantile"` and `alpha=qi`. |
-
-#### Key Methods
-
-| Method | Signature | Description |
-|---|---|---|
-| `fit` | `fit(X: np.ndarray, y: np.ndarray, verbose: bool = False) -> BaseQuantileRegressor` | Trains all quantile models. If models are stored as a `dict` (LightGBM), iterates and fits each; otherwise fits the single model. |
-| `predict` | `predict(X: np.ndarray, sigma: bool = False) -> tuple` | Returns `(median_prediction, sigma_or_quantiles)`. When `sigma=True`, returns the sigma (inter-quantile range); otherwise returns the full quantile predictions array of shape `(batch, num_quantiles, horizon, num_targets)`. |
-| `forecast` | `forecast(x: np.ndarray, sigma: bool = False) -> dict \| tuple` | When `sigma=True`, returns `{"loc": median, "scale": sigma}`; otherwise returns `(median, quantile_predictions)`. |
-
-:::{admonition} Quantile merging
-:class: info
-
-User-specified quantiles are merged with the confidence bounds derived from `conf_level`. For example, with `quantiles=[0.25, 0.5, 0.75]` and `conf_level=0.1`, the final sorted quantile list is `[0.05, 0.25, 0.5, 0.75, 0.95]`.
-:::
-
-
-### QRCATBOOSTModel
-
-Quantile regression CatBoost using `MultiQuantile` loss. All quantiles are predicted in a single forward pass.
-
-#### QRCATBOOSTConfig
-
-`QRCATBOOSTConfig` extends [`CATBOOSTConfig`](#catboostconfig):
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `name` | `Literal["qrcatboost"]` | `"qrcatboost"` | Model identifier. |
-| `quantiles` | `list \| None` | `[0.05, 0.25, 0.5, 0.75, 0.95]` | Quantile fractions for fitting. |
-| `conf_level` | `float \| None` | `0.1` | Confidence level for prediction intervals. |
-
-All other fields and the search space are inherited from `CATBOOSTConfig`.
-
-
-### QRXGBOOSTModel
-
-Quantile regression XGBoost using the `reg:quantileerror` objective with `quantile_alpha`.
-
-#### QRXGBOOSTConfig
-
-`QRXGBOOSTConfig` extends [`XGBOOSTConfig`](#xgboostconfig):
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `name` | `Literal["qrxgboost"]` | `"qrxgboost"` | Model identifier. |
-| `quantiles` | `list \| None` | `[0.05, 0.25, 0.5, 0.75, 0.95]` | Quantile fractions for fitting. |
-| `conf_level` | `float \| None` | `0.1` | Confidence level for prediction intervals. |
-| `objective` | `Literal["reg:quantileerror"]` | `"reg:quantileerror"` | XGBoost quantile error objective (overrides the parent default). |
-
-All other fields and the search space are inherited from `XGBOOSTConfig`.
-
-
-### QRLIGHTGBMModel
-
-Quantile regression LightGBM using per-quantile `LGBMRegressor` models with `objective="quantile"`.
-
-#### QRLIGHTGBMConfig
-
-`QRLIGHTGBMConfig` extends [`LIGHTGBMConfig`](#lightgbmconfig):
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `name` | `Literal["qrlightgbm"]` | `"qrlightgbm"` | Model identifier. |
-| `quantiles` | `list \| None` | `[0.05, 0.25, 0.5, 0.75, 0.95]` | Quantile fractions for fitting. |
-| `conf_level` | `float \| None` | `0.1` | Confidence level for prediction intervals. |
-| `objective` | `Literal["quantile"]` | `"quantile"` | LightGBM quantile objective (overrides the parent default). |
-
-All other fields and the search space are inherited from `LIGHTGBMConfig`.
-
-:::{admonition} Training time for LightGBM quantile regression
-:class: note
-
-Because LightGBM trains a **separate model per quantile**, training time scales linearly with the number of quantiles. With the default 5 quantiles plus 2 confidence bounds (7 total), expect roughly 7x the training time of a single point forecast model. CatBoost and XGBoost predict all quantiles in a single model, making them more efficient for large quantile sets.
-:::
-
-
-### QRRANDOMFORESTModel
-
-Quantile regression using `quantile_forest.RandomForestQuantileRegressor`. Unlike the gradient-boosted quantile models, a **single forest is trained once** and any set of quantiles can be extracted at inference time without retraining. Monotonicity across quantiles is enforced post-hoc via isotonic regression.
-
-#### QRRANDOMFORESTConfig
-
-`QRRANDOMFORESTConfig` extends [`RANDOMFORESTConfig`](#randomforestconfig):
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `name` | `Literal["qrrandomforest"]` | `"qrrandomforest"` | Model identifier. |
-| `quantiles` | `list[float] \| None` | `[0.05, 0.25, 0.5, 0.75, 0.95]` | Quantile fractions for prediction. |
-| `conf_level` | `float \| None` | `0.1` | Confidence level for prediction interval bounds. |
-
-All other fields and the search space are inherited from `RANDOMFORESTConfig`.
-
-#### Inference Architecture
-
-The model calls `predict(X, quantiles=[...])` on the trained `RandomForestQuantileRegressor`, which returns an array of shape `(B, n_quantiles, horizon, num_targets)`. Monotonicity is then enforced via isotonic regression applied independently per sample and target.
-
-:::{admonition} Single-model inference
-:class: tip
-
-Because `RandomForestQuantileRegressor` stores the full leaf-node empirical distribution during training, any quantile can be queried at prediction time with no retraining. This makes `QRRANDOMFORESTModel` more efficient than `QRLIGHTGBMModel` (which trains one model per quantile) when many quantile levels are needed.
-:::
-
-
-## Natural Gradient Boosting Models
-
-NGBoost (Natural Gradient Boosting) jointly optimises all parameters of a probability distribution using the natural gradient  -  the gradient pre-multiplied by the inverse Fisher information matrix. Unlike the two-stage Gaussian models (`GAUSS*`), which fit mean and variance separately, NGBoost fits both parameters simultaneously through a single boosted ensemble, producing better-calibrated distributions.
-
-Twiga provides three NGBoost models, one for each supported output distribution. All share the same config structure (only `name` and the internal `_dist` differ) and inherit from `BaseNGBoostRegressor`, which trains one `NGBRegressor` per flattened output column.
-
-### NGBOOSTNORMALModel
-
-Fits a Gaussian distribution N(μ, σ²) by jointly optimising both the mean and standard deviation through natural gradient boosting.
-
-#### NGBOOSTNORMALConfig
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `name` | `Literal["ngboostnormal"]` | `"ngboostnormal"` | Model identifier. Excluded from parameter dumps. |
-| `domain` | `Literal["ml"]` | `"ml"` | Domain identifier. Excluded from parameter dumps. |
-| `n_estimators` | `int` | `500` | Number of boosting rounds. |
-| `learning_rate` | `float` | `0.01` | Shrinkage applied to each boosting step. |
-| `minibatch_frac` | `float` | `1.0` | Fraction of training data used per boosting round. |
-| `col_sample` | `float` | `1.0` | Fraction of features sampled per tree. |
-| `random_state` | `int` | `42` | Random seed for reproducibility. |
-| `score` | `Literal["LogScore", "CRPScore"]` | `"LogScore"` | Scoring rule used as the training objective. Excluded from parameter dumps. |
-| `search_space` | `BaseSearchSpace` | *(see below)* | Default hyperparameter search space. Excluded from parameter dumps. |
-
-**Default Search Space:**
-
-| Parameter | Range | Type | Scale |
-|---|---|---|---|
-| `n_estimators` | `(100, 1000)` | `int` | Linear |
-| `learning_rate` | `(1e-3, 0.3)` | `float` | Log |
-| `minibatch_frac` | `(0.1, 1.0)` | `float` | Linear |
-| `col_sample` | `(0.1, 1.0)` | `float` | Linear |
-
-**Output:** `(loc, scale)` = (mean μ, standard deviation σ).
-
-**Underlying estimator:** Per-output `NGBRegressor(Dist=Normal, ...)`.
-
-:::{admonition} NGBoost vs. two-stage Gaussian models
-:class: tip
-
-| Approach | Joint optimisation | When to use |
-|---|---|---|
-| `NGBOOSTNORMALModel` | Yes  -  μ and σ optimised together via natural gradient | Well-calibrated uncertainty, moderate dataset sizes |
-| `GAUSS*Model` | No  -  σ fitted on residuals of a separate μ model | Very large datasets where NGBoost per-column training is slow |
-
-NGBoost tends to produce better-calibrated prediction intervals. The two-stage approach is faster and scales better to very large datasets.
-:::
-
-
-### NGBOOSTLOGNORMALModel
-
-Fits a LogNormal distribution, appropriate for strictly positive targets such as solar irradiance, wind power, or non-negative electricity prices.
-
-#### NGBOOSTLOGNORMALConfig
-
-`NGBOOSTLOGNORMALConfig` shares the same fields as `NGBOOSTNORMALConfig` with:
-
-| Field | Type | Default | Description |
-| --- | --- | --- | --- |
-| `name` | `Literal["ngboostlognormal"]` | `"ngboostlognormal"` | Model identifier. |
-
-**Output:** `(loc, scale)` = (geometric mean exp(μ_log), log-space standard deviation σ_log).
-
-**Underlying estimator:** Per-output `NGBRegressor(Dist=LogNormal, ...)`.
-
-:::{admonition} Interpreting LogNormal output
-:class: info
-
-`loc` is the **geometric mean** (the exponentiated log-space mean), not the arithmetic mean. `scale` is the standard deviation in log space. To recover the arithmetic mean, use `exp(log(loc) + scale² / 2)`. For prediction intervals, exponentiate the log-space quantiles.
-:::
-
-
-### NGBOOSTEXPONENTIALModel
-
-Fits an Exponential distribution parameterised by its scale (1/λ). Suitable for non-negative targets with a memoryless property, such as inter-arrival times or strictly positive residuals.
-
-#### NGBOOSTEXPONENTIALConfig
-
-`NGBOOSTEXPONENTIALConfig` shares the same fields as `NGBOOSTNORMALConfig` with:
-
-| Field | Type | Default | Description |
-| --- | --- | --- | --- |
-| `name` | `Literal["ngboostexponential"]` | `"ngboostexponential"` | Model identifier. |
-
-**Output:** Both `loc` and `scale` equal the predicted scale parameter 1/λ (the Exponential distribution has a single parameter).
-
-**Underlying estimator:** Per-output `NGBRegressor(Dist=Exponential, ...)`.
-
-:::{admonition} Single-parameter distribution
-:class: note
-
-The Exponential distribution is fully characterised by its scale (1/λ), so both `loc` and `scale` in the output tuple carry the same value. Mean and standard deviation are both equal to 1/λ. Use this model when you believe the target follows a memoryless decay process.
-:::
+- [Distribution Families](../probabilistic/distributions.md) — GaussCatBoost, NGBoost Normal, NGBoost LogNormal, NGBoost Exponential
+- [Quantile Regression](../probabilistic/quantile-regression.md) — QR CatBoost, QR XGBoost, QR LightGBM, QR Random Forest
 
 
 ## Model Comparison
 
-The table below summarises all ML models, their output types, and key characteristics.
+The table below covers the **point forecast** ML models. For the full picture including probabilistic variants see the [Model Catalog Overview](index.md).
 
 | Model | Config Class | Output | Wrapping | GPU |
-| --- | --- | --- | --- | --- |
+|---|---|---|---|---|
 | `CATBOOSTModel` | `CATBOOSTConfig` | Point | `MultiOutputRegressor(CatBoostRegressor)` | Yes |
 | `XGBOOSTModel` | `XGBOOSTConfig` | Point | `XGBRegressor` (native multi-output) | Yes |
 | `LIGHTGBMModel` | `LIGHTGBMConfig` | Point | `MultiOutputRegressor(LGBMRegressor)` | No |
 | `LINEAREGModel` | `LINEAREGConfig` | Point | `MultiOutputRegressor(LinearRegression)` | No |
-| `GAUSSCATBOOSTModel` | `GAUSSCATBOOSTConfig` | Gaussian (μ, σ)  -  joint NLL via `RMSEWithUncertainty` | `CatBoostRegressor` per output | Yes |
-| `QRCATBOOSTModel` | `QRCATBOOSTConfig` | Quantiles | `MultiOutputRegressor` + MultiQuantile loss | Yes |
-| `QRXGBOOSTModel` | `QRXGBOOSTConfig` | Quantiles | `MultiOutputRegressor` + quantile_alpha | Yes |
-| `QRLIGHTGBMModel` | `QRLIGHTGBMConfig` | Quantiles | Per-quantile `MultiOutputRegressor` | No |
 | `RANDOMFORESTModel` | `RANDOMFORESTConfig` | Point | `RandomForestRegressor` (native multi-output) | No |
-| `QRRANDOMFORESTModel` | `QRRANDOMFORESTConfig` | Quantile | `RandomForestQuantileRegressor` (single model, any quantile) | No |
-| `NGBOOSTNORMALModel` | `NGBOOSTNORMALConfig` | Gaussian (μ, σ)  -  joint NGB | Per-output `NGBRegressor(Normal)` | No |
-| `NGBOOSTLOGNORMALModel` | `NGBOOSTLOGNORMALConfig` | LogNormal (geometric mean, σ_log) | Per-output `NGBRegressor(LogNormal)` | No |
-| `NGBOOSTEXPONENTIALModel` | `NGBOOSTEXPONENTIALConfig` | Exponential (scale=1/λ) | Per-output `NGBRegressor(Exponential)` | No |
 
 
 ## Usage Example
@@ -607,57 +308,6 @@ results_df, metrics_df = forecaster.evaluate_point_forecast(test_df=test_df)
 print(metrics_df)
 ```
 
-### Gaussian Probabilistic Example
-
-```python
-from twiga.models.ml.gausscatboost_model import GAUSSCATBOOSTConfig
-
-gauss_cat_config = GAUSSCATBOOSTConfig()
-
-forecaster = TwigaForecaster(
-    data_params=data_config,
-    model_params=[gauss_cat_config],
-    train_params=train_config,
-)
-
-forecaster.fit(train_df=train_df, val_df=val_df)
-
-# predict() returns (mu, sigma)  -  use predict_interval() for bounds
-interval_dict, _ = forecaster.predict_interval(test_df=test_df)
-
-for model_name, (lower, point, upper) in interval_dict.items():
-    print(f"{model_name}: lower={lower.shape}, point={point.shape}, upper={upper.shape}")
-```
-
-:::{admonition} Using Gaussian models with conformal calibration
-:class: note
-
-Gaussian ML models output `(μ, σ)` directly and can also be wrapped with conformal prediction for coverage guarantees. Pass `ConformalConfig(method="residual", score_type="res")` to `TwigaForecaster` and call `forecaster.calibrate(calibrate_df=val_df)` before `predict_interval()`.
-:::
-
-
-### Quantile Regression Example
-
-```python
-from twiga.models.ml.qrcatboost_model import QRCATBOOSTConfig
-from twiga.core.config import ConformalConfig
-
-qr_config = QRCATBOOSTConfig(
-    task_type="CPU",
-    quantiles=[0.1, 0.25, 0.5, 0.75, 0.9],
-    conf_level=0.1,
-)
-
-forecaster = TwigaForecaster(
-    data_params=data_config,
-    model_params=[qr_config],
-    train_params=train_config,
-)
-
-forecaster.fit(train_df=train_df)
-results_df, metrics_df = forecaster.evaluate_point_forecast(test_df=test_df)
-```
-
 ### Custom Search Space Example
 
 ```python
@@ -688,10 +338,72 @@ forecaster.fit(train_df=train_df)
 See [Hyperparameter Tuning](../advanced/hyperparameter-tuning.md) for advanced tuning recipes including warm-starting, pruning strategies, and multi-objective optimisation.
 
 
+## Class Reference
+
+### Autodoc: Base Classes
+
+```{eval-rst}
+.. autoclass:: twiga.models.ml.core.base_regressor.BaseRegressor
+   :members:
+   :show-inheritance:
+   :no-index:
+
+.. autoclass:: twiga.models.ml.prob.base_quantile.BaseQuantileRegressor
+   :members:
+   :show-inheritance:
+   :no-index:
+```
+
+### Autodoc: Point Forecast Models
+
+```{eval-rst}
+.. autoclass:: twiga.models.ml.catboost_model.CATBOOSTConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.catboost_model.CATBOOSTModel
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.lightgbm_model.LIGHTGBMConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.lightgbm_model.LIGHTGBMModel
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.xgboost_model.XGBOOSTConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.xgboost_model.XGBOOSTModel
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.randomforest_model.RANDOMFORESTConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.randomforest_model.RANDOMFORESTModel
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.lineareg_model.LINEAREGConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.lineareg_model.LINEAREGModel
+   :members:
+   :show-inheritance:
+```
+
+
 ## See Also
 
-- [Configuration System](../core/config.md) -- `BaseModelConfig`, `BaseSearchSpace`, and all config field references
-- [TwigaForecaster](../core/forecaster.md) -- training, prediction, and evaluation orchestration
-- [Model Catalog Overview](index.md) -- complete list of ML and NN models
-- [Quantile Regression](../probabilistic/quantile-regression.md) -- probabilistic forecasting with prediction intervals
-- [Hyperparameter Tuning](../advanced/hyperparameter-tuning.md) -- Optuna-based search space configuration and tuning workflows
+- [Configuration System](../core/config.md) - `BaseModelConfig`, `BaseSearchSpace`, and all config field references
+- [TwigaForecaster](../core/forecaster.md) - training, prediction, and evaluation orchestration
+- [Model Catalog Overview](index.md) - complete list of ML and NN models
+- [Quantile Regression](../probabilistic/quantile-regression.md) - QR CatBoost, XGBoost, LightGBM, RandomForest
+- [Distribution Families](../probabilistic/distributions.md) - GaussCatBoost, NGBoost Normal/LogNormal/Exponential
+- [Hyperparameter Tuning](../advanced/hyperparameter-tuning.md) - Optuna-based search space configuration and tuning workflows

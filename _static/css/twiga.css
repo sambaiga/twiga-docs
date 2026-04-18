@@ -6,18 +6,23 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Lato:wght@300;400;700&display=swap');
 
-/* ── Tokens ──────────────────────────────────────────────────── */
+/* ── Tokens ──────────────────────────────────────────────────────
+   Palette aligned to Parrotech brand identity:
+     Charcoal/Gunmetal  #263238  — primary dark
+     Persian Green      #00bfa5  — primary turquoise accent
+   --tw-teal (#0f718e) is kept darker for WCAG AA contrast on white.
+   ─────────────────────────────────────────────────────────────── */
 :root {
-  --tw-teal:         #0f718e;
-  --tw-teal-mid:     #069fac;
-  --tw-teal-light:   #e0f4f7;
-  --tw-teal-bg:      #f0f9fa;
-  --tw-charcoal:     #1c2429;
-  --tw-slate:        #455a64;
-  --tw-border:       #c8e0e5;
-  --tw-surface:      #f5f9fa;
+  --tw-teal:         #0f718e;   /* dark teal — headings/links, 4.6:1 on white */
+  --tw-teal-mid:     #00bfa5;   /* Parrotech Persian Green — accents, icons, hover */
+  --tw-teal-light:   #e0f8f4;   /* tint of #00bfa5 */
+  --tw-teal-bg:      #f0fdf9;   /* near-white tint of #00bfa5 */
+  --tw-charcoal:     #263238;   /* Parrotech Charcoal/Gunmetal */
+  --tw-slate:        #455a64;   /* Blue Grey 600 — muted text */
+  --tw-border:       #b3e8e0;   /* light border tinted toward #00bfa5 */
+  --tw-surface:      #f5faf9;   /* off-white surface */
   --tw-white:        #ffffff;
-  --tw-text:         #2b3a42;
+  --tw-text:         #263238;   /* body text — Parrotech charcoal */
 
   --pst-color-primary:           var(--tw-teal);
   --pst-color-primary-highlight: var(--tw-teal-mid);
@@ -30,12 +35,12 @@
 }
 
 html[data-theme="dark"] {
-  --tw-teal:       #069fac;
-  --tw-teal-mid:   #00c0bf;
-  --tw-teal-light: rgba(6,159,172,0.12);
-  --tw-teal-bg:    rgba(6,159,172,0.08);
-  --tw-border:     rgba(6,159,172,0.25);
-  --tw-surface:    #1e2d32;
+  --tw-teal:       #00bfa5;   /* Parrotech turquoise — good contrast on dark surfaces */
+  --tw-teal-mid:   #00bfa5;
+  --tw-teal-light: rgba(0,191,165,0.12);
+  --tw-teal-bg:    rgba(0,191,165,0.08);
+  --tw-border:     rgba(0,191,165,0.25);
+  --tw-surface:    #1e2d32;   /* dark variant of Parrotech charcoal */
   --tw-text:       #d8eaee;
   --pst-color-primary:           var(--tw-teal);
   --pst-color-primary-highlight: var(--tw-teal-mid);
@@ -89,20 +94,36 @@ a:hover { color: var(--tw-teal-mid); }
   border-radius: 4px;
   transition: color 0.15s, background 0.15s;
   white-space: nowrap;
+  box-shadow: none !important;
 }
 
 html[data-theme="dark"] .navbar-nav .nav-link { color: #d8eaee !important; }
 
 .navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:active,
 .navbar-nav .nav-item.active > .nav-link,
 .navbar-nav .current > .nav-link {
   color: var(--tw-teal) !important;
   background-color: var(--tw-teal-light) !important;
+  box-shadow: none !important;
 }
 
-html[data-theme="dark"] .navbar-nav .nav-link:hover {
+.navbar-nav .nav-link:focus,
+.navbar-nav .nav-link:focus-visible {
+  color: var(--tw-teal) !important;
+  background-color: var(--tw-teal-light) !important;
+  outline: 2px solid var(--tw-teal) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .navbar-nav .nav-link:hover,
+html[data-theme="dark"] .navbar-nav .nav-link:active,
+html[data-theme="dark"] .navbar-nav .nav-link:focus,
+html[data-theme="dark"] .navbar-nav .nav-link:focus-visible {
   background-color: var(--tw-teal-bg) !important;
   color: var(--tw-teal) !important;
+  box-shadow: none !important;
 }
 
 /* Dropdown menu */
@@ -168,14 +189,26 @@ html[data-theme="dark"] .navbar-nav .nav-link:hover {
 /* ── Content ─────────────────────────────────────────────────── */
 .bd-content { max-width: 900px; }
 
+/* Hide the RST-generated h1 on the landing page — the hero section serves this role.
+   Sphinx still reads it for the <title> tag and toctree label. */
+.bd-article-container:has(.tw-landing) h1:first-of-type {
+  display: none;
+}
+
 /* Landing page — full width, centered */
 .tw-landing {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 2rem 1rem;
 }
 
 /* Override content constraints on pages that contain the landing section */
+.bd-main .bd-content:has(.tw-landing),
+.bd-main:has(.tw-landing) .bd-article-container {
+  max-width: none !important;
+  padding: 0 !important;
+}
+
 .bd-article-container:has(.tw-landing) .bd-article,
 .bd-article:has(.tw-landing) {
   max-width: none !important;
@@ -253,6 +286,7 @@ html[data-theme="dark"] .sd-card { background: var(--tw-surface) !important; }
   color: #fff !important;
   font-family: 'Poppins', sans-serif; font-weight: 600;
   border-radius: 7px 7px 0 0; padding: 10px 16px;
+  border-bottom: none !important;
 }
 .sd-card-footer a {
   color: var(--tw-teal) !important; font-weight: 700;
@@ -386,6 +420,88 @@ dl.py.class > dt, dl.py.function > dt, dl.py.method > dt {
 .tw-code-snippet .kw { color: var(--tw-teal-mid); }
 .tw-code-snippet .st { color: #a8d8e0; }
 
+/* ════════════════════════════════════════════════════════════════
+   FEATURE CARD GRID  (2-col static cards on landing page)
+   ════════════════════════════════════════════════════════════════ */
+
+.tw-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 3rem;
+}
+
+@media (max-width: 768px) {
+  .tw-feature-grid { grid-template-columns: 1fr; }
+}
+
+.tw-fcard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.4rem 1.4rem 1.1rem;
+  background: var(--tw-white);
+  border: 1px solid var(--tw-border);
+  border-radius: 10px;
+  transition: box-shadow 0.2s, transform 0.15s, border-color 0.2s;
+}
+
+html[data-theme="dark"] .tw-fcard { background: var(--tw-surface); }
+
+.tw-fcard:hover {
+  box-shadow: 0 4px 20px rgba(15,113,142,0.12);
+  transform: translateY(-2px);
+  border-color: var(--tw-teal-mid);
+}
+
+.tw-fcard-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.tw-fcard-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--tw-teal);
+  margin: 0;
+  border: none !important;
+  padding: 0 !important;
+  line-height: 1.3;
+}
+
+.tw-fcard-body {
+  font-size: 0.875rem;
+  color: var(--tw-slate);
+  line-height: 1.7;
+  margin: 0;
+  flex: 1;
+}
+
+html[data-theme="dark"] .tw-fcard-body { color: #8aabb4; }
+
+.tw-fcard-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tw-teal) !important;
+  text-decoration: none !important;
+  margin-top: 0.25rem;
+  transition: gap 0.15s, color 0.15s;
+}
+
+.tw-fcard-link:hover {
+  color: var(--tw-teal-mid) !important;
+  gap: 8px;
+  text-decoration: none !important;
+}
+
 /* ── Accordion feature list (Why Twiga section) ── */
 .tw-features {
   display: flex;
@@ -420,6 +536,7 @@ html[data-theme="dark"] .tw-feature { background: var(--tw-surface); }
   gap: 0.9rem;
   padding: 0.9rem 1.1rem;
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
   outline: none;
 }
@@ -495,9 +612,6 @@ html[data-theme="dark"] .tw-feature-body { color: #8aabb4; }
   .tw-feature-teaser { display: none; }
   .tw-feature-body { padding-left: 1.1rem; }
 }
-
-/* Mermaid */
-.mermaid { text-align: center; margin: 1.5rem 0; }
 
 /* Edit on GitHub button */
 .bd-header-article a.btn { border-color: var(--tw-teal); color: var(--tw-teal); font-size: 0.82rem; }
@@ -751,79 +865,222 @@ html[data-theme="dark"] .tw-level-intermediate { background: rgba(245,127,23,0.2
 html[data-theme="dark"] .tw-level-advanced     { background: rgba(198,40,40,0.2);  color: #ef9a9a; }
 
 /* ════════════════════════════════════════════════════════════════
-   OVERVIEW PAGE — subsystem card headers + diagram container
+   SUBSYSTEM GRADIENT HEADERS  (new — MLOps & overview cards)
    ════════════════════════════════════════════════════════════════ */
 
-/* Shared: white text on all colored headers */
-.tw-ovr-pipe,
-.tw-ovr-model,
-.tw-ovr-cv,
-.tw-ovr-met,
-.tw-ovr-conf,
-.tw-ovr-mlops {
-  color: #ffffff !important;
-  font-family: 'Poppins', sans-serif !important;
-  font-weight: 700 !important;
-  font-size: 0.9rem !important;
-  letter-spacing: 0.01em;
-  border-radius: 7px 7px 0 0;
+.tw-ovr-pipe  { background: linear-gradient(135deg, #0f718e, #069fac) !important; color: white !important; }
+.tw-ovr-model { background: linear-gradient(135deg, #0a6480, #0f718e) !important; color: white !important; }
+.tw-ovr-cv    { background: linear-gradient(135deg, #bf5500, #e07b39) !important; color: white !important; }
+.tw-ovr-met   { background: linear-gradient(135deg, #3949ab, #5c6bc0) !important; color: white !important; }
+.tw-ovr-conf  { background: linear-gradient(135deg, #1b5e20, #2e9e6b) !important; color: white !important; }
+.tw-ovr-mlops { background: linear-gradient(135deg, #880e4f, #c2185b) !important; color: white !important; }
+
+/* ════════════════════════════════════════════════════════════════
+   NAVBAR VERSION DROPDOWN  (Bokeh-style version indicator)
+   ════════════════════════════════════════════════════════════════ */
+
+.tw-version-wrapper {
+  display: flex;
+  align-items: center;
 }
 
-/* Per-subsystem gradient — matches diagram color bands */
-.tw-ovr-pipe  { background: linear-gradient(135deg, #0f718e, #069fac) !important; }
-.tw-ovr-model { background: linear-gradient(135deg, #0a6480, #0f718e) !important; }
-.tw-ovr-cv    { background: linear-gradient(135deg, #bf5500, #e07b39) !important; }
-.tw-ovr-met   { background: linear-gradient(135deg, #3949ab, #5c6bc0) !important; }
-.tw-ovr-conf  { background: linear-gradient(135deg, #1b5e20, #2e9e6b) !important; }
-.tw-ovr-mlops { background: linear-gradient(135deg, #880e4f, #c2185b) !important; }
+.tw-version-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--tw-border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--tw-charcoal) !important;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
 
-/* Card body: slightly tinted by subsystem */
-.tw-ovr-pipe  ~ .sd-card-body,
-.tw-ovr-model ~ .sd-card-body { background: #f4fbfd; }
-.tw-ovr-cv    ~ .sd-card-body { background: #fef8f2; }
-.tw-ovr-met   ~ .sd-card-body { background: #f2f4fc; }
-.tw-ovr-conf  ~ .sd-card-body { background: #f2fbf5; }
-.tw-ovr-mlops ~ .sd-card-body { background: #fdf2f6; }
+.tw-version-btn:hover,
+.tw-version-btn:focus,
+.tw-version-btn.show {
+  border-color: var(--tw-teal) !important;
+  background: var(--tw-teal-light) !important;
+  color: var(--tw-teal) !important;
+  box-shadow: none !important;
+}
 
-html[data-theme="dark"] .tw-ovr-pipe  ~ .sd-card-body,
-html[data-theme="dark"] .tw-ovr-model ~ .sd-card-body { background: rgba(15,113,142,0.08); }
-html[data-theme="dark"] .tw-ovr-cv    ~ .sd-card-body { background: rgba(224,123,57,0.08); }
-html[data-theme="dark"] .tw-ovr-met   ~ .sd-card-body { background: rgba(92,107,192,0.08); }
-html[data-theme="dark"] .tw-ovr-conf  ~ .sd-card-body { background: rgba(46,158,107,0.08); }
-html[data-theme="dark"] .tw-ovr-mlops ~ .sd-card-body { background: rgba(194,24,91,0.08);  }
+html[data-theme="dark"] .tw-version-btn {
+  color: var(--tw-text) !important;
+  border-color: var(--tw-border);
+}
 
-/* Card footer link — inherit subsystem accent */
-.sd-card:has(.tw-ovr-pipe)  .sd-card-footer a { color: #0f718e !important; }
-.sd-card:has(.tw-ovr-model) .sd-card-footer a { color: #0f718e !important; }
-.sd-card:has(.tw-ovr-cv)    .sd-card-footer a { color: #bf5500 !important; }
-.sd-card:has(.tw-ovr-met)   .sd-card-footer a { color: #3949ab !important; }
-.sd-card:has(.tw-ovr-conf)  .sd-card-footer a { color: #1b5e20 !important; }
-.sd-card:has(.tw-ovr-mlops) .sd-card-footer a { color: #880e4f !important; }
+html[data-theme="dark"] .tw-version-btn:hover,
+html[data-theme="dark"] .tw-version-btn.show {
+  background: var(--tw-teal-bg) !important;
+  color: var(--tw-teal) !important;
+}
 
-/* Mermaid diagram: light teal container on overview page */
-.tw-arch-diagram {
-  background: var(--tw-surface);
+.tw-version-label {
+  font-size: 0.78rem;
+}
+
+.tw-alpha-pill {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--tw-teal-bg);
+  color: var(--tw-teal);
   border: 1px solid var(--tw-border);
   border-radius: 10px;
-  padding: 1.5rem 1rem;
-  margin: 1.5rem 0 2rem;
-  text-align: center;
+  padding: 1px 6px;
+  line-height: 1.4;
 }
 
-/* Design principle definition list on overview page */
-.tw-principles dl dt {
+.tw-version-btn.show .tw-alpha-pill,
+.tw-version-btn:hover .tw-alpha-pill {
+  background: rgba(15,113,142,0.15);
+  border-color: var(--tw-teal);
+}
+
+.tw-version-menu {
+  min-width: 270px;
+  padding: 14px 16px !important;
+  border: 1px solid var(--tw-border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 24px rgba(15,113,142,0.13) !important;
+  margin-top: 6px !important;
+}
+
+html[data-theme="dark"] .tw-version-menu {
+  background: var(--tw-surface) !important;
+  border-color: var(--tw-border) !important;
+}
+
+.tw-version-info p {
+  font-size: 0.85rem;
+  color: var(--tw-text);
+  margin: 0 0 10px;
+  line-height: 1.55;
+}
+
+.tw-version-changelog-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--tw-teal) !important;
+  text-decoration: none !important;
+  letter-spacing: 0.02em;
+}
+
+.tw-version-changelog-link:hover {
+  color: var(--tw-teal-mid) !important;
+  text-decoration: underline !important;
+}
+
+/* ── Mermaid ─────────────────────────────────────────────────── */
+.mermaid { text-align: center; margin: 1.5rem 0; }
+.mermaid svg { max-width: 100% !important; height: auto !important; }
+
+/* ════════════════════════════════════════════════════════════════
+   BORROWED FROM BOKEH — brand-neutral polish
+   ════════════════════════════════════════════════════════════════ */
+
+/* Ligatures cause bad kerning in technical names — disable globally */
+* { font-variant-ligatures: none; }
+
+/* Hide the auto-generated sidebar section title — Twiga caption-text already
+   handles section labels via .bd-sidebar-primary .caption-text */
+.bd-links__title { display: none; }
+
+/* sphinx-design card rows — add vertical breathing room between rows */
+.sd-row { --sd-gutter-y: 1.5em; }
+
+/* API reference — lighter weight signatures are easier to scan */
+.class .sig,
+.function .sig,
+.sig .property { font-weight: 400; }
+
+/* Optional image border class for screenshots in notebooks/guides.
+   Shadow uses Twiga teal tint instead of Bokeh's neutral grey. */
+img.image-border {
+  border: 1px solid var(--tw-border);
+  margin-bottom: 1.15rem;
+  border-radius: 4px;
+  box-shadow: 1px 2px 6px rgba(15,113,142,0.12);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PANDAS DATAFRAME  (notebook output tables)
+   Adapted from Bokeh/nbsphinx — colors remapped to Twiga tokens.
+   ════════════════════════════════════════════════════════════════ */
+
+.dataframe {
+  max-width: 100%;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+table.dataframe {
+  border: none !important;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 12px;
+  table-layout: fixed;
+  color: var(--tw-text);
+}
+
+table.dataframe thead {
+  border-bottom: 2px solid var(--tw-teal);
+  vertical-align: bottom;
+}
+
+table.dataframe tr,
+table.dataframe th,
+table.dataframe td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.45em 0.6em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+
+table.dataframe th {
   font-family: 'Poppins', sans-serif;
   font-weight: 700;
-  font-size: 0.93rem;
   color: var(--tw-teal);
-  margin-top: 1.2rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.tw-principles dl dd {
-  margin-left: 1.5rem;
-  font-size: 0.9rem;
-  color: var(--tw-slate);
-  line-height: 1.7;
+table.dataframe tbody tr:nth-child(odd) {
+  background: var(--tw-surface);
 }
 
-html[data-theme="dark"] .tw-principles dl dd { color: #8aabb4; }
+table.dataframe tbody tr:hover {
+  background: var(--tw-teal-light);
+}
+
+html[data-theme="dark"] table.dataframe {
+  color: var(--tw-text);
+}
+
+html[data-theme="dark"] table.dataframe thead {
+  border-bottom-color: var(--tw-teal);
+}
+
+html[data-theme="dark"] table.dataframe tbody tr:nth-child(odd) {
+  background: rgba(255,255,255,0.04);
+}
+
+html[data-theme="dark"] table.dataframe tbody tr:hover {
+  background: var(--tw-teal-bg);
+}

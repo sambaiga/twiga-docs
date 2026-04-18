@@ -1,72 +1,92 @@
 # Key Concepts
 
-<details>
-<summary>Source Files</summary>
-
-- `twiga/core/config/base.py`
-- `twiga/core/data/pipeline.py`
-- `twiga/forecaster/core.py`
-
-</details>
+```{toctree}
+:hidden:
+```
 
 ## Time Series Terminology
 
-Twiga uses the following terminology consistently throughout the framework:
-
 | Term | Description | Config Field |
-|---|---|---|
-| **Lookback window** | Number of past time steps used as input features | `DataPipelineConfig.lookback_window_size` |
+| --- | --- | --- |
+| **Lookback window** | Number of past time steps fed to the model as input | `DataPipelineConfig.lookback_window_size` |
 | **Forecast horizon** | Number of future time steps to predict | `DataPipelineConfig.forecast_horizon` |
-| **Period** | Sampling frequency of the time series (pandas offset alias) | `DataPipelineConfig.period` |
+| **Period** | Sampling frequency (pandas offset alias, e.g. `"1H"`, `"30min"`) | `DataPipelineConfig.period` |
 | **Target feature** | The variable(s) to forecast | `DataPipelineConfig.target_feature` |
-| **Exogenous features** | External variables available only for historical data | `DataPipelineConfig.exogenous_features` |
-| **Future covariates** | External variables available for both past and future | `DataPipelineConfig.future_covariates` |
+| **Historical features** | Features whose future values are unknown (lookback only) | `DataPipelineConfig.historical_features` |
+| **Calendar features** | Cyclical temporal features derived from the timestamp (e.g. hour, day of week) | `DataPipelineConfig.calendar_features` |
+| **Exogenous features** | External features known over the full lookback + forecast horizon | `DataPipelineConfig.exogenous_features` |
+| **Future covariates** | External features known only over the forecast horizon | `DataPipelineConfig.future_covariates` |
+
+### Feature availability across the time axis
+
+The four feature types differ in which portion of the time axis they cover.
 
 ```{mermaid}
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#e0f8f4', 'primaryTextColor': '#263238', 'primaryBorderColor': '#0f718e', 'lineColor': '#0f718e', 'clusterBkg': '#f0fdf9', 'clusterBorder': '#00bfa5', 'titleColor': '#263238'}}}%%
 graph LR
-    subgraph "Lookback Window (past)"
-        A[t-L] --> B[t-L+1] --> C[...] --> D[t-1] --> E[t]
+    subgraph PAST["Lookback Window  ( t-L … t )"]
+        TP["target_feature\nas lagged input"]
+        HF["historical_features\npast only"]
+        CP["calendar_features\nderived from timestamp"]
+        EP["exogenous_features\nfull window known"]
     end
-    subgraph "Forecast Horizon (future)"
-        F[t+1] --> G[t+2] --> H[...] --> I[t+H]
+    subgraph FUTURE["Forecast Horizon  ( t+1 … t+H )"]
+        TF["target_feature\npredicted output"]
+        CF["calendar_features\nderived from timestamp"]
+        EF["exogenous_features\nfull horizon known"]
+        FC["future_covariates\nhorizon only"]
     end
-    E --> F
+    PAST -->|"t → t+1"| FUTURE
+
+    classDef target fill:#0f718e,stroke:#0f718e,color:#fff,rx:6
+    classDef hist   fill:#263238,stroke:#263238,color:#fff,rx:6
+    classDef cal    fill:#00bfa5,stroke:#00897b,color:#fff,rx:6
+    classDef exog   fill:#e0f8f4,stroke:#0f718e,color:#263238,rx:6
+    classDef fcov   fill:#f0fdf9,stroke:#00bfa5,color:#263238,rx:6
+
+    class TP,TF target
+    class HF hist
+    class CP,CF cal
+    class EP,EF exog
+    class FC fcov
 ```
+
+| Feature type | Lookback | Forecast horizon | Typical examples |
+| --- | --- | --- | --- |
+| `target_feature` | Used as lagged input | Predicted output | Electricity load, solar generation |
+| `historical_features` | Available | Not available | Sensor readings without NWP forecast |
+| `calendar_features` | Derived from timestamp | Derived from timestamp | Hour of day, day of week, month |
+| `exogenous_features` | Available | Available (full horizon) | NWP weather forecast, scheduled output |
+| `future_covariates` | Not used | Available (horizon only) | Day-ahead price signal, planned events |
+
+:::{admonition} Why the distinction matters
+:class: note
+
+`historical_features` can only contribute lag/rolling statistics — their future values are unknown. `exogenous_features` and `future_covariates` are passed directly into the forecast window so the model conditions on their future values. `calendar_features` are always derivable from the timestamp and computed automatically.
+:::
 
 ## Data Format Requirements
 
 Twiga expects a pandas `DataFrame` with:
 
-1. **A datetime column**  -  named `"timestamp"` by default (configurable via `date_column`)
-2. **One or more target columns**  -  the variable(s) to forecast
-3. **Optional feature columns**  -  exogenous variables, future covariates
+1. **A datetime column** named `"timestamp"` by default (configurable via `date_column`)
+2. **One or more target columns** — the variable(s) to forecast
+3. **Optional feature columns** — any combination of the four feature types
 
 ```python
 import pandas as pd
 
-# Example data format
 df = pd.DataFrame({
-    "timestamp": pd.date_range("2024-01-01", periods=1000, freq="1h"),
-    "load_mw": [100.0, 102.5, ...],       # target feature
-    "temperature": [25.0, 24.8, ...],      # exogenous feature
-    "ghi": [0.0, 0.0, ...],               # exogenous feature
+    "timestamp":   pd.date_range("2024-01-01", periods=1000, freq="1h"),
+    "load_mw":     [...],   # target_feature
+    "temperature": [...],   # exogenous_features  — NWP forecast known for full horizon
+    "wind_speed":  [...],   # future_covariates   — known only over forecast horizon
+    "irradiance":  [...],   # historical_features — no future forecast available
+    # calendar features (hour, dayofweek, etc.) are derived automatically from timestamp
 })
 ```
 
-:::{admonition} Note
-:class: note
-
-The DataFrame should be sorted by timestamp and have a regular frequency. Missing values should be handled before passing data to the pipeline.
-:::
-
-
-## Configuration-Driven Design
-
-Twiga follows a **configuration-as-code** pattern. Every component is configured via a Pydantic dataclass that validates inputs at construction time. The three core configs are:
-
-### DataPipelineConfig
-
-Controls data preprocessing  -  what features to engineer, how to scale, and how to create sequences.
+The config tells the pipeline which columns play which role:
 
 ```python
 from twiga.core.config import DataPipelineConfig
@@ -74,12 +94,44 @@ from twiga.core.config import DataPipelineConfig
 data_config = DataPipelineConfig(
     target_feature="load_mw",
     period="1h",
-    lookback_window_size=168,   # 7 days of hourly data
-    forecast_horizon=48,        # predict 2 days ahead
+    lookback_window_size=168,
+    forecast_horizon=48,
+    historical_features=["irradiance"],
+    calendar_features=["hour", "dayofweek"],
+    exogenous_features=["temperature"],
+    future_covariates=["wind_speed"],
+)
+```
+
+:::{admonition} Note
+:class: note
+
+The DataFrame must be sorted by timestamp with a regular frequency. Handle missing values before passing data to the pipeline.
+:::
+
+## Configuration-Driven Design
+
+Twiga follows a **configuration-as-code** pattern. Every component is configured via a Pydantic dataclass that validates inputs at construction time. The three core configs are:
+
+### DataPipelineConfig
+
+Controls data preprocessing — what features to engineer, how to scale, and how to create sequences.
+
+```python
+from twiga.core.config import DataPipelineConfig
+
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,           # 7 days of hourly data
+    forecast_horizon=48,                # predict 2 days ahead
+    historical_features=["irradiance"], # past-only, no future forecast
+    calendar_features=["hour", "dayofweek"],
+    exogenous_features=["temperature"], # known over full horizon
+    future_covariates=["wind_speed"],   # known only for forecast window
     lags=[1, 24, 48, 168],
     windows=[24, 48],
     window_funcs=["mean", "std"],
-    calendar_features=["hour", "dayofweek"],
 )
 ```
 
@@ -87,7 +139,7 @@ See [Configuration System](../core/config.md) for the full field reference.
 
 ### ForecasterConfig
 
-Controls training orchestration  -  backtesting splits, project naming, and output directories.
+Controls training orchestration — backtesting splits, project naming, and output directories.
 
 ```python
 from twiga.core.config import ForecasterConfig
@@ -105,7 +157,7 @@ train_config = ForecasterConfig(
 
 ### Model Configs
 
-Each model has its own config class inheriting from `BaseModelConfig` (ML) or `NeuralModelConfig` (NN):
+Each model has its own config class inheriting from `BaseModelConfig` (ML/baseline) or `NeuralModelConfig` (NN):
 
 ```python
 from twiga.models.ml.xgboost_model import XGBOOSTConfig
@@ -118,14 +170,17 @@ xgb_config = XGBOOSTConfig(
 
 ## Model Domains
 
-Twiga organizes models into two domains:
+Twiga organizes models into three domains:
 
 | Domain | Base Class | Training Framework | Models |
-|---|---|---|---|
-| `"ml"` | `BaseRegressor` | scikit-learn API | CatBoost, XGBoost, LightGBM, Linear Regression |
-| `"nn"` | `BaseNeuralForecast` | PyTorch Lightning | MLPF, MLPGAM, MLPGAF, NHITS, GANF |
+| --- | --- | --- | --- |
+| `"baseline"` | `BaseRegressor` | scikit-learn API | Naive, SeasonalNaive, WindowAverage, Drift, ContextParrot |
+| `"ml"` | `BaseRegressor` | scikit-learn API | CatBoost, XGBoost, LightGBM, RandomForest, LinearReg, NGBoost variants, QR variants |
+| `"nn"` | `BaseNeuralForecast` | PyTorch Lightning | MLPF, MLPGAM, MLPGAF, N-HiTS, GANF and their probabilistic variants |
 
-The domain is set automatically based on the model config's `domain` field and determines how the [TwigaForecaster](../core/forecaster.md) handles training, prediction, and checkpointing.
+The domain is set automatically from the model config's `domain` field and controls how [TwigaForecaster](../core/forecaster.md) handles training, checkpointing, and prediction.
+
+Baseline models require no training — `fit()` only stores metadata — making them fast reference points for computing skill scores. See [Baseline Models](../models/baseline-models.md) and [Model Catalog](../models/index.md) for the full list.
 
 ## Forecasting Types
 
@@ -145,13 +200,13 @@ Produces a distribution of predicted values, either via quantile regression, par
 
 **ML probabilistic models:**
 
-- `QRCATBOOSTModel`, `QRXGBOOSTModel`, `QRLIGHTGBMModel`  -  quantile regression
-- `GAUSSCATBOOSTModel`  -  Gaussian (mean + sigma) output
+- `QRCATBOOSTModel`, `QRXGBOOSTModel`, `QRLIGHTGBMModel` — quantile regression
+- `GAUSSCATBOOSTModel` — Gaussian (mean + sigma) output
 
 **NN probabilistic models** use a composable backbone/head design. Every architecture (MLPF, MLPGAM, MLPGAF, NHITS) can be paired with any distribution head by selecting the appropriate config:
 
 | Distribution | Use case | Example config |
-|---|---|---|
+| --- | --- | --- |
 | Normal | Symmetric, unbounded targets | `MLPFNormalConfig`, `NHITSNormalConfig` |
 | Laplace | Heavy-tailed, outlier-robust | `MLPFLaplaceConfig` |
 | LogNormal | Strictly positive, right-skewed | `MLPGAMLogNormalConfig` |
@@ -175,6 +230,5 @@ forecaster.calibrate(calibration_df)
 # Generate prediction intervals
 intervals = forecaster.predict_interval(test_df)
 ```
-
 
 **Next:** [Quick Start Guide](quickstart.md)

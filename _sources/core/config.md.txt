@@ -7,7 +7,7 @@
 
 </details>
 
-Twiga follows a **configuration-as-code** pattern: every component -- data preprocessing, model architecture, training orchestration, and uncertainty quantification -- is controlled by a Pydantic model that validates inputs at construction time. This page is the complete field reference for every configuration class in the framework.
+Twiga follows a **configuration-as-code** pattern: every component - data preprocessing, model architecture, training orchestration, and uncertainty quantification - is controlled by a Pydantic model that validates inputs at construction time. This page is the complete field reference for every configuration class in the framework.
 
 ## Class Hierarchy
 
@@ -88,10 +88,10 @@ flowchart LR
     MC -. "NN configs" .-> NN[MLPF / MLPGAM / MLPGAF / NHITS / GANF]
 ```
 
-- **`ForecasterConfig`** controls the [TwigaForecaster](forecaster.md) itself -- project naming, cross-validation splits, and output directories.
-- **`DataPipelineConfig`** controls the [DataPipeline](data-pipeline.md) -- feature engineering, scaling, and sequence creation.
+- **`ForecasterConfig`** controls the [TwigaForecaster](forecaster.md) itself - project naming, cross-validation splits, and output directories.
+- **`DataPipelineConfig`** controls the [DataPipeline](data-pipeline.md) - feature engineering, scaling, and sequence creation.
 - **Model configs** (`BaseModelConfig` subclasses for [ML models](../models/ml-models.md), `NeuralModelConfig` subclasses for [NN models](../models/nn-models.md)) define model architecture and training behavior.
-- **`ConformalConfig`** controls [conformal prediction](../probabilistic/conformal-prediction.md) -- the method, score type, and significance level used for prediction intervals.
+- **`ConformalConfig`** controls [conformal prediction](../probabilistic/conformal-prediction.md) - the method, score type, and significance level used for prediction intervals.
 
 
 ## DataPipelineConfig
@@ -116,7 +116,7 @@ flowchart LR
 | `windows` | `list[int] \| int \| None` | `None` | Window sizes for rolling statistics (e.g., `[24, 48]` or `24`). |
 | `window_funcs` | `list[str] \| str \| None` | `None` | Aggregation functions applied to rolling windows (e.g., `["mean", "std"]` or `"mean"`). |
 | `date_column` | `str` | `"timestamp"` | Name of the datetime column in the input DataFrame. |
-| `daily_features` | `bool` | `False` | Whether to compute daily (24-hour-ahead) features. |
+| `stride` | `int` | `1` | Step between consecutive sliding windows. Default `1` produces fully overlapping windows (maximum data augmentation). Set to `forecast_horizon` for non-overlapping windows — recommended for baseline evaluation to avoid pseudo-replication. |
 
 ### Example
 
@@ -172,7 +172,7 @@ Pick lags that correspond to meaningful seasonal periods in your data. For hourl
 | `stride` | `int \| None` | `None` | Step size (in `split_freq` units) between successive folds. Defaults to `test_size` when `None`. |
 | `window` | `Literal["expanding", "rolling"]` | `"expanding"` | Cross-validation window strategy. `"expanding"` grows the training set with each fold; `"rolling"` keeps a fixed-size window. |
 | `num_splits` | `int \| None` | `None` | Maximum number of cross-validation splits. `None` uses all available splits. |
-| `project_name` | `str` | `"Tanesco"` | Project name used for organizing output directories and experiment tracking. |
+| `project_name` | `str` | `"experiment"` | Project name used for organizing output directories and experiment tracking. |
 | `file_name` | `str \| None` | `None` | Optional file name prefix for saved artifacts. |
 | `seed` | `int` | `42` | Random seed for reproducibility. |
 | `date_column` | `str` | `"timestamp"` | Name of the datetime column in the input DataFrame. |
@@ -200,7 +200,7 @@ train_config = ForecasterConfig(
 :::{admonition} Expanding vs. rolling windows
 :class: note
 
-With `window="expanding"`, each successive fold includes all prior training data -- the training set grows over time. With `window="rolling"`, the training window is fixed at `train_size` units and slides forward. Expanding windows generally produce more stable models; rolling windows are better when the data distribution shifts significantly over time. See [Backtesting](backtesting.md) for a detailed comparison.
+With `window="expanding"`, each successive fold includes all prior training data - the training set grows over time. With `window="rolling"`, the training window is fixed at `train_size` units and slides forward. Expanding windows generally produce more stable models; rolling windows are better when the data distribution shifts significantly over time. See [Backtesting](backtesting.md) for a detailed comparison.
 :::
 
 
@@ -294,12 +294,12 @@ mlpf_config = MLPFConfig.from_data_config(data_config, max_epochs=50, batch_size
 
 The classmethod extracts the following from the `DataPipelineConfig`:
 
-- `num_target_feature` -- count of target variables
-- `num_historical_features` -- count of historical feature columns
-- `num_calendar_features` -- count of calendar feature columns
-- `num_exogenous_features` -- count of exogenous feature columns
-- `num_future_covariates` -- count of future covariate columns
-- `forecast_horizon` and `lookback_window_size` -- passed through directly
+- `num_target_feature` - count of target variables
+- `num_historical_features` - count of historical feature columns
+- `num_calendar_features` - count of calendar feature columns
+- `num_exogenous_features` - count of exogenous feature columns
+- `num_future_covariates` - count of future covariate columns
+- `forecast_horizon` and `lookback_window_size` - passed through directly
 
 Any additional keyword arguments are forwarded to the config constructor, allowing you to override defaults like `max_epochs` or `batch_size`.
 
@@ -341,7 +341,7 @@ The `validate_search_space()` model validator enforces the following at construc
 
 1. **Tuples** must have exactly two numeric elements with `low < high`.
 2. **Lists** must contain at least one element and have no duplicates.
-3. All fields must be either tuples or lists -- no other types are allowed.
+3. All fields must be either tuples or lists - no other types are allowed.
 
 ### Automatic Log Scale
 

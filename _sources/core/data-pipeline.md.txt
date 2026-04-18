@@ -3,17 +3,17 @@
 <details>
 <summary>Source Files</summary>
 
-- `twiga/core/data/pipeline.py` -- `DataPipeline` orchestrator
-- `twiga/core/data/temporal.py` -- `TemporalFeatureTransformer`
-- `twiga/core/data/autores.py` -- `AutoregressTransformer`
-- `twiga/core/data/feature.py` -- Fourier series, day/night, net-load helpers
-- `twiga/core/data/selection.py` -- Feature selection utilities
-- `twiga/core/data/processing.py` -- Sequence creation, lag/rolling augmentation
-- `twiga/core/data/loader.py` -- `TimeseriesDataModule` (PyTorch Lightning)
+- `twiga/core/data/pipeline.py` - `DataPipeline` orchestrator
+- `twiga/core/data/temporal.py` - `TemporalFeatureTransformer`
+- `twiga/core/data/autores.py` - `AutoregressTransformer`
+- `twiga/core/data/feature.py` - Fourier series, day/night, net-load helpers
+- `twiga/core/data/selection.py` - Feature selection utilities
+- `twiga/core/data/processing.py` - Sequence creation, lag/rolling augmentation
+- `twiga/core/data/loader.py` - `TimeseriesDataModule` (PyTorch Lightning)
 
 </details>
 
-The **Data Pipeline** is responsible for transforming a raw pandas `DataFrame` into model-ready NumPy arrays. It handles temporal feature extraction, autoregressive feature engineering, column-wise scaling, and sliding-window sequence creation -- all behind a single scikit-learn-compatible transformer.
+The **Data Pipeline** is responsible for transforming a raw pandas `DataFrame` into model-ready NumPy arrays. It handles temporal feature extraction, autoregressive feature engineering, column-wise scaling, and sliding-window sequence creation - all behind a single scikit-learn-compatible transformer.
 
 
 ## Pipeline Overview
@@ -29,10 +29,10 @@ flowchart LR
     E --> F["Model-ready arrays\n(features, targets)"]
 ```
 
-1. **TemporalFeatureTransformer** -- Extracts calendar features (`hour`, `dayofweek`, `month`, ...), adds Fourier-encoded cyclical features, and optionally adds a binary `day_night` indicator based on geographic coordinates.
-2. **AutoregressTransformer** -- Creates lagged copies of the target variable and computes rolling-window statistics (mean, std, etc.).
-3. **ColumnTransformer (Scaling)** -- Applies separate scalers to target columns and numerical input columns via scikit-learn's `ColumnTransformer`.
-4. **Sequence Creation** -- Uses NumPy stride tricks to build overlapping `(lookback_window, num_features)` input windows and `(forecast_horizon, num_targets)` target windows.
+1. **TemporalFeatureTransformer** - Extracts calendar features (`hour`, `dayofweek`, `month`, ...), adds Fourier-encoded cyclical features, and optionally adds a binary `day_night` indicator based on geographic coordinates.
+2. **AutoregressTransformer** - Creates lagged copies of the target variable and computes rolling-window statistics (mean, std, etc.).
+3. **ColumnTransformer (Scaling)** - Applies separate scalers to target columns and numerical input columns via scikit-learn's `ColumnTransformer`.
+4. **Sequence Creation** - Uses NumPy stride tricks to build overlapping `(lookback_window, num_features)` input windows and `(forecast_horizon, num_targets)` target windows.
 
 The `DataPipeline` class wires these stages together into a single `sklearn.pipeline.Pipeline` and exposes a familiar `fit` / `transform` / `fit_transform` API.
 
@@ -55,13 +55,13 @@ The `DataPipeline` class wires these stages together into a single `sklearn.pipe
 | `calendar_features` | `list[str] \| None` | `None` | Temporal features to extract (see table below). |
 | `exogenous_features` | `list[str] \| None` | `None` | External columns available for both past and future windows. |
 | `future_covariates` | `list[str] \| None` | `None` | External columns available only for the future horizon window. |
-| `input_scaler` | `object \| None` | `FunctionTransformer()` | Scaler applied to numerical input features. |
-| `target_scaler` | `object \| None` | `FunctionTransformer()` | Scaler applied to target column(s). |
+| `input_scaler` | `object \| None` | `None` | Scaler applied to numerical input features. Defaults to `FunctionTransformer()` (identity) when `None`. |
+| `target_scaler` | `object \| None` | `None` | Scaler applied to target column(s). Defaults to `FunctionTransformer()` (identity) when `None`. |
 | `lags` | `list[int] \| None` | `None` | Lag intervals for autoregressive features (in periods). |
 | `windows` | `list[int] \| int \| None` | `None` | Rolling-window sizes for statistics (in periods). |
 | `window_funcs` | `list[str] \| str \| None` | `None` | Aggregation functions for rolling windows (e.g. `"mean"`, `"std"`). |
 | `date_column` | `str` | `"timestamp"` | Name of the datetime column. |
-| `daily_features` | `bool` | `False` | When `True`, use day-aligned (non-overlapping) sequence extraction. |
+| `stride` | `int` | `1` | Step between consecutive sliding windows. Default `1` produces fully overlapping windows. Set to `forecast_horizon` for non-overlapping windows. |
 
 :::{admonition} Configuration shortcut
 :class: tip
@@ -226,8 +226,8 @@ Window 2:        [--- features (L) ---]  [--- targets (H) ---]
 Window K:                                [--- features (L) ---]  [--- targets (H) ---]
 ```
 
-- **Feature sequences**: shape `(K, L, num_features)` -- each sample is a lookback window of all input features.
-- **Target sequences**: shape `(K, H, num_targets)` -- each sample is the corresponding future window of target values.
+- **Feature sequences**: shape `(K, L, num_features)` - each sample is a lookback window of all input features.
+- **Target sequences**: shape `(K, H, num_targets)` - each sample is the corresponding future window of target values.
 - **K** = `N - L - H + 1` (number of valid windows with stride 1).
 
 When `daily_features=True`, the stride equals `forecast_horizon` instead of 1, producing non-overlapping day-aligned windows.

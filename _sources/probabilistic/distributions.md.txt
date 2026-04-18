@@ -7,6 +7,11 @@
 - `twiga/distributions/nn/quantile.py`
 - `twiga/distributions/nn/fpquantile.py`
 - `twiga/models/nn/prob/core.py`
+- `twiga/models/ml/gausscatboost_model.py`  -  `GAUSSCATBOOSTConfig` / `GAUSSCATBOOSTModel`
+- `twiga/models/ml/ngboostnormal_model.py`  -  `NGBOOSTNORMALConfig` / `NGBOOSTNORMALModel`
+- `twiga/models/ml/ngboostlognormal_model.py`  -  `NGBOOSTLOGNORMALConfig` / `NGBOOSTLOGNORMALModel`
+- `twiga/models/ml/ngboostexponential_model.py`  -  `NGBOOSTEXPONENTIALConfig` / `NGBOOSTEXPONENTIALModel`
+- `twiga/models/ml/prob/base_ngboost.py`  -  `BaseNGBoostRegressor`
 - `twiga/distributions/ml/utils.py`
 
 </details>
@@ -157,6 +162,218 @@ median = get_median_quantile(quantile_hats, probs=[0.05, 0.25, 0.5, 0.75, 0.95])
 If $\tau = 0.5$ is in the quantile list, it is extracted directly. Otherwise, linear interpolation between the two closest quantiles is used.
 
 
+### Full Parameterised Quantile Regression (FPQR)
+
+`FPQRDistribution` (`twiga/distributions/nn/fpquantile.py`) extends quantile regression by treating the quantile levels themselves as learnable. Rather than predicting at a fixed grid of quantiles, a `QuantileProposal` network proposes the quantile levels adaptively from the latent representation, which are then encoded via `CosinetauEmbedding` before producing forecast values.
+
+:::{admonition} References
+:class: seealso
+
+- A. Faustine and A. Moshi, "Full Parameterized Quantile Function for Probabilistic Forecasting," *IEEE Access*, 2024. DOI: [10.1109/ACCESS.2024.3402001](https://ieeexplore.ieee.org/document/10529636)
+- A. Faustine and L. Aversano, "Adaptive Quantile Learning for Long-Term Probabilistic Forecasting," *IEEE Transactions*, 2022. DOI: [10.1109/ACCESS.2022.3143387](https://ieeexplore.ieee.org/document/9701598)
+:::
+
+```{mermaid}
+graph LR
+    Z["z (B, hidden_size)"] --> QP["QuantileProposal\n→ taus, tau_hats, entropies"]
+    Z --> CE["CosinetauEmbedding\n(cosine τ embedding)"]
+    QP --> CE
+    CE --> QO["quantile_output\n→ (B, n_quantiles, horizon, outputs)"]
+    QP --> LOSS["QuantileProposalLoss\n+ QuantileLoss − entropy"]
+```
+
+**`QuantileProposal`** generates the quantile grid from the backbone's latent vector:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `n_quantiles` | `int` | `10` | Number of quantile levels to propose |
+| `z_dim` | `int` | `64` | Input latent dimension |
+| `dropout` | `float` | `0.1` | Dropout for regularisation |
+| `conf_level` | `float` | `0.05` | Clamps proposals to `[α/2, 1 − α/2]` |
+
+**`CosinetauEmbedding`** maps proposed tau values to a fixed-size embedding using cosine basis functions:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `num_cosines` | `int` | `32` | Number of cosine basis functions |
+| `z_dim` | `int` | `128` | Output embedding dimension |
+| `num_outputs` | `int` | `48` | Scales input size (should match horizon) |
+
+**`FPQRDistribution`** combines proposal + cosine embedding + output projection:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `n_quantiles` | `int \| None` | `9` | Quantile levels (None → 9) |
+| `num_outputs` | `int` | `1` | Number of target variables |
+| `hidden_size` | `int` | `256` | Latent dimension from backbone |
+| `horizon` | `int` | `48` | Forecast horizon |
+| `dropout` | `float` | `0.1` | Dropout in proposal network |
+| `conf_level` | `float` | `0.05` | Significance level for interval bounds |
+| `kappa` | `float` | `0.25` | Huber transition parameter |
+| `num_cosines` | `int` | `32` | Cosine basis functions (0 to use `DataEmbedding`) |
+| `loss_fn` | `str` | `"pinball"` | `"pinball"` or `"huber-pinball"` |
+
+```python
+from twiga.distributions.nn.fpquantile import FPQRDistribution
+
+dist = FPQRDistribution(
+    n_quantiles=9,
+    num_outputs=1,
+    hidden_size=256,
+    horizon=48,
+    conf_level=0.05,
+    loss_fn="pinball",
+)
+
+# Training step: loss = quantile_loss + proposal_loss − entropy
+loss, metric = dist.step(z, y, metric_fn, epoch)
+
+# Inference: returns dict with loc, quantiles, quantile_levels, conf_level
+result = dist.forecast(z)
+# result["loc"]             shape: (B, horizon, num_outputs)
+# result["quantiles"]       shape: (B, n_quantiles, horizon, num_outputs)
+# result["quantile_levels"] shape: (B, n_quantiles, horizon)  ← per-sample proposal
+```
+
+:::{admonition} FPQR vs QR
+:class: note
+
+`QRDistribution` predicts at a fixed, user-specified quantile grid. `FPQRDistribution` learns the quantile levels jointly with the forecast values, adapting the grid per sample. The proposal loss plus entropy regularisation encourages diverse, well-spread coverage. Use FPQR when you want the model to discover the most informative quantile levels automatically.
+:::
+
+The training loss combines three terms:
+
+$$\mathcal{L} = \mathcal{L}_{\text{quantile}} + \mathcal{L}_{\text{proposal}} - \mathbb{H}(\text{probs})$$
+
+where $\mathbb{H}$ is the entropy of the proposed quantile distribution, acting as a diversity regulariser.
+
+
+## ML Parametric Models
+
+Twiga provides two families of parametric ML models that output full distribution parameters rather than just point forecasts.
+
+### GaussCatBoost
+
+`GAUSSCATBOOSTModel` uses CatBoost's built-in `RMSEWithUncertainty` loss, which jointly learns the mean μ and aleatoric scale σ in a single model. One `CatBoostRegressor` is trained per output step, and virtual ensemble snapshots provide epistemic uncertainty decomposition.
+
+| Model | Name | Config Class | Output |
+|---|---|---|---|
+| Gaussian CatBoost | `gausscatboost` | `GAUSSCATBOOSTConfig` | (μ, σ) per horizon step |
+
+**GAUSSCATBOOSTConfig** extends [`CATBOOSTConfig`](../models/ml-models.md#catboostmodel) with:
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["gausscatboost"]` | `"gausscatboost"` | Model identifier. |
+| `od_type` | `Literal["Iter", "IncToDec"]` | `"Iter"` | Overfitting detection strategy; active only when an eval set is provided to `fit()`. |
+| `od_wait` | `int` | `20` | Iterations without improvement before early stopping triggers. |
+| `virtual_ensembles_count` | `int` | `10` | Virtual ensemble snapshots for epistemic uncertainty estimation via `predict_with_uncertainty()`. Excluded from parameter dumps. |
+
+```python
+from twiga.models.ml.gausscatboost_model import GAUSSCATBOOSTConfig
+
+config = GAUSSCATBOOSTConfig(
+    iterations=500,
+    learning_rate=0.05,
+    task_type="CPU",
+    virtual_ensembles_count=20,
+)
+```
+
+:::{admonition} Uncertainty decomposition
+:class: info
+
+`predict_with_uncertainty()` returns three components per output step: `mean` (predicted μ), `knowledge_uncertainty` (epistemic — variance across virtual ensemble snapshots), and `data_uncertainty` (aleatoric — the model's second output, exp of predicted log-σ).
+:::
+
+### NGBoost
+
+NGBoost (Natural Gradient Boosting) fits all distribution parameters simultaneously via the natural gradient of a proper scoring rule. Unlike the two-stage `GAUSSCATBOOSTModel`, which fits mean and variance separately, NGBoost optimises both jointly. All models extend `BaseNGBoostRegressor` and train one `NGBRegressor` per flattened output column.
+
+| Model | Name | Config Class | Distribution | Best for |
+|---|---|---|---|---|
+| NGBoost Normal | `ngboostnormal` | `NGBOOSTNORMALConfig` | Normal N(μ, σ²) | Symmetric, unbounded targets |
+| NGBoost LogNormal | `ngboostlognormal` | `NGBOOSTLOGNORMALConfig` | LogNormal | Strictly positive, right-skewed targets |
+| NGBoost Exponential | `ngboostexponential` | `NGBOOSTEXPONENTIALConfig` | Exponential (1/λ) | Non-negative, memoryless processes |
+
+:::{admonition} NGBoost vs two-stage Gaussian
+:class: tip
+
+NGBoost jointly optimises μ and σ via natural gradient, producing better-calibrated intervals. The two-stage `GAUSSCATBOOSTModel` (`RMSEWithUncertainty`) is faster and scales better on very large datasets.
+:::
+
+#### NGBOOSTNORMALModel
+
+Fits a Gaussian distribution N(μ, σ²) jointly optimising mean and standard deviation.
+
+**NGBOOSTNORMALConfig** fields:
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["ngboostnormal"]` | `"ngboostnormal"` | Model identifier. |
+| `domain` | `Literal["ml"]` | `"ml"` | Domain identifier. |
+| `n_estimators` | `int` | `500` | Number of boosting rounds. |
+| `learning_rate` | `float` | `0.01` | Shrinkage applied to each boosting step. |
+| `minibatch_frac` | `float` | `1.0` | Fraction of training data used per round. |
+| `col_sample` | `float` | `1.0` | Fraction of features sampled per tree. |
+| `random_state` | `int` | `42` | Random seed. |
+| `score` | `Literal["LogScore", "CRPScore"]` | `"LogScore"` | Scoring rule for training objective. |
+
+**Output:** `(loc, scale)` = (mean μ, standard deviation σ).
+
+```python
+from twiga.models.ml.ngboostnormal_model import NGBOOSTNORMALConfig
+
+config = NGBOOSTNORMALConfig(n_estimators=300, learning_rate=0.05)
+```
+
+#### NGBOOSTLOGNORMALModel
+
+Fits a LogNormal distribution, appropriate for strictly positive targets such as solar irradiance or non-negative electricity prices.
+
+**NGBOOSTLOGNORMALConfig** shares all fields with `NGBOOSTNORMALConfig` with `name="ngboostlognormal"`.
+
+**Output:** `(loc, scale)` = (geometric mean exp(μ_log), log-space standard deviation σ_log).
+
+:::{admonition} Interpreting LogNormal output
+:class: info
+
+`loc` is the **geometric mean** (the exponentiated log-space mean), not the arithmetic mean. To recover the arithmetic mean use `exp(log(loc) + scale² / 2)`. For prediction intervals, exponentiate the log-space quantiles.
+:::
+
+```python
+from twiga.models.ml.ngboostlognormal_model import NGBOOSTLOGNORMALConfig
+
+config = NGBOOSTLOGNORMALConfig(n_estimators=300, score="CRPScore")
+```
+
+#### NGBOOSTEXPONENTIALModel
+
+Fits an Exponential distribution parameterised by its scale (1/λ). Suitable for non-negative targets with a memoryless property.
+
+**NGBOOSTEXPONENTIALConfig** shares all fields with `NGBOOSTNORMALConfig` with `name="ngboostexponential"`.
+
+**Output:** Both `loc` and `scale` equal the predicted scale parameter 1/λ (the Exponential distribution has a single parameter).
+
+:::{admonition} Single-parameter distribution
+:class: note
+
+The Exponential distribution is fully characterised by its scale (1/λ), so both `loc` and `scale` in the output tuple carry the same value. Mean and standard deviation are both equal to 1/λ.
+:::
+
+```python
+from twiga.models.ml.ngboostexponential_model import NGBOOSTEXPONENTIALConfig
+
+config = NGBOOSTEXPONENTIALConfig(n_estimators=400)
+```
+
+:::{admonition} LogScore vs CRPScore
+:class: tip
+
+`LogScore` maximises the predictive log-likelihood — faster and often better-calibrated for in-distribution data. `CRPScore` (Continuous Ranked Probability Score) is more robust to distributional shift and outliers but typically slower to converge.
+:::
+
+
 ## ML Distribution Utilities
 
 The `twiga/distributions/ml/utils.py` module provides utilities for post-processing quantile predictions from ML models.
@@ -241,3 +458,88 @@ graph TD
 **Parametric NN models** (via `ProbabilisticModel`) produce full distribution parameters and train via NLL. They can be used stand-alone or combined with [conformal residual fitting](conformal-prediction.md).
 
 **Quantile models** produce multiple quantile predictions and can be used with [conformal quantile regression](conformal-prediction.md) or taken directly as prediction intervals.
+
+
+## ML Usage Example
+
+```python
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.ml.gausscatboost_model import GAUSSCATBOOSTConfig
+from twiga.models.ml.ngboostnormal_model import NGBOOSTNORMALConfig
+
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,
+    forecast_horizon=24,
+    lags=[1, 24, 168],
+    input_scaler=StandardScaler(),
+)
+
+train_config = ForecasterConfig(
+    split_freq="months",
+    train_size=6,
+    test_size=1,
+    window="expanding",
+    project_name="GaussianForecast",
+)
+
+# Gaussian CatBoost — fast, single model via RMSEWithUncertainty
+gauss_config = GAUSSCATBOOSTConfig(task_type="CPU", virtual_ensembles_count=10)
+
+# NGBoost Normal — joint optimisation of μ and σ
+ngboost_config = NGBOOSTNORMALConfig(n_estimators=300, learning_rate=0.05)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[gauss_config],
+    train_params=train_config,
+)
+
+forecaster.fit(train_df=train_df)
+
+interval_dict, _ = forecaster.predict_interval(test_df=test_df)
+for model_name, (lower, point, upper) in interval_dict.items():
+    print(f"{model_name}: lower={lower.shape}, point={point.shape}, upper={upper.shape}")
+```
+
+
+## API Reference
+
+```{eval-rst}
+.. autoclass:: twiga.models.ml.gausscatboost_model.GAUSSCATBOOSTConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.gausscatboost_model.GAUSSCATBOOSTModel
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALModel
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALModel
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALModel
+   :members:
+   :show-inheritance:
+```

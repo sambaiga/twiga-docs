@@ -7,11 +7,21 @@
 - `twiga/models/ml/qrcatboost_model.py`
 - `twiga/models/ml/qrxgboost_model.py`
 - `twiga/models/ml/qrlightgbm_model.py`
+- `twiga/models/ml/qrrandomforest_model.py`
 - `twiga/models/nn/mlpfqr_model.py`
+- `twiga/models/nn/mlpgamqr_model.py`
+- `twiga/models/nn/mlpgafqr_model.py`
 - `twiga/models/nn/nhitsqr_model.py`
+- `twiga/models/nn/mlpffpqr_model.py`
+- `twiga/models/nn/mlpgamfpqr_model.py`
+- `twiga/models/nn/mlpgaffpqr_model.py`
+- `twiga/models/nn/nhitsfpqr_model.py`
+- `twiga/models/nn/mlpfcrc_model.py`
+- `twiga/models/nn/mlpgamcrc_model.py`
+- `twiga/models/nn/mlpgafcrc_model.py`
+- `twiga/models/nn/nhitscrc_model.py`
 - `twiga/distributions/nn/quantile.py`
 - `twiga/distributions/nn/fpquantile.py`
-- `twiga/distributions/nn/quantile.py`
 - `twiga/distributions/ml/utils.py`
 
 </details>
@@ -22,38 +32,70 @@ Quantile regression estimates conditional quantiles of the target distribution r
 
 ### BaseQuantileRegressor
 
-All ML quantile models extend `BaseQuantileRegressor` (`twiga/models/ml/prob/base_quantile.py`), which itself extends [`BaseRegressor`](../models/ml-models.md).
+All ML quantile models extend `BaseQuantileRegressor` (`twiga/models/ml/prob/base_quantile.py`), which itself extends [`BaseRegressor`](../models/ml-models.md#baseregressor-interface).
 
-Key attributes:
+#### Constructor
+
+```python
+BaseQuantileRegressor(
+    data_pipeline: Any | None = None,
+    model_instance: Any = None,
+    model_config: dict | None = None,
+    quantiles: list[float] | None = None,
+    conf_level: float = 0.05,
+)
+```
 
 | Attribute | Type | Description |
 |---|---|---|
-| `quantiles` | `list[float]` | Quantile levels including confidence bounds (e.g., `[0.05, 0.25, 0.5, 0.75, 0.95]`) |
-| `conf_level` | `float` | Confidence level for interval bounds |
-| `models` | `dict[float, Any]` | Mapping from quantile to trained model |
-| `supports_multi_output` | `bool` | Whether the underlying model supports multi-output natively |
+| `quantiles` | `list[float]` | Sorted quantile fractions, automatically extended with `conf_level / 2` and `1 - conf_level / 2`. |
+| `conf_level` | `float` | Significance level; `0.1` produces a 90 % prediction interval. |
+| `supports_multi_output` | `bool` | Whether the underlying engine natively handles multiple outputs. |
+| `models` | `dict[float, Any]` | One trained model per quantile (LightGBM), or a single `MultiOutputRegressor` (CatBoost, XGBoost). |
 
-Key methods:
+#### Key Methods
 
-| Method | Returns | Description |
+| Method | Signature | Description |
 |---|---|---|
-| `fit(X, y)` | `BaseQuantileRegressor` | Trains one model per quantile |
-| `predict(X, sigma=False)` | `tuple` | Returns (median, sigma) or (median, quantile_values) |
-| `forecast(x, sigma=False)` | `dict` | Returns structured forecast dictionary |
+| `fit` | `fit(X, y, verbose=False)` | Trains all quantile models. Iterates per-quantile for LightGBM; fits a single model for CatBoost and XGBoost. |
+| `predict` | `predict(X, sigma=False)` | Returns `(median, quantile_array)`. When `sigma=True` returns `(median, sigma)` where sigma is the inter-quantile range. Quantile array shape: `(batch, num_quantiles, horizon, num_targets)`. |
+| `forecast` | `forecast(x, sigma=False)` | Returns `{"loc": median, "scale": sigma}` when `sigma=True`; otherwise `(median, quantile_predictions)`. |
 
-### Engine-Specific Handling
+:::{admonition} Quantile merging
+:class: info
 
-Different gradient boosting libraries handle quantile regression differently:
+User-specified quantiles are merged with the confidence bounds derived from `conf_level`. For example, with `quantiles=[0.25, 0.5, 0.75]` and `conf_level=0.1`, the final sorted quantile list is `[0.05, 0.25, 0.5, 0.75, 0.95]`.
+:::
 
-| Engine | Approach | Loss Function |
+### Per-Engine Handling
+
+Each engine uses a different internal strategy for quantile regression:
+
+| Engine | Strategy | Loss / Parameter |
 |---|---|---|
-| **CatBoost** | Single model, multi-quantile | `MultiQuantile:alpha=0.05,0.25,0.5,0.75,0.95` |
-| **XGBoost** | Single model with `quantile_alpha` param | `reg:quantileerror` with multi-output |
-| **LightGBM** | Separate model per quantile | `objective="quantile"`, `alpha=quantile_value` |
+| **CatBoost** | Multi-quantile loss — single model predicts all quantiles | `loss_function="MultiQuantile:alpha=q1,q2,..."` |
+| **XGBoost** | Single model with `quantile_alpha` array | `objective="reg:quantileerror"` |
+| **LightGBM** | Per-quantile models — one `LGBMRegressor` per quantile | `objective="quantile"`, `alpha=qi` |
+
+:::{admonition} LightGBM training time
+:class: note
+
+LightGBM trains a **separate model per quantile**, so training time scales linearly with the number of quantiles. With the default 5 quantiles plus 2 confidence bounds (7 total), expect roughly 7× the training time of a single point model. CatBoost and XGBoost predict all quantiles in a single model, making them more efficient for large quantile sets.
+:::
 
 ### Available Models
 
 #### QRCATBOOSTModel
+
+Quantile regression CatBoost using `MultiQuantile` loss — all quantiles predicted in a single forward pass.
+
+**QRCATBOOSTConfig** extends [`CATBOOSTConfig`](../models/ml-models.md#catboostmodel):
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["qrcatboost"]` | `"qrcatboost"` | Model identifier. |
+| `quantiles` | `list \| None` | `[0.05, 0.25, 0.5, 0.75, 0.95]` | Quantile fractions for fitting. |
+| `conf_level` | `float \| None` | `0.1` | Significance level for prediction interval bounds. |
 
 ```python
 from twiga.models.ml.qrcatboost_model import QRCATBOOSTConfig
@@ -67,6 +109,17 @@ config = QRCATBOOSTConfig(
 
 #### QRXGBOOSTModel
 
+Quantile regression XGBoost using `reg:quantileerror` objective with `quantile_alpha`.
+
+**QRXGBOOSTConfig** extends [`XGBOOSTConfig`](../models/ml-models.md#xgboostmodel):
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["qrxgboost"]` | `"qrxgboost"` | Model identifier. |
+| `quantiles` | `list \| None` | `[0.05, 0.25, 0.5, 0.75, 0.95]` | Quantile fractions for fitting. |
+| `conf_level` | `float \| None` | `0.1` | Significance level for prediction interval bounds. |
+| `objective` | `Literal["reg:quantileerror"]` | `"reg:quantileerror"` | XGBoost quantile error objective. |
+
 ```python
 from twiga.models.ml.qrxgboost_model import QRXGBOOSTConfig
 
@@ -79,6 +132,17 @@ config = QRXGBOOSTConfig(
 
 #### QRLIGHTGBMModel
 
+Quantile regression LightGBM using per-quantile `LGBMRegressor` models with `objective="quantile"`.
+
+**QRLIGHTGBMConfig** extends [`LIGHTGBMConfig`](../models/ml-models.md#lightgbmmodel):
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["qrlightgbm"]` | `"qrlightgbm"` | Model identifier. |
+| `quantiles` | `list \| None` | `[0.05, 0.25, 0.5, 0.75, 0.95]` | Quantile fractions for fitting. |
+| `conf_level` | `float \| None` | `0.1` | Significance level for prediction interval bounds. |
+| `objective` | `Literal["quantile"]` | `"quantile"` | LightGBM quantile objective. |
+
 ```python
 from twiga.models.ml.qrlightgbm_model import QRLIGHTGBMConfig
 
@@ -88,38 +152,157 @@ config = QRLIGHTGBMConfig(
 )
 ```
 
+#### QRRANDOMFORESTModel
+
+Quantile regression using `quantile_forest.RandomForestQuantileRegressor`. A **single forest is trained once** and any quantile can be extracted at inference time without retraining. Monotonicity across quantiles is enforced post-hoc via isotonic regression.
+
+**QRRANDOMFORESTConfig** extends [`RANDOMFORESTConfig`](../models/ml-models.md#randomforestmodel):
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["qrrandomforest"]` | `"qrrandomforest"` | Model identifier. |
+| `quantiles` | `list[float] \| None` | `[0.05, 0.25, 0.5, 0.75, 0.95]` | Quantile fractions for prediction. |
+| `conf_level` | `float \| None` | `0.1` | Significance level for prediction interval bounds. |
+
+```python
+from twiga.models.ml.qrrandomforest_model import QRRANDOMFORESTConfig
+
+config = QRRANDOMFORESTConfig(
+    quantiles=[0.05, 0.25, 0.5, 0.75, 0.95],
+    conf_level=0.1,
+    n_estimators=200,
+    random_state=42,
+)
+```
+
+:::{admonition} Single-model inference
+:class: tip
+
+Because `RandomForestQuantileRegressor` stores the full leaf-node empirical distribution during training, any quantile can be queried at prediction time with no retraining. This makes `QRRANDOMFORESTModel` more efficient than `QRLIGHTGBMModel` when many quantile levels are needed.
+:::
+
 
 ## NN Quantile Models
 
-All four NN architectures (MLPF, MLPGAM, MLPGAF, NHITS) support QR and FPQR distribution heads via the [backbone/head architecture](../models/nn-models.md#probabilistic-models). The `MLPFQRModel` is documented here as the canonical example; all other variants (`MLPGAMQRModel`, `MLPGAFQRModel`, `NHITSQRModel`, and their FPQR counterparts) follow the same config pattern.
+All four NN architectures (MLPF, MLPGAM, MLPGAF, NHITS) support QR, FPQR, and CRC heads via the [backbone/head architecture](../models/nn-models.md#probabilistic-models).
 
-### MLPFQRModel
+### QR Models
 
-The `MLPFQRModel` pairs the [MLPF](../models/nn-models.md) backbone with `QRDistribution`.
+QR models pair a backbone with `QRDistribution` and predict at a fixed quantile grid set before training.
 
-```python
-from twiga.models.nn.mlpfqr_model import MLPFQRConfig
+| Model | Name | Config Class | Source Module |
+|---|---|---|---|
+| MLPF-QR | `mlpfqr` | `MLPFQRConfig` | `twiga.models.nn.mlpfqr_model` |
+| MLPGAM-QR | `mlpgamqr` | `MLPGAMQRConfig` | `twiga.models.nn.mlpgamqr_model` |
+| MLPGAF-QR | `mlpgafqr` | `MLPGAFQRConfig` | `twiga.models.nn.mlpgafqr_model` |
+| N-HiTS-QR | `nhitsqr` | `NHITSQRConfig` | `twiga.models.nn.nhitsqr_model` |
 
-config = MLPFQRConfig.from_data_config(data_config)
-config.quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
-config.conf_level = 0.05
-config.loss_fn = "pinball"      # or "huber-pinball"
-config.kappa = 0.25             # Huber kappa (only used with "huber-pinball")
-config.max_epochs = 20
-```
+All share the same config parameters:
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `quantiles` | `list[float] \| None` | `None` | Quantile levels to predict |
+| `quantiles` | `list[float] \| None` | `None` | Fixed quantile levels to predict |
 | `conf_level` | `float` | `0.05` | Confidence level for interval bounds |
 | `loss_fn` | `Literal["pinball", "huber-pinball"]` | `"pinball"` | Loss function |
 | `kappa` | `float` | `0.25` | Huber transition parameter |
 | `eps` | `float` | `1e-6` | Numerical stability |
 
+```python
+from twiga.models.nn.mlpfqr_model import MLPFQRConfig   # same pattern for all QR variants
+
+config = MLPFQRConfig.from_data_config(data_config)
+config.quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
+config.conf_level = 0.05
+config.loss_fn = "pinball"
+config.max_epochs = 20
+```
+
 ### Loss Functions
 
-- **Pinball (quantile) loss**: Standard asymmetric loss that penalizes over- and under-prediction differently based on the quantile level $\tau$
-- **Huber-pinball loss**: Combines pinball loss with Huber loss for smoother gradients near zero, controlled by `kappa`
+- **Pinball loss** — standard asymmetric loss penalising over- and under-prediction differently at each quantile level $\tau$
+- **Huber-pinball loss** — smoothed near zero, controlled by `kappa`; reduces sensitivity to outliers
+
+### FPQR Models (Full Parameterised Quantile Regression)
+
+FPQR models pair each backbone with `FPQRDistribution`. The quantile levels are proposed dynamically per sample by a learned `QuantileProposal` network rather than fixed at config time.
+
+| Model | Name | Config Class | Source Module |
+|---|---|---|---|
+| MLPF-FPQR | `mlpffpqr` | `MLPFFPQRConfig` | `twiga.models.nn.mlpffpqr_model` |
+| MLPGAM-FPQR | `mlpgamfpqr` | `MLPGAMFPQRConfig` | `twiga.models.nn.mlpgamfpqr_model` |
+| MLPGAF-FPQR | `mlpgaffpqr` | `MLPGAFFPQRConfig` | `twiga.models.nn.mlpgaffpqr_model` |
+| N-HiTS-FPQR | `nhitsfpqr` | `NHITSFPQRConfig` | `twiga.models.nn.nhitsfpqr_model` |
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `n_quantiles` | `int \| None` | `9` | Adaptive quantile levels (None → 9) |
+| `conf_level` | `float` | `0.05` | Clamps proposals to `[α/2, 1−α/2]` |
+| `loss_fn` | `Literal["pinball", "huber-pinball"]` | `"pinball"` | Loss function |
+| `kappa` | `float` | `0.25` | Huber transition parameter |
+| `num_cosines` | `int` | `32` | Cosine basis functions for tau embedding |
+
+```python
+from twiga.models.nn.mlpffpqr_model import MLPFFPQRConfig   # same pattern for all FPQR variants
+
+config = MLPFFPQRConfig.from_data_config(data_config)
+config.n_quantiles = 9
+config.conf_level = 0.05
+config.loss_fn = "pinball"
+config.num_cosines = 32
+config.max_epochs = 20
+```
+
+See [FPQR Distribution](distributions.md#full-parameterised-quantile-regression-fpqr) for the full architecture description including `QuantileProposal` and `CosinetauEmbedding`.
+
+### CRC Models (Conformal Residual Coverage)
+
+CRC models wrap a backbone with a conformal prediction head trained end-to-end. Unlike post-hoc conformal wrappers, `CRCDistribution` is trained jointly with the backbone using a coverage loss that directly optimises prediction interval width while maintaining the target coverage level.
+
+| Model | Name | Config Class | Source Module |
+|---|---|---|---|
+| MLPF-CRC | `mlpfcrc` | `MLPFCRCConfig` | `twiga.models.nn.mlpfcrc_model` |
+| MLPGAM-CRC | `mlpgamcrc` | `MLPGAMCRCConfig` | `twiga.models.nn.mlpgamcrc_model` |
+| MLPGAF-CRC | `mlpgafcrc` | `MLPGAFCRCConfig` | `twiga.models.nn.mlpgafcrc_model` |
+| N-HiTS-CRC | `nhitscrc` | `NHITSCRCConfig` | `twiga.models.nn.nhitscrc_model` |
+
+```python
+from twiga.models.nn.mlpfcrc_model import MLPFCRCConfig   # same pattern for all CRC variants
+
+config = MLPFCRCConfig.from_data_config(data_config)
+config.conf_level = 0.1     # target 90% coverage
+config.max_epochs = 30
+```
+
+:::{admonition} CRC vs post-hoc conformal prediction
+:class: note
+
+CRC is trained jointly and bakes coverage directly into the loss. [Post-hoc conformal prediction](conformal-prediction.md) wraps any already-trained model during the calibration step and makes no distributional assumptions. CRC typically produces tighter intervals; post-hoc conformal is model-agnostic and always valid.
+:::
+
+### CRC Models (Conformal Residual Coverage)
+
+CRC models wrap a backbone with a conformal prediction head trained end-to-end. Unlike post-hoc conformal wrappers, `CRCDistribution` is trained jointly with the backbone using a coverage loss that directly optimises prediction interval width while maintaining the target coverage level.
+
+| Model | Name | Config Class | Source Module |
+|---|---|---|---|
+| MLPF-CRC | `mlpfcrc` | `MLPFCRCConfig` | `twiga.models.nn.mlpfcrc_model` |
+| MLPGAM-CRC | `mlpgamcrc` | `MLPGAMCRCConfig` | `twiga.models.nn.mlpgamcrc_model` |
+| MLPGAF-CRC | `mlpgafcrc` | `MLPGAFCRCConfig` | `twiga.models.nn.mlpgafcrc_model` |
+| N-HiTS-CRC | `nhitscrc` | `NHITSCRCConfig` | `twiga.models.nn.nhitscrc_model` |
+
+```python
+from twiga.models.nn.mlpfcrc_model import MLPFCRCConfig   # same pattern for all CRC variants
+
+config = MLPFCRCConfig.from_data_config(data_config)
+config.conf_level = 0.1     # target 90% coverage
+config.max_epochs = 30
+```
+
+:::{admonition} CRC vs post-hoc conformal prediction
+:class: note
+
+CRC is trained jointly and bakes coverage directly into the loss. [Post-hoc conformal prediction](conformal-prediction.md) wraps any already-trained model during the calibration step and makes no distributional assumptions. CRC typically produces tighter intervals; post-hoc conformal is model-agnostic and always valid.
+:::
 
 
 ## ML Distribution Utilities
@@ -162,11 +345,89 @@ score = pinball_score(
 Quantile predictions can also be used with [conformal quantile regression](conformal-prediction.md) for calibrated prediction intervals.
 
 
-## API Reference
+## ML Usage Example
 
+```python
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.ml.qrcatboost_model import QRCATBOOSTConfig
+
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,
+    forecast_horizon=24,
+    lags=[1, 24, 168],
+    input_scaler=StandardScaler(),
+)
+
+train_config = ForecasterConfig(
+    split_freq="months",
+    train_size=6,
+    test_size=1,
+    window="expanding",
+    project_name="QRForecast",
+)
+
+qr_config = QRCATBOOSTConfig(
+    task_type="CPU",
+    quantiles=[0.1, 0.25, 0.5, 0.75, 0.9],
+    conf_level=0.1,
+)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[qr_config],
+    train_params=train_config,
+)
+
+forecaster.fit(train_df=train_df)
+
+interval_dict, _ = forecaster.predict_interval(test_df=test_df)
+for model_name, (lower, point, upper) in interval_dict.items():
+    print(f"{model_name}: lower={lower.shape}, point={point.shape}, upper={upper.shape}")
+```
+
+
+## API Reference
 
 ```{eval-rst}
 .. autoclass:: twiga.models.ml.prob.base_quantile.BaseQuantileRegressor
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.qrcatboost_model.QRCATBOOSTConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.qrcatboost_model.QRCATBOOSTModel
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.qrxgboost_model.QRXGBOOSTConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.qrxgboost_model.QRXGBOOSTModel
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.qrlightgbm_model.QRLIGHTGBMConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.qrlightgbm_model.QRLIGHTGBMModel
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.qrrandomforest_model.QRRANDOMFORESTConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.ml.qrrandomforest_model.QRRANDOMFORESTModel
    :members:
    :show-inheritance:
 ```

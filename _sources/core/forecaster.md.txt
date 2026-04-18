@@ -3,13 +3,13 @@
 <details>
 <summary>Source Files</summary>
 
-- `twiga/forecaster/core.py` -- `TwigaForecaster` (user-facing entry point)
-- `twiga/forecaster/abstract.py` -- `AbstractForecaster` (fit / predict / evaluate / tune orchestration)
-- `twiga/forecaster/base.py` -- `BaseForecaster` (checkpointing, feature preparation, Optuna integration)
-- `twiga/forecaster/registry.py` -- Dynamic model loading
-- `twiga/forecaster/ensemble.py` -- Ensemble prediction strategies
-- `twiga/forecaster/utils.py` -- Shape validation, DataFrame construction helpers
-- `twiga/core/config/base.py` -- `DataPipelineConfig`, `ForecasterConfig`, `ConformalConfig`, `BaseModelConfig`
+- `twiga/forecaster/core.py` - `TwigaForecaster` (user-facing entry point)
+- `twiga/forecaster/abstract.py` - `AbstractForecaster` (fit / predict / evaluate / tune orchestration)
+- `twiga/forecaster/base.py` - `BaseForecaster` (checkpointing, feature preparation, Optuna integration)
+- `twiga/forecaster/registry.py` - Dynamic model loading
+- `twiga/forecaster/ensemble.py` - Ensemble prediction strategies
+- `twiga/forecaster/utils.py` - Shape validation, DataFrame construction helpers
+- `twiga/core/config/base.py` - `DataPipelineConfig`, `ForecasterConfig`, `ConformalConfig`, `BaseModelConfig`
 
 </details>
 
@@ -18,12 +18,12 @@
 
 `TwigaForecaster` is the primary interface for building, training, and evaluating time series forecasting models in Twiga. It accepts configuration objects, dynamically loads model implementations from a registry, and exposes a unified API that covers:
 
-- **Multi-model training** -- fit one or many models (ML and/or neural network) in a single call.
-- **Point and interval predictions** -- generate raw forecasts or conformal prediction intervals.
-- **Evaluation** -- compute metrics against held-out data for both point and interval forecasts.
-- **Backtesting** -- walk-forward cross-validation over expanding or rolling windows.
-- **Hyperparameter tuning** -- Optuna-powered search with Hyperband pruning and TPE sampling.
-- **Ensemble strategies** -- combine predictions from multiple models via mean, median, or weighted aggregation.
+- **Multi-model training** - fit one or many models (ML and/or neural network) in a single call.
+- **Point and interval predictions** - generate raw forecasts or conformal prediction intervals.
+- **Evaluation** - compute metrics against held-out data for both point and interval forecasts.
+- **Backtesting** - walk-forward cross-validation over expanding or rolling windows.
+- **Hyperparameter tuning** - Optuna-powered search with Hyperband pruning and TPE sampling.
+- **Ensemble strategies** - combine predictions from multiple models via mean, median, or weighted aggregation.
 
 For a hands-on introduction see the [Quick Start Guide](../getting-started/quickstart.md).
 
@@ -76,13 +76,13 @@ classDiagram
         +on_save_checkpoint()
         +on_load_checkpoint()
         +_fit(train_df, val_df, train_ratio, trial)
-        +_predict(test_df, covariate_df, daily_feature)
-        +_evaluate(test_df, covariate_df, daily_feature)
+        +_predict(test_df, covariate_df)
+        +_evaluate(test_df, covariate_df)
         +_tune(train_df, val_df, ...)
         +_backtester(data, ...)
         +create_optuna_study(...)
         +prepare_test_data(test_df)
-        +get_ground_truth(test_df, daily_feature)
+        +get_ground_truth(test_df)
     }
 
     class TwigaForecaster {
@@ -203,13 +203,13 @@ The data pipeline is fitted **once** on the first call. Subsequent calls to `fit
 
 | Method | Signature | Returns |
 |---|---|---|
-| `predict` | `predict(test_df, covariate_df=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None, prepare_test_data=True)` | `tuple[dict[str, np.ndarray], dict[str, float]]` |
-| `predict_interval` | `predict_interval(test_df, covariate_df=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None, prepare_test_data=True)` | `tuple[dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]], dict[str, float]]` |
+| `predict` | `predict(test_df, covariate_df=None, ensemble_strategy=None, ensemble_weights=None, prepare_test_data=True)` | `tuple[dict[str, np.ndarray], dict[str, float]]` |
+| `predict_interval` | `predict_interval(test_df, covariate_df=None, ensemble_strategy=None, ensemble_weights=None, prepare_test_data=True)` | `tuple[dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]], dict[str, float]]` |
 
 Both methods return a two-element tuple:
 
-1. **Prediction dictionary** -- keys are model names (and optionally `"Ensemble"`), values are 3-D NumPy arrays `(num_samples, horizon, num_targets)` for point forecasts, or `(lower, point, upper)` tuples for intervals.
-2. **Inference time dictionary** -- keys are model names, values are wall-clock seconds.
+1. **Prediction dictionary** - keys are model names (and optionally `"Ensemble"`), values are 3-D NumPy arrays `(num_samples, horizon, num_targets)` for point forecasts, or `(lower, point, upper)` tuples for intervals.
+2. **Inference time dictionary** - keys are model names, values are wall-clock seconds.
 
 `predict_interval` requires that `conformal_params` was supplied at construction and that `calibrate()` has been called.
 
@@ -224,7 +224,7 @@ Calling `predict_interval` before `calibrate()` raises a `ValueError`. Always ca
 
 | Method | Signature | Description |
 |---|---|---|
-| `calibrate` | `calibrate(calibrate_df=None, covariate_df=None, daily_feature=False, ensemble_strategy=None, ensemble_weights=None)` | Generates point predictions on the calibration set and fits a `Conformal` model per registered model, storing them in `self.conformal`. |
+| `calibrate` | `calibrate(calibrate_df=None, covariate_df=None, ensemble_strategy=None, ensemble_weights=None)` | Generates point predictions on the calibration set and fits a `Conformal` model per registered model, storing them in `self.conformal`. |
 
 See [Conformal Prediction](../probabilistic/conformal-prediction.md) for the available `method` and `score_type` options in `ConformalConfig`.
 
@@ -232,9 +232,9 @@ See [Conformal Prediction](../probabilistic/conformal-prediction.md) for the ava
 
 | Method | Signature | Returns |
 |---|---|---|
-| `evaluate` | `evaluate(test_df=None, covariate_df=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None, prediction_fn=..., evaluation_fn=..., is_interval=False)` | `tuple[pd.DataFrame, pd.DataFrame]` |
-| `evaluate_point_forecast` | `evaluate_point_forecast(test_df=None, covariate_df=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
-| `evaluate_interval_forecast` | `evaluate_interval_forecast(test_df=None, covariate_df=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
+| `evaluate` | `evaluate(test_df=None, covariate_df=None, ensemble_strategy=None, ensemble_weights=None, prediction_fn=..., evaluation_fn=..., is_interval=False)` | `tuple[pd.DataFrame, pd.DataFrame]` |
+| `evaluate_point_forecast` | `evaluate_point_forecast(test_df=None, covariate_df=None, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
+| `evaluate_interval_forecast` | `evaluate_interval_forecast(test_df=None, covariate_df=None, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
 
 `evaluate_point_forecast` and `evaluate_interval_forecast` are convenience wrappers around `evaluate` that pre-bind the appropriate prediction and evaluation functions.
 
@@ -267,7 +267,7 @@ See [Metrics](metrics.md) for the full list of supported evaluation metrics.
 
 | Method | Signature | Returns |
 |---|---|---|
-| `backtesting` | `backtesting(data, train_ratio=1.0, start_dt=None, end_dt=None, verbose=True, trial=None, daily_feature=True, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
+| `backtesting` | `backtesting(data, train_ratio=1.0, start_dt=None, end_dt=None, verbose=True, trial=None, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
 
 Backtesting performs walk-forward cross-validation by iterating over temporal splits produced by the inherited `TimeBasedCV.split()` method. For each fold it:
 
@@ -395,27 +395,47 @@ Checkpoint persistence differs by domain:
 
 ## API Reference
 
-
 ```{eval-rst}
 .. autoclass:: twiga.forecaster.core.TwigaForecaster
    :members:
    :show-inheritance:
 ```
 
-    options:
-      show_root_heading: true
-      show_source: true
-      members_order: source
-      heading_level: 3
+### Forecast Result Types
 
+```{eval-rst}
+.. autoclass:: twiga.forecaster.result.ForecastResult
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.forecaster.result.ForecastCollection
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.forecaster.result.ForecastKind
+   :members:
+   :show-inheritance:
+```
+
+### Registry
+
+```{eval-rst}
+.. autofunction:: twiga.forecaster.registry.get_model
+```
+
+### Ensemble
+
+```{eval-rst}
+.. autofunction:: twiga.forecaster.ensemble.compute_ensemble_predictions
+```
 
 ## See Also
 
-- [Quick Start Guide](../getting-started/quickstart.md) -- end-to-end walkthrough
-- [Configuration System](config.md) -- `DataPipelineConfig`, `ForecasterConfig`, `ConformalConfig`
-- [Data Pipeline](data-pipeline.md) -- feature engineering and scaling
-- [Metrics](metrics.md) -- point and interval evaluation functions
-- [Backtesting](backtesting.md) -- cross-validation strategy
-- [Models](../models/index.md) -- available model implementations
-- [Conformal Prediction](../probabilistic/conformal-prediction.md) -- prediction intervals
-- [Hyperparameter Tuning](../advanced/hyperparameter-tuning.md) -- Optuna integration
+- [Quick Start Guide](../getting-started/quickstart.md) - end-to-end walkthrough
+- [Configuration System](config.md) - `DataPipelineConfig`, `ForecasterConfig`, `ConformalConfig`
+- [Data Pipeline](data-pipeline.md) - feature engineering and scaling
+- [Metrics](metrics.md) - point and interval evaluation functions
+- [Backtesting](backtesting.md) - cross-validation strategy
+- [Models](../models/index.md) - available model implementations
+- [Conformal Prediction](../probabilistic/conformal-prediction.md) - prediction intervals
+- [Hyperparameter Tuning](../advanced/hyperparameter-tuning.md) - Optuna integration

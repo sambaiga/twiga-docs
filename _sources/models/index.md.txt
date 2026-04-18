@@ -10,6 +10,8 @@
 
 </details>
 
+A single `TwigaForecaster` trains, tunes, evaluates and backtests any model in the catalog through an identical API. Switching from a gradient-boosted tree to a neural network means changing one config object, not rewriting training code. The entire workflow — feature engineering, training, hyperparameter optimisation, backtesting and calibration — is unified in one interface with no library boundaries to cross.
+
 Twiga provides forecasting models across three domains: **baseline** (parameter-free reference models), **ml** (gradient-boosted trees, random forests, linear, and NGBoost), and **nn** (neural networks). All models share a common interface and are loaded dynamically through the [model registry](../core/forecaster.md#model-registry).
 
 The table below lists the **base** model configurations. In addition, every neural architecture (MLPF, MLPGAM, MLPGAF, NHITS) has dedicated probabilistic config classes for each distribution family (Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC)  -  see [Neural Network Models](nn-models.md#probabilistic-models) for the full matrix.
@@ -24,6 +26,7 @@ The table below lists the **base** model configurations. In addition, every neur
 | Seasonal Naive | `seasonal_naive` | baseline | Point | `SEASONALNAIVEConfig` | Repeats value from m steps ago (daily/weekly) |
 | Window Average | `window_average` | baseline | Point | `WINDOWAVERAGEConfig` | Local mean over the last w steps |
 | Drift | `drift` | baseline | Point | `DRIFTConfig` | Linear extrapolation of per-window trend |
+| Context Parrot | `context_parrot` | baseline | Point | `CONTEXTPARROTConfig` | Repeats the last observed context window as the forecast |
 
 ### ML Domain
 
@@ -45,15 +48,72 @@ The table below lists the **base** model configurations. In addition, every neur
 
 ### NN Domain
 
-| Model | Name | Domain | Type | Config Class | Description |
-|---|---|---|---|---|---|
-| MLPF | `mlpf` | nn | Point | `MLPFConfig` | MLP forecaster with attention-based feature combination |
-| MLPGAM | `mlpgam` | nn | Point | `MLPGAMConfig` | MLP with Generalized Additive Model structure |
-| MLPGAF | `mlpgaf` | nn | Point | `MLPGAFConfig` | MLP-GAM with feature gates and uncertainty |
-| N-HiTS | `nhits` | nn | Point | `NHITSConfig` | Neural Hierarchical Interpolation for Time Series |
-| GANF | `ganf` | nn | Point | `GANFConfig` | Group Additive Neural Forecaster |
-| MLPF-QR | `mlpfqr` | nn | Quantile | `MLPFQRConfig` | MLPF with quantile regression output |
-| MLPGAM-CRC | `mlpgamcrc` | nn | Probabilistic | `MLPGAMCRCConfig` | MLPGAM with conformal residual coverage |
+Each architecture ships as a **point** base model plus a full suite of probabilistic variants. All share the `nn` domain and are loaded via the same registry.
+
+#### Base Architectures
+
+| Model | Name | Config Class | Description |
+|---|---|---|---|
+| MLPF | `mlpf` | `MLPFConfig` | MLP forecaster with attention-based feature combination |
+| MLPGAM | `mlpgam` | `MLPGAMConfig` | MLP with Generalized Additive Model structure |
+| MLPGAF | `mlpgaf` | `MLPGAFConfig` | MLP-GAM with gated attention fusion |
+| N-HiTS | `nhits` | `NHITSConfig` | Neural Hierarchical Interpolation for Time Series |
+| GANF | `ganf` | `GANFConfig` | Graph Attention Network Forecaster |
+
+#### MLPF Probabilistic Variants
+
+| Name | Type | Config Class |
+|---|---|---|
+| `mlpfnormal` | Parametric — Normal | `MLPFNormalConfig` |
+| `mlpflaplace` | Parametric — Laplace | `MLPFLaplaceConfig` |
+| `mlpflognormal` | Parametric — LogNormal | `MLPFLogNormalConfig` |
+| `mlpfgamma` | Parametric — Gamma | `MLPFGammaConfig` |
+| `mlpfbeta` | Parametric — Beta | `MLPFBetaConfig` |
+| `mlpfqr` | Quantile Regression | `MLPFQRConfig` |
+| `mlpffpqr` | Full Parameterised QR | `MLPFFPQRConfig` |
+| `mlpfcrc` | Conformal Residual Coverage | `MLPFCRCConfig` |
+
+#### MLPGAM Probabilistic Variants
+
+| Name | Type | Config Class |
+|---|---|---|
+| `mlpgamnormal` | Parametric — Normal | `MLPGAMNormalConfig` |
+| `mlpgamlaplace` | Parametric — Laplace | `MLPGAMLaplaceConfig` |
+| `mlpgamlognormal` | Parametric — LogNormal | `MLPGAMLogNormalConfig` |
+| `mlpgamgamma` | Parametric — Gamma | `MLPGAMGammaConfig` |
+| `mlpgambeta` | Parametric — Beta | `MLPGAMBetaConfig` |
+| `mlpgamstudentt` | Parametric — Student-t | `MLPGAMStudentTConfig` |
+| `mlpgamqr` | Quantile Regression | `MLPGAMQRConfig` |
+| `mlpgamfpqr` | Full Parameterised QR | `MLPGAMFPQRConfig` |
+| `mlpgamcrc` | Conformal Residual Coverage | `MLPGAMCRCConfig` |
+
+#### MLPGAF Probabilistic Variants
+
+| Name | Type | Config Class |
+|---|---|---|
+| `mlpgafnormal` | Parametric — Normal | `MLPGAFNormalConfig` |
+| `mlpgaflaplace` | Parametric — Laplace | `MLPGAFLaplaceConfig` |
+| `mlpgaflognormal` | Parametric — LogNormal | `MLPGAFLogNormalConfig` |
+| `mlpgafgamma` | Parametric — Gamma | `MLPGAFGammaConfig` |
+| `mlpgafbeta` | Parametric — Beta | `MLPGAFBetaConfig` |
+| `mlpgafstudentt` | Parametric — Student-t | `MLPGAFStudentTConfig` |
+| `mlpgafqr` | Quantile Regression | `MLPGAFQRConfig` |
+| `mlpgaffpqr` | Full Parameterised QR | `MLPGAFFPQRConfig` |
+| `mlpgafcrc` | Conformal Residual Coverage | `MLPGAFCRCConfig` |
+
+#### N-HiTS Probabilistic Variants
+
+| Name | Type | Config Class |
+|---|---|---|
+| `nhitsnormal` | Parametric — Normal | `NHITSNormalConfig` |
+| `nhitslaplace` | Parametric — Laplace | `NHITSLaplaceConfig` |
+| `nhitslognormal` | Parametric — LogNormal | `NHITSLogNormalConfig` |
+| `nhitsgamma` | Parametric — Gamma | `NHITSGammaConfig` |
+| `nhitsbeta` | Parametric — Beta | `NHITSBetaConfig` |
+| `nhitsstudentt` | Parametric — Student-t | `NHITSStudentTConfig` |
+| `nhitsqr` | Quantile Regression | `NHITSQRConfig` |
+| `nhitsfpqr` | Full Parameterised QR | `NHITSFPQRConfig` |
+| `nhitscrc` | Conformal Residual Coverage | `NHITSCRCConfig` |
 
 ## Model Class Hierarchy
 
@@ -64,13 +124,11 @@ classDiagram
         +fit(X, y)
         +predict(x)
         +forecast(x)
-        +format_features(x)
     }
 
     class BaseQuantileRegressor {
         <<ML Quantile>>
         +quantiles: list
-        +conf_level: float
         +fit(X, y)
         +predict(X, sigma)
     }
@@ -79,21 +137,44 @@ classDiagram
         <<ML Probabilistic>>
         +fit(X, y)
         +predict(X)
-        +forecast(x)
     }
 
     class BaseNeuralForecast {
-        <<NN Domain>>
+        <<NN Base>>
         +fit(X_train, y_train, X_val, y_val)
         +forecast(features)
         +update(trial)
-        +load_checkpoint()
+    }
+
+    class MLPFVariants["MLPF Variants (×8)"] {
+        mlpfnormal · mlpflaplace · mlpflognormal
+        mlpfgamma · mlpfbeta
+        mlpfqr · mlpffpqr · mlpfcrc
+    }
+
+    class MLPGAMVariants["MLPGAM Variants (×9)"] {
+        mlpgamnormal · mlpgamlaplace · mlpgamlognormal
+        mlpgamgamma · mlpgambeta · mlpgamstudentt
+        mlpgamqr · mlpgamfpqr · mlpgamcrc
+    }
+
+    class MLPGAFVariants["MLPGAF Variants (×9)"] {
+        mlpgafnormal · mlpgaflaplace · mlpgaflognormal
+        mlpgafgamma · mlpgafbeta · mlpgafstudentt
+        mlpgafqr · mlpgaffpqr · mlpgafcrc
+    }
+
+    class NHITSVariants["N-HiTS Variants (×9)"] {
+        nhitsnormal · nhitslaplace · nhitslognormal
+        nhitsgamma · nhitsbeta · nhitsstudentt
+        nhitsqr · nhitsfpqr · nhitscrc
     }
 
     BaseRegressor <|-- NAIVEModel
     BaseRegressor <|-- SEASONALNAIVEModel
     BaseRegressor <|-- WINDOWAVERAGEModel
     BaseRegressor <|-- DRIFTModel
+    BaseRegressor <|-- CONTEXTPARROTModel
     BaseRegressor <|-- CATBOOSTModel
     BaseRegressor <|-- XGBOOSTModel
     BaseRegressor <|-- LIGHTGBMModel
@@ -114,21 +195,27 @@ classDiagram
     BaseNeuralForecast <|-- MLPGAFModel
     BaseNeuralForecast <|-- NHITSModel
     BaseNeuralForecast <|-- GANFModel
-    BaseNeuralForecast <|-- MLPFQRModel
-    BaseNeuralForecast <|-- MLPGAMCRCModel
+    MLPFModel <|-- MLPFVariants
+    MLPGAMModel <|-- MLPGAMVariants
+    MLPGAFModel <|-- MLPGAFVariants
+    NHITSModel <|-- NHITSVariants
 ```
 
 ## Choosing a Model
 
 | Use Case | Recommended Models | Why |
 |---|---|---|
-| Establish performance floor | `naive`, `seasonal_naive`, `drift` | Zero-training reference; compute skill scores against ML/NN |
+| Establish performance floor | `naive`, `seasonal_naive`, `drift`, `context_parrot` | Zero-training reference; compute skill scores against ML/NN |
 | Quick ML baseline | `lineareg`, `randomforest` | Fast training, easy to interpret |
 | Tabular data, many features | `catboost`, `lightgbm`, `xgboost` | Strong with heterogeneous features |
-| GPU acceleration needed | `catboost` (GPU), `mlpf`, `nhits` | Native GPU support |
-| Uncertainty  -  symmetric targets | `gausscatboost`, `ngboostnormal` | Gaussian output; GaussCatBoost also decomposes epistemic vs aleatoric uncertainty |
-| Uncertainty  -  positive targets | `ngboostlognormal`, `qrcatboost` | LogNormal or distribution-free quantiles |
-| Uncertainty  -  any model | `qrcatboost`, `qrrandomforest`, `mlpfqr` | Quantile regression outputs |
+| GPU acceleration needed | `catboost` (GPU), `xgboost` (CUDA), `mlpf`, `nhits` | Native GPU support |
+| Parametric uncertainty — symmetric | `gausscatboost`, `ngboostnormal`, `mlpfnormal`, `nhitsnormal` | Gaussian output with mean + sigma |
+| Parametric uncertainty — heavy tails | `mlpgamstudentt`, `mlpgafstudentt`, `nhitsstudentt` | Student-t handles heavier-tailed residuals |
+| Parametric uncertainty — positive targets | `ngboostlognormal`, `mlpflognormal`, `mlpgamgamma` | LogNormal / Gamma for count or power data |
+| Distribution-free quantiles — ML | `qrcatboost`, `qrxgboost`, `qrlightgbm`, `qrrandomforest` | Pinball loss, any quantile at inference |
+| Distribution-free quantiles — NN | `mlpfqr`, `mlpgamqr`, `mlpgafqr`, `nhitsqr` | Simultaneous multi-quantile output |
+| Learned quantile levels | `mlpffpqr`, `mlpgamfpqr`, `mlpgaffpqr`, `nhitsfpqr` | FPQR adapts quantile levels during training |
+| Post-hoc coverage guarantee | `mlpfcrc`, `mlpgamcrc`, `mlpgafcrc`, `nhitscrc` | Conformal residual coverage wraps any NN |
 | Complex temporal patterns | `nhits`, `mlpf`, `ganf` | Deep learning captures nonlinearities |
 | Interpretable forecasts | `mlpgam`, `mlpgaf`, `ganf` | Additive structure provides feature insights |
 | Small datasets | `lineareg`, `catboost`, `randomforest` | Less prone to overfitting |

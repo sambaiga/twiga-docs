@@ -3,20 +3,20 @@
 <details>
 <summary>Source Files</summary>
 
-- `twiga/models/nn/core/base.py` -- `BaseNeuralForecast` (training orchestration)
-- `twiga/models/nn/core/base_model.py` -- `BaseNeuralModel` (LightningModule wrapper)
-- `twiga/models/nn/core/base_arch.py` -- `BaseArchitecture` (nn.Module ABC)
-- `twiga/models/nn/core/embedding.py` -- Value & positional embeddings
-- `twiga/models/nn/core/linear.py` -- `create_linear`, `MLPBlock`, `PastFutureEncoder`, `FeedForward`
-- `twiga/models/nn/mlpf_model.py` -- `MLPFModel` / `MLPFConfig`
-- `twiga/models/nn/mlpgam_model.py` -- `MLPGAMModel` / `MLPGAMConfig`
-- `twiga/models/nn/mlpgaf_model.py` -- `MLPGAFModel` / `MLPGAFConfig`
-- `twiga/models/nn/nhits_model.py` -- `NHITSModel` / `NHITSConfig`
-- `twiga/models/nn/mlpfqr_model.py` -- `MLPFQRModel` / `MLPFQRConfig`
-- `twiga/models/nn/mlpgamcrc_model.py` -- `MLPGAMCRCModel` / `MLPGAMCRCConfig`
-- `twiga/models/nn/net/` -- Network architecture implementations
-- `twiga/models/nn/prob/core.py` -- `ProbabilisticModel` / `ProbabilisticNetwork`
-- `twiga/models/nn/prob/` -- Probabilistic network variants (parametric, QR, FPQR, CRC)
+- `twiga/models/nn/core/base.py` - `BaseNeuralForecast` (training orchestration)
+- `twiga/models/nn/core/base_model.py` - `BaseNeuralModel` (LightningModule wrapper)
+- `twiga/models/nn/core/base_arch.py` - `BaseArchitecture` (nn.Module ABC)
+- `twiga/models/nn/core/embedding.py` - Value & positional embeddings
+- `twiga/models/nn/core/linear.py` - `create_linear`, `MLPBlock`, `PastFutureEncoder`, `FeedForward`
+- `twiga/models/nn/mlpf_model.py` - `MLPFModel` / `MLPFConfig`
+- `twiga/models/nn/mlpgam_model.py` - `MLPGAMModel` / `MLPGAMConfig`
+- `twiga/models/nn/mlpgaf_model.py` - `MLPGAFModel` / `MLPGAFConfig`
+- `twiga/models/nn/nhits_model.py` - `NHITSModel` / `NHITSConfig`
+- `twiga/models/nn/mlpfqr_model.py` - `MLPFQRModel` / `MLPFQRConfig`
+- `twiga/models/nn/mlpgamcrc_model.py` - `MLPGAMCRCModel` / `MLPGAMCRCConfig`
+- `twiga/models/nn/net/` - Network architecture implementations
+- `twiga/models/nn/prob/core.py` - `ProbabilisticModel` / `ProbabilisticNetwork`
+- `twiga/models/nn/prob/` - Probabilistic network variants (parametric, QR, FPQR, CRC)
 
 </details>
 
@@ -109,8 +109,8 @@ classDiagram
 
 | Responsibility | Method | Details |
 |---|---|---|
-| Hyperparameter update | `update(trial)` | Abstract -- each model subclass reinitializes itself from an Optuna trial. |
-| Checkpoint loading | `load_checkpoint()` | Abstract -- loads the best checkpoint for the specific architecture. |
+| Hyperparameter update | `update(trial)` | Abstract - each model subclass reinitializes itself from an Optuna trial. |
+| Checkpoint loading | `load_checkpoint()` | Abstract - loads the best checkpoint for the specific architecture. |
 | Trainer setup | `_set_up_trainer(trial=None)` | Creates a `pl.Trainer` with early stopping (or Optuna pruning), model checkpointing, LR monitoring, and a progress bar. |
 | Logger setup | `_configure_logger()` | `WandbLogger` when `wandb_logging=True`, otherwise `TensorBoardLogger`. |
 | Training | `fit(X_train, y_train, X_val, y_val, trial)` | Wraps data in a `TimeseriesDataModule`, optionally resumes from the latest checkpoint, and calls `trainer.fit()`. |
@@ -191,7 +191,7 @@ The embedding system uses a registry pattern. Available embedding types:
 
 ## Point Forecast Models
 
-### MLPF -- MLP Forecaster
+### MLPF - MLP Forecaster
 
 An MLP-based forecaster with attention-based feature combination. Separate `PastFutureEncoder` modules process each feature group (target, historical, calendar, exogenous, future covariates), and the resulting latent vectors are combined via multi-head attention, learned weights, or simple addition.
 
@@ -224,7 +224,7 @@ Registered name: `"mlpf"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](../c
 | `num_attention_heads` | `int` | `4` | Heads for `"attn-comb"` combination |
 
 
-### MLPGAM -- MLP Generalized Additive Model
+### MLPGAM - MLP Generalized Additive Model
 
 Extends the MLPF architecture with a **generalized additive model (GAM) structure**: each feature group contributes independently to the final forecast via its own linear projection, and the outputs are summed. A **Lasso penalty** (`lambda_lasso`) encourages sparsity across group contributions.
 
@@ -242,7 +242,7 @@ Registered name: `"mlpgam"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](..
 | `lambda_lasso` | `float` | `1e-6` | Lasso (L1) penalty coefficient for group-level sparsity |
 
 
-### MLPGAF -- MLP Generalized Additive Forecaster with Feature Gates
+### MLPGAF - MLP Generalized Additive Forecaster with Feature Gates
 
 Builds on the GAM structure with **learned feature gates** and an optional **sigma head** for uncertainty estimation. Feature gates use a sigmoid function (controlled by `gate_scale`) to perform soft feature selection, and a warm-up schedule (`warmup_epochs`) gradually activates the gate penalty.
 
@@ -275,14 +275,14 @@ Registered name: `"mlpgaf"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](..
 | `sigma_type` | `str` | `"Residual"` | Uncertainty modeling type for the sigma head |
 
 
-### N-HiTS -- Neural Hierarchical Interpolation for Time Series
+### N-HiTS - Neural Hierarchical Interpolation for Time Series
 
 N-HiTS decomposes the forecasting problem into multiple resolution levels using **stacked hierarchical interpolation blocks**. Each stack processes the input at a different temporal resolution:
 
-1. **Input pooling** -- a `MaxPool1d` or `AvgPool1d` layer with a per-stack kernel size (`n_pool_kernel_size`) downsamples the lookback window to capture patterns at different scales.
-2. **MLP processing** -- within each stack, one or more MLP blocks (`n_blocks`) with configurable layer sizes (`mlp_units`) produce basis expansion coefficients.
-3. **Interpolation** -- the low-resolution coefficients are upsampled back to the forecast horizon using the chosen `interpolation_mode` (linear, nearest, or cubic), with a per-stack downsampling factor (`n_freq_downsample`) controlling the number of coefficients.
-4. **Hierarchical summation** -- forecasts from all stacks are summed to produce the final prediction, combining coarse global trends with fine local patterns.
+1. **Input pooling** - a `MaxPool1d` or `AvgPool1d` layer with a per-stack kernel size (`n_pool_kernel_size`) downsamples the lookback window to capture patterns at different scales.
+2. **MLP processing** - within each stack, one or more MLP blocks (`n_blocks`) with configurable layer sizes (`mlp_units`) produce basis expansion coefficients.
+3. **Interpolation** - the low-resolution coefficients are upsampled back to the forecast horizon using the chosen `interpolation_mode` (linear, nearest, or cubic), with a per-stack downsampling factor (`n_freq_downsample`) controlling the number of coefficients.
+4. **Hierarchical summation** - forecasts from all stacks are summed to produce the final prediction, combining coarse global trends with fine local patterns.
 
 :::{admonition} Config class: `NHITSConfig`
 :class: info
@@ -312,16 +312,16 @@ The lists `stack_types`, `n_blocks`, `mlp_units`, `n_pool_kernel_size`, and `n_f
 :::
 
 
-### GANF -- Group Additive Neural Forecaster
+### GANF - Group Additive Neural Forecaster
 
 GANF is a multivariate forecasting model that uses a **group-wise additive structure** aligned with the natural feature groupings in the [DataPipeline](../core/data-pipeline.md). Each feature group (target, historical, calendar, exogenous, future covariates) is processed by a dedicated encoder. Group-level predictions are produced via linear projections and summed with a global bias to form the final forecast.
 
 Key architectural features:
 
-- **Group-specific encoders** -- `PastFutureEncoder` instances process each feature group independently, preserving the additive interpretability of the model.
-- **Structured sparsity** -- group Lasso (L2/L1) or element-wise Lasso regularization (`lambda_lasso`) encourages the model to zero out entire feature groups that do not contribute to the forecast.
-- **Optional sigma learning** -- when `sigma_learning=True`, the model learns per-group observation noise parameters for probabilistic forecasting.
-- **Flexible group combination** -- for feature groups with both past and future information, representations can be combined via `"learnable"`, `"average"`, `"sum"`, or `"cat"` strategies.
+- **Group-specific encoders** - `PastFutureEncoder` instances process each feature group independently, preserving the additive interpretability of the model.
+- **Structured sparsity** - group Lasso (L2/L1) or element-wise Lasso regularization (`lambda_lasso`) encourages the model to zero out entire feature groups that do not contribute to the forecast.
+- **Optional sigma learning** - when `sigma_learning=True`, the model learns per-group observation noise parameters for probabilistic forecasting.
+- **Flexible group combination** - for feature groups with both past and future information, representations can be combined via `"learnable"`, `"average"`, `"sum"`, or `"cat"` strategies.
 
 :::{admonition} Config class: `GANFConfig`
 :class: info
@@ -380,10 +380,10 @@ Each base architecture supports these distribution heads:
 | LogNormal | ✓ | ✓ | ✓ | ✓ | `LogNormalConfig` |
 | Gamma | ✓ | ✓ | ✓ | ✓ | `GammaConfig` |
 | Beta | ✓ | ✓ | ✓ | ✓ | `BetaConfig` |
-| StudentT | -- | ✓ | ✓ | ✓ | `StudentTConfig` |
+| StudentT | - | ✓ | ✓ | ✓ | `StudentTConfig` |
 | QR | ✓ | ✓ | ✓ | ✓ | `QRConfig` |
 | FPQR | ✓ | ✓ | ✓ | ✓ | `FPQRConfig` |
-| CRC | ✓ | ✓ | -- | -- | `CRCConfig` |
+| CRC | ✓ | ✓ | - | - | `CRCConfig` |
 
 ```python
 from twiga.models.nn.mlpfnormal_model import MLPFNormalConfig
@@ -406,7 +406,7 @@ from twiga.models.nn.mlpf_model import MLPFConfig
 mlpf_config = MLPFConfig.from_data_config(data_config, distribution="normal")
 ```
 
-### MLPF-QR -- MLPF with Quantile Regression
+### MLPF-QR - MLPF with Quantile Regression
 
 Extends the MLPF architecture with a **multi-quantile output head**. Instead of producing a single point forecast, MLPF-QR outputs one forecast per quantile, trained with either a pinball loss or a smoothed Huber-pinball variant.
 
@@ -428,7 +428,7 @@ Registered name: `"mlpfqr"` | Domain: `"nn"` | Extends: `MLPFConfig`
 All other fields are inherited from `MLPFConfig`. See [Quantile Regression](../probabilistic/quantile-regression.md) for details on the loss functions and quantile calibration.
 
 
-### MLPGAM-CRC -- MLPGAM with Conformal Residual Coverage
+### MLPGAM-CRC - MLPGAM with Conformal Residual Coverage
 
 Extends `MLPGAMModel` with a conformal residual coverage (CRC) head. The architecture is identical to MLPGAM, but the model produces outputs that are compatible with the conformal prediction framework. Configuration inherits all fields from `MLPGAMConfig` without additions.
 
@@ -446,11 +446,11 @@ Registered name: `"mlpgamcrc"` | Domain: `"nn"` | Extends: `MLPGAMConfig`
 
 | Model | Type | Feature Combination | Interpretable | Sparsity | Probabilistic variants | Best For |
 |---|---|---|---|---|---|---|
-| **MLPF** | Point | Attention / weighted / additive | -- | -- | Normal, Laplace, LogNormal, Gamma, Beta, QR, FPQR, CRC | General-purpose deep forecasting |
+| **MLPF** | Point | Attention / weighted / additive | - | - | Normal, Laplace, LogNormal, Gamma, Beta, QR, FPQR, CRC | General-purpose deep forecasting |
 | **MLPGAM** | Point | Additive (GAM) | Yes | L1 Lasso | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Interpretable group-additive forecasts |
 | **MLPGAF** | Point | Gated additive | Yes | Gate + weight Lasso | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Feature selection with uncertainty |
-| **N-HiTS** | Point | Hierarchical stack sum | Decomposable | -- | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR | Multi-resolution temporal patterns |
-| **GANF** | Point | Group-additive sum | Yes | Group Lasso | -- (use conformal post-hoc) | Multivariate additive forecasting |
+| **N-HiTS** | Point | Hierarchical stack sum | Decomposable | - | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR | Multi-resolution temporal patterns |
+| **GANF** | Point | Group-additive sum | Yes | Group Lasso | - (use conformal post-hoc) | Multivariate additive forecasting |
 
 :::{admonition} Choosing a distribution
 :class: tip
@@ -486,7 +486,7 @@ data_config = DataPipelineConfig(
     target_scaler=RobustScaler(),
 )
 
-# 2. Create model configs -- dimensions are inferred automatically
+# 2. Create model configs - dimensions are inferred automatically
 mlpf_config = MLPFConfig.from_data_config(
     data_config,
     max_epochs=50,
