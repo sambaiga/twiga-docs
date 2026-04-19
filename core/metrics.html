@@ -607,17 +607,20 @@
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/metrics/point.py</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/metrics/interval.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/metrics/quantile.py</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/metrics/prob.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/metrics/parametric.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/metrics/stats.py</span></code></p></li>
 </ul>
 </details>
-<p>Twiga provides a comprehensive set of metrics for evaluating point forecasts, prediction intervals, and probabilistic forecasts. All metrics operate on NumPy arrays and are used internally by <a class="reference internal" href="forecaster.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.evaluate_point_forecast()</span></code></span></a> and <a class="reference internal" href="forecaster.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.evaluate_interval_forecast()</span></code></span></a>.</p>
+<p>Twiga provides a comprehensive set of metrics for evaluating point forecasts, prediction intervals, quantile forecasts, and full probabilistic forecasts. All metrics operate on NumPy arrays and are accessible via <a class="reference internal" href="#twiga.core.metrics.evaluate_forecast" title="twiga.core.metrics.evaluate_forecast"><code class="xref py py-func docutils literal notranslate"><span class="pre">evaluate_forecast()</span></code></a>.</p>
 <section id="point-forecast-metrics">
 <h2>Point Forecast Metrics<a class="headerlink" href="#point-forecast-metrics" title="Link to this heading">#</a></h2>
 <p>Defined in <code class="docutils literal notranslate"><span class="pre">twiga/core/metrics/point.py</span></code>. Used via <code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast()</span></code>.</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Metric</p></th>
-<th class="head"><p>Function</p></th>
+<th class="head"><p>Key</p></th>
 <th class="head"><p>Formula</p></th>
 <th class="head"><p>Description</p></th>
 </tr>
@@ -633,15 +636,25 @@
 <td><p><span class="math notranslate nohighlight">\(\frac{1}{T}\sum|y_t - \hat{y}_t|\)</span></p></td>
 <td><p>Mean Absolute Error</p></td>
 </tr>
-<tr class="row-even"><td><p>MSE</p></td>
+<tr class="row-even"><td><p><strong>MedAE</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">medae</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(\text{median}(|y_t - \hat{y}_t|)\)</span></p></td>
+<td><p>Median Absolute Error — robust to outliers</p></td>
+</tr>
+<tr class="row-odd"><td><p>MSE</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">mse</span></code></p></td>
 <td><p><span class="math notranslate nohighlight">\(\frac{1}{T}\sum(y_t - \hat{y}_t)^2\)</span></p></td>
 <td><p>Mean Squared Error</p></td>
 </tr>
-<tr class="row-odd"><td><p>RMSE</p></td>
+<tr class="row-even"><td><p>RMSE</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">rmse</span></code></p></td>
 <td><p><span class="math notranslate nohighlight">\(\sqrt{MSE}\)</span></p></td>
 <td><p>Root Mean Squared Error</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>RMSLE</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rmsle</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(\sqrt{\frac{1}{T}\sum(\log(1+\hat{y}_t)-\log(1+y_t))^2}\)</span></p></td>
+<td><p>Root Mean Squared Log Error — scale-invariant, requires <span class="math notranslate nohighlight">\(y,\hat{y}\geq 0\)</span></p></td>
 </tr>
 <tr class="row-even"><td><p>NRMSE</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">nrmse</span></code></p></td>
@@ -683,12 +696,17 @@
 <td><p><span class="math notranslate nohighlight">\(\frac{RMSE}{RMSE_{naive}}\)</span></p></td>
 <td><p>Root Mean Squared Scaled Error</p></td>
 </tr>
-<tr class="row-even"><td><p>Correlation</p></td>
+<tr class="row-even"><td><p><strong>R²</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">r2</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(1 - \frac{\sum(y_t-\hat{y}_t)^2}{\sum(y_t-\bar{y})^2}\)</span></p></td>
+<td><p>Coefficient of Determination — proportion of variance explained</p></td>
+</tr>
+<tr class="row-odd"><td><p>Correlation</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">corr</span></code></p></td>
 <td><p>Pearson <span class="math notranslate nohighlight">\(\rho(y, \hat{y})\)</span></p></td>
 <td><p>Pearson correlation coefficient</p></td>
 </tr>
-<tr class="row-odd"><td><p>Normalized Bias</p></td>
+<tr class="row-even"><td><p>Normalized Bias</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">nbias</span></code></p></td>
 <td><p><span class="math notranslate nohighlight">\(\sum\frac{y_t - \hat{y}_t}{y_t + \hat{y}_t}\)</span></p></td>
 <td><p>Normalized bias error</p></td>
@@ -696,44 +714,28 @@
 </tbody>
 </table>
 </div>
-<section id="using-point-metrics">
-<h3>Using Point Metrics<a class="headerlink" href="#using-point-metrics" title="Link to this heading">#</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast()</span></code> function computes metrics per forecast day and target:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics.point</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_point_forecast</span>
+<p><strong>Bold</strong> entries are new additions aligned with standard libraries (NeuralForecast, Darts, scikit-learn).</p>
+<section id="skill-score">
+<h3>Skill Score<a class="headerlink" href="#skill-score" title="Link to this heading">#</a></h3>
+<p>The Skill Score measures relative improvement over a naive baseline:</p>
+<div class="math notranslate nohighlight">
+\[SS = 1 - \frac{\text{metric}(y, \hat{y})}{\text{metric}(y, y_{\text{naive}})}\]</div>
+<p>It is a standalone function (not part of <code class="docutils literal notranslate"><span class="pre">get_pointwise_metrics</span></code>) because it requires a baseline forecast:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">skill_score</span>
 
-<span class="n">outputs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;true&quot;</span><span class="p">:</span> <span class="n">ground_truth</span><span class="p">,</span>       <span class="c1"># shape: (num_days, time_steps, num_targets)</span>
-    <span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="n">predictions</span><span class="p">,</span>         <span class="c1"># shape: (num_days, time_steps, num_targets)</span>
-    <span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="n">timestamps</span><span class="p">,</span>        <span class="c1"># shape: (num_days, time_steps, num_targets)</span>
-    <span class="s2">&quot;targets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;load_mw&quot;</span><span class="p">],</span>     <span class="c1"># list of target names</span>
-<span class="p">}</span>
-
-<span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">metric_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;smape&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">])</span>
-</pre></div>
-</div>
-<p>To compute individual metrics directly:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics.point</span><span class="w"> </span><span class="kn">import</span> <span class="n">mae</span><span class="p">,</span> <span class="n">rmse</span><span class="p">,</span> <span class="n">smape</span><span class="p">,</span> <span class="n">corr</span>
-
-<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">])</span>
-<span class="n">y_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">2.2</span><span class="p">,</span> <span class="mf">3.1</span><span class="p">,</span> <span class="mf">4.3</span><span class="p">,</span> <span class="mf">5.2</span><span class="p">])</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MAE: </span><span class="si">{</span><span class="n">mae</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">y_hat</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RMSE: </span><span class="si">{</span><span class="n">rmse</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">y_hat</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sMAPE: </span><span class="si">{</span><span class="n">smape</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">y_hat</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Corr: </span><span class="si">{</span><span class="n">corr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">y_hat</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">ss</span> <span class="o">=</span> <span class="n">skill_score</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">y_naive</span><span class="o">=</span><span class="n">seasonal_naive_forecast</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;mae&quot;</span><span class="p">)</span>
+<span class="c1"># ss &gt; 0: model beats the baseline; ss = 0: no improvement; ss &lt; 0: worse</span>
 </pre></div>
 </div>
 </section>
-<section id="selecting-metrics">
-<h3>Selecting Metrics<a class="headerlink" href="#selecting-metrics" title="Link to this heading">#</a></h3>
-<p>Pass a list of metric names to <code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast()</span></code> or to <code class="docutils literal notranslate"><span class="pre">get_pointwise_metrics()</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Available metric names:</span>
-<span class="c1"># &quot;res&quot;, &quot;mae&quot;, &quot;mase&quot;, &quot;mse&quot;, &quot;msse&quot;, &quot;rmse&quot;, &quot;rmsse&quot;,</span>
-<span class="c1"># &quot;mape&quot;, &quot;wmape&quot;, &quot;smape&quot;, &quot;ope&quot;, &quot;corr&quot;, &quot;nbias&quot;</span>
+<section id="using-point-metrics">
+<h3>Using Point Metrics<a class="headerlink" href="#using-point-metrics" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics.point</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_point_forecast</span>
 
-<span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">metric_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">,</span> <span class="s2">&quot;wmape&quot;</span><span class="p">])</span>
+<span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">metric_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;r2&quot;</span><span class="p">,</span> <span class="s2">&quot;smape&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
+<p>Available metric keys: <code class="docutils literal notranslate"><span class="pre">&quot;res&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mae&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mase&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mse&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;msse&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;rmse&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;rmsse&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mape&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;wmape&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;smape&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;ope&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;corr&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;nbias&quot;</span></code>, <strong><code class="docutils literal notranslate"><span class="pre">&quot;r2&quot;</span></code></strong>, <strong><code class="docutils literal notranslate"><span class="pre">&quot;rmsle&quot;</span></code></strong>, **`”medae”``.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">metric_names</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>, all available metrics are computed.</p>
 </section>
 </section>
@@ -776,29 +778,94 @@
 <td><p><code class="docutils literal notranslate"><span class="pre">gamma_nmpi_score</span></code></p></td>
 <td><p>Width quality score relative to true NMPI</p></td>
 </tr>
+<tr class="row-odd"><td><p><strong>MSIS</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msis</span></code></p></td>
+<td><p>Mean Scaled Interval Score — M4/M5 competition standard</p></td>
+</tr>
 </tbody>
 </table>
 </div>
+<section id="msis">
+<h3>MSIS<a class="headerlink" href="#msis" title="Link to this heading">#</a></h3>
+<p>The Mean Scaled Interval Score is the standard metric for prediction interval comparison in the M4/M5 competitions. It penalizes width and missed coverage, normalized by the naive seasonal forecast MAE:</p>
+<div class="math notranslate nohighlight">
+\[MSIS = \frac{\frac{1}{n}\sum_{t}[(U_t - L_t) + \frac{2}{\alpha}(L_t - y_t)\mathbb{1}_{y_t &lt; L_t} + \frac{2}{\alpha}(y_t - U_t)\mathbb{1}_{y_t &gt; U_t}]}{\frac{1}{T-s}\sum_{i=s+1}^{T}|y_i - y_{i-s}|}\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">msis</span>
+
+<span class="n">score</span> <span class="o">=</span> <span class="n">msis</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="n">training_series</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">seasonality</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
 <section id="using-interval-metrics">
 <h3>Using Interval Metrics<a class="headerlink" href="#using-interval-metrics" title="Link to this heading">#</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics.interval</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_interval_forecast</span>
 
-<span class="n">outputs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;true&quot;</span><span class="p">:</span> <span class="n">ground_truth</span><span class="p">,</span>       <span class="c1"># shape: (num_days, time_steps, num_targets)</span>
-    <span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="n">predictions</span><span class="p">,</span>         <span class="c1"># shape: (num_days, time_steps, num_targets)</span>
-    <span class="s2">&quot;lower&quot;</span><span class="p">:</span> <span class="n">lower_bounds</span><span class="p">,</span>      <span class="c1"># shape: (num_days, time_steps, num_targets)</span>
-    <span class="s2">&quot;upper&quot;</span><span class="p">:</span> <span class="n">upper_bounds</span><span class="p">,</span>      <span class="c1"># shape: (num_days, time_steps, num_targets)</span>
-    <span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="n">timestamps</span><span class="p">,</span>
-    <span class="s2">&quot;targets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;load_mw&quot;</span><span class="p">],</span>
-<span class="p">}</span>
-
-<span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
 <span class="c1"># Returns: timestamp | target | res | mae | ... | winkle-score | picp | ace | nmpi | cwe</span>
 </pre></div>
 </div>
 <div class="note admonition">
 <p class="admonition-title">Note</p>
-<p><code class="docutils literal notranslate"><span class="pre">evaluate_interval_forecast()</span></code> computes both point metrics and interval metrics for each forecast day. The alpha parameter should match the significance level used during <a class="reference internal" href="../probabilistic/conformal-prediction.html"><span class="std std-doc">conformal calibration</span></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">evaluate_interval_forecast()</span></code> computes both point metrics and interval metrics for each forecast day. The <code class="docutils literal notranslate"><span class="pre">alpha</span></code> parameter should match the significance level used during <a class="reference internal" href="../probabilistic/conformal-prediction.html"><span class="std std-doc">conformal calibration</span></a>.</p>
+</div>
+</section>
+</section>
+<section id="quantile-forecast-metrics">
+<h2>Quantile Forecast Metrics<a class="headerlink" href="#quantile-forecast-metrics" title="Link to this heading">#</a></h2>
+<p>Defined in <code class="docutils literal notranslate"><span class="pre">twiga/core/metrics/quantile.py</span></code>. Used via <code class="docutils literal notranslate"><span class="pre">evaluate_quantile_forecast()</span></code>.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Metric</p></th>
+<th class="head"><p>Function</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Pinball Loss</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pinball_score</span></code></p></td>
+<td><p>Mean pinball (check) loss across all quantile levels</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>WQL</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">wql</span></code></p></td>
+<td><p>Weighted Quantile Loss — GluonTS/M5 normalized standard</p></td>
+</tr>
+<tr class="row-even"><td><p>CRPS</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">crps_quantile</span></code></p></td>
+<td><p>Piecewise-linear CDF approximation of CRPS</p></td>
+</tr>
+<tr class="row-odd"><td><p>Calibration Error</p></td>
+<td><p>—</p></td>
+<td><p>Mean |empirical coverage − nominal level|</p></td>
+</tr>
+<tr class="row-even"><td><p>Sharpness</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">quantile_sharpness</span></code></p></td>
+<td><p>Mean width of symmetric prediction intervals</p></td>
+</tr>
+<tr class="row-odd"><td><p>PIT</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">reliability_scores</span></code></p></td>
+<td><p>Probability Integral Transform for calibration diagnosis</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="weighted-quantile-loss-wql">
+<h3>Weighted Quantile Loss (WQL)<a class="headerlink" href="#weighted-quantile-loss-wql" title="Link to this heading">#</a></h3>
+<p>WQL is the GluonTS/M5 standard aggregate quantile metric, normalized by total observation volume for cross-series comparability:</p>
+<div class="math notranslate nohighlight">
+\[WQL = \frac{2 \sum_{\tau} \sum_{t} \rho_\tau(y_t, \hat{q}_{\tau,t})}{|\mathcal{T}| \cdot \sum_t |y_t|}\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">wql</span>
+
+<span class="n">score</span> <span class="o">=</span> <span class="n">wql</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">quantile_preds</span><span class="p">,</span> <span class="n">quantile_levels</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span> <span class="n">quantile_axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="using-quantile-metrics">
+<h3>Using Quantile Metrics<a class="headerlink" href="#using-quantile-metrics" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics.quantile</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_quantile_forecast</span>
+
+<span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_quantile_forecast</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="c1"># Columns: point metrics + picp | ace | nmpi | cwe | pinball | wql | crps | calibration_error | sharpness</span>
+</pre></div>
 </div>
 </section>
 </section>
@@ -813,80 +880,275 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Pinball Loss</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">pinball_loss(y,</span> <span class="pre">q,</span> <span class="pre">tau)</span></code></p></td>
-<td><p>Quantile-specific loss: asymmetric penalty for over/under-prediction</p></td>
-</tr>
-<tr class="row-odd"><td><p>Pinball Score</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">pinball_score(true,</span> <span class="pre">q_values,</span> <span class="pre">taus)</span></code></p></td>
-<td><p>Mean pinball loss across multiple quantiles</p></td>
-</tr>
 <tr class="row-even"><td><p>CRPS</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">continuous_ranked_probability_score(true,</span> <span class="pre">samples)</span></code></p></td>
-<td><p>Continuous Ranked Probability Score</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">continuous_ranked_probability_score</span></code></p></td>
+<td><p>Sample-based CRPS — proper scoring rule generalising MAE</p></td>
 </tr>
 <tr class="row-odd"><td><p>CRPS (PWM)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">continuous_ranked_probability_score_pwm(true,</span> <span class="pre">samples)</span></code></p></td>
-<td><p>CRPS via Probability Weighted Moments</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">continuous_ranked_probability_score_pwm</span></code></p></td>
+<td><p>CRPS via Probability Weighted Moments (better for small samples)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>DSS</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">dawid_sebastiani_score</span></code></p></td>
+<td><p>Dawid-Sebastiani Score for Normal parametric forecasts</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Energy Score</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">energy_score</span></code></p></td>
+<td><p>Multivariate generalisation of CRPS for joint distributions</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Brier Score</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">brier_score</span></code></p></td>
+<td><p>Probabilistic binary event forecast accuracy</p></td>
+</tr>
+<tr class="row-odd"><td><p>NLL</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_parametric_metrics</span></code></p></td>
+<td><p>Negative log-likelihood under Normal distribution</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<section id="pinball-loss">
-<h3>Pinball Loss<a class="headerlink" href="#pinball-loss" title="Link to this heading">#</a></h3>
-<p>The pinball loss evaluates quantile predictions asymmetrically:</p>
+<section id="dawid-sebastiani-score-dss">
+<h3>Dawid-Sebastiani Score (DSS)<a class="headerlink" href="#dawid-sebastiani-score-dss" title="Link to this heading">#</a></h3>
+<p>DSS is a proper scoring rule for location-scale parametric forecasts, jointly rewarding sharpness and calibration:</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}
-L_\tau(y, q) = \begin{cases} \tau(y - q) &amp; \text{if } y \geq q \\ (1 - \tau)(q - y) &amp; \text{if } y &lt; q \end{cases}
-\end{split}\]</div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics.prob</span><span class="w"> </span><span class="kn">import</span> <span class="n">pinball_loss</span><span class="p">,</span> <span class="n">pinball_score</span>
+\[DSS(y_t, \mu_t, \sigma_t) = \frac{(y_t - \mu_t)^2}{\sigma_t^2} + 2\log\sigma_t\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">dawid_sebastiani_score</span>
 
-<span class="c1"># Single quantile</span>
-<span class="n">loss</span> <span class="o">=</span> <span class="n">pinball_loss</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">true_values</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">quantile_predictions</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-
-<span class="c1"># Aggregated across quantiles</span>
-<span class="n">score</span> <span class="o">=</span> <span class="n">pinball_score</span><span class="p">(</span>
-    <span class="n">true</span><span class="o">=</span><span class="n">true_values</span><span class="p">,</span>
-    <span class="n">q_values</span><span class="o">=</span><span class="p">[</span><span class="n">q10_predictions</span><span class="p">,</span> <span class="n">q50_predictions</span><span class="p">,</span> <span class="n">q90_predictions</span><span class="p">],</span>
-    <span class="n">taus</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span>
-<span class="p">)</span>
+<span class="n">dss</span> <span class="o">=</span> <span class="n">dawid_sebastiani_score</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">predicted_means</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">predicted_stds</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
-<section id="crps">
-<h3>CRPS<a class="headerlink" href="#crps" title="Link to this heading">#</a></h3>
-<p>The Continuous Ranked Probability Score generalizes MAE to probabilistic forecasts:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics.prob</span><span class="w"> </span><span class="kn">import</span> <span class="n">continuous_ranked_probability_score</span>
+<section id="energy-score">
+<h3>Energy Score<a class="headerlink" href="#energy-score" title="Link to this heading">#</a></h3>
+<p>The Energy Score generalises CRPS to multivariate (joint horizon) forecast distributions:</p>
+<div class="math notranslate nohighlight">
+\[ES(F, \mathbf{y}) = \mathbb{E}_F\|\mathbf{X} - \mathbf{y}\|_2 - \tfrac{1}{2}\mathbb{E}_F\|\mathbf{X} - \mathbf{X}'\|_2\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">energy_score</span>
 
-<span class="c1"># samples shape: (num_predictions, num_observations)</span>
-<span class="n">crps</span> <span class="o">=</span> <span class="n">continuous_ranked_probability_score</span><span class="p">(</span><span class="n">true</span><span class="o">=</span><span class="n">true_values</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="n">forecast_samples</span><span class="p">)</span>
+<span class="c1"># samples shape: (n_ensemble_members, forecast_horizon)</span>
+<span class="n">es</span> <span class="o">=</span> <span class="n">energy_score</span><span class="p">(</span><span class="n">true</span><span class="o">=</span><span class="n">true_vector</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="n">ensemble_samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="brier-score">
+<h3>Brier Score<a class="headerlink" href="#brier-score" title="Link to this heading">#</a></h3>
+<p>Measures accuracy of probabilistic binary event forecasts (e.g., exceedance probability):</p>
+<div class="math notranslate nohighlight">
+\[BS = \frac{1}{n}\sum_t(\hat{p}_t - o_t)^2 \quad \hat{p}_t = \frac{1}{M}\sum_i \mathbb{1}(x_{i,t} \leq \text{threshold})\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">brier_score</span>
+
+<span class="n">bs</span> <span class="o">=</span> <span class="n">brier_score</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="n">ensemble_samples</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">peak_demand</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="using-probabilistic-metrics">
+<h3>Using Probabilistic Metrics<a class="headerlink" href="#using-probabilistic-metrics" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics.prob</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_samples_forecast</span><span class="p">,</span> <span class="n">evaluate_parametric_forecast</span>
+
+<span class="c1"># Sample-based forecasts (CRPS + Energy Score)</span>
+<span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_samples_forecast</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+<span class="c1"># Parametric forecasts (NLL + DSS)</span>
+<span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_parametric_forecast</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 </section>
-<section id="integration-with-twigaforecaster">
-<h2>Integration with TwigaForecaster<a class="headerlink" href="#integration-with-twigaforecaster" title="Link to this heading">#</a></h2>
-<p>The <a class="reference internal" href="forecaster.html"><span class="std std-doc">TwigaForecaster</span></a> uses these metrics automatically during evaluation:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Point forecast evaluation</span>
-<span class="n">predictions_df</span><span class="p">,</span> <span class="n">metrics_df</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<section id="analytical-parametric-scoring">
+<h2>Analytical Parametric Scoring<a class="headerlink" href="#analytical-parametric-scoring" title="Link to this heading">#</a></h2>
+<p>Defined in <code class="docutils literal notranslate"><span class="pre">twiga/core/metrics/parametric.py</span></code>. Closed-form implementations for common parametric distributions — no Monte Carlo sampling needed.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Function</p></th>
+<th class="head"><p>Distribution</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">normal_nll</span></code></p></td>
+<td><p>Normal</p></td>
+<td><p>Negative log-likelihood under <span class="math notranslate nohighlight">\(\mathcal{N}(\mu, \sigma^2)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">normal_crps</span></code></p></td>
+<td><p>Normal</p></td>
+<td><p>Analytical CRPS under <span class="math notranslate nohighlight">\(\mathcal{N}(\mu, \sigma^2)\)</span> (exact, no quantile approximation)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">laplace_nll</span></code></p></td>
+<td><p>Laplace</p></td>
+<td><p>Negative log-likelihood under <span class="math notranslate nohighlight">\(\text{Laplace}(\mu, b)\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics.parametric</span><span class="w"> </span><span class="kn">import</span> <span class="n">normal_nll</span><span class="p">,</span> <span class="n">normal_crps</span><span class="p">,</span> <span class="n">laplace_nll</span>
 
-<span class="c1"># Interval forecast evaluation (requires conformal calibration)</span>
-<span class="n">predictions_df</span><span class="p">,</span> <span class="n">metrics_df</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">nll</span> <span class="o">=</span> <span class="n">normal_nll</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+<span class="n">crps</span> <span class="o">=</span> <span class="n">normal_crps</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>   <span class="c1"># exact closed form</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">ForecasterConfig.metrics</span></code> field controls which point metrics are computed:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecasterConfig</span>
+<p>The analytical <code class="docutils literal notranslate"><span class="pre">normal_crps</span></code> uses:</p>
+<div class="math notranslate nohighlight">
+\[CRPS(\mathcal{N}(\mu,\sigma^2), y) = \sigma\left[z(2\Phi(z)-1) + 2\phi(z) - \frac{1}{\sqrt{\pi}}\right], \quad z = \frac{y-\mu}{\sigma}\]</div>
+</section>
+<section id="statistical-significance-testing">
+<h2>Statistical Significance Testing<a class="headerlink" href="#statistical-significance-testing" title="Link to this heading">#</a></h2>
+<p>Defined in <code class="docutils literal notranslate"><span class="pre">twiga/core/metrics/stats.py</span></code>.</p>
+<p>Both tests share the same interface: they accept raw forecast arrays <code class="docutils literal notranslate"><span class="pre">(p_real,</span> <span class="pre">p_pred_1,</span> <span class="pre">p_pred_2)</span></code> of shape <code class="docutils literal notranslate"><span class="pre">(n_days,</span> <span class="pre">n_steps_per_day)</span></code> and return a one-sided p-value.  <strong>A small p-value (&lt; 0.05) means <code class="docutils literal notranslate"><span class="pre">p_pred_2</span></code> is significantly more accurate than <code class="docutils literal notranslate"><span class="pre">p_pred_1</span></code>.</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Test</p></th>
+<th class="head"><p>Function</p></th>
+<th class="head"><p>Statistic</p></th>
+<th class="head"><p>What it tests</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>DM</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">diebold_mariano_test</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(\mathcal{N}(0,1)\)</span></p></td>
+<td><p>Unconditional equal predictive accuracy</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>GW</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">giacomini_white_test</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(\chi^2(q)\)</span></p></td>
+<td><p>Conditional predictive accuracy (exploits information set)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="diebold-mariano-dm-test">
+<h3>Diebold-Mariano (DM) Test<a class="headerlink" href="#diebold-mariano-dm-test" title="Link to this heading">#</a></h3>
+<p>Tests <em>unconditional</em> equal accuracy.  The loss differential <span class="math notranslate nohighlight">\(d_t = g(e_{1,t}) - g(e_{2,t})\)</span> is tested against zero using a HAC Bartlett variance estimator to handle serial correlation in multi-step forecasts:</p>
+<div class="math notranslate nohighlight">
+\[DM = \frac{\bar{d}}{\sqrt{\hat{\sigma}^2_{\text{HAC}} / T}} \xrightarrow{d} \mathcal{N}(0,1)\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">diebold_mariano_test</span>
 
-<span class="n">config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
-    <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;smape&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">],</span>
-    <span class="c1"># ... other params</span>
-<span class="p">)</span>
+<span class="c1"># Multivariate (single test, averaging across steps)</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">diebold_mariano_test</span><span class="p">(</span><span class="n">p_real</span><span class="p">,</span> <span class="n">p_pred_1</span><span class="p">,</span> <span class="n">p_pred_2</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;multivariate&quot;</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+
+<span class="c1"># Univariate (one test per step, e.g. per hour in a 24h horizon)</span>
+<span class="n">p_per_hour</span> <span class="o">=</span> <span class="n">diebold_mariano_test</span><span class="p">(</span><span class="n">p_real</span><span class="p">,</span> <span class="n">p_pred_1</span><span class="p">,</span> <span class="n">p_pred_2</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;univariate&quot;</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+<span class="c1"># p_per_hour.shape == (24,)</span>
 </pre></div>
 </div>
-<p>If <code class="docutils literal notranslate"><span class="pre">metrics</span></code> is empty or <code class="docutils literal notranslate"><span class="pre">None</span></code>, all available metrics are computed by default.</p>
+</section>
+<section id="giacomini-white-gw-test">
+<h3>Giacomini-White (GW) Test<a class="headerlink" href="#giacomini-white-gw-test" title="Link to this heading">#</a></h3>
+<p>Tests <em>conditional</em> predictive accuracy — it checks whether one forecast systematically exploits information the other ignores.  Uses instruments <span class="math notranslate nohighlight">\(h_t = [1, d_{t-1}]\)</span> in an OLS regression; the test statistic is <span class="math notranslate nohighlight">\(T \cdot R^2 \sim \chi^2(q)\)</span>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">giacomini_white_test</span>
+
+<span class="c1"># Multivariate (single joint test)</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">giacomini_white_test</span><span class="p">(</span><span class="n">p_real</span><span class="p">,</span> <span class="n">p_pred_1</span><span class="p">,</span> <span class="n">p_pred_2</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;multivariate&quot;</span><span class="p">)</span>
+
+<span class="c1"># Univariate (per-step tests)</span>
+<span class="n">p_per_hour</span> <span class="o">=</span> <span class="n">giacomini_white_test</span><span class="p">(</span><span class="n">p_real</span><span class="p">,</span> <span class="n">p_pred_1</span><span class="p">,</span> <span class="n">p_pred_2</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;univariate&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>When to use which test:</strong></p>
+<ul class="simple">
+<li><p>Use <strong>DM</strong> for a straightforward comparison of two forecasts without conditioning on past information.</p></li>
+<li><p>Use <strong>GW</strong> when you suspect one model exploits time-varying information (e.g., regime changes, calendar effects) that the other does not — GW is more powerful in these situations.</p></li>
+</ul>
+</section>
+<section id="visualising-the-test-matrix">
+<h3>Visualising the test matrix<a class="headerlink" href="#visualising-the-test-matrix" title="Link to this heading">#</a></h3>
+<p>Both functions return arrays when <code class="docutils literal notranslate"><span class="pre">version=&quot;univariate&quot;</span></code>, making it straightforward to build a model comparison heatmap:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span><span class="o">,</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">diebold_mariano_test</span>
+
+<span class="n">models</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Model A&quot;</span><span class="p">:</span> <span class="n">pred_a</span><span class="p">,</span> <span class="s2">&quot;Model B&quot;</span><span class="p">:</span> <span class="n">pred_b</span><span class="p">,</span> <span class="s2">&quot;Naive&quot;</span><span class="p">:</span> <span class="n">pred_naive</span><span class="p">}</span>
+<span class="n">p_matrix</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">models</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">models</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">m1</span><span class="p">,</span> <span class="n">p1</span> <span class="ow">in</span> <span class="n">models</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">m2</span><span class="p">,</span> <span class="n">p2</span> <span class="ow">in</span> <span class="n">models</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">m1</span> <span class="o">==</span> <span class="n">m2</span><span class="p">:</span>
+            <span class="n">p_matrix</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p_matrix</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">]</span> <span class="o">=</span> <span class="n">diebold_mariano_test</span><span class="p">(</span><span class="n">p_real</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;multivariate&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="unified-dispatch">
+<h2>Unified Dispatch<a class="headerlink" href="#unified-dispatch" title="Link to this heading">#</a></h2>
+<p>Use <a class="reference internal" href="#twiga.core.metrics.evaluate_forecast" title="twiga.core.metrics.evaluate_forecast"><code class="xref py py-func docutils literal notranslate"><span class="pre">evaluate_forecast()</span></code></a> as the single entry point — it dispatches automatically based on <code class="docutils literal notranslate"><span class="pre">result.kind</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_forecast</span>
+
+<span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_forecast</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>          <span class="c1"># auto-dispatches</span>
+<span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_forecast</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>  <span class="c1"># for interval/quantile kinds</span>
+</pre></div>
+</div>
+<p>Supported <code class="docutils literal notranslate"><span class="pre">kind</span></code> values:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">kind</span></code></p></th>
+<th class="head"><p>Evaluate function</p></th>
+<th class="head"><p>Key metrics</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;point&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast</span></code></p></td>
+<td><p>MAE, RMSE, R², MedAE, RMSLE, …</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;interval&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">evaluate_interval_forecast</span></code></p></td>
+<td><p>point metrics + PICP, ACE, NMPI, MSIS, CWE</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;quantile&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">evaluate_quantile_forecast</span></code></p></td>
+<td><p>point + interval + pinball, WQL, CRPS, sharpness</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;samples&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">evaluate_samples_forecast</span></code></p></td>
+<td><p>point metrics + CRPS, Energy Score</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;parametric&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">evaluate_parametric_forecast</span></code></p></td>
+<td><p>point metrics + NLL, DSS</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </section>
 <section id="api-reference">
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.evaluate_forecast">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.</span></span><span class="sig-name descname"><span class="pre">evaluate_forecast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics.html#evaluate_forecast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.evaluate_forecast" title="Link to this definition">#</a></dt>
+<dd><p>Dispatch forecast evaluation to the kind-appropriate function.</p>
+<p>This is the single entry point for evaluation so callers do not need to
+know or import individual evaluate functions.  The correct function is
+selected from an internal dispatch table keyed on
+<a class="reference internal" href="forecaster.html#twiga.forecaster.result.ForecastResult.kind" title="twiga.forecaster.result.ForecastResult.kind"><code class="xref py py-attr docutils literal notranslate"><span class="pre">kind</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>result</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a></span>) – A <a class="reference internal" href="forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a> whose
+<code class="docutils literal notranslate"><span class="pre">ground_truth</span></code> field is set.  The <code class="docutils literal notranslate"><span class="pre">kind</span></code> attribute determines
+which evaluate function is called.</p></li>
+<li><p><strong>**kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></span>) – Extra keyword arguments forwarded to the underlying evaluate
+function (e.g. <code class="docutils literal notranslate"><span class="pre">alpha</span></code> for interval or quantile forecasts).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame of per-day, per-target metrics indexed by daily timestamp.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">result.ground_truth</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> or <code class="docutils literal notranslate"><span class="pre">result.kind</span></code>
+    is not one of the supported values.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">ForecastResult</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="n">ForecastKind</span><span class="o">.</span><span class="n">POINT</span><span class="p">,</span> <span class="n">ground_truth</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metrics_df</span> <span class="o">=</span> <span class="n">evaluate_forecast</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="twiga.core.metrics.point.evaluate_point_forecast">
 <span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.point.</span></span><span class="sig-name descname"><span class="pre">evaluate_point_forecast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/point.html#evaluate_point_forecast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.point.evaluate_point_forecast" title="Link to this definition">#</a></dt>
@@ -907,6 +1169,165 @@ point metrics are computed.</p></li>
 <dd class="field-odd"><p>DataFrame of per-day, per-target metrics indexed by daily timestamp.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.point.r_squared">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.point.</span></span><span class="sig-name descname"><span class="pre">r_squared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_hat</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/point.html#r_squared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.point.r_squared" title="Link to this definition">#</a></dt>
+<dd><p>Calculate the Coefficient of Determination (R²) between actual and predicted values.</p>
+<p>R² measures the proportion of variance in the actual values explained by the predictions:
+[
+R^2 = 1 - frac{sum_{t=1}^{T} (y_t - hat{y}_t)^2}{sum_{t=1}^{T} (y_t - bar{y})^2}
+]
+where <span class="math notranslate nohighlight">\(\bar{y}\)</span> is the mean of the actual values.  A perfect forecast yields
+<code class="docutils literal notranslate"><span class="pre">R²</span> <span class="pre">=</span> <span class="pre">1</span></code>; a constant mean prediction yields <code class="docutils literal notranslate"><span class="pre">R²</span> <span class="pre">=</span> <span class="pre">0</span></code>; worse-than-mean predictions
+can yield negative values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeAliasType</span></code></span>) – Actual values, shape (n_samples,) or (n_samples, n_features).</p></li>
+<li><p><strong>y_hat</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeAliasType</span></code></span>) – Predicted values, same shape as <cite>y</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>R² coefficient, scalar if 1D input, array if multi-dimensional.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <cite>y</cite> and <cite>y_hat</cite> have incompatible shapes.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the variance of <cite>y</cite> is zero (constant series).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.9</span><span class="p">,</span> <span class="mf">4.1</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r_squared</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+<span class="go">0.994</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.point.rmsle">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.point.</span></span><span class="sig-name descname"><span class="pre">rmsle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_hat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/point.html#rmsle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.point.rmsle" title="Link to this definition">#</a></dt>
+<dd><p>Calculate the Root Mean Squared Log Error (RMSLE).</p>
+<p>The RMSLE penalises under-predictions more than over-predictions and is
+scale-invariant on a log scale:
+[
+RMSLE = sqrt{frac{1}{T} sum_{t=1}^{T} bigl(log(1 + hat{y}_t) - log(1 + y_t)bigr)^2}
+]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeAliasType</span></code></span>) – Actual values, must be non-negative, shape (n_samples,) or (n_samples, n_features).</p></li>
+<li><p><strong>y_hat</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeAliasType</span></code></span>) – Predicted values, must be non-negative, same shape as <cite>y</cite>.</p></li>
+<li><p><strong>axis</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Axis along which to compute the mean. Defaults to 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a> | <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>RMSLE, scalar if 1D input, array if multi-dimensional.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If any value in <cite>y</cite> or <cite>y_hat</cite> is negative.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rmsle</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+<span class="go">0.07663...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.point.medae">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.point.</span></span><span class="sig-name descname"><span class="pre">medae</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_hat</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/point.html#medae"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.point.medae" title="Link to this definition">#</a></dt>
+<dd><p>Calculate the Median Absolute Error (MedAE) between actual and predicted values.</p>
+<p>MedAE is robust to outliers, unlike MAE:
+[
+MedAE = text{median}!left(lvert y_t - hat{y}_t rvertright)
+]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeAliasType</span></code></span>) – Actual values, shape (n_samples,) or (n_samples, n_features).</p></li>
+<li><p><strong>y_hat</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeAliasType</span></code></span>) – Predicted values, same shape as <cite>y</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Median absolute error, scalar.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <cite>y</cite> and <cite>y_hat</cite> have incompatible shapes.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.9</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">medae</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+<span class="go">0.1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.point.skill_score">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.point.</span></span><span class="sig-name descname"><span class="pre">skill_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_hat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_naive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mae'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/point.html#skill_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.point.skill_score" title="Link to this definition">#</a></dt>
+<dd><p>Calculate the Skill Score of a forecast relative to a naive baseline.</p>
+<p>The Skill Score quantifies the relative improvement of a model over a
+naive baseline forecast:
+[
+SS = 1 - frac{text{metric}(y, hat{y})}{text{metric}(y, y_{text{naive}})}
+]
+A positive score indicates improvement over the baseline; 0 means no
+improvement; negative values indicate the model is worse than the baseline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeAliasType</span></code></span>) – Actual values, shape (n_samples,).</p></li>
+<li><p><strong>y_hat</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeAliasType</span></code></span>) – Model predictions, same shape as <cite>y</cite>.</p></li>
+<li><p><strong>y_naive</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeAliasType</span></code></span>) – Naive baseline predictions (e.g. seasonal naïve, persistence),
+same shape as <cite>y</cite>.</p></li>
+<li><p><strong>metric</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Error metric to use for comparison.  One of <code class="docutils literal notranslate"><span class="pre">'mae'</span></code>, <code class="docutils literal notranslate"><span class="pre">'mse'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'rmse'</span></code>.  Defaults to <code class="docutils literal notranslate"><span class="pre">'mae'</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Skill score, typically in (-∞, 1]. Perfect skill = 1.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <cite>metric</cite> is not one of the supported values.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the naive baseline metric is zero.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">2.1</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_naive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">skill_score</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="n">y_naive</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;mae&quot;</span><span class="p">)</span>
+<span class="go">0.9333...</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -933,6 +1354,541 @@ When <code class="docutils literal notranslate"><span class="pre">None</span></c
 by daily timestamp.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.interval.msis">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.interval.</span></span><span class="sig-name descname"><span class="pre">msis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seasonality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/interval.html#msis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.interval.msis" title="Link to this definition">#</a></dt>
+<dd><p>Calculate the Mean Scaled Interval Score (MSIS).</p>
+<p>MSIS is the M4/M5 competition standard for evaluating prediction intervals.
+It measures interval sharpness and coverage simultaneously, scaled by the
+naive seasonal forecast error to make it comparable across series:</p>
+<div class="math notranslate nohighlight">
+\[MSIS = \frac{1}{n} \sum_{t=1}^{n} \frac{W_t}{\frac{1}{T-s}
+    \sum_{i=s+1}^{T} |y_i - y_{i-s}|}\]</div>
+<p>where <span class="math notranslate nohighlight">\(W_t = (U_t - L_t) + \frac{2}{\alpha}(L_t - y_t)\mathbb{1}_{y_t &lt; L_t}
++ \frac{2}{\alpha}(y_t - U_t)\mathbb{1}_{y_t &gt; U_t}\)</span>, <span class="math notranslate nohighlight">\(s\)</span> is the seasonality
+period, and <span class="math notranslate nohighlight">\(T\)</span> is the length of the training series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – True values for the forecast period, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+<li><p><strong>lower</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Lower bounds of prediction intervals, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+<li><p><strong>upper</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Upper bounds of prediction intervals, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+<li><p><strong>y_train</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Historical training values used to compute the seasonal scaling
+factor, shape <code class="docutils literal notranslate"><span class="pre">(T,)</span></code> where <code class="docutils literal notranslate"><span class="pre">T</span> <span class="pre">&gt;</span> <span class="pre">s</span></code>.</p></li>
+<li><p><strong>alpha</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Significance level of the prediction interval, in <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1)</span></code>.</p></li>
+<li><p><strong>seasonality</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Seasonal period <code class="docutils literal notranslate"><span class="pre">s</span></code> for the naive scaling baseline.
+Defaults to <code class="docutils literal notranslate"><span class="pre">1</span></code> (non-seasonal naïve).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>float</em> – MSIS value. Lower is better.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">alpha</span></code> is not in <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1)</span></code>.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">len(y_train)</span> <span class="pre">&lt;=</span> <span class="pre">seasonality</span></code>.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If shapes of <code class="docutils literal notranslate"><span class="pre">true</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span></code>, and <code class="docutils literal notranslate"><span class="pre">upper</span></code> do not match.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>Makridakis et al. (2020). The M4 Competition: 100,000 time series and
+61 forecasting methods. <em>International Journal of Forecasting</em>, 36(1), 54–74.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lower</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">msis</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.quantile.evaluate_quantile_forecast">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.quantile.</span></span><span class="sig-name descname"><span class="pre">evaluate_quantile_forecast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">true_nmpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/quantile.html#evaluate_quantile_forecast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.quantile.evaluate_quantile_forecast" title="Link to this definition">#</a></dt>
+<dd><p>Evaluate quantile forecasts by computing daily point, interval, and quantile metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>result</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a></span>) – <a class="reference internal" href="forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a> with
+<code class="docutils literal notranslate"><span class="pre">ground_truth</span></code>, <code class="docutils literal notranslate"><span class="pre">quantiles</span></code>, and <code class="docutils literal notranslate"><span class="pre">quantile_levels</span></code> set,
+<code class="docutils literal notranslate"><span class="pre">kind=ForecastKind.QUANTILE</span></code>.</p></li>
+<li><p><strong>alpha</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Significance level for interval metrics; the outermost quantile
+pair (<code class="docutils literal notranslate"><span class="pre">q[0]</span></code> / <code class="docutils literal notranslate"><span class="pre">q[-1]</span></code>) is used as lower/upper bounds.
+Defaults to <code class="docutils literal notranslate"><span class="pre">0.01</span></code>.</p></li>
+<li><p><strong>true_nmpi</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Optional reference value for NMPI normalisation.  When
+<code class="docutils literal notranslate"><span class="pre">None</span></code> the standard deviation of the true values is used.</p></li>
+<li><p><strong>metric_names</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Point metric names to compute.  <code class="docutils literal notranslate"><span class="pre">None</span></code> computes all.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame of per‑day, per‑target metrics indexed by daily timestamp.
+Columns include point metrics, interval metrics (coverage, NMPI, …),
+and quantile metrics (pinball, crps, calibration_error, sharpness).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.quantile.wql">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.quantile.</span></span><span class="sig-name descname"><span class="pre">wql</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantile_preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantile_levels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantile_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/quantile.html#wql"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.quantile.wql" title="Link to this definition">#</a></dt>
+<dd><p>Compute the Weighted Quantile Loss (WQL), also known as the scaled pinball loss.</p>
+<p>WQL is the GluonTS / M5 standard aggregate quantile metric.  It is the mean
+pinball loss normalised by the total absolute volume of observations, making
+it comparable across series with different scales:</p>
+<div class="math notranslate nohighlight">
+\[WQL = \frac{2 \sum_{\tau} \sum_{t} \rho_\tau(y_t, \hat{q}_{\tau,t})}
+      {|\mathcal{T}| \cdot \sum_t |y_t|}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\rho_\tau(y, q) = \max(\tau(y-q),\, (\tau-1)(y-q))\)</span> is the
+pinball (check) loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Ground truth values, shape <code class="docutils literal notranslate"><span class="pre">(n_samples,)</span></code> or any shape compatible
+with <code class="docutils literal notranslate"><span class="pre">quantile_preds</span></code> after removing the quantile axis.</p></li>
+<li><p><strong>quantile_preds</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Predicted quantiles. The quantile axis can be any dimension,
+but the remaining dimensions must match <code class="docutils literal notranslate"><span class="pre">true.shape</span></code>.</p></li>
+<li><p><strong>quantile_levels</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/constants.html#Ellipsis" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span>) – Quantile levels τ ∈ (0,1), length must match the quantile
+dimension and be strictly increasing.</p></li>
+<li><p><strong>quantile_axis</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Explicitly specify which axis of <code class="docutils literal notranslate"><span class="pre">quantile_preds</span></code> holds the
+quantiles. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the function tries to infer it.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Scalar WQL. Lower is better; 0 is perfect.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If inputs are invalid (empty, levels out of range, shape mismatch,
+    or zero total observation volume).</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>Alexandrov et al. (2020). GluonTS: Probabilistic and neural time series
+modeling in Python. <em>Journal of Machine Learning Research</em>, 21(116), 1–6.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">quantile_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.8</span><span class="p">,</span> <span class="mf">2.8</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">2.2</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wql</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">quantile_preds</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span> <span class="n">quantile_axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.prob.evaluate_samples_forecast">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.prob.</span></span><span class="sig-name descname"><span class="pre">evaluate_samples_forecast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/prob.html#evaluate_samples_forecast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.prob.evaluate_samples_forecast" title="Link to this definition">#</a></dt>
+<dd><p>Evaluate sample-based forecasts by computing daily point and CRPS metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>result</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a></span>) – <a class="reference internal" href="forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a> with
+<code class="docutils literal notranslate"><span class="pre">ground_truth</span></code> and <code class="docutils literal notranslate"><span class="pre">samples</span></code> set,
+<code class="docutils literal notranslate"><span class="pre">kind=ForecastKind.SAMPLES</span></code>.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame of per-day, per-target point metrics and CRPS indexed by
+daily timestamp.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.prob.evaluate_parametric_forecast">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.prob.</span></span><span class="sig-name descname"><span class="pre">evaluate_parametric_forecast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/prob.html#evaluate_parametric_forecast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.prob.evaluate_parametric_forecast" title="Link to this definition">#</a></dt>
+<dd><p>Evaluate parametric forecasts by computing daily point and NLL metrics.</p>
+<p>The NLL is computed under a Normal distribution assumption when
+<code class="docutils literal notranslate"><span class="pre">result.log_likelihood</span></code> is absent.  Pass pre-computed log-likelihood
+values via that attribute to override this behaviour.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>result</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a></span>) – <a class="reference internal" href="forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a> with
+<code class="docutils literal notranslate"><span class="pre">ground_truth</span></code> and <code class="docutils literal notranslate"><span class="pre">scale</span></code> set,
+<code class="docutils literal notranslate"><span class="pre">kind=ForecastKind.PARAMETRIC</span></code>.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame of per-day, per-target point metrics and NLL indexed by
+daily timestamp.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If any <em>scale</em> value is non-positive.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.prob.dawid_sebastiani_score">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.prob.</span></span><span class="sig-name descname"><span class="pre">dawid_sebastiani_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/prob.html#dawid_sebastiani_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.prob.dawid_sebastiani_score" title="Link to this definition">#</a></dt>
+<dd><p>Compute the Dawid-Sebastiani Score (DSS) for parametric Normal forecasts.</p>
+<p>DSS is a proper scoring rule for location-scale forecasts.  Under a Normal
+predictive distribution <span class="math notranslate nohighlight">\(\mathcal{N}(\mu_t, \sigma_t^2)\)</span>, the score is:</p>
+<div class="math notranslate nohighlight">
+\[DSS(y_t, \mu_t, \sigma_t) = \frac{(y_t - \mu_t)^2}{\sigma_t^2} + 2 \log \sigma_t\]</div>
+<p>The mean over observations is returned.  Lower values indicate better
+calibrated and sharper forecasts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Ground-truth values, shape <code class="docutils literal notranslate"><span class="pre">(n_obs,)</span></code>.</p></li>
+<li><p><strong>loc</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Predicted means, shape <code class="docutils literal notranslate"><span class="pre">(n_obs,)</span></code>.</p></li>
+<li><p><strong>scale</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Predicted standard deviations (σ &gt; 0), shape <code class="docutils literal notranslate"><span class="pre">(n_obs,)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mean DSS over all observations.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If any value in <code class="docutils literal notranslate"><span class="pre">scale</span></code> is non-positive.</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>Dawid, A. P., &amp; Sebastiani, P. (1999). Coherent dispersion criteria for
+optimal experimental design. <em>The Annals of Statistics</em>, 27(1), 65–81.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">loc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">,</span> <span class="mf">3.1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dawid_sebastiani_score</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.prob.energy_score">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.prob.</span></span><span class="sig-name descname"><span class="pre">energy_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/prob.html#energy_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.prob.energy_score" title="Link to this definition">#</a></dt>
+<dd><p>Compute the Energy Score (ES) for ensemble / sample-based forecasts.</p>
+<p>The Energy Score is the multivariate generalisation of CRPS.  It reduces to
+CRPS in the univariate case but extends naturally to joint forecast
+distributions over the full forecast horizon:</p>
+<div class="math notranslate nohighlight">
+\[ES(F, \mathbf{y}) = \mathbb{E}_F\|\mathbf{X} - \mathbf{y}\|_2
+    - \tfrac{1}{2}\,\mathbb{E}_F\|\mathbf{X} - \mathbf{X}'\|_2\]</div>
+<p>The empirical approximation with <span class="math notranslate nohighlight">\(M\)</span> samples is:</p>
+<div class="math notranslate nohighlight">
+\[ES \approx \frac{1}{M} \sum_{i=1}^{M} \|\mathbf{x}_i - \mathbf{y}\|_2
+    - \frac{1}{2M^2} \sum_{i=1}^{M}\sum_{j=1}^{M} \|\mathbf{x}_i - \mathbf{x}_j\|_2\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Ground-truth vector, shape <code class="docutils literal notranslate"><span class="pre">(n_obs,)</span></code>.</p></li>
+<li><p><strong>samples</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Ensemble samples, shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">n_obs)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Energy Score (non-negative scalar). Lower is better.</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>Gneiting, T., &amp; Raftery, A. E. (2007). Strictly proper scoring rules,
+prediction, and estimation. <em>Journal of the American Statistical
+Association</em>, 102(477), 359–378.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">2.1</span><span class="p">,</span> <span class="mf">2.9</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">,</span> <span class="mf">3.1</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">energy_score</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.prob.brier_score">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.prob.</span></span><span class="sig-name descname"><span class="pre">brier_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/prob.html#brier_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.prob.brier_score" title="Link to this definition">#</a></dt>
+<dd><p>Compute the Brier Score for a probabilistic event forecast.</p>
+<p>The Brier Score measures the accuracy of probabilistic binary event
+predictions.  Here the event is <span class="math notranslate nohighlight">\(y_t \leq \text{threshold}\)</span> and the
+predicted probability is estimated from ensemble samples:</p>
+<div class="math notranslate nohighlight">
+\[BS = \frac{1}{n} \sum_{t=1}^{n} \bigl(\hat{p}_t - o_t\bigr)^2\]</div>
+<p>where <span class="math notranslate nohighlight">\(\hat{p}_t = \frac{1}{M}\sum_{i=1}^{M}\mathbb{1}(x_{i,t} \leq \text{threshold})\)</span>
+and <span class="math notranslate nohighlight">\(o_t = \mathbb{1}(y_t \leq \text{threshold})\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Ground-truth values, shape <code class="docutils literal notranslate"><span class="pre">(n_obs,)</span></code>.</p></li>
+<li><p><strong>samples</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Ensemble samples, shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">n_obs)</span></code>.</p></li>
+<li><p><strong>threshold</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Event threshold; the event is defined as <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">≤</span> <span class="pre">threshold</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Brier Score in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>. Lower is better; 0 is perfect.</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>Brier, G. W. (1950). Verification of forecasts expressed in terms of
+probability. <em>Monthly Weather Review</em>, 78(1), 1–3.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">brier_score</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.parametric.normal_nll">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.parametric.</span></span><span class="sig-name descname"><span class="pre">normal_nll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/parametric.html#normal_nll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.parametric.normal_nll" title="Link to this definition">#</a></dt>
+<dd><p>Negative log-likelihood under a Normal predictive distribution.</p>
+<div class="math notranslate nohighlight">
+\[NLL = \frac{1}{n} \sum_{t=1}^{n}
+    \left[ \frac{1}{2} \log(2\pi\sigma_t^2)
+    + \frac{(y_t - \mu_t)^2}{2\sigma_t^2} \right]\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Ground-truth values, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+<li><p><strong>loc</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Predicted means μ, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+<li><p><strong>scale</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Predicted standard deviations σ &gt; 0, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mean NLL over all observations.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If any <code class="docutils literal notranslate"><span class="pre">scale</span></code> value is non-positive.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">normal_nll</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]))</span>
+<span class="go">1.0439...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.parametric.normal_crps">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.parametric.</span></span><span class="sig-name descname"><span class="pre">normal_crps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/parametric.html#normal_crps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.parametric.normal_crps" title="Link to this definition">#</a></dt>
+<dd><p>Analytical CRPS for a Normal predictive distribution.</p>
+<p>The closed-form CRPS under <span class="math notranslate nohighlight">\(\mathcal{N}(\mu, \sigma^2)\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[CRPS(\mathcal{N}(\mu, \sigma^2), y)
+    = \sigma \left[ \frac{y - \mu}{\sigma}
+    \left( 2\Phi\!\left(\frac{y - \mu}{\sigma}\right) - 1 \right)
+    + 2\phi\!\left(\frac{y - \mu}{\sigma}\right)
+    - \frac{1}{\sqrt{\pi}} \right]\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Phi\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span> are the Normal CDF and PDF respectively.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Ground-truth values, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+<li><p><strong>loc</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Predicted means μ, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+<li><p><strong>scale</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Predicted standard deviations σ &gt; 0, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mean CRPS over all observations.  Lower is better; 0 is perfect.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If any <code class="docutils literal notranslate"><span class="pre">scale</span></code> value is non-positive.</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>Gneiting, T., Raftery, A. E., Westveld, A. H., &amp; Goldman, T. (2005).
+Calibrated probabilistic forecasting using ensemble model output
+statistics and minimum CRPS estimation. <em>Monthly Weather Review</em>,
+133(5), 1098–1118.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">normal_crps</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]))</span>
+<span class="go">0.5641...  # σ / sqrt(π) for perfectly calibrated forecast</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.parametric.laplace_nll">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.parametric.</span></span><span class="sig-name descname"><span class="pre">laplace_nll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/parametric.html#laplace_nll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.parametric.laplace_nll" title="Link to this definition">#</a></dt>
+<dd><p>Negative log-likelihood under a Laplace predictive distribution.</p>
+<div class="math notranslate nohighlight">
+\[NLL = \frac{1}{n} \sum_{t=1}^{n}
+    \left[ \log(2b_t) + \frac{|y_t - \mu_t|}{b_t} \right]\]</div>
+<p>where <span class="math notranslate nohighlight">\(b_t\)</span> is the scale (diversity) parameter of the Laplace distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Ground-truth values, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+<li><p><strong>loc</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Predicted means μ, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+<li><p><strong>scale</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Predicted Laplace scale b &gt; 0, shape <code class="docutils literal notranslate"><span class="pre">(n,)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mean NLL over all observations.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If any <code class="docutils literal notranslate"><span class="pre">scale</span></code> value is non-positive.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">laplace_nll</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]))</span>
+<span class="go">1.1931...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.stats.diebold_mariano_test">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.stats.</span></span><span class="sig-name descname"><span class="pre">diebold_mariano_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_real</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_pred_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_pred_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'multivariate'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/stats.html#diebold_mariano_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.stats.diebold_mariano_test" title="Link to this definition">#</a></dt>
+<dd><p>One-sided Diebold-Mariano (DM) test for equal predictive accuracy.</p>
+<p>Tests the null hypothesis H0 that forecast <code class="docutils literal notranslate"><span class="pre">p_pred_1</span></code> has equal or
+<em>lower</em> loss than forecast <code class="docutils literal notranslate"><span class="pre">p_pred_2</span></code> against the one-sided alternative
+H1 that <code class="docutils literal notranslate"><span class="pre">p_pred_2</span></code> is strictly more accurate.  <strong>Rejecting H0</strong> (small
+p-value) means <code class="docutils literal notranslate"><span class="pre">p_pred_2</span></code> is significantly more accurate.</p>
+<p>The loss differential is <span class="math notranslate nohighlight">\(d_t = g(e_{1,t}) - g(e_{2,t})\)</span> where
+<span class="math notranslate nohighlight">\(g(e) = |e|^{norm}\)</span> (<code class="docutils literal notranslate"><span class="pre">norm=1</span></code> → MAE-based, <code class="docutils literal notranslate"><span class="pre">norm=2</span></code> →
+MSE-based).  The test statistic</p>
+<div class="math notranslate nohighlight">
+\[DM = \frac{\bar{d}}{\sqrt{\hat{\sigma}^2_{\text{HAC}} / T}}
+\xrightarrow{d} \mathcal{N}(0,1)\]</div>
+<p>uses a Bartlett HAC variance estimator with bandwidth <code class="docutils literal notranslate"><span class="pre">h</span> <span class="pre">-</span> <span class="pre">1</span></code> to
+account for serial correlation in multi-step forecasts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p_real</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Observed values, shape <code class="docutils literal notranslate"><span class="pre">(n_days,</span> <span class="pre">n_steps)</span></code> or <code class="docutils literal notranslate"><span class="pre">(T,)</span></code>.</p></li>
+<li><p><strong>p_pred_1</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Forecast 1 predictions, same shape as <code class="docutils literal notranslate"><span class="pre">p_real</span></code>.</p></li>
+<li><p><strong>p_pred_2</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Forecast 2 predictions, same shape as <code class="docutils literal notranslate"><span class="pre">p_real</span></code>.</p></li>
+<li><p><strong>norm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Loss function norm.  <code class="docutils literal notranslate"><span class="pre">1</span></code> for MAE-based, <code class="docutils literal notranslate"><span class="pre">2</span></code> for MSE-based.
+Defaults to <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><strong>version</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – <p>Test variant.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;multivariate&quot;</span></code>: single test on the mean loss differential
+averaged across steps (default).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;univariate&quot;</span></code>: independent test per time step (column),
+returns an array of p-values of length <code class="docutils literal notranslate"><span class="pre">n_steps</span></code>.</p></li>
+</ul>
+</p></li>
+<li><p><strong>h</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Forecast horizon used to set the HAC bandwidth.  Set to the
+number of steps ahead you are forecasting.  Defaults to <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a> | <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>One-sided p-value (float) for <code class="docutils literal notranslate"><span class="pre">&quot;multivariate&quot;</span></code>, or 1-D array of
+p-values (one per step) for <code class="docutils literal notranslate"><span class="pre">&quot;univariate&quot;</span></code>.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If input shapes do not match.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">version</span></code> is not <code class="docutils literal notranslate"><span class="pre">&quot;univariate&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;multivariate&quot;</span></code>.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">norm</span></code> is not 1 or 2.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>Diebold, F. X., &amp; Mariano, R. S. (1995). Comparing predictive accuracy.
+<em>Journal of Business &amp; Economic Statistics</em>, 13(3), 253–263.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">real</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pred1</span> <span class="o">=</span> <span class="n">real</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">real</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pred2</span> <span class="o">=</span> <span class="n">real</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">real</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># better forecast</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">diebold_mariano_test</span><span class="p">(</span><span class="n">real</span><span class="p">,</span> <span class="n">pred1</span><span class="p">,</span> <span class="n">pred2</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;multivariate&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.metrics.stats.giacomini_white_test">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.metrics.stats.</span></span><span class="sig-name descname"><span class="pre">giacomini_white_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_real</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_pred_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_pred_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'multivariate'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/metrics/stats.html#giacomini_white_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.metrics.stats.giacomini_white_test" title="Link to this definition">#</a></dt>
+<dd><p>One-sided Giacomini-White (GW) test for Conditional Predictive Accuracy (CPA).</p>
+<p>Tests the null hypothesis H0 that forecast <code class="docutils literal notranslate"><span class="pre">p_pred_1</span></code> has equal or
+lower <em>conditional</em> expected loss than <code class="docutils literal notranslate"><span class="pre">p_pred_2</span></code> against the
+one-sided alternative H1 that <code class="docutils literal notranslate"><span class="pre">p_pred_2</span></code> is conditionally more accurate.
+<strong>Rejecting H0</strong> (small p-value) means <code class="docutils literal notranslate"><span class="pre">p_pred_2</span></code> is significantly
+more accurate <em>given the available information set</em>.</p>
+<p>Unlike DM, the GW test conditions on lagged loss differentials, making it
+more powerful when one model systematically exploits information that the
+other misses.  The instruments are <span class="math notranslate nohighlight">\(h_t = [1, d_{t-1}]\)</span>, and the
+test statistic is <span class="math notranslate nohighlight">\(T \cdot R^2 \sim \chi^2(q)\)</span> where <span class="math notranslate nohighlight">\(q\)</span> is
+the number of instruments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p_real</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Observed values, shape <code class="docutils literal notranslate"><span class="pre">(n_days,</span> <span class="pre">n_steps)</span></code> or <code class="docutils literal notranslate"><span class="pre">(T,)</span></code>.</p></li>
+<li><p><strong>p_pred_1</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Forecast 1 predictions, same shape as <code class="docutils literal notranslate"><span class="pre">p_real</span></code>.</p></li>
+<li><p><strong>p_pred_2</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Forecast 2 predictions, same shape as <code class="docutils literal notranslate"><span class="pre">p_real</span></code>.</p></li>
+<li><p><strong>norm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Loss function norm.  <code class="docutils literal notranslate"><span class="pre">1</span></code> for MAE-based, <code class="docutils literal notranslate"><span class="pre">2</span></code> for MSE-based.
+Defaults to <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><strong>version</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – <p>Test variant.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;multivariate&quot;</span></code>: single test on the mean loss differential
+averaged across steps (default).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;univariate&quot;</span></code>: independent test per time step, returns an
+array of p-values of length <code class="docutils literal notranslate"><span class="pre">n_steps</span></code>.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a> | <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>One-sided p-value (float) for <code class="docutils literal notranslate"><span class="pre">&quot;multivariate&quot;</span></code>, or 1-D array of
+p-values (one per step) for <code class="docutils literal notranslate"><span class="pre">&quot;univariate&quot;</span></code>.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If input shapes do not match or are 1-D (use <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">1)</span></code>
+    for a single-step series).</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">version</span></code> is not <code class="docutils literal notranslate"><span class="pre">&quot;univariate&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;multivariate&quot;</span></code>.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">norm</span></code> is not 1 or 2.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>Giacomini, R., &amp; White, H. (2006). Tests of conditional predictive
+ability. <em>Econometrica</em>, 74(6), 1545–1578.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">real</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pred1</span> <span class="o">=</span> <span class="n">real</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">real</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pred2</span> <span class="o">=</span> <span class="n">real</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">real</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># better forecast</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">giacomini_white_test</span><span class="p">(</span><span class="n">real</span><span class="p">,</span> <span class="n">pred1</span><span class="p">,</span> <span class="n">pred2</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;multivariate&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>
@@ -986,23 +1942,56 @@ by daily timestamp.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#point-forecast-metrics">Point Forecast Metrics</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#skill-score">Skill Score</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-point-metrics">Using Point Metrics</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#selecting-metrics">Selecting Metrics</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interval-forecast-metrics">Interval Forecast Metrics</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#msis">MSIS</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-interval-metrics">Using Interval Metrics</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probabilistic-metrics">Probabilistic Metrics</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pinball-loss">Pinball Loss</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#crps">CRPS</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantile-forecast-metrics">Quantile Forecast Metrics</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#weighted-quantile-loss-wql">Weighted Quantile Loss (WQL)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-quantile-metrics">Using Quantile Metrics</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-with-twigaforecaster">Integration with TwigaForecaster</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probabilistic-metrics">Probabilistic Metrics</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dawid-sebastiani-score-dss">Dawid-Sebastiani Score (DSS)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#energy-score">Energy Score</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#brier-score">Brier Score</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-probabilistic-metrics">Using Probabilistic Metrics</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analytical-parametric-scoring">Analytical Parametric Scoring</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#statistical-significance-testing">Statistical Significance Testing</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#diebold-mariano-dm-test">Diebold-Mariano (DM) Test</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#giacomini-white-gw-test">Giacomini-White (GW) Test</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualising-the-test-matrix">Visualising the test matrix</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#unified-dispatch">Unified Dispatch</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api-reference">API Reference</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.evaluate_forecast"><code class="docutils literal notranslate"><span class="pre">evaluate_forecast()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.point.evaluate_point_forecast"><code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.point.r_squared"><code class="docutils literal notranslate"><span class="pre">r_squared()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.point.rmsle"><code class="docutils literal notranslate"><span class="pre">rmsle()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.point.medae"><code class="docutils literal notranslate"><span class="pre">medae()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.point.skill_score"><code class="docutils literal notranslate"><span class="pre">skill_score()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.interval.evaluate_interval_forecast"><code class="docutils literal notranslate"><span class="pre">evaluate_interval_forecast()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.interval.msis"><code class="docutils literal notranslate"><span class="pre">msis()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.quantile.evaluate_quantile_forecast"><code class="docutils literal notranslate"><span class="pre">evaluate_quantile_forecast()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.quantile.wql"><code class="docutils literal notranslate"><span class="pre">wql()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.prob.evaluate_samples_forecast"><code class="docutils literal notranslate"><span class="pre">evaluate_samples_forecast()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.prob.evaluate_parametric_forecast"><code class="docutils literal notranslate"><span class="pre">evaluate_parametric_forecast()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.prob.dawid_sebastiani_score"><code class="docutils literal notranslate"><span class="pre">dawid_sebastiani_score()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.prob.energy_score"><code class="docutils literal notranslate"><span class="pre">energy_score()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.prob.brier_score"><code class="docutils literal notranslate"><span class="pre">brier_score()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.parametric.normal_nll"><code class="docutils literal notranslate"><span class="pre">normal_nll()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.parametric.normal_crps"><code class="docutils literal notranslate"><span class="pre">normal_crps()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.parametric.laplace_nll"><code class="docutils literal notranslate"><span class="pre">laplace_nll()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.stats.diebold_mariano_test"><code class="docutils literal notranslate"><span class="pre">diebold_mariano_test()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.metrics.stats.giacomini_white_test"><code class="docutils literal notranslate"><span class="pre">giacomini_white_test()</span></code></a></li>
 </ul>
 </li>
 </ul>

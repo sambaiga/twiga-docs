@@ -12,10 +12,13 @@
 - `twiga/models/nn/mlpgam_model.py` - `MLPGAMModel` / `MLPGAMConfig`
 - `twiga/models/nn/mlpgaf_model.py` - `MLPGAFModel` / `MLPGAFConfig`
 - `twiga/models/nn/nhits_model.py` - `NHITSModel` / `NHITSConfig`
+- `twiga/models/nn/rnn_model.py` - `RNNModel` / `RNNConfig`
 - `twiga/models/nn/mlpfqr_model.py` - `MLPFQRModel` / `MLPFQRConfig`
 - `twiga/models/nn/mlpgamcrc_model.py` - `MLPGAMCRCModel` / `MLPGAMCRCConfig`
 - `twiga/models/nn/net/` - Network architecture implementations
 - `twiga/models/nn/prob/core.py` - `ProbabilisticModel` / `ProbabilisticNetwork`
+- `twiga/models/nn/prob/rnn_parametric.py` - RNN parametric distribution wrappers
+- `twiga/models/nn/prob/rnn_qr.py` - `RNNQR` / `RNNFPQR`
 - `twiga/models/nn/prob/` - Probabilistic network variants (parametric, QR, FPQR, CRC)
 
 </details>
@@ -98,6 +101,7 @@ classDiagram
     BaseNeuralForecast <|-- MLPGAMModel
     BaseNeuralForecast <|-- MLPGAFModel
     BaseNeuralForecast <|-- NHITSModel
+    BaseNeuralForecast <|-- RNNModel
     BaseNeuralForecast <|-- GANFModel
     BaseNeuralForecast <|-- MLPFQRModel
     BaseNeuralForecast <|-- MLPGAMCRCModel
@@ -312,6 +316,48 @@ The lists `stack_types`, `n_blocks`, `mlp_units`, `n_pool_kernel_size`, and `n_f
 :::
 
 
+### RNN - Recurrent Neural Network Forecaster
+
+A GRU/LSTM-based sequence model. The lookback window is processed step-by-step by a stacked recurrent network, and the **final hidden state** is projected to the forecast horizon. A `LayerNorm` is applied to the latent vector before projection, and an optional bidirectional mode doubles the encoding capacity.
+
+Key architectural details:
+
+- **Cell type** — `"gru"` (default) or `"lstm"`. GRU has fewer parameters and often trains faster; LSTM provides gated memory that can help on longer lookback windows.
+- **Bidirectional** — when enabled, a forward and backward pass over the past window are concatenated, doubling `encode_size = hidden_size × 2`.
+- **Encode contract** — `encode(x)` extracts the past feature window, runs the RNN, extracts the final hidden state (concatenating both directions if bidirectional), and applies `LayerNorm`. This makes `RNNForecastNetwork` directly compatible with all parametric and quantile distribution heads.
+- **Multi-layer dropout** — inter-layer dropout is active only when `n_layers > 1`; a single-layer RNN has no dropout applied by PyTorch to the recurrent connections.
+
+:::{admonition} Config class: `RNNConfig`
+:class: info
+
+Registered name: `"rnn"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](../core/config.md#neuralmodelconfig)
+:::
+
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `num_target_feature` | `int` | `0` | Number of target variables to forecast |
+| `num_historical_features` | `int` | `0` | Historical (unknown-future) feature count |
+| `num_calendar_features` | `int` | `0` | Calendar feature count |
+| `num_exogenous_features` | `int` | `0` | Exogenous (known-future) feature count |
+| `num_future_covariates` | `int` | `0` | Future-only covariate count |
+| `forecast_horizon` | `int` | `0` | Steps ahead to predict |
+| `lookback_window_size` | `int` | `0` | Input window length |
+| `hidden_size` | `int` | `128` | Width of the RNN hidden state |
+| `n_layers` | `int` | `2` | Number of stacked RNN layers |
+| `cell_type` | `Literal["gru", "lstm"]` | `"gru"` | RNN cell type |
+| `bidirectional` | `bool` | `False` | Use a bidirectional RNN |
+| `dropout` | `float` | `0.25` | Dropout probability (inter-layer only when `n_layers > 1`) |
+| `alpha` | `float` | `0.1` | MSE/MAE loss weighting |
+| `out_activation_function` | `str` | `"Identity"` | Output activation |
+
+:::{admonition} Bidirectional encoding
+:class: tip
+
+Setting `bidirectional=True` doubles `encode_size` from `hidden_size` to `hidden_size × 2`. This increases model capacity at the cost of slightly more parameters, and makes it possible to attend to both past and "future" context within the lookback window.
+:::
+
+
 ### GANF - Group Additive Neural Forecaster
 
 GANF is a multivariate forecasting model that uses a **group-wise additive structure** aligned with the natural feature groupings in the [DataPipeline](../core/data-pipeline.md). Each feature group (target, historical, calendar, exogenous, future covariates) is processed by a dedicated encoder. Group-level predictions are produced via linear projections and summed with a global bias to form the final forecast.
@@ -373,17 +419,17 @@ Because `hidden_size` is injected from `backbone.encode_size`, distribution head
 
 Each base architecture supports these distribution heads:
 
-| Distribution | MLPF | MLPGAM | MLPGAF | NHITS | Config suffix |
-|---|---|---|---|---|---|
-| Normal | ✓ | ✓ | ✓ | ✓ | `NormalConfig` |
-| Laplace | ✓ | ✓ | ✓ | ✓ | `LaplaceConfig` |
-| LogNormal | ✓ | ✓ | ✓ | ✓ | `LogNormalConfig` |
-| Gamma | ✓ | ✓ | ✓ | ✓ | `GammaConfig` |
-| Beta | ✓ | ✓ | ✓ | ✓ | `BetaConfig` |
-| StudentT | - | ✓ | ✓ | ✓ | `StudentTConfig` |
-| QR | ✓ | ✓ | ✓ | ✓ | `QRConfig` |
-| FPQR | ✓ | ✓ | ✓ | ✓ | `FPQRConfig` |
-| CRC | ✓ | ✓ | - | - | `CRCConfig` |
+| Distribution | MLPF | MLPGAM | MLPGAF | NHITS | RNN | Config suffix |
+| --- | --- | --- | --- | --- | --- | --- |
+| Normal | ✓ | ✓ | ✓ | ✓ | ✓ | `NormalConfig` |
+| Laplace | ✓ | ✓ | ✓ | ✓ | ✓ | `LaplaceConfig` |
+| LogNormal | ✓ | ✓ | ✓ | ✓ | ✓ | `LogNormalConfig` |
+| Gamma | ✓ | ✓ | ✓ | ✓ | ✓ | `GammaConfig` |
+| Beta | ✓ | ✓ | ✓ | ✓ | ✓ | `BetaConfig` |
+| StudentT | - | ✓ | ✓ | ✓ | ✓ | `StudentTConfig` |
+| QR | ✓ | ✓ | ✓ | ✓ | ✓ | `QRConfig` |
+| FPQR | ✓ | ✓ | ✓ | ✓ | ✓ | `FPQRConfig` |
+| CRC | ✓ | ✓ | - | - | - | `CRCConfig` |
 
 ```python
 from twiga.models.nn.mlpfnormal_model import MLPFNormalConfig
@@ -450,6 +496,7 @@ Registered name: `"mlpgamcrc"` | Domain: `"nn"` | Extends: `MLPGAMConfig`
 | **MLPGAM** | Point | Additive (GAM) | Yes | L1 Lasso | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Interpretable group-additive forecasts |
 | **MLPGAF** | Point | Gated additive | Yes | Gate + weight Lasso | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Feature selection with uncertainty |
 | **N-HiTS** | Point | Hierarchical stack sum | Decomposable | - | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR | Multi-resolution temporal patterns |
+| **RNN** | Point | Recurrent (GRU/LSTM) | - | - | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR | Sequential dependencies, variable-length lookback |
 | **GANF** | Point | Group-additive sum | Yes | Group Lasso | - (use conformal post-hoc) | Multivariate additive forecasting |
 
 :::{admonition} Choosing a distribution
@@ -473,6 +520,7 @@ from twiga.forecaster.core import TwigaForecaster
 from twiga.models.nn.mlpf_model import MLPFConfig
 from twiga.models.nn.ganf_model import GANFConfig
 from twiga.models.nn.nhits_model import NHITSConfig
+from twiga.models.nn.rnn_model import RNNConfig
 
 # 1. Define data pipeline
 data_config = DataPipelineConfig(
@@ -515,6 +563,17 @@ nhits_config = NHITSConfig.from_data_config(
     patience=10,
 )
 
+rnn_config = RNNConfig.from_data_config(
+    data_config,
+    max_epochs=50,
+    batch_size=128,
+    hidden_size=128,
+    n_layers=2,
+    cell_type="gru",
+    bidirectional=False,
+    patience=10,
+)
+
 # 3. Train via TwigaForecaster
 train_config = ForecasterConfig(
     split_freq="months",
@@ -526,7 +585,7 @@ train_config = ForecasterConfig(
 
 forecaster = TwigaForecaster(
     data_params=data_config,
-    model_params=[mlpf_config, ganf_config, nhits_config],
+    model_params=[mlpf_config, ganf_config, nhits_config, rnn_config],
     train_params=train_config,
 )
 

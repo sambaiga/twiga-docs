@@ -5,22 +5,27 @@
 
 - `twiga/core/metrics/point.py`
 - `twiga/core/metrics/interval.py`
+- `twiga/core/metrics/quantile.py`
 - `twiga/core/metrics/prob.py`
+- `twiga/core/metrics/parametric.py`
+- `twiga/core/metrics/stats.py`
 
 </details>
 
-Twiga provides a comprehensive set of metrics for evaluating point forecasts, prediction intervals, and probabilistic forecasts. All metrics operate on NumPy arrays and are used internally by [`TwigaForecaster.evaluate_point_forecast()`](forecaster.md) and [`TwigaForecaster.evaluate_interval_forecast()`](forecaster.md).
+Twiga provides a comprehensive set of metrics for evaluating point forecasts, prediction intervals, quantile forecasts, and full probabilistic forecasts. All metrics operate on NumPy arrays and are accessible via {func}`~twiga.core.metrics.evaluate_forecast`.
 
 ## Point Forecast Metrics
 
 Defined in `twiga/core/metrics/point.py`. Used via `evaluate_point_forecast()`.
 
-| Metric | Function | Formula | Description |
+| Metric | Key | Formula | Description |
 |---|---|---|---|
 | Mean Error | `res` | $\frac{1}{T}\sum(y_t - \hat{y}_t)$ | Average signed error (bias indicator) |
 | MAE | `mae` | $\frac{1}{T}\sum\|y_t - \hat{y}_t\|$ | Mean Absolute Error |
+| **MedAE** | `medae` | $\text{median}(\|y_t - \hat{y}_t\|)$ | Median Absolute Error — robust to outliers |
 | MSE | `mse` | $\frac{1}{T}\sum(y_t - \hat{y}_t)^2$ | Mean Squared Error |
 | RMSE | `rmse` | $\sqrt{MSE}$ | Root Mean Squared Error |
+| **RMSLE** | `rmsle` | $\sqrt{\frac{1}{T}\sum(\log(1+\hat{y}_t)-\log(1+y_t))^2}$ | Root Mean Squared Log Error — scale-invariant, requires $y,\hat{y}\geq 0$ |
 | NRMSE | `nrmse` | $\frac{RMSE}{scale}$ | Normalized RMSE (scale: max, range, or mean) |
 | MAPE | `mape` | $\frac{100}{T}\sum\frac{\|y_t - \hat{y}_t\|}{\|y_t\|}$ | Mean Absolute Percentage Error |
 | sMAPE | `smape` | $\frac{200}{T}\sum\frac{\|y_t - \hat{y}_t\|}{\|y_t\| + \|\hat{y}_t\|}$ | Symmetric MAPE |
@@ -29,51 +34,36 @@ Defined in `twiga/core/metrics/point.py`. Used via `evaluate_point_forecast()`.
 | MASE | `mase` | $\frac{MAE}{MAE_{naive}}$ | Mean Absolute Scaled Error (naive = lag-1) |
 | MSSE | `msse` | $\frac{MSE}{MSE_{naive}}$ | Mean Squared Scaled Error |
 | RMSSE | `rmsse` | $\frac{RMSE}{RMSE_{naive}}$ | Root Mean Squared Scaled Error |
+| **R²** | `r2` | $1 - \frac{\sum(y_t-\hat{y}_t)^2}{\sum(y_t-\bar{y})^2}$ | Coefficient of Determination — proportion of variance explained |
 | Correlation | `corr` | Pearson $\rho(y, \hat{y})$ | Pearson correlation coefficient |
 | Normalized Bias | `nbias` | $\sum\frac{y_t - \hat{y}_t}{y_t + \hat{y}_t}$ | Normalized bias error |
 
-### Using Point Metrics
+**Bold** entries are new additions aligned with standard libraries (NeuralForecast, Darts, scikit-learn).
 
-The `evaluate_point_forecast()` function computes metrics per forecast day and target:
+### Skill Score
+
+The Skill Score measures relative improvement over a naive baseline:
+
+$$SS = 1 - \frac{\text{metric}(y, \hat{y})}{\text{metric}(y, y_{\text{naive}})}$$
+
+It is a standalone function (not part of `get_pointwise_metrics`) because it requires a baseline forecast:
+
+```python
+from twiga.core.metrics import skill_score
+
+ss = skill_score(y, y_hat, y_naive=seasonal_naive_forecast, metric="mae")
+# ss > 0: model beats the baseline; ss = 0: no improvement; ss < 0: worse
+```
+
+### Using Point Metrics
 
 ```python
 from twiga.core.metrics.point import evaluate_point_forecast
 
-outputs = {
-    "true": ground_truth,       # shape: (num_days, time_steps, num_targets)
-    "loc": predictions,         # shape: (num_days, time_steps, num_targets)
-    "index": timestamps,        # shape: (num_days, time_steps, num_targets)
-    "targets": ["load_mw"],     # list of target names
-}
-
-metrics_df = evaluate_point_forecast(outputs, metric_names=["mae", "rmse", "smape", "corr"])
+metrics_df = evaluate_point_forecast(result, metric_names=["mae", "rmse", "r2", "smape", "corr"])
 ```
 
-To compute individual metrics directly:
-
-```python
-from twiga.core.metrics.point import mae, rmse, smape, corr
-
-y = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
-y_hat = np.array([1.1, 2.2, 3.1, 4.3, 5.2])
-
-print(f"MAE: {mae(y, y_hat):.4f}")
-print(f"RMSE: {rmse(y, y_hat):.4f}")
-print(f"sMAPE: {smape(y, y_hat):.4f}")
-print(f"Corr: {corr(y, y_hat):.4f}")
-```
-
-### Selecting Metrics
-
-Pass a list of metric names to `evaluate_point_forecast()` or to `get_pointwise_metrics()`:
-
-```python
-# Available metric names:
-# "res", "mae", "mase", "mse", "msse", "rmse", "rmsse",
-# "mape", "wmape", "smape", "ope", "corr", "nbias"
-
-metrics_df = evaluate_point_forecast(outputs, metric_names=["mae", "corr", "wmape"])
-```
+Available metric keys: `"res"`, `"mae"`, `"mase"`, `"mse"`, `"msse"`, `"rmse"`, `"rmsse"`, `"mape"`, `"wmape"`, `"smape"`, `"ope"`, `"corr"`, `"nbias"`, **`"r2"`**, **`"rmsle"`**, **`"medae"``.
 
 If `metric_names` is `None`, all available metrics are computed.
 
@@ -91,30 +81,69 @@ Defined in `twiga/core/metrics/interval.py`. Used via `evaluate_interval_forecas
 | CWE | `cwe_score` | Combined Weighting Index balancing coverage and width |
 | Gamma Coverage | `gamma_coverage_score` | Exponential coverage penalty score |
 | Gamma NMPI | `gamma_nmpi_score` | Width quality score relative to true NMPI |
+| **MSIS** | `msis` | Mean Scaled Interval Score — M4/M5 competition standard |
+
+### MSIS
+
+The Mean Scaled Interval Score is the standard metric for prediction interval comparison in the M4/M5 competitions. It penalizes width and missed coverage, normalized by the naive seasonal forecast MAE:
+
+$$MSIS = \frac{\frac{1}{n}\sum_{t}[(U_t - L_t) + \frac{2}{\alpha}(L_t - y_t)\mathbb{1}_{y_t < L_t} + \frac{2}{\alpha}(y_t - U_t)\mathbb{1}_{y_t > U_t}]}{\frac{1}{T-s}\sum_{i=s+1}^{T}|y_i - y_{i-s}|}$$
+
+```python
+from twiga.core.metrics import msis
+
+score = msis(true, lower, upper, y_train=training_series, alpha=0.1, seasonality=24)
+```
 
 ### Using Interval Metrics
 
 ```python
 from twiga.core.metrics.interval import evaluate_interval_forecast
 
-outputs = {
-    "true": ground_truth,       # shape: (num_days, time_steps, num_targets)
-    "loc": predictions,         # shape: (num_days, time_steps, num_targets)
-    "lower": lower_bounds,      # shape: (num_days, time_steps, num_targets)
-    "upper": upper_bounds,      # shape: (num_days, time_steps, num_targets)
-    "index": timestamps,
-    "targets": ["load_mw"],
-}
-
-metrics_df = evaluate_interval_forecast(outputs, alpha=0.1)
+metrics_df = evaluate_interval_forecast(result, alpha=0.1)
 # Returns: timestamp | target | res | mae | ... | winkle-score | picp | ace | nmpi | cwe
 ```
 
 :::{admonition} Note
 :class: note
 
-`evaluate_interval_forecast()` computes both point metrics and interval metrics for each forecast day. The alpha parameter should match the significance level used during [conformal calibration](../probabilistic/conformal-prediction.md).
+`evaluate_interval_forecast()` computes both point metrics and interval metrics for each forecast day. The `alpha` parameter should match the significance level used during [conformal calibration](../probabilistic/conformal-prediction.md).
 :::
+
+
+## Quantile Forecast Metrics
+
+Defined in `twiga/core/metrics/quantile.py`. Used via `evaluate_quantile_forecast()`.
+
+| Metric | Function | Description |
+|---|---|---|
+| Pinball Loss | `pinball_score` | Mean pinball (check) loss across all quantile levels |
+| **WQL** | `wql` | Weighted Quantile Loss — GluonTS/M5 normalized standard |
+| CRPS | `crps_quantile` | Piecewise-linear CDF approximation of CRPS |
+| Calibration Error | — | Mean \|empirical coverage − nominal level\| |
+| Sharpness | `quantile_sharpness` | Mean width of symmetric prediction intervals |
+| PIT | `reliability_scores` | Probability Integral Transform for calibration diagnosis |
+
+### Weighted Quantile Loss (WQL)
+
+WQL is the GluonTS/M5 standard aggregate quantile metric, normalized by total observation volume for cross-series comparability:
+
+$$WQL = \frac{2 \sum_{\tau} \sum_{t} \rho_\tau(y_t, \hat{q}_{\tau,t})}{|\mathcal{T}| \cdot \sum_t |y_t|}$$
+
+```python
+from twiga.core.metrics import wql
+
+score = wql(true, quantile_preds, quantile_levels=[0.1, 0.5, 0.9], quantile_axis=0)
+```
+
+### Using Quantile Metrics
+
+```python
+from twiga.core.metrics.quantile import evaluate_quantile_forecast
+
+metrics_df = evaluate_quantile_forecast(result, alpha=0.1)
+# Columns: point metrics + picp | ace | nmpi | cwe | pinball | wql | crps | calibration_error | sharpness
+```
 
 
 ## Probabilistic Metrics
@@ -123,79 +152,251 @@ Defined in `twiga/core/metrics/prob.py`.
 
 | Metric | Function | Description |
 |---|---|---|
-| Pinball Loss | `pinball_loss(y, q, tau)` | Quantile-specific loss: asymmetric penalty for over/under-prediction |
-| Pinball Score | `pinball_score(true, q_values, taus)` | Mean pinball loss across multiple quantiles |
-| CRPS | `continuous_ranked_probability_score(true, samples)` | Continuous Ranked Probability Score |
-| CRPS (PWM) | `continuous_ranked_probability_score_pwm(true, samples)` | CRPS via Probability Weighted Moments |
+| CRPS | `continuous_ranked_probability_score` | Sample-based CRPS — proper scoring rule generalising MAE |
+| CRPS (PWM) | `continuous_ranked_probability_score_pwm` | CRPS via Probability Weighted Moments (better for small samples) |
+| **DSS** | `dawid_sebastiani_score` | Dawid-Sebastiani Score for Normal parametric forecasts |
+| **Energy Score** | `energy_score` | Multivariate generalisation of CRPS for joint distributions |
+| **Brier Score** | `brier_score` | Probabilistic binary event forecast accuracy |
+| NLL | `get_parametric_metrics` | Negative log-likelihood under Normal distribution |
 
-### Pinball Loss
+### Dawid-Sebastiani Score (DSS)
 
-The pinball loss evaluates quantile predictions asymmetrically:
+DSS is a proper scoring rule for location-scale parametric forecasts, jointly rewarding sharpness and calibration:
 
-$$
-L_\tau(y, q) = \begin{cases} \tau(y - q) & \text{if } y \geq q \\ (1 - \tau)(q - y) & \text{if } y < q \end{cases}
-$$
-
-```python
-from twiga.core.metrics.prob import pinball_loss, pinball_score
-
-# Single quantile
-loss = pinball_loss(y=true_values, q=quantile_predictions, tau=0.5)
-
-# Aggregated across quantiles
-score = pinball_score(
-    true=true_values,
-    q_values=[q10_predictions, q50_predictions, q90_predictions],
-    taus=[0.1, 0.5, 0.9],
-)
-```
-
-### CRPS
-
-The Continuous Ranked Probability Score generalizes MAE to probabilistic forecasts:
+$$DSS(y_t, \mu_t, \sigma_t) = \frac{(y_t - \mu_t)^2}{\sigma_t^2} + 2\log\sigma_t$$
 
 ```python
-from twiga.core.metrics.prob import continuous_ranked_probability_score
+from twiga.core.metrics import dawid_sebastiani_score
 
-# samples shape: (num_predictions, num_observations)
-crps = continuous_ranked_probability_score(true=true_values, samples=forecast_samples)
+dss = dawid_sebastiani_score(true, loc=predicted_means, scale=predicted_stds)
 ```
 
+### Energy Score
 
-## Integration with TwigaForecaster
+The Energy Score generalises CRPS to multivariate (joint horizon) forecast distributions:
 
-The [TwigaForecaster](forecaster.md) uses these metrics automatically during evaluation:
+$$ES(F, \mathbf{y}) = \mathbb{E}_F\|\mathbf{X} - \mathbf{y}\|_2 - \tfrac{1}{2}\mathbb{E}_F\|\mathbf{X} - \mathbf{X}'\|_2$$
 
 ```python
-# Point forecast evaluation
-predictions_df, metrics_df = forecaster.evaluate_point_forecast(test_df=test_df)
+from twiga.core.metrics import energy_score
 
-# Interval forecast evaluation (requires conformal calibration)
-predictions_df, metrics_df = forecaster.evaluate_interval_forecast(test_df=test_df)
+# samples shape: (n_ensemble_members, forecast_horizon)
+es = energy_score(true=true_vector, samples=ensemble_samples)
 ```
 
-The `ForecasterConfig.metrics` field controls which point metrics are computed:
+### Brier Score
+
+Measures accuracy of probabilistic binary event forecasts (e.g., exceedance probability):
+
+$$BS = \frac{1}{n}\sum_t(\hat{p}_t - o_t)^2 \quad \hat{p}_t = \frac{1}{M}\sum_i \mathbb{1}(x_{i,t} \leq \text{threshold})$$
 
 ```python
-from twiga.core.config import ForecasterConfig
+from twiga.core.metrics import brier_score
 
-config = ForecasterConfig(
-    metrics=["mae", "rmse", "smape", "corr"],
-    # ... other params
-)
+bs = brier_score(true, samples=ensemble_samples, threshold=peak_demand)
 ```
 
-If `metrics` is empty or `None`, all available metrics are computed by default.
+### Using Probabilistic Metrics
+
+```python
+from twiga.core.metrics.prob import evaluate_samples_forecast, evaluate_parametric_forecast
+
+# Sample-based forecasts (CRPS + Energy Score)
+metrics_df = evaluate_samples_forecast(result)
+
+# Parametric forecasts (NLL + DSS)
+metrics_df = evaluate_parametric_forecast(result)
+```
+
+
+## Analytical Parametric Scoring
+
+Defined in `twiga/core/metrics/parametric.py`. Closed-form implementations for common parametric distributions — no Monte Carlo sampling needed.
+
+| Function | Distribution | Description |
+|---|---|---|
+| `normal_nll` | Normal | Negative log-likelihood under $\mathcal{N}(\mu, \sigma^2)$ |
+| `normal_crps` | Normal | Analytical CRPS under $\mathcal{N}(\mu, \sigma^2)$ (exact, no quantile approximation) |
+| `laplace_nll` | Laplace | Negative log-likelihood under $\text{Laplace}(\mu, b)$ |
+
+```python
+from twiga.core.metrics.parametric import normal_nll, normal_crps, laplace_nll
+
+nll = normal_nll(true, loc=mu, scale=sigma)
+crps = normal_crps(true, loc=mu, scale=sigma)   # exact closed form
+```
+
+The analytical `normal_crps` uses:
+
+$$CRPS(\mathcal{N}(\mu,\sigma^2), y) = \sigma\left[z(2\Phi(z)-1) + 2\phi(z) - \frac{1}{\sqrt{\pi}}\right], \quad z = \frac{y-\mu}{\sigma}$$
+
+
+## Statistical Significance Testing
+
+Defined in `twiga/core/metrics/stats.py`.
+
+Both tests share the same interface: they accept raw forecast arrays `(p_real, p_pred_1, p_pred_2)` of shape `(n_days, n_steps_per_day)` and return a one-sided p-value.  **A small p-value (< 0.05) means `p_pred_2` is significantly more accurate than `p_pred_1`.**
+
+| Test | Function | Statistic | What it tests |
+|---|---|---|---|
+| **DM** | `diebold_mariano_test` | $\mathcal{N}(0,1)$ | Unconditional equal predictive accuracy |
+| **GW** | `giacomini_white_test` | $\chi^2(q)$ | Conditional predictive accuracy (exploits information set) |
+
+### Diebold-Mariano (DM) Test
+
+Tests *unconditional* equal accuracy.  The loss differential $d_t = g(e_{1,t}) - g(e_{2,t})$ is tested against zero using a HAC Bartlett variance estimator to handle serial correlation in multi-step forecasts:
+
+$$DM = \frac{\bar{d}}{\sqrt{\hat{\sigma}^2_{\text{HAC}} / T}} \xrightarrow{d} \mathcal{N}(0,1)$$
+
+```python
+from twiga.core.metrics import diebold_mariano_test
+
+# Multivariate (single test, averaging across steps)
+p = diebold_mariano_test(p_real, p_pred_1, p_pred_2, norm=1, version="multivariate", h=24)
+
+# Univariate (one test per step, e.g. per hour in a 24h horizon)
+p_per_hour = diebold_mariano_test(p_real, p_pred_1, p_pred_2, norm=1, version="univariate", h=24)
+# p_per_hour.shape == (24,)
+```
+
+### Giacomini-White (GW) Test
+
+Tests *conditional* predictive accuracy — it checks whether one forecast systematically exploits information the other ignores.  Uses instruments $h_t = [1, d_{t-1}]$ in an OLS regression; the test statistic is $T \cdot R^2 \sim \chi^2(q)$:
+
+```python
+from twiga.core.metrics import giacomini_white_test
+
+# Multivariate (single joint test)
+p = giacomini_white_test(p_real, p_pred_1, p_pred_2, norm=1, version="multivariate")
+
+# Univariate (per-step tests)
+p_per_hour = giacomini_white_test(p_real, p_pred_1, p_pred_2, norm=1, version="univariate")
+```
+
+**When to use which test:**
+- Use **DM** for a straightforward comparison of two forecasts without conditioning on past information.
+- Use **GW** when you suspect one model exploits time-varying information (e.g., regime changes, calendar effects) that the other does not — GW is more powerful in these situations.
+
+### Visualising the test matrix
+
+Both functions return arrays when `version="univariate"`, making it straightforward to build a model comparison heatmap:
+
+```python
+import pandas as pd, numpy as np
+from twiga.core.metrics import diebold_mariano_test
+
+models = {"Model A": pred_a, "Model B": pred_b, "Naive": pred_naive}
+p_matrix = pd.DataFrame(index=models, columns=models, dtype=float)
+
+for m1, p1 in models.items():
+    for m2, p2 in models.items():
+        if m1 == m2:
+            p_matrix.loc[m1, m2] = 1.0
+        else:
+            p_matrix.loc[m1, m2] = diebold_mariano_test(p_real, p1, p2, version="multivariate")
+```
+
+
+## Unified Dispatch
+
+Use {func}`~twiga.core.metrics.evaluate_forecast` as the single entry point — it dispatches automatically based on `result.kind`:
+
+```python
+from twiga.core.metrics import evaluate_forecast
+
+metrics_df = evaluate_forecast(result)          # auto-dispatches
+metrics_df = evaluate_forecast(result, alpha=0.1)  # for interval/quantile kinds
+```
+
+Supported `kind` values:
+
+| `kind` | Evaluate function | Key metrics |
+|---|---|---|
+| `"point"` | `evaluate_point_forecast` | MAE, RMSE, R², MedAE, RMSLE, … |
+| `"interval"` | `evaluate_interval_forecast` | point metrics + PICP, ACE, NMPI, MSIS, CWE |
+| `"quantile"` | `evaluate_quantile_forecast` | point + interval + pinball, WQL, CRPS, sharpness |
+| `"samples"` | `evaluate_samples_forecast` | point metrics + CRPS, Energy Score |
+| `"parametric"` | `evaluate_parametric_forecast` | point metrics + NLL, DSS |
 
 
 ## API Reference
 
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.evaluate_forecast
+```
 
 ```{eval-rst}
 .. autofunction:: twiga.core.metrics.point.evaluate_point_forecast
 ```
 
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.point.r_squared
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.point.rmsle
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.point.medae
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.point.skill_score
+```
 
 ```{eval-rst}
 .. autofunction:: twiga.core.metrics.interval.evaluate_interval_forecast
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.interval.msis
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.quantile.evaluate_quantile_forecast
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.quantile.wql
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.prob.evaluate_samples_forecast
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.prob.evaluate_parametric_forecast
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.prob.dawid_sebastiani_score
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.prob.energy_score
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.prob.brier_score
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.parametric.normal_nll
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.parametric.normal_crps
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.parametric.laplace_nll
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.stats.diebold_mariano_test
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.metrics.stats.giacomini_white_test
 ```

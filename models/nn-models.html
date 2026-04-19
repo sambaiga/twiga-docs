@@ -1045,10 +1045,13 @@ window.runMermaid = runMermaid;</script>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/mlpgam_model.py</span></code> - <code class="docutils literal notranslate"><span class="pre">MLPGAMModel</span></code> / <code class="docutils literal notranslate"><span class="pre">MLPGAMConfig</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/mlpgaf_model.py</span></code> - <code class="docutils literal notranslate"><span class="pre">MLPGAFModel</span></code> / <code class="docutils literal notranslate"><span class="pre">MLPGAFConfig</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/nhits_model.py</span></code> - <code class="docutils literal notranslate"><span class="pre">NHITSModel</span></code> / <code class="docutils literal notranslate"><span class="pre">NHITSConfig</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/rnn_model.py</span></code> - <code class="docutils literal notranslate"><span class="pre">RNNModel</span></code> / <code class="docutils literal notranslate"><span class="pre">RNNConfig</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/mlpfqr_model.py</span></code> - <code class="docutils literal notranslate"><span class="pre">MLPFQRModel</span></code> / <code class="docutils literal notranslate"><span class="pre">MLPFQRConfig</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/mlpgamcrc_model.py</span></code> - <code class="docutils literal notranslate"><span class="pre">MLPGAMCRCModel</span></code> / <code class="docutils literal notranslate"><span class="pre">MLPGAMCRCConfig</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/net/</span></code> - Network architecture implementations</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/prob/core.py</span></code> - <code class="docutils literal notranslate"><span class="pre">ProbabilisticModel</span></code> / <code class="docutils literal notranslate"><span class="pre">ProbabilisticNetwork</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/prob/rnn_parametric.py</span></code> - RNN parametric distribution wrappers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/prob/rnn_qr.py</span></code> - <code class="docutils literal notranslate"><span class="pre">RNNQR</span></code> / <code class="docutils literal notranslate"><span class="pre">RNNFPQR</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/prob/</span></code> - Probabilistic network variants (parametric, QR, FPQR, CRC)</p></li>
 </ul>
 </details>
@@ -1127,6 +1130,7 @@ window.runMermaid = runMermaid;</script>
     BaseNeuralForecast &lt;|-- MLPGAMModel
     BaseNeuralForecast &lt;|-- MLPGAFModel
     BaseNeuralForecast &lt;|-- NHITSModel
+    BaseNeuralForecast &lt;|-- RNNModel
     BaseNeuralForecast &lt;|-- GANFModel
     BaseNeuralForecast &lt;|-- MLPFQRModel
     BaseNeuralForecast &lt;|-- MLPGAMCRCModel
@@ -1665,6 +1669,107 @@ window.runMermaid = runMermaid;</script>
 <p>The lists <code class="docutils literal notranslate"><span class="pre">stack_types</span></code>, <code class="docutils literal notranslate"><span class="pre">n_blocks</span></code>, <code class="docutils literal notranslate"><span class="pre">mlp_units</span></code>, <code class="docutils literal notranslate"><span class="pre">n_pool_kernel_size</span></code>, and <code class="docutils literal notranslate"><span class="pre">n_freq_downsample</span></code> must all have the same length (one entry per stack). Use larger pooling kernels and downsampling factors in earlier stacks to capture long-range trends, and smaller values in later stacks for short-range detail.</p>
 </div>
 </section>
+<section id="rnn-recurrent-neural-network-forecaster">
+<h3>RNN - Recurrent Neural Network Forecaster<a class="headerlink" href="#rnn-recurrent-neural-network-forecaster" title="Link to this heading">#</a></h3>
+<p>A GRU/LSTM-based sequence model. The lookback window is processed step-by-step by a stacked recurrent network, and the <strong>final hidden state</strong> is projected to the forecast horizon. A <code class="docutils literal notranslate"><span class="pre">LayerNorm</span></code> is applied to the latent vector before projection, and an optional bidirectional mode doubles the encoding capacity.</p>
+<p>Key architectural details:</p>
+<ul class="simple">
+<li><p><strong>Cell type</strong> — <code class="docutils literal notranslate"><span class="pre">&quot;gru&quot;</span></code> (default) or <code class="docutils literal notranslate"><span class="pre">&quot;lstm&quot;</span></code>. GRU has fewer parameters and often trains faster; LSTM provides gated memory that can help on longer lookback windows.</p></li>
+<li><p><strong>Bidirectional</strong> — when enabled, a forward and backward pass over the past window are concatenated, doubling <code class="docutils literal notranslate"><span class="pre">encode_size</span> <span class="pre">=</span> <span class="pre">hidden_size</span> <span class="pre">×</span> <span class="pre">2</span></code>.</p></li>
+<li><p><strong>Encode contract</strong> — <code class="docutils literal notranslate"><span class="pre">encode(x)</span></code> extracts the past feature window, runs the RNN, extracts the final hidden state (concatenating both directions if bidirectional), and applies <code class="docutils literal notranslate"><span class="pre">LayerNorm</span></code>. This makes <code class="docutils literal notranslate"><span class="pre">RNNForecastNetwork</span></code> directly compatible with all parametric and quantile distribution heads.</p></li>
+<li><p><strong>Multi-layer dropout</strong> — inter-layer dropout is active only when <code class="docutils literal notranslate"><span class="pre">n_layers</span> <span class="pre">&gt;</span> <span class="pre">1</span></code>; a single-layer RNN has no dropout applied by PyTorch to the recurrent connections.</p></li>
+</ul>
+<div class="info admonition">
+<p class="admonition-title">Config class: <code class="docutils literal notranslate"><span class="pre">RNNConfig</span></code></p>
+<p>Registered name: <code class="docutils literal notranslate"><span class="pre">&quot;rnn&quot;</span></code> | Domain: <code class="docutils literal notranslate"><span class="pre">&quot;nn&quot;</span></code> | Extends: <a class="reference internal" href="../core/config.html#neuralmodelconfig"><span class="std std-ref"><code class="docutils literal notranslate"><span class="pre">NeuralModelConfig</span></code></span></a></p>
+</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">num_target_feature</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>Number of target variables to forecast</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">num_historical_features</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>Historical (unknown-future) feature count</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">num_calendar_features</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>Calendar feature count</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">num_exogenous_features</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>Exogenous (known-future) feature count</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">num_future_covariates</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>Future-only covariate count</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">forecast_horizon</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>Steps ahead to predict</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>Input window length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">hidden_size</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">128</span></code></p></td>
+<td><p>Width of the RNN hidden state</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">n_layers</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2</span></code></p></td>
+<td><p>Number of stacked RNN layers</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cell_type</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;gru&quot;,</span> <span class="pre">&quot;lstm&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;gru&quot;</span></code></p></td>
+<td><p>RNN cell type</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">bidirectional</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">bool</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
+<td><p>Use a bidirectional RNN</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dropout</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">float</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0.25</span></code></p></td>
+<td><p>Dropout probability (inter-layer only when <code class="docutils literal notranslate"><span class="pre">n_layers</span> <span class="pre">&gt;</span> <span class="pre">1</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alpha</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">float</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0.1</span></code></p></td>
+<td><p>MSE/MAE loss weighting</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">out_activation_function</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Identity&quot;</span></code></p></td>
+<td><p>Output activation</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tip admonition">
+<p class="admonition-title">Bidirectional encoding</p>
+<p>Setting <code class="docutils literal notranslate"><span class="pre">bidirectional=True</span></code> doubles <code class="docutils literal notranslate"><span class="pre">encode_size</span></code> from <code class="docutils literal notranslate"><span class="pre">hidden_size</span></code> to <code class="docutils literal notranslate"><span class="pre">hidden_size</span> <span class="pre">×</span> <span class="pre">2</span></code>. This increases model capacity at the cost of slightly more parameters, and makes it possible to attend to both past and “future” context within the lookback window.</p>
+</div>
+</section>
 <section id="ganf-group-additive-neural-forecaster">
 <h3>GANF - Group Additive Neural Forecaster<a class="headerlink" href="#ganf-group-additive-neural-forecaster" title="Link to this heading">#</a></h3>
 <p>GANF is a multivariate forecasting model that uses a <strong>group-wise additive structure</strong> aligned with the natural feature groupings in the <a class="reference internal" href="../core/data-pipeline.html"><span class="std std-doc">DataPipeline</span></a>. Each feature group (target, historical, calendar, exogenous, future covariates) is processed by a dedicated encoder. Group-level predictions are produced via linear projections and summed with a global bias to form the final forecast.</p>
@@ -1800,11 +1905,13 @@ window.runMermaid = runMermaid;</script>
 <th class="head"><p>MLPGAM</p></th>
 <th class="head"><p>MLPGAF</p></th>
 <th class="head"><p>NHITS</p></th>
+<th class="head"><p>RNN</p></th>
 <th class="head"><p>Config suffix</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>Normal</p></td>
+<td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
@@ -1816,9 +1923,11 @@ window.runMermaid = runMermaid;</script>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
+<td><p>✓</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">LaplaceConfig</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p>LogNormal</p></td>
+<td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
@@ -1830,9 +1939,11 @@ window.runMermaid = runMermaid;</script>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
+<td><p>✓</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">GammaConfig</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p>Beta</p></td>
+<td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
@@ -1844,9 +1955,11 @@ window.runMermaid = runMermaid;</script>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
+<td><p>✓</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">StudentTConfig</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p>QR</p></td>
+<td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
@@ -1858,11 +1971,13 @@ window.runMermaid = runMermaid;</script>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
+<td><p>✓</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">FPQRConfig</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p>CRC</p></td>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
+<td><p>-</p></td>
 <td><p>-</p></td>
 <td><p>-</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">CRCConfig</span></code></p></td>
@@ -1991,7 +2106,15 @@ window.runMermaid = runMermaid;</script>
 <td><p>Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR</p></td>
 <td><p>Multi-resolution temporal patterns</p></td>
 </tr>
-<tr class="row-even"><td><p><strong>GANF</strong></p></td>
+<tr class="row-even"><td><p><strong>RNN</strong></p></td>
+<td><p>Point</p></td>
+<td><p>Recurrent (GRU/LSTM)</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR</p></td>
+<td><p>Sequential dependencies, variable-length lookback</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>GANF</strong></p></td>
 <td><p>Point</p></td>
 <td><p>Group-additive sum</p></td>
 <td><p>Yes</p></td>
@@ -2019,6 +2142,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.mlpf_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.ganf_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">GANFConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.nhits_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">NHITSConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.rnn_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">RNNConfig</span>
 
 <span class="c1"># 1. Define data pipeline</span>
 <span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
@@ -2061,6 +2185,17 @@ window.runMermaid = runMermaid;</script>
     <span class="n">patience</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
 <span class="p">)</span>
 
+<span class="n">rnn_config</span> <span class="o">=</span> <span class="n">RNNConfig</span><span class="o">.</span><span class="n">from_data_config</span><span class="p">(</span>
+    <span class="n">data_config</span><span class="p">,</span>
+    <span class="n">max_epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+    <span class="n">hidden_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+    <span class="n">n_layers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">cell_type</span><span class="o">=</span><span class="s2">&quot;gru&quot;</span><span class="p">,</span>
+    <span class="n">bidirectional</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">patience</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="p">)</span>
+
 <span class="c1"># 3. Train via TwigaForecaster</span>
 <span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
     <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
@@ -2072,7 +2207,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
-    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">mlpf_config</span><span class="p">,</span> <span class="n">ganf_config</span><span class="p">,</span> <span class="n">nhits_config</span><span class="p">],</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">mlpf_config</span><span class="p">,</span> <span class="n">ganf_config</span><span class="p">,</span> <span class="n">nhits_config</span><span class="p">,</span> <span class="n">rnn_config</span><span class="p">],</span>
     <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -2678,6 +2813,7 @@ If None, no epoch-dependent behavior is applied.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mlpgam-mlp-generalized-additive-model">MLPGAM - MLP Generalized Additive Model</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mlpgaf-mlp-generalized-additive-forecaster-with-feature-gates">MLPGAF - MLP Generalized Additive Forecaster with Feature Gates</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#n-hits-neural-hierarchical-interpolation-for-time-series">N-HiTS - Neural Hierarchical Interpolation for Time Series</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rnn-recurrent-neural-network-forecaster">RNN - Recurrent Neural Network Forecaster</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ganf-group-additive-neural-forecaster">GANF - Group Additive Neural Forecaster</a></li>
 </ul>
 </li>

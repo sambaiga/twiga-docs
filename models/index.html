@@ -1036,6 +1036,9 @@ window.runMermaid = runMermaid;</script>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/baseline/</span></code>  -  no-training baselines</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/ml/</span></code>  -  tree-based and linear models</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/</span></code>  -  neural network models</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/rnn_model.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">RNNModel</span></code> / <code class="docutils literal notranslate"><span class="pre">RNNConfig</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/prob/rnn_parametric.py</span></code>  -  RNN parametric distribution wrappers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/models/nn/prob/rnn_qr.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">RNNQR</span></code> / <code class="docutils literal notranslate"><span class="pre">RNNFPQR</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/registry.py</span></code></p></li>
 </ul>
 </details>
@@ -1238,7 +1241,12 @@ window.runMermaid = runMermaid;</script>
 <td><p><code class="docutils literal notranslate"><span class="pre">NHITSConfig</span></code></p></td>
 <td><p>Neural Hierarchical Interpolation for Time Series</p></td>
 </tr>
-<tr class="row-even"><td><p>GANF</p></td>
+<tr class="row-even"><td><p>RNN</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rnn</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RNNConfig</span></code></p></td>
+<td><p>GRU/LSTM recurrent network with bidirectional support</p></td>
+</tr>
+<tr class="row-odd"><td><p>GANF</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">ganf</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">GANFConfig</span></code></p></td>
 <td><p>Graph Attention Network Forecaster</p></td>
@@ -1443,6 +1451,52 @@ window.runMermaid = runMermaid;</script>
 </table>
 </div>
 </section>
+<section id="rnn-probabilistic-variants">
+<h4>RNN Probabilistic Variants<a class="headerlink" href="#rnn-probabilistic-variants" title="Link to this heading">#</a></h4>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Config Class</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rnnnormal</span></code></p></td>
+<td><p>Parametric — Normal</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RNNNormalConfig</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rnnlaplace</span></code></p></td>
+<td><p>Parametric — Laplace</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RNNLaplaceConfig</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rnnlognormal</span></code></p></td>
+<td><p>Parametric — LogNormal</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RNNLogNormalConfig</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rnngamma</span></code></p></td>
+<td><p>Parametric — Gamma</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RNNGammaConfig</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rnnbeta</span></code></p></td>
+<td><p>Parametric — Beta</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RNNBetaConfig</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rnnstudentt</span></code></p></td>
+<td><p>Parametric — Student-t</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RNNStudentTConfig</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rnnqr</span></code></p></td>
+<td><p>Quantile Regression</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RNNQRConfig</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rnnfpqr</span></code></p></td>
+<td><p>Full Parameterised QR</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RNNFPQRConfig</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 </section>
 </section>
 <section id="model-class-hierarchy">
@@ -1500,6 +1554,12 @@ window.runMermaid = runMermaid;</script>
         nhitsqr · nhitsfpqr · nhitscrc
     }
 
+    class RNNVariants[&quot;RNN Variants (×8)&quot;] {
+        rnnnormal · rnnlaplace · rnnlognormal
+        rnngamma · rnnbeta · rnnstudentt
+        rnnqr · rnnfpqr
+    }
+
     BaseRegressor &lt;|-- NAIVEModel
     BaseRegressor &lt;|-- SEASONALNAIVEModel
     BaseRegressor &lt;|-- WINDOWAVERAGEModel
@@ -1524,11 +1584,13 @@ window.runMermaid = runMermaid;</script>
     BaseNeuralForecast &lt;|-- MLPGAMModel
     BaseNeuralForecast &lt;|-- MLPGAFModel
     BaseNeuralForecast &lt;|-- NHITSModel
+    BaseNeuralForecast &lt;|-- RNNModel
     BaseNeuralForecast &lt;|-- GANFModel
     MLPFModel &lt;|-- MLPFVariants
     MLPGAMModel &lt;|-- MLPGAMVariants
     MLPGAFModel &lt;|-- MLPGAFVariants
     NHITSModel &lt;|-- NHITSVariants
+    RNNModel &lt;|-- RNNVariants
     </pre></section>
 <section id="choosing-a-model">
 <h2>Choosing a Model<a class="headerlink" href="#choosing-a-model" title="Link to this heading">#</a></h2>
@@ -1553,19 +1615,19 @@ window.runMermaid = runMermaid;</script>
 <td><p>Strong with heterogeneous features</p></td>
 </tr>
 <tr class="row-odd"><td><p>GPU acceleration needed</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">catboost</span></code> (GPU), <code class="docutils literal notranslate"><span class="pre">xgboost</span></code> (CUDA), <code class="docutils literal notranslate"><span class="pre">mlpf</span></code>, <code class="docutils literal notranslate"><span class="pre">nhits</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">catboost</span></code> (GPU), <code class="docutils literal notranslate"><span class="pre">xgboost</span></code> (CUDA), <code class="docutils literal notranslate"><span class="pre">mlpf</span></code>, <code class="docutils literal notranslate"><span class="pre">nhits</span></code>, <code class="docutils literal notranslate"><span class="pre">rnn</span></code></p></td>
 <td><p>Native GPU support</p></td>
 </tr>
 <tr class="row-even"><td><p>Parametric uncertainty — symmetric</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">gausscatboost</span></code>, <code class="docutils literal notranslate"><span class="pre">ngboostnormal</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpfnormal</span></code>, <code class="docutils literal notranslate"><span class="pre">nhitsnormal</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gausscatboost</span></code>, <code class="docutils literal notranslate"><span class="pre">ngboostnormal</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpfnormal</span></code>, <code class="docutils literal notranslate"><span class="pre">nhitsnormal</span></code>, <code class="docutils literal notranslate"><span class="pre">rnnnormal</span></code></p></td>
 <td><p>Gaussian output with mean + sigma</p></td>
 </tr>
 <tr class="row-odd"><td><p>Parametric uncertainty — heavy tails</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">mlpgamstudentt</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgafstudentt</span></code>, <code class="docutils literal notranslate"><span class="pre">nhitsstudentt</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mlpgamstudentt</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgafstudentt</span></code>, <code class="docutils literal notranslate"><span class="pre">nhitsstudentt</span></code>, <code class="docutils literal notranslate"><span class="pre">rnnstudentt</span></code></p></td>
 <td><p>Student-t handles heavier-tailed residuals</p></td>
 </tr>
 <tr class="row-even"><td><p>Parametric uncertainty — positive targets</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ngboostlognormal</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpflognormal</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgamgamma</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ngboostlognormal</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpflognormal</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgamgamma</span></code>, <code class="docutils literal notranslate"><span class="pre">rnngamma</span></code></p></td>
 <td><p>LogNormal / Gamma for count or power data</p></td>
 </tr>
 <tr class="row-odd"><td><p>Distribution-free quantiles — ML</p></td>
@@ -1573,26 +1635,30 @@ window.runMermaid = runMermaid;</script>
 <td><p>Pinball loss, any quantile at inference</p></td>
 </tr>
 <tr class="row-even"><td><p>Distribution-free quantiles — NN</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">mlpfqr</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgamqr</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgafqr</span></code>, <code class="docutils literal notranslate"><span class="pre">nhitsqr</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mlpfqr</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgamqr</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgafqr</span></code>, <code class="docutils literal notranslate"><span class="pre">nhitsqr</span></code>, <code class="docutils literal notranslate"><span class="pre">rnnqr</span></code></p></td>
 <td><p>Simultaneous multi-quantile output</p></td>
 </tr>
 <tr class="row-odd"><td><p>Learned quantile levels</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">mlpffpqr</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgamfpqr</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgaffpqr</span></code>, <code class="docutils literal notranslate"><span class="pre">nhitsfpqr</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mlpffpqr</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgamfpqr</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgaffpqr</span></code>, <code class="docutils literal notranslate"><span class="pre">nhitsfpqr</span></code>, <code class="docutils literal notranslate"><span class="pre">rnnfpqr</span></code></p></td>
 <td><p>FPQR adapts quantile levels during training</p></td>
 </tr>
 <tr class="row-even"><td><p>Post-hoc coverage guarantee</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">mlpfcrc</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgamcrc</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgafcrc</span></code>, <code class="docutils literal notranslate"><span class="pre">nhitscrc</span></code></p></td>
 <td><p>Conformal residual coverage wraps any NN</p></td>
 </tr>
-<tr class="row-odd"><td><p>Complex temporal patterns</p></td>
+<tr class="row-odd"><td><p>Sequential / recurrent patterns</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rnn</span></code></p></td>
+<td><p>GRU/LSTM captures step-by-step temporal dependencies</p></td>
+</tr>
+<tr class="row-even"><td><p>Complex temporal patterns</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">nhits</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpf</span></code>, <code class="docutils literal notranslate"><span class="pre">ganf</span></code></p></td>
 <td><p>Deep learning captures nonlinearities</p></td>
 </tr>
-<tr class="row-even"><td><p>Interpretable forecasts</p></td>
+<tr class="row-odd"><td><p>Interpretable forecasts</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">mlpgam</span></code>, <code class="docutils literal notranslate"><span class="pre">mlpgaf</span></code>, <code class="docutils literal notranslate"><span class="pre">ganf</span></code></p></td>
 <td><p>Additive structure provides feature insights</p></td>
 </tr>
-<tr class="row-odd"><td><p>Small datasets</p></td>
+<tr class="row-even"><td><p>Small datasets</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">lineareg</span></code>, <code class="docutils literal notranslate"><span class="pre">catboost</span></code>, <code class="docutils literal notranslate"><span class="pre">randomforest</span></code></p></td>
 <td><p>Less prone to overfitting</p></td>
 </tr>
@@ -1671,6 +1737,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#mlpgam-probabilistic-variants">MLPGAM Probabilistic Variants</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#mlpgaf-probabilistic-variants">MLPGAF Probabilistic Variants</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#n-hits-probabilistic-variants">N-HiTS Probabilistic Variants</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#rnn-probabilistic-variants">RNN Probabilistic Variants</a></li>
 </ul>
 </li>
 </ul>

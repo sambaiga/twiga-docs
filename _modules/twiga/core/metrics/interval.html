@@ -992,6 +992,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../metrics.html" class="nav-link">twiga.core.metrics</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">twiga.core.metrics.interval</span></li>
   </ul>
 </nav>
@@ -1303,6 +1306,80 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">picp</span> <span class="o">&lt;=</span> <span class="mf">0.5</span><span class="p">:</span>
         <span class="n">cwe</span> <span class="o">*=</span> <span class="n">picp</span>
     <span class="k">return</span> <span class="n">cwe</span>
+
+
+<div class="viewcode-block" id="msis">
+<a class="viewcode-back" href="../../../../core/metrics.html#twiga.core.metrics.interval.msis">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">msis</span><span class="p">(</span>
+    <span class="n">true</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">lower</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">upper</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">y_train</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">seasonality</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Mean Scaled Interval Score (MSIS).</span>
+
+<span class="sd">    MSIS is the M4/M5 competition standard for evaluating prediction intervals.</span>
+<span class="sd">    It measures interval sharpness and coverage simultaneously, scaled by the</span>
+<span class="sd">    naive seasonal forecast error to make it comparable across series:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        MSIS = \frac{1}{n} \sum_{t=1}^{n} \frac{W_t}{\frac{1}{T-s}</span>
+<span class="sd">            \sum_{i=s+1}^{T} |y_i - y_{i-s}|}</span>
+
+<span class="sd">    where :math:`W_t = (U_t - L_t) + \frac{2}{\alpha}(L_t - y_t)\mathbb{1}_{y_t &lt; L_t}</span>
+<span class="sd">    + \frac{2}{\alpha}(y_t - U_t)\mathbb{1}_{y_t &gt; U_t}`, :math:`s` is the seasonality</span>
+<span class="sd">    period, and :math:`T` is the length of the training series.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        true: True values for the forecast period, shape ``(n,)``.</span>
+<span class="sd">        lower: Lower bounds of prediction intervals, shape ``(n,)``.</span>
+<span class="sd">        upper: Upper bounds of prediction intervals, shape ``(n,)``.</span>
+<span class="sd">        y_train: Historical training values used to compute the seasonal scaling</span>
+<span class="sd">            factor, shape ``(T,)`` where ``T &gt; s``.</span>
+<span class="sd">        alpha: Significance level of the prediction interval, in ``(0, 1)``.</span>
+<span class="sd">        seasonality: Seasonal period ``s`` for the naive scaling baseline.</span>
+<span class="sd">            Defaults to ``1`` (non-seasonal naïve).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: MSIS value. Lower is better.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If ``alpha`` is not in ``(0, 1)``.</span>
+<span class="sd">        ValueError: If ``len(y_train) &lt;= seasonality``.</span>
+<span class="sd">        ValueError: If shapes of ``true``, ``lower``, and ``upper`` do not match.</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        Makridakis et al. (2020). The M4 Competition: 100,000 time series and</span>
+<span class="sd">        61 forecasting methods. *International Journal of Forecasting*, 36(1), 54–74.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; true = np.array([2.0, 3.0, 4.0])</span>
+<span class="sd">        &gt;&gt;&gt; lower = np.array([1.5, 2.5, 3.5])</span>
+<span class="sd">        &gt;&gt;&gt; upper = np.array([2.5, 3.5, 4.5])</span>
+<span class="sd">        &gt;&gt;&gt; y_train = np.array([1.0, 2.0, 3.0, 4.0, 5.0])</span>
+<span class="sd">        &gt;&gt;&gt; msis(true, lower, upper, y_train, alpha=0.1)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">alpha</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;alpha must be in (0, 1), got </span><span class="si">{</span><span class="n">alpha</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">seasonality</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;len(y_train)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span><span class="si">}</span><span class="s2"> must be &gt; seasonality=</span><span class="si">{</span><span class="n">seasonality</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">lower</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">upper</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">true</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">lower</span><span class="o">.</span><span class="n">shape</span> <span class="ow">or</span> <span class="n">true</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">upper</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;true, lower, and upper must have the same shape.&quot;</span><span class="p">)</span>
+
+    <span class="n">winkler</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">upper</span> <span class="o">-</span> <span class="n">lower</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">lower</span> <span class="o">-</span> <span class="n">true</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">true</span> <span class="o">-</span> <span class="n">upper</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">y_train</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y_train</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">naive_mae</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y_train</span><span class="p">[</span><span class="n">seasonality</span><span class="p">:]</span> <span class="o">-</span> <span class="n">y_train</span><span class="p">[:</span><span class="o">-</span><span class="n">seasonality</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">winkler</span><span class="p">)</span> <span class="o">/</span> <span class="n">naive_mae</span><span class="p">)</span></div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_interval_metrics</span><span class="p">(</span>

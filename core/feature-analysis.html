@@ -613,7 +613,7 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/stats/mutual_information.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">compute_mutual_information</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/stats/ppscore.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">compute_ppscore</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/stats/residual.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">cooks_distance</span></code>, <code class="docutils literal notranslate"><span class="pre">leverage_statistic</span></code>, <code class="docutils literal notranslate"><span class="pre">get_standardized_residual</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/stats/seasonality.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">get_acf_values</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/stats/seasonality.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">get_acf_values</span></code>, <code class="docutils literal notranslate"><span class="pre">get_trend_seasonality</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/stats/stationarity.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">adf_test</span></code>, <code class="docutils literal notranslate"><span class="pre">kpss_test</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/stats/utils.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">get_optimal_lags</span></code>, <code class="docutils literal notranslate"><span class="pre">normalise_series</span></code>, <code class="docutils literal notranslate"><span class="pre">get_entropy_parameters</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/stats/xicorr.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">compute_xicorr</span></code></p></li>
@@ -866,20 +866,108 @@
 <h3>Stationarity Tests<a class="headerlink" href="#stationarity-tests" title="Link to this heading">#</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">adf_test</span><span class="p">,</span> <span class="n">kpss_test</span>
 
-<span class="c1"># Augmented Dickey-Fuller test</span>
-<span class="c1"># H0: unit root present (non-stationary)</span>
-<span class="n">adf_result</span> <span class="o">=</span> <span class="n">adf_test</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">max_lag</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">autolag</span><span class="o">=</span><span class="s2">&quot;AIC&quot;</span><span class="p">)</span>
-<span class="c1"># Returns dict: {&quot;statistic&quot;, &quot;p_value&quot;, &quot;critical_values&quot;, &quot;is_stationary&quot;}</span>
+<span class="c1"># Augmented Dickey-Fuller — H0: unit root present (non-stationary)</span>
+<span class="c1"># Returns the raw statsmodels result tuple: (stat, p_value, n_lags, n_obs, critical_values)</span>
+<span class="n">adf_result</span> <span class="o">=</span> <span class="n">adf_test</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">maxlag</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">regression</span><span class="o">=</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">autolag</span><span class="o">=</span><span class="s2">&quot;BIC&quot;</span><span class="p">)</span>
+<span class="n">stat</span><span class="p">,</span> <span class="n">p_val</span><span class="p">,</span> <span class="n">n_lags</span><span class="p">,</span> <span class="n">n_obs</span><span class="p">,</span> <span class="n">crit</span> <span class="o">=</span> <span class="n">adf_result</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ADF stat=</span><span class="si">{</span><span class="n">stat</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  p=</span><span class="si">{</span><span class="n">p_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># p &lt; 0.05 → reject H0 → evidence of stationarity</span>
 
-<span class="c1"># KPSS test</span>
-<span class="c1"># H0: series is stationary (trend- or level-stationary)</span>
-<span class="n">kpss_result</span> <span class="o">=</span> <span class="n">kpss_test</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">regression</span><span class="o">=</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">nlags</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
-<span class="c1"># Returns dict: {&quot;statistic&quot;, &quot;p_value&quot;, &quot;critical_values&quot;, &quot;is_stationary&quot;}</span>
+<span class="c1"># KPSS — H0: series IS stationary (level or trend)</span>
+<span class="c1"># Returns: (stat, p_value, n_lags, critical_values)</span>
+<span class="n">kpss_result</span> <span class="o">=</span> <span class="n">kpss_test</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">regression</span><span class="o">=</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">maxlag</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">stat</span><span class="p">,</span> <span class="n">p_val</span><span class="p">,</span> <span class="n">n_lags</span><span class="p">,</span> <span class="n">crit</span> <span class="o">=</span> <span class="n">kpss_result</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;KPSS stat=</span><span class="si">{</span><span class="n">stat</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  p=</span><span class="si">{</span><span class="n">p_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># p &lt; 0.05 → reject H0 → evidence of non-stationarity</span>
 </pre></div>
 </div>
+<p>Both functions validate input length (≥ 10 observations), compute sensible lag bounds automatically, and suppress statsmodels <code class="docutils literal notranslate"><span class="pre">InterpolationWarning</span></code> by default.</p>
 <div class="tip admonition">
 <p class="admonition-title">Combining ADF and KPSS</p>
-<p>Use both tests together: if ADF rejects the unit-root null and KPSS does not reject stationarity, you have strong evidence of stationarity. Conflicting results suggest trend-stationarity or structural breaks.</p>
+<p>Use both tests together for a stronger conclusion:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>ADF</p></th>
+<th class="head"><p>KPSS</p></th>
+<th class="head"><p>Conclusion</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Reject H0 (p &lt; 0.05)</p></td>
+<td><p>Fail to reject H0 (p ≥ 0.05)</p></td>
+<td><p>Stationary ✅</p></td>
+</tr>
+<tr class="row-odd"><td><p>Fail to reject H0</p></td>
+<td><p>Reject H0</p></td>
+<td><p>Non-stationary (unit root) ❌</p></td>
+</tr>
+<tr class="row-even"><td><p>Reject H0</p></td>
+<td><p>Reject H0</p></td>
+<td><p>Trend-stationary or structural break ⚠️</p></td>
+</tr>
+<tr class="row-odd"><td><p>Fail to reject H0</p></td>
+<td><p>Fail to reject H0</p></td>
+<td><p>Inconclusive — more data needed</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="seasonal-decomposition-mstl">
+<h3>Seasonal Decomposition (MSTL)<a class="headerlink" href="#seasonal-decomposition-mstl" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">get_trend_seasonality</span></code> uses MSTL (Multiple Seasonal-Trend decomposition using Loess) to separate a time series into trend, one or more seasonal components, and a residual. It handles multiple simultaneous seasonalities (e.g. daily + weekly in a 30-minute series).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_trend_seasonality</span>
+
+<span class="c1"># Single seasonality — daily cycle at 30-min resolution (48 samples/day)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">get_trend_seasonality</span><span class="p">(</span>
+    <span class="n">series</span><span class="p">,</span>
+    <span class="n">periods</span><span class="o">=</span><span class="p">[</span><span class="mi">48</span><span class="p">],</span>
+    <span class="n">component_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Daily&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="c1"># result.columns → [&quot;Daily&quot;, &quot;Trend&quot;, &quot;Residual&quot;]</span>
+
+<span class="c1"># Multiple seasonalities — daily + weekly</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">get_trend_seasonality</span><span class="p">(</span>
+    <span class="n">series</span><span class="p">,</span>
+    <span class="n">periods</span><span class="o">=</span><span class="p">[</span><span class="mi">48</span><span class="p">,</span> <span class="mi">336</span><span class="p">],</span>          <span class="c1"># 336 = 48 * 7</span>
+    <span class="n">component_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Daily&quot;</span><span class="p">,</span> <span class="s2">&quot;Weekly&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="c1"># result.columns → [&quot;Daily&quot;, &quot;Weekly&quot;, &quot;Trend&quot;, &quot;Residual&quot;]</span>
+</pre></div>
+</div>
+<p>The returned DataFrame has the same DatetimeIndex as the input series.</p>
+<div class="note admonition">
+<p class="admonition-title">Period sizing</p>
+<p>statsmodels silently drops any period that exceeds half the series length.  Twiga logs a warning when this happens and still returns the remaining components, so decompositions never fail silently.</p>
+</div>
+<p><strong>Tuning parameters:</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Effect</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">iterate</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">3</span></code></p></td>
+<td><p>Outer MSTL iterations — more = smoother but slower</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">seasonal_deg</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>LOESS degree for seasonal smoother (0 = constant, 1 = linear)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">inner_iter</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2</span></code></p></td>
+<td><p>STL inner loop iterations</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">outer_iter</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>STL robustness iterations (&gt; 0 downweights outliers)</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </section>
 <section id="acf-pacf">
@@ -1327,6 +1415,59 @@ interpolation warnings from statsmodels.</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.stats.seasonality.get_trend_seasonality">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.stats.seasonality.</span></span><span class="sig-name descname"><span class="pre">get_trend_seasonality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periods</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seasonal_deg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inner_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outer_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/stats/seasonality.html#get_trend_seasonality"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.stats.seasonality.get_trend_seasonality" title="Link to this definition">#</a></dt>
+<dd><p>Decompose a time series into trend, seasonal components, and residuals using MSTL.</p>
+<p>MSTL (Multiple Seasonal-Trend decomposition using Loess) extends STL to
+handle multiple seasonality periods simultaneously — e.g. daily (48) and
+weekly (48 * 7) patterns in a 30-minute series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>series</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series" title="(in pandas v3.0.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Series</span></code></a></span>) – Input time series as a pandas Series with a DatetimeIndex.
+Must not contain NaN values.</p></li>
+<li><p><strong>periods</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]</span>) – List of seasonal period lengths in number of observations.
+For example, <code class="docutils literal notranslate"><span class="pre">[48]</span></code> for a single daily cycle at 30-minute
+resolution, or <code class="docutils literal notranslate"><span class="pre">[48,</span> <span class="pre">336]</span></code> for daily + weekly.</p></li>
+<li><p><strong>component_names</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Names for the seasonal components, one per period.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, defaults to <code class="docutils literal notranslate"><span class="pre">[&quot;Seasonal_&lt;p&gt;&quot;</span> <span class="pre">for</span> <span class="pre">p</span> <span class="pre">in</span> <span class="pre">periods]</span></code>.</p></li>
+<li><p><strong>iterate</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Number of outer MSTL iterations. Defaults to <code class="docutils literal notranslate"><span class="pre">3</span></code>.</p></li>
+<li><p><strong>seasonal_deg</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Degree of the seasonal LOESS smoother (0 = constant,
+1 = linear). Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>inner_iter</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Number of inner loop iterations in STL. Defaults to <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
+<li><p><strong>outer_iter</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Number of outer (robustness) iterations in STL.
+Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame with the same index as <code class="docutils literal notranslate"><span class="pre">series</span></code> containing one column per
+seasonal component (named from <code class="docutils literal notranslate"><span class="pre">component_names</span></code>), plus <code class="docutils literal notranslate"><span class="pre">&quot;Trend&quot;</span></code>
+and <code class="docutils literal notranslate"><span class="pre">&quot;Residual&quot;</span></code> columns.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">len(periods)</span> <span class="pre">!=</span> <span class="pre">len(component_names)</span></code> when
+    <code class="docutils literal notranslate"><span class="pre">component_names</span></code> is provided.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">series</span></code> contains NaN values.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If any period is less than 2.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span><span class="o">,</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">idx</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="s2">&quot;2024-01-01&quot;</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">40</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)),</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">get_trend_seasonality</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="p">[</span><span class="mi">48</span><span class="p">],</span> <span class="n">component_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Daily&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="go">[&#39;Daily&#39;, &#39;Trend&#39;, &#39;Residual&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="twiga.core.stats.autocorr.get_pacf_values">
 <span class="sig-prename descclassname"><span class="pre">twiga.core.stats.autocorr.</span></span><span class="sig-name descname"><span class="pre">get_pacf_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxlag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ywm'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/twiga/core/stats/autocorr.html#get_pacf_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#twiga.core.stats.autocorr.get_pacf_values" title="Link to this definition">#</a></dt>
 <dd><p>Calculate PACF values and confidence intervals.</p>
@@ -1580,6 +1721,7 @@ change if the <span class="math notranslate nohighlight">\(i\)</span>-th point w
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#time-series-diagnostics">Time Series Diagnostics</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#stationarity-tests">Stationarity Tests</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#seasonal-decomposition-mstl">Seasonal Decomposition (MSTL)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#acf-pacf">ACF / PACF</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#durbin-watson">Durbin-Watson</a></li>
 </ul>
@@ -1604,6 +1746,7 @@ change if the <span class="math notranslate nohighlight">\(i\)</span>-th point w
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.stats.stationarity.adf_test"><code class="docutils literal notranslate"><span class="pre">adf_test()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.stats.stationarity.kpss_test"><code class="docutils literal notranslate"><span class="pre">kpss_test()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.stats.seasonality.get_acf_values"><code class="docutils literal notranslate"><span class="pre">get_acf_values()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.stats.seasonality.get_trend_seasonality"><code class="docutils literal notranslate"><span class="pre">get_trend_seasonality()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.stats.autocorr.get_pacf_values"><code class="docutils literal notranslate"><span class="pre">get_pacf_values()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.stats.autocorr.estimate_ar_order"><code class="docutils literal notranslate"><span class="pre">estimate_ar_order()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.stats.entropy.get_permutation_entropy"><code class="docutils literal notranslate"><span class="pre">get_permutation_entropy()</span></code></a></li>

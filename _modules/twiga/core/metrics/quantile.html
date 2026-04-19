@@ -1,0 +1,1830 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>twiga.core.metrics.quantile &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/twiga.css?v=063c221a" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../../../../_static/documentation_options.js?v=49b5e7b8"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=3c7def43"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/twiga/core/metrics/quantile';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../../../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0a1" />
+  
+    
+    <script src="../../../../_static/searchtools.js"></script>
+    <script src="../../../../_static/language_data.js"></script>
+    <script src="../../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../../../../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../getting-started/index.html">
+    Quickstart
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../core/index.html">
+    Handbook
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../mlops/index.html">
+    Deploy
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../developer-guide/index.html">
+    Contribute
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../overview.html">
+    Blueprint
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../api/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../../advanced/visualization.html">
+    Visualization
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="dropdown tw-version-wrapper">
+  <button
+    class="btn dropdown-toggle tw-version-btn"
+    type="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+    aria-label="Twiga version 0.1.0a1"
+  >
+    <span class="tw-version-label">v0.1.0a1</span>
+    <span class="tw-alpha-pill">alpha</span>
+  </button>
+  <div class="dropdown-menu dropdown-menu-end tw-version-menu">
+    <div class="tw-version-info">
+      <p>
+        <strong>Twiga 0.1.0a1</strong> is in alpha.
+        The API may change before 1.0.
+      </p>
+      <a
+        href="https://github.com/sambaiga/twiga-forecast/blob/main/CHANGELOG.md"
+        class="tw-version-changelog-link"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        View changelog <i class="bi bi-arrow-up-right-square"></i>
+      </a>
+    </div>
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/twiga/" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-python fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../getting-started/index.html">
+    Quickstart
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../core/index.html">
+    Handbook
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../mlops/index.html">
+    Deploy
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../developer-guide/index.html">
+    Contribute
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../overview.html">
+    Blueprint
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../api/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../advanced/visualization.html">
+    Visualization
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="dropdown tw-version-wrapper">
+  <button
+    class="btn dropdown-toggle tw-version-btn"
+    type="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+    aria-label="Twiga version 0.1.0a1"
+  >
+    <span class="tw-version-label">v0.1.0a1</span>
+    <span class="tw-alpha-pill">alpha</span>
+  </button>
+  <div class="dropdown-menu dropdown-menu-end tw-version-menu">
+    <div class="tw-version-info">
+      <p>
+        <strong>Twiga 0.1.0a1</strong> is in alpha.
+        The API may change before 1.0.
+      </p>
+      <a
+        href="https://github.com/sambaiga/twiga-forecast/blob/main/CHANGELOG.md"
+        class="tw-version-changelog-link"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        View changelog <i class="bi bi-arrow-up-right-square"></i>
+      </a>
+    </div>
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/twiga/" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-python fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">PyPI</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../../../../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../../../../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../metrics.html" class="nav-link">twiga.core.metrics</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">twiga.core.metrics.quantile</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for twiga.core.metrics.quantile</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecastResult</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interval</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_interval_metrics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.point</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_pointwise_metrics</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">reliability_scores</span><span class="p">(</span>
+    <span class="n">true</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_preds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_levels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">quantile_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+    <span class="n">return_uniformity_test</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Probability Integral Transform (PIT) values to assess forecast reliability / calibration.</span>
+
+<span class="sd">    For a well-calibrated probabilistic forecast, the PIT values</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        u_i = F_i(y_i) \quad \text{where } F_i \text{ is the predicted CDF for sample } i</span>
+
+<span class="sd">    should be uniformly distributed on [0,1]. Deviations indicate miscalibration</span>
+<span class="sd">    (e.g. underdispersion → U-shape, overdispersion → peaked at 0.5, bias → shifted).</span>
+
+<span class="sd">    The CDF is approximated piecewise-linearly from the quantiles with linear tail extrapolation.</span>
+<span class="sd">    Quantile predictions are sorted per sample to ensure monotonicity, and a check is performed</span>
+<span class="sd">    that the corresponding quantile levels remain strictly increasing (i.e., that the original</span>
+<span class="sd">    predictions were not crossed).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        true: Observed values, any shape (will be flattened internally).</span>
+<span class="sd">        quantile_preds: Predicted quantiles, shape with one axis holding quantiles.</span>
+<span class="sd">            Remaining dimensions must match ``true.shape`` after axis movement.</span>
+<span class="sd">        quantile_levels: Quantile levels τ ∈ (0,1), strictly increasing.</span>
+<span class="sd">        quantile_axis: Axis of ``quantile_preds`` that holds the quantiles.</span>
+<span class="sd">            If None, inferred (usually 0 or 1).</span>
+<span class="sd">        eps: Small value for fallback in failed extrapolation.</span>
+<span class="sd">        return_uniformity_test: If True, also return a dict with KS test statistic &amp; p-value.</span>
+<span class="sd">            Requires `scipy` to be installed.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        PIT values (flattened, shape (n_elements,)) in [0,1].</span>
+<span class="sd">        If return_uniformity_test=True: tuple (pit_values, {&#39;ks_stat&#39;: float, &#39;ks_pvalue&#39;: float})</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: Invalid shapes, insufficient quantiles, non-monotonic levels,</span>
+<span class="sd">                    non-monotonic predictions after sorting, etc.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">true_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">q_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_preds</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">taus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_levels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;true cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;quantile_preds cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least 2 quantile levels required for extrapolation&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">taus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">taus</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quantile levels must be in (0,1)&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quantile levels must be strictly increasing&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Infer / move quantile axis to 0</span>
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot infer quantile axis. shape=</span><span class="si">{</span><span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, len(quantile_levels)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">q_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">q_preds</span><span class="p">,</span> <span class="n">quantile_axis</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shape mismatch: quantile_preds[1:] = </span><span class="si">{</span><span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2"> vs true.shape = </span><span class="si">{</span><span class="n">true_arr</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">n_quantiles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span>
+    <span class="n">n_elements</span> <span class="o">=</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">true_flat</span> <span class="o">=</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>  <span class="c1"># (n_elements,)</span>
+    <span class="n">q_flat</span> <span class="o">=</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_quantiles</span><span class="p">,</span> <span class="n">n_elements</span><span class="p">)</span>  <span class="c1"># (n_q, n_elements)</span>
+
+    <span class="c1"># Sort quantiles (and corresponding taus) per sample</span>
+    <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">q_flat</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># (n_q, n_elements)</span>
+    <span class="n">q_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">q_flat</span><span class="p">,</span> <span class="n">sort_idx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">tau_broad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">taus</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="p">(</span><span class="n">n_quantiles</span><span class="p">,</span> <span class="n">n_elements</span><span class="p">))</span>
+    <span class="n">tau_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">tau_broad</span><span class="p">,</span> <span class="n">sort_idx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># --- MONOTONICITY CHECK ---</span>
+    <span class="c1"># After sorting quantiles, the corresponding tau values must be strictly increasing</span>
+    <span class="c1"># for each sample to define a valid CDF.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">tau_sorted</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Quantile predictions are not monotonic with respect to quantile levels &quot;</span>
+            <span class="s2">&quot;for at least one sample. The resulting CDF would be invalid.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Tail extrapolation (vectorized)</span>
+    <span class="n">q0</span><span class="p">,</span> <span class="n">q1</span> <span class="o">=</span> <span class="n">q_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">q_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">tau0</span><span class="p">,</span> <span class="n">tau1</span> <span class="o">=</span> <span class="n">tau_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tau_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+        <span class="n">slope_left</span> <span class="o">=</span> <span class="p">(</span><span class="n">q1</span> <span class="o">-</span> <span class="n">q0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tau1</span> <span class="o">-</span> <span class="n">tau0</span> <span class="o">+</span> <span class="mf">1e-12</span><span class="p">)</span>
+    <span class="n">q_left</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">slope_left</span><span class="p">),</span>
+        <span class="n">q0</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">-</span> <span class="n">tau0</span><span class="p">)</span> <span class="o">*</span> <span class="n">slope_left</span><span class="p">,</span>
+        <span class="n">q0</span> <span class="o">-</span> <span class="n">eps</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">q_last</span><span class="p">,</span> <span class="n">q_prev</span> <span class="o">=</span> <span class="n">q_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">q_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">tau_last</span><span class="p">,</span> <span class="n">tau_prev</span> <span class="o">=</span> <span class="n">tau_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">tau_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+        <span class="n">slope_right</span> <span class="o">=</span> <span class="p">(</span><span class="n">q_last</span> <span class="o">-</span> <span class="n">q_prev</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tau_last</span> <span class="o">-</span> <span class="n">tau_prev</span> <span class="o">+</span> <span class="mf">1e-12</span><span class="p">)</span>
+    <span class="n">q_right</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">slope_right</span><span class="p">),</span>
+        <span class="n">q_last</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">tau_last</span><span class="p">)</span> <span class="o">*</span> <span class="n">slope_right</span><span class="p">,</span>
+        <span class="n">q_last</span> <span class="o">+</span> <span class="n">eps</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Extended CDF points &amp; levels</span>
+    <span class="n">q_ext</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">q_left</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">q_sorted</span><span class="p">,</span> <span class="n">q_right</span><span class="p">[</span><span class="kc">None</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># (n_q+2, n_elements)</span>
+    <span class="n">tau_ext</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">],</span> <span class="n">taus</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]])[:,</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># (n_q+2, 1)</span>
+
+    <span class="c1"># PIT = linear interpolation of tau_ext at true value in q_ext space</span>
+    <span class="n">pit_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_elements</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_elements</span><span class="p">):</span>  <span class="c1"># loop over samples (could be vectorized with care)</span>
+        <span class="n">pit_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
+            <span class="n">true_flat</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">q_ext</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span>
+            <span class="n">tau_ext</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="n">left</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">right</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_uniformity_test</span><span class="p">:</span>
+        <span class="c1"># Import scipy only when needed</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+        <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">&quot;scipy is required for uniformity test. Install scipy or set return_uniformity_test=False.&quot;</span><span class="p">,</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">err</span>
+        <span class="n">ks_stat</span><span class="p">,</span> <span class="n">ks_pvalue</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">kstest</span><span class="p">(</span><span class="n">pit_values</span><span class="p">,</span> <span class="s2">&quot;uniform&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pit_values</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;ks_stat&quot;</span><span class="p">:</span> <span class="n">ks_stat</span><span class="p">,</span> <span class="s2">&quot;ks_pvalue&quot;</span><span class="p">:</span> <span class="n">ks_pvalue</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">pit_values</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">pinball_score</span><span class="p">(</span>
+    <span class="n">true</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_preds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_levels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">quantile_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Mean pinball (quantile) loss across samples, time steps, channels and quantile levels.</span>
+
+<span class="sd">    The pinball loss for a single prediction is:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \rho_\tau(e) = \max(\tau e,\; (\tau-1)e), \quad e = y - \hat{q}_\tau</span>
+
+<span class="sd">    The returned value is the average over **all** dimensions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        true: Ground truth values, shape ``(batch, horizon, channels)`` (or any shape).</span>
+<span class="sd">        quantile_preds: Predicted quantiles. The quantile axis can be any dimension,</span>
+<span class="sd">            but the remaining dimensions must match ``true.shape``.</span>
+<span class="sd">        quantile_levels: Quantile levels τ ∈ (0,1), length must match the quantile dimension.</span>
+<span class="sd">        quantile_axis: Explicitly specify which axis of ``quantile_preds`` holds the quantiles.</span>
+<span class="sd">            If ``None``, the function tries to infer it (first or second axis).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Scalar mean pinball loss.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">true</span><span class="p">)</span>
+    <span class="n">quantile_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_preds</span><span class="p">)</span>
+    <span class="n">taus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_levels</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;quantile_levels cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">taus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">taus</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quantile levels must be strictly between 0 and 1.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">quantile_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">quantile_preds</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">quantile_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot infer quantile axis. quantile_preds.shape = </span><span class="si">{</span><span class="n">quantile_preds</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;len(quantile_levels) = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span><span class="si">}</span><span class="s2">. Please provide quantile_axis explicitly.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">quantile_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">quantile_preds</span><span class="p">,</span> <span class="n">quantile_axis</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">quantile_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">true</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Shape mismatch after removing quantile axis: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;quantile_preds[1:] = </span><span class="si">{</span><span class="n">quantile_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">, true.shape = </span><span class="si">{</span><span class="n">true</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">true</span> <span class="o">-</span> <span class="n">quantile_preds</span>
+    <span class="n">taus_reshaped</span> <span class="o">=</span> <span class="n">taus</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">true</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">taus_reshaped</span> <span class="o">*</span> <span class="n">errors</span><span class="p">,</span> <span class="p">(</span><span class="n">taus_reshaped</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">errors</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">crps_quantile</span><span class="p">(</span>
+    <span class="n">true</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_preds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_levels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">quantile_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">normalization</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Continuous Ranked Probability Score (CRPS) from quantile forecasts.</span>
+
+<span class="sd">    The CRPS is a proper scoring rule that measures the accuracy of a probabilistic</span>
+<span class="sd">    forecast. It compares the predicted cumulative distribution function (CDF) with</span>
+<span class="sd">    the empirical CDF of the observation. Lower values indicate better forecasts,</span>
+<span class="sd">    and 0 is perfect.</span>
+
+<span class="sd">    For a set of predicted quantiles :math:`\hat{q}_{\tau_k}` at levels</span>
+<span class="sd">    :math:`\tau_k`, the CRPS can be approximated as:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        \text{CRPS} \approx \frac{1}{N} \sum_{i=1}^N \int_{-\infty}^{\infty}</span>
+<span class="sd">        \bigl( F_i(x) - \mathbf{1}_{x \ge y_i} \bigr)^2 dx</span>
+
+<span class="sd">    where :math:`F_i` is the piecewise‑linear CDF constructed from the quantiles,</span>
+<span class="sd">    with linear tails extrapolated to :math:`\tau=0` and :math:`\tau=1`. The integral</span>
+<span class="sd">    is evaluated via the trapezoidal rule over the extended quantile points.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        true: Ground truth values, shape ``(n_samples,)`` or any multi‑dimensional shape.</span>
+<span class="sd">        quantile_preds: Predicted quantiles. The quantile axis can be any dimension,</span>
+<span class="sd">            but the remaining dimensions must match ``true.shape``.</span>
+<span class="sd">        quantile_levels: Quantile levels :math:`\tau \in (0,1)`, length must match the</span>
+<span class="sd">            quantile dimension and be strictly increasing. At least two levels are required.</span>
+<span class="sd">        quantile_axis: Explicitly specify which axis of ``quantile_preds`` holds the</span>
+<span class="sd">            quantiles. If ``None``, the function tries to infer it (first or second axis).</span>
+<span class="sd">        normalization: If True, divide the final CRPS by the standard deviation of</span>
+<span class="sd">            the true values (scale‑independent).</span>
+<span class="sd">        eps: Small constant used when extrapolation fails (e.g., identical quantiles).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Scalar mean CRPS over all elements. Returns ``np.nan`` if ``true`` is empty.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If inputs are invalid, e.g., empty arrays, insufficient quantiles,</span>
+<span class="sd">                    quantile levels not in (0,1), or shape mismatches.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; true = np.array([0.0, 2.0])</span>
+<span class="sd">        &gt;&gt;&gt; quantile_preds = np.array([[-0.5, 1.8], [0.2, 2.5], [0.8, 3.1]])</span>
+<span class="sd">        &gt;&gt;&gt; quantile_levels = [0.2, 0.5, 0.8]</span>
+<span class="sd">        &gt;&gt;&gt; crps_quantile(true, quantile_preds, quantile_levels, quantile_axis=0)</span>
+<span class="sd">        0.18333333333333332</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">true</span><span class="p">)</span>
+    <span class="n">quantile_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_preds</span><span class="p">)</span>
+    <span class="n">taus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_levels</span><span class="p">)</span>
+
+    <span class="c1"># --- Validation ---</span>
+    <span class="k">if</span> <span class="n">true</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">if</span> <span class="n">quantile_preds</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;quantile_preds cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;quantile_levels cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least two quantile levels are required for tail extrapolation.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">taus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">taus</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quantile levels must be strictly between 0 and 1.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quantile levels must be strictly increasing.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Quantile axis inference / movement ---</span>
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">quantile_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">quantile_preds</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">quantile_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot infer quantile axis. quantile_preds.shape = </span><span class="si">{</span><span class="n">quantile_preds</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;len(quantile_levels) = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span><span class="si">}</span><span class="s2">. Provide quantile_axis explicitly.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">quantile_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">quantile_preds</span><span class="p">,</span> <span class="n">quantile_axis</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">quantile_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">true</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Shape mismatch after removing quantile axis: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;quantile_preds[1:] = </span><span class="si">{</span><span class="n">quantile_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">, true.shape = </span><span class="si">{</span><span class="n">true</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># --- Flatten all non‑quantile dimensions ---</span>
+    <span class="n">n_quantiles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span>
+    <span class="n">n_elements</span> <span class="o">=</span> <span class="n">true</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">true_flat</span> <span class="o">=</span> <span class="n">true</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>  <span class="c1"># (n_elements,)</span>
+    <span class="n">quantile_flat</span> <span class="o">=</span> <span class="n">quantile_preds</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_quantiles</span><span class="p">,</span> <span class="n">n_elements</span><span class="p">)</span>  <span class="c1"># (n_q, n_elements)</span>
+
+    <span class="c1"># --- Sort quantiles and taus together for each sample ---</span>
+    <span class="c1"># Get indices that sort each column (sample) of quantile_flat</span>
+    <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">quantile_flat</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># (n_q, n_elements)</span>
+    <span class="c1"># Use advanced indexing to reorder quantiles and taus per column</span>
+    <span class="n">q_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">quantile_flat</span><span class="p">,</span> <span class="n">sort_idx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># (n_q, n_elements)</span>
+    <span class="c1"># For taus, broadcast to (n_q, n_elements) then sort per column</span>
+    <span class="n">tau_broad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">taus</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="p">(</span><span class="n">n_quantiles</span><span class="p">,</span> <span class="n">n_elements</span><span class="p">))</span>
+    <span class="n">tau_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">tau_broad</span><span class="p">,</span> <span class="n">sort_idx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># (n_q, n_elements)</span>
+
+    <span class="c1"># --- Tail extrapolation (vectorized across samples) ---</span>
+    <span class="c1"># Left tail: use first two sorted quantiles</span>
+    <span class="n">q0</span> <span class="o">=</span> <span class="n">q_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>  <span class="c1"># first quantile (smallest) per sample</span>
+    <span class="n">q1</span> <span class="o">=</span> <span class="n">q_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>  <span class="c1"># second quantile per sample</span>
+    <span class="n">tau0</span> <span class="o">=</span> <span class="n">tau_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">tau1</span> <span class="o">=</span> <span class="n">tau_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="c1"># Avoid division by zero where tau1 == tau0 (shouldn&#39;t happen, but guard)</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+        <span class="n">slope_left</span> <span class="o">=</span> <span class="p">(</span><span class="n">q1</span> <span class="o">-</span> <span class="n">q0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tau1</span> <span class="o">-</span> <span class="n">tau0</span> <span class="o">+</span> <span class="mf">1e-12</span><span class="p">)</span>  <span class="c1"># add tiny epsilon for safety</span>
+    <span class="c1"># Where slope is undefined (tau1 ≈ tau0), fallback to using eps</span>
+    <span class="n">q_left</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">slope_left</span><span class="p">),</span> <span class="n">q0</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">-</span> <span class="n">tau0</span><span class="p">)</span> <span class="o">*</span> <span class="n">slope_left</span><span class="p">,</span> <span class="n">q0</span> <span class="o">-</span> <span class="n">eps</span><span class="p">)</span>
+
+    <span class="c1"># Right tail: use last two quantiles</span>
+    <span class="n">q_last</span> <span class="o">=</span> <span class="n">q_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">q_second_last</span> <span class="o">=</span> <span class="n">q_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">tau_last</span> <span class="o">=</span> <span class="n">tau_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">tau_second_last</span> <span class="o">=</span> <span class="n">tau_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+        <span class="n">slope_right</span> <span class="o">=</span> <span class="p">(</span><span class="n">q_last</span> <span class="o">-</span> <span class="n">q_second_last</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tau_last</span> <span class="o">-</span> <span class="n">tau_second_last</span> <span class="o">+</span> <span class="mf">1e-12</span><span class="p">)</span>
+    <span class="n">q_right</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">slope_right</span><span class="p">),</span> <span class="n">q_last</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">tau_last</span><span class="p">)</span> <span class="o">*</span> <span class="n">slope_right</span><span class="p">,</span> <span class="n">q_last</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+
+    <span class="c1"># q_ext: shape (n_q+2, n_elements)</span>
+    <span class="n">q_ext</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">q_left</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">q_sorted</span><span class="p">,</span> <span class="n">q_right</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># tau_ext: shape (n_q+2, 1) broadcastable to samples</span>
+    <span class="n">tau_ext</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">],</span> <span class="n">taus</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]])[:,</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># (n_q+2, 1)</span>
+
+    <span class="n">ind</span> <span class="o">=</span> <span class="p">(</span><span class="n">true_flat</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&lt;=</span> <span class="n">q_ext</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># (n_q+2, n_elements)</span>
+
+    <span class="n">integrand</span> <span class="o">=</span> <span class="p">(</span><span class="n">tau_ext</span> <span class="o">-</span> <span class="n">ind</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>  <span class="c1"># (n_q+2, n_elements)</span>
+
+    <span class="n">crps_per_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">(</span><span class="n">integrand</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">q_ext</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># type: ignore[attr-defined]  # (n_elements,)</span>
+
+    <span class="n">mean_crps</span> <span class="o">=</span> <span class="n">crps_per_sample</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">normalization</span><span class="p">:</span>
+        <span class="n">std_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">true</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">std_true</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mean_crps</span> <span class="o">/=</span> <span class="n">std_true</span>
+
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">mean_crps</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">quantile_sharpness</span><span class="p">(</span>
+    <span class="n">quantile_preds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_levels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute mean sharpness over symmetric quantile pairs (vectorized).</span>
+
+<span class="sd">    Sharpness measures the average width of symmetric prediction intervals</span>
+<span class="sd">    (e.g. for levels :math:`\tau` and :math:`1-\tau`). Narrower intervals</span>
+<span class="sd">    indicate a sharper, more confident forecast.</span>
+
+<span class="sd">    This implementation is fully vectorized across both samples and quantile pairs,</span>
+<span class="sd">    using NumPy&#39;s advanced indexing for efficiency.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        quantile_preds: Predicted quantiles. The quantile axis can be any dimension,</span>
+<span class="sd">            but the remaining dimensions are treated as independent samples.</span>
+<span class="sd">        quantile_levels: Quantile levels :math:`\tau \in (0,1)`, strictly increasing.</span>
+<span class="sd">        quantile_axis: Axis of ``quantile_preds`` that holds the quantiles.</span>
+<span class="sd">            If ``None``, the function tries to infer it (first or second axis).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Mean interval width over all symmetric pairs found. Returns ``0.0``</span>
+<span class="sd">        when no symmetric pairs exist.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If inputs are invalid (empty, quantile levels not in (0,1),</span>
+<span class="sd">                    non‑increasing levels, shape mismatch, etc.).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">q_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_preds</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">taus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_levels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;quantile_preds cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;quantile_levels cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">taus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">taus</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quantile levels must be strictly between 0 and 1.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quantile levels must be strictly increasing.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Quantile axis inference / movement ---</span>
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot infer quantile axis. quantile_preds.shape = </span><span class="si">{</span><span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;len(quantile_levels) = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span><span class="si">}</span><span class="s2">. Provide quantile_axis explicitly.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">q_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">q_preds</span><span class="p">,</span> <span class="n">quantile_axis</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">n_quantiles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span>
+    <span class="n">n_elements</span> <span class="o">=</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="n">n_quantiles</span>
+    <span class="n">q_flat</span> <span class="o">=</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_quantiles</span><span class="p">,</span> <span class="n">n_elements</span><span class="p">)</span>  <span class="c1"># (n_q, n_elements)</span>
+
+    <span class="c1"># Build a mapping from tau value to its index (using rounding to avoid floating errors)</span>
+    <span class="n">tau_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">8</span><span class="p">):</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">taus</span><span class="p">)}</span>
+    <span class="c1"># Get all tau values that have a complement &gt; themselves</span>
+    <span class="n">lower_taus</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tau_to_idx</span> <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="mf">0.5</span> <span class="ow">and</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="ow">in</span> <span class="n">tau_to_idx</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lower_taus</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="n">lower_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">tau_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">lower_taus</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">upper_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">tau_to_idx</span><span class="p">[</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">lower_taus</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># Compute widths for all pairs and all samples in one vectorized operation</span>
+    <span class="n">widths</span> <span class="o">=</span> <span class="n">q_flat</span><span class="p">[</span><span class="n">upper_indices</span><span class="p">]</span> <span class="o">-</span> <span class="n">q_flat</span><span class="p">[</span><span class="n">lower_indices</span><span class="p">]</span>  <span class="c1"># (n_pairs, n_elements)</span>
+
+    <span class="n">mean_widths_per_pair</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">widths</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mean_widths_per_pair</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">calibration_coverage</span><span class="p">(</span>
+    <span class="n">true</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_preds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_levels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute empirical coverage for each quantile level.</span>
+
+<span class="sd">    For a well-calibrated forecast, the fraction of observations below the</span>
+<span class="sd">    predicted :math:`\tau`-quantile should be close to :math:`\tau`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        true: Ground truth values, any shape.</span>
+<span class="sd">        quantile_preds: Predicted quantiles. The quantile axis can be any dimension,</span>
+<span class="sd">            but the remaining dimensions must match ``true.shape``.</span>
+<span class="sd">        quantile_levels: Quantile levels :math:`\tau \in (0,1)`, strictly increasing.</span>
+<span class="sd">        quantile_axis: Axis of ``quantile_preds`` that holds the quantiles.</span>
+<span class="sd">            If ``None``, the function tries to infer it (first or second axis).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Empirical coverage for each quantile level, shape ``(n_levels,)``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If inputs are invalid (empty, quantile levels not in (0,1),</span>
+<span class="sd">                    non‑increasing, shape mismatch, etc.).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">true_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">q_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_preds</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">taus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_levels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;true cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;quantile_preds cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;quantile_levels cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">taus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">taus</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quantile levels must be strictly between 0 and 1.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quantile levels must be strictly increasing.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Quantile axis inference / movement ---</span>
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot infer quantile axis. quantile_preds.shape = </span><span class="si">{</span><span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;len(quantile_levels) = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span><span class="si">}</span><span class="s2">. Provide quantile_axis explicitly.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">q_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">q_preds</span><span class="p">,</span> <span class="n">quantile_axis</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shape mismatch: quantile_preds[1:] = </span><span class="si">{</span><span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">, true.shape = </span><span class="si">{</span><span class="n">true_arr</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">n_quantiles</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span>
+    <span class="n">n_elements</span> <span class="o">=</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">true_flat</span> <span class="o">=</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>  <span class="c1"># (n_elements,)</span>
+    <span class="n">q_flat</span> <span class="o">=</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_quantiles</span><span class="p">,</span> <span class="n">n_elements</span><span class="p">)</span>  <span class="c1"># (n_q, n_elements)</span>
+
+    <span class="n">coverage</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="p">(</span><span class="n">true_flat</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&lt;=</span> <span class="n">q_flat</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_q,)</span>
+    <span class="k">return</span> <span class="n">coverage</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_pinball_exact_taus</span><span class="p">(</span>
+    <span class="n">true</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_preds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_levels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mean pinball loss when each quantile/step has its own tau value.</span>
+
+<span class="sd">    Handles the FPQR case where ``quantile_levels`` is ``(N, T)`` - i.e. each</span>
+<span class="sd">    quantile proposal is different for every time step within the horizon.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        true: Ground truth, shape ``(T,)``.</span>
+<span class="sd">        quantile_preds: Predicted quantiles, shape ``(N, T)``.</span>
+<span class="sd">        quantile_levels: Per-step tau values, shape ``(N, T)``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Scalar mean pinball loss averaged over all ``(N, T)`` elements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">true</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">quantile_preds</span>  <span class="c1"># (N, T)</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">quantile_levels</span> <span class="o">*</span> <span class="n">errors</span><span class="p">,</span> <span class="p">(</span><span class="n">quantile_levels</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">errors</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="wql">
+<a class="viewcode-back" href="../../../../core/metrics.html#twiga.core.metrics.quantile.wql">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">wql</span><span class="p">(</span>
+    <span class="n">true</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_preds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_levels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">quantile_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the Weighted Quantile Loss (WQL), also known as the scaled pinball loss.</span>
+
+<span class="sd">    WQL is the GluonTS / M5 standard aggregate quantile metric.  It is the mean</span>
+<span class="sd">    pinball loss normalised by the total absolute volume of observations, making</span>
+<span class="sd">    it comparable across series with different scales:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        WQL = \frac{2 \sum_{\tau} \sum_{t} \rho_\tau(y_t, \hat{q}_{\tau,t})}</span>
+<span class="sd">              {|\mathcal{T}| \cdot \sum_t |y_t|}</span>
+
+<span class="sd">    where :math:`\rho_\tau(y, q) = \max(\tau(y-q),\, (\tau-1)(y-q))` is the</span>
+<span class="sd">    pinball (check) loss.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        true: Ground truth values, shape ``(n_samples,)`` or any shape compatible</span>
+<span class="sd">            with ``quantile_preds`` after removing the quantile axis.</span>
+<span class="sd">        quantile_preds: Predicted quantiles. The quantile axis can be any dimension,</span>
+<span class="sd">            but the remaining dimensions must match ``true.shape``.</span>
+<span class="sd">        quantile_levels: Quantile levels τ ∈ (0,1), length must match the quantile</span>
+<span class="sd">            dimension and be strictly increasing.</span>
+<span class="sd">        quantile_axis: Explicitly specify which axis of ``quantile_preds`` holds the</span>
+<span class="sd">            quantiles. If ``None``, the function tries to infer it.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Scalar WQL. Lower is better; 0 is perfect.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If inputs are invalid (empty, levels out of range, shape mismatch,</span>
+<span class="sd">                    or zero total observation volume).</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        Alexandrov et al. (2020). GluonTS: Probabilistic and neural time series</span>
+<span class="sd">        modeling in Python. *Journal of Machine Learning Research*, 21(116), 1–6.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; true = np.array([1.0, 2.0, 3.0])</span>
+<span class="sd">        &gt;&gt;&gt; quantile_preds = np.array([[0.8, 1.8, 2.8], [1.0, 2.0, 3.0], [1.2, 2.2, 3.2]])</span>
+<span class="sd">        &gt;&gt;&gt; wql(true, quantile_preds, [0.1, 0.5, 0.9], quantile_axis=0)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">true_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">q_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_preds</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">taus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_levels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;true cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;quantile_levels cannot be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">taus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">taus</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quantile levels must be strictly between 0 and 1.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+            <span class="n">quantile_axis</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot infer quantile axis. quantile_preds.shape=</span><span class="si">{</span><span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;len(quantile_levels)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span><span class="si">}</span><span class="s2">. Provide quantile_axis explicitly.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">if</span> <span class="n">quantile_axis</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">q_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">q_preds</span><span class="p">,</span> <span class="n">quantile_axis</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Shape mismatch after removing quantile axis: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;quantile_preds[1:] = </span><span class="si">{</span><span class="n">q_preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">, true.shape = </span><span class="si">{</span><span class="n">true_arr</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">total_volume</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">true_arr</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">total_volume</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sum of |true| is zero; WQL is undefined.&quot;</span><span class="p">)</span>
+
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">true_arr</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">q_preds</span>  <span class="c1"># (n_q, *true.shape)</span>
+    <span class="n">taus_reshaped</span> <span class="o">=</span> <span class="n">taus</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">true_arr</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+    <span class="n">pinball_losses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">taus_reshaped</span> <span class="o">*</span> <span class="n">errors</span><span class="p">,</span> <span class="p">(</span><span class="n">taus_reshaped</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">errors</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pinball_losses</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span> <span class="o">*</span> <span class="n">total_volume</span><span class="p">))</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_quantile_metrics</span><span class="p">(</span>
+    <span class="n">true</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantiles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantile_levels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute quantile‑based metrics for a single slice (e.g., one day, one target).</span>
+
+<span class="sd">    Given ground truth values and the corresponding predicted quantiles,</span>
+<span class="sd">    this function calculates the following aggregated metrics:</span>
+
+<span class="sd">    - **pinball**: Mean pinball loss over all samples and quantile levels.</span>
+<span class="sd">    - **crps**: Continuous Ranked Probability Score approximated from the</span>
+<span class="sd">      piecewise‑linear CDF built from the quantiles (with linear tail</span>
+<span class="sd">      extrapolation). Lower is better; 0 is perfect.</span>
+<span class="sd">    - **calibration_error**: Mean absolute deviation between the empirical</span>
+<span class="sd">      coverage (fraction of true values ≤ predicted quantile) and the nominal</span>
+<span class="sd">      quantile levels. A perfectly calibrated forecast yields 0.</span>
+<span class="sd">    - **sharpness**: Average width of symmetric prediction intervals</span>
+<span class="sd">      (e.g., for levels τ and 1‑τ). Narrower intervals indicate sharper</span>
+<span class="sd">      forecasts.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        true: Ground truth values. Shape (n_samples,).</span>
+<span class="sd">        quantiles: Predicted quantiles. Shape (n_quantiles, n_samples).</span>
+<span class="sd">        quantile_levels: List of quantile levels corresponding to the first</span>
+<span class="sd">            dimension of `quantiles`. Must be strictly increasing and lie in</span>
+<span class="sd">            (0,1). Length must equal `n_quantiles`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A single‑row pandas DataFrame with the columns:</span>
+<span class="sd">            &quot;pinball&quot;, &quot;crps&quot;, &quot;calibration_error&quot;, &quot;sharpness&quot;.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If input shapes are inconsistent or if quantile levels</span>
+<span class="sd">            are invalid (the underlying metric functions will raise).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">quantile_levels</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">levels</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># Per-step taus (FPQR): shape (N, T).</span>
+        <span class="c1"># Use exact per-step tau for pinball; representative mean for other metrics.</span>
+        <span class="n">pinball</span> <span class="o">=</span> <span class="n">_pinball_exact_taus</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">quantiles</span><span class="p">,</span> <span class="n">levels</span><span class="p">)</span>
+        <span class="n">rep_levels</span> <span class="o">=</span> <span class="n">levels</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (N,) - monotonic representative grid</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Standard 1-D taus shared across all time steps.</span>
+        <span class="n">pinball</span> <span class="o">=</span> <span class="n">pinball_score</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">quantile_preds</span><span class="o">=</span><span class="n">quantiles</span><span class="p">,</span> <span class="n">quantile_levels</span><span class="o">=</span><span class="n">levels</span><span class="p">,</span> <span class="n">quantile_axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">rep_levels</span> <span class="o">=</span> <span class="n">levels</span>
+
+    <span class="n">crps</span> <span class="o">=</span> <span class="n">crps_quantile</span><span class="p">(</span>
+        <span class="n">true</span><span class="p">,</span>
+        <span class="n">quantile_preds</span><span class="o">=</span><span class="n">quantiles</span><span class="p">,</span>
+        <span class="n">quantile_levels</span><span class="o">=</span><span class="n">rep_levels</span><span class="p">,</span>
+        <span class="n">quantile_axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">normalization</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">sharpness</span> <span class="o">=</span> <span class="n">quantile_sharpness</span><span class="p">(</span><span class="n">quantile_preds</span><span class="o">=</span><span class="n">quantiles</span><span class="p">,</span> <span class="n">quantile_levels</span><span class="o">=</span><span class="n">rep_levels</span><span class="p">,</span> <span class="n">quantile_axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Calibration error: mean |empirical - nominal|</span>
+    <span class="n">empirical</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">true</span> <span class="o">&lt;=</span> <span class="n">q</span><span class="p">)</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">quantiles</span><span class="p">])</span>
+    <span class="n">nominal</span> <span class="o">=</span> <span class="n">rep_levels</span>
+    <span class="n">calib_error</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">empirical</span> <span class="o">-</span> <span class="n">nominal</span><span class="p">)))</span>
+
+    <span class="n">wql_score</span> <span class="o">=</span> <span class="n">wql</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">quantiles</span><span class="p">,</span> <span class="n">quantile_levels</span><span class="o">=</span><span class="n">rep_levels</span><span class="p">,</span> <span class="n">quantile_axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">[{</span><span class="s2">&quot;pinball&quot;</span><span class="p">:</span> <span class="n">pinball</span><span class="p">,</span> <span class="s2">&quot;wql&quot;</span><span class="p">:</span> <span class="n">wql_score</span><span class="p">,</span> <span class="s2">&quot;crps&quot;</span><span class="p">:</span> <span class="n">crps</span><span class="p">,</span> <span class="s2">&quot;calibration_error&quot;</span><span class="p">:</span> <span class="n">calib_error</span><span class="p">,</span> <span class="s2">&quot;sharpness&quot;</span><span class="p">:</span> <span class="n">sharpness</span><span class="p">}]</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="evaluate_quantile_forecast">
+<a class="viewcode-back" href="../../../../core/metrics.html#twiga.core.metrics.quantile.evaluate_quantile_forecast">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_quantile_forecast</span><span class="p">(</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n">ForecastResult</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">true_nmpi</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">metric_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate quantile forecasts by computing daily point, interval, and quantile metrics.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        result: :class:`~twiga.forecaster.result.ForecastResult` with</span>
+<span class="sd">            ``ground_truth``, ``quantiles``, and ``quantile_levels`` set,</span>
+<span class="sd">            ``kind=ForecastKind.QUANTILE``.</span>
+<span class="sd">        alpha: Significance level for interval metrics; the outermost quantile</span>
+<span class="sd">            pair (``q[0]`` / ``q[-1]``) is used as lower/upper bounds.</span>
+<span class="sd">            Defaults to ``0.01``.</span>
+<span class="sd">        true_nmpi: Optional reference value for NMPI normalisation.  When</span>
+<span class="sd">            ``None`` the standard deviation of the true values is used.</span>
+<span class="sd">        metric_names: Point metric names to compute.  ``None`` computes all.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame of per‑day, per‑target metrics indexed by daily timestamp.</span>
+<span class="sd">        Columns include point metrics, interval metrics (coverage, NMPI, …),</span>
+<span class="sd">        and quantile metrics (pinball, crps, calibration_error, sharpness).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">_evaluate_loop</span>
+
+    <span class="n">quantile_levels_raw</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">quantile_levels</span>  <span class="c1"># list[float] | np.ndarray | None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_fn</span><span class="p">(</span><span class="n">day_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">target_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">true_vals</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">ground_truth</span><span class="p">[</span><span class="n">day_idx</span><span class="p">,</span> <span class="p">:,</span> <span class="n">target_idx</span><span class="p">]</span>  <span class="c1"># type: ignore[index]</span>
+        <span class="n">pred_vals</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">day_idx</span><span class="p">,</span> <span class="p">:,</span> <span class="n">target_idx</span><span class="p">]</span>
+        <span class="c1"># quantiles shape: (n_levels, n_steps) for this day/target</span>
+        <span class="n">q_vals</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">quantiles</span><span class="p">[</span><span class="n">day_idx</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">target_idx</span><span class="p">]</span>  <span class="c1"># type: ignore[index]</span>
+        <span class="n">lower_vals</span> <span class="o">=</span> <span class="n">q_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">upper_vals</span> <span class="o">=</span> <span class="n">q_vals</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># For FPQR, quantile_levels is a 3-D ndarray (B, N, T); slice per day.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">quantile_levels_raw</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">quantile_levels_raw</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">day_levels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">quantile_levels_raw</span><span class="p">[</span><span class="n">day_idx</span><span class="p">]</span>  <span class="c1"># (N, T)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">day_levels</span> <span class="o">=</span> <span class="n">quantile_levels_raw</span> <span class="ow">or</span> <span class="p">[]</span>  <span class="c1"># type: ignore[assignment]</span>
+
+        <span class="n">point_scores</span> <span class="o">=</span> <span class="n">get_pointwise_metrics</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">true_vals</span><span class="p">,</span> <span class="n">y_hat</span><span class="o">=</span><span class="n">pred_vals</span><span class="p">,</span> <span class="n">metric_names</span><span class="o">=</span><span class="n">metric_names</span><span class="p">)</span>
+        <span class="n">interval_scores</span> <span class="o">=</span> <span class="n">get_interval_metrics</span><span class="p">(</span><span class="n">pred_vals</span><span class="p">,</span> <span class="n">true_vals</span><span class="p">,</span> <span class="n">lower_vals</span><span class="p">,</span> <span class="n">upper_vals</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">true_nmpi</span><span class="p">)</span>
+        <span class="n">quantile_scores</span> <span class="o">=</span> <span class="n">get_quantile_metrics</span><span class="p">(</span><span class="n">true</span><span class="o">=</span><span class="n">true_vals</span><span class="p">,</span> <span class="n">quantiles</span><span class="o">=</span><span class="n">q_vals</span><span class="p">,</span> <span class="n">quantile_levels</span><span class="o">=</span><span class="n">day_levels</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">point_scores</span><span class="p">,</span> <span class="n">interval_scores</span><span class="p">,</span> <span class="n">quantile_scores</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_evaluate_loop</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">metric_fn</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -11,7 +11,7 @@
 - `twiga/core/stats/mutual_information.py`  -  `compute_mutual_information`
 - `twiga/core/stats/ppscore.py`  -  `compute_ppscore`
 - `twiga/core/stats/residual.py`  -  `cooks_distance`, `leverage_statistic`, `get_standardized_residual`
-- `twiga/core/stats/seasonality.py`  -  `get_acf_values`
+- `twiga/core/stats/seasonality.py`  -  `get_acf_values`, `get_trend_seasonality`
 - `twiga/core/stats/stationarity.py`  -  `adf_test`, `kpss_test`
 - `twiga/core/stats/utils.py`  -  `get_optimal_lags`, `normalise_series`, `get_entropy_parameters`
 - `twiga/core/stats/xicorr.py`  -  `compute_xicorr`
@@ -230,22 +230,77 @@ importance_df = compute_rf_importance(
 ```python
 from twiga.core.stats import adf_test, kpss_test
 
-# Augmented Dickey-Fuller test
-# H0: unit root present (non-stationary)
-adf_result = adf_test(series, max_lag=None, autolag="AIC")
-# Returns dict: {"statistic", "p_value", "critical_values", "is_stationary"}
+# Augmented Dickey-Fuller — H0: unit root present (non-stationary)
+# Returns the raw statsmodels result tuple: (stat, p_value, n_lags, n_obs, critical_values)
+adf_result = adf_test(series, maxlag=None, regression="c", autolag="BIC")
+stat, p_val, n_lags, n_obs, crit = adf_result
+print(f"ADF stat={stat:.4f}  p={p_val:.4f}")
+# p < 0.05 → reject H0 → evidence of stationarity
 
-# KPSS test
-# H0: series is stationary (trend- or level-stationary)
-kpss_result = kpss_test(series, regression="c", nlags="auto")
-# Returns dict: {"statistic", "p_value", "critical_values", "is_stationary"}
+# KPSS — H0: series IS stationary (level or trend)
+# Returns: (stat, p_value, n_lags, critical_values)
+kpss_result = kpss_test(series, regression="c", maxlag=None)
+stat, p_val, n_lags, crit = kpss_result
+print(f"KPSS stat={stat:.4f}  p={p_val:.4f}")
+# p < 0.05 → reject H0 → evidence of non-stationarity
 ```
+
+Both functions validate input length (≥ 10 observations), compute sensible lag bounds automatically, and suppress statsmodels `InterpolationWarning` by default.
 
 :::{admonition} Combining ADF and KPSS
 :class: tip
 
-Use both tests together: if ADF rejects the unit-root null and KPSS does not reject stationarity, you have strong evidence of stationarity. Conflicting results suggest trend-stationarity or structural breaks.
+Use both tests together for a stronger conclusion:
+
+| ADF | KPSS | Conclusion |
+| --- | --- | --- |
+| Reject H0 (p < 0.05) | Fail to reject H0 (p ≥ 0.05) | Stationary ✅ |
+| Fail to reject H0 | Reject H0 | Non-stationary (unit root) ❌ |
+| Reject H0 | Reject H0 | Trend-stationary or structural break ⚠️ |
+| Fail to reject H0 | Fail to reject H0 | Inconclusive — more data needed |
+
 :::
+
+### Seasonal Decomposition (MSTL)
+
+`get_trend_seasonality` uses MSTL (Multiple Seasonal-Trend decomposition using Loess) to separate a time series into trend, one or more seasonal components, and a residual. It handles multiple simultaneous seasonalities (e.g. daily + weekly in a 30-minute series).
+
+```python
+from twiga.core.stats import get_trend_seasonality
+
+# Single seasonality — daily cycle at 30-min resolution (48 samples/day)
+result = get_trend_seasonality(
+    series,
+    periods=[48],
+    component_names=["Daily"],
+)
+# result.columns → ["Daily", "Trend", "Residual"]
+
+# Multiple seasonalities — daily + weekly
+result = get_trend_seasonality(
+    series,
+    periods=[48, 336],          # 336 = 48 * 7
+    component_names=["Daily", "Weekly"],
+)
+# result.columns → ["Daily", "Weekly", "Trend", "Residual"]
+```
+
+The returned DataFrame has the same DatetimeIndex as the input series.
+
+:::{admonition} Period sizing
+:class: note
+
+statsmodels silently drops any period that exceeds half the series length.  Twiga logs a warning when this happens and still returns the remaining components, so decompositions never fail silently.
+:::
+
+**Tuning parameters:**
+
+| Parameter | Default | Effect |
+| --- | --- | --- |
+| `iterate` | `3` | Outer MSTL iterations — more = smoother but slower |
+| `seasonal_deg` | `0` | LOESS degree for seasonal smoother (0 = constant, 1 = linear) |
+| `inner_iter` | `2` | STL inner loop iterations |
+| `outer_iter` | `0` | STL robustness iterations (> 0 downweights outliers) |
 
 ### ACF / PACF
 
@@ -410,6 +465,10 @@ X, y = prepare_data(df, target="load_mw", features=feature_columns)
 
 ```{eval-rst}
 .. autofunction:: twiga.core.stats.seasonality.get_acf_values
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.seasonality.get_trend_seasonality
 ```
 
 ```{eval-rst}

@@ -992,6 +992,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../metrics.html" class="nav-link">twiga.core.metrics</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">twiga.core.metrics.point</span></li>
   </ul>
 </nav>
@@ -1746,6 +1749,167 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
 
 
+<div class="viewcode-block" id="r_squared">
+<a class="viewcode-back" href="../../../../core/metrics.html#twiga.core.metrics.point.r_squared">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">r_squared</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Coefficient of Determination (R²) between actual and predicted values.</span>
+
+<span class="sd">    R² measures the proportion of variance in the actual values explained by the predictions:</span>
+<span class="sd">    \[</span>
+<span class="sd">    R^2 = 1 - \frac{\sum_{t=1}^{T} (y_t - \hat{y}_t)^2}{\sum_{t=1}^{T} (y_t - \bar{y})^2}</span>
+<span class="sd">    \]</span>
+<span class="sd">    where :math:`\bar{y}` is the mean of the actual values.  A perfect forecast yields</span>
+<span class="sd">    ``R² = 1``; a constant mean prediction yields ``R² = 0``; worse-than-mean predictions</span>
+<span class="sd">    can yield negative values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        R² coefficient, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If `y` and `y_hat` have incompatible shapes.</span>
+<span class="sd">        ValueError: If the variance of `y` is zero (constant series).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1.0, 2.0, 3.0, 4.0, 5.0])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 2.0, 2.9, 4.1, 5.0])</span>
+<span class="sd">        &gt;&gt;&gt; r_squared(y, y_hat)</span>
+<span class="sd">        0.994</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="n">ss_res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">squared_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">ss_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">ss_tot</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Variance of `y` is zero; R² is undefined for a constant series.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ss_res</span> <span class="o">/</span> <span class="n">ss_tot</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="rmsle">
+<a class="viewcode-back" href="../../../../core/metrics.html#twiga.core.metrics.point.rmsle">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rmsle</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Root Mean Squared Log Error (RMSLE).</span>
+
+<span class="sd">    The RMSLE penalises under-predictions more than over-predictions and is</span>
+<span class="sd">    scale-invariant on a log scale:</span>
+<span class="sd">    \[</span>
+<span class="sd">    RMSLE = \sqrt{\frac{1}{T} \sum_{t=1}^{T} \bigl(\log(1 + \hat{y}_t) - \log(1 + y_t)\bigr)^2}</span>
+<span class="sd">    \]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, must be non-negative, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, must be non-negative, same shape as `y`.</span>
+<span class="sd">        axis: Axis along which to compute the mean. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        RMSLE, scalar if 1D input, array if multi-dimensional.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If any value in `y` or `y_hat` is negative.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1.0, 2.0, 3.0])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 1.9, 3.2])</span>
+<span class="sd">        &gt;&gt;&gt; rmsle(y, y_hat)</span>
+<span class="sd">        0.07663...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">validate_inputs</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">y_hat</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;RMSLE requires non-negative values for `y` and `y_hat`.&quot;</span><span class="p">)</span>
+    <span class="n">log_diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">y_hat</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">log_diff</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)))</span></div>
+
+
+
+<div class="viewcode-block" id="medae">
+<a class="viewcode-back" href="../../../../core/metrics.html#twiga.core.metrics.point.medae">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">medae</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Median Absolute Error (MedAE) between actual and predicted values.</span>
+
+<span class="sd">    MedAE is robust to outliers, unlike MAE:</span>
+<span class="sd">    \[</span>
+<span class="sd">    MedAE = \text{median}\!\left(\lvert y_t - \hat{y}_t \rvert\right)</span>
+<span class="sd">    \]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,) or (n_samples, n_features).</span>
+<span class="sd">        y_hat: Predicted values, same shape as `y`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Median absolute error, scalar.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If `y` and `y_hat` have incompatible shapes.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1.0, 2.0, 3.0, 100.0])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 2.0, 2.9, 90.0])</span>
+<span class="sd">        &gt;&gt;&gt; medae(y, y_hat)</span>
+<span class="sd">        0.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">abs_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)))</span></div>
+
+
+
+<div class="viewcode-block" id="skill_score">
+<a class="viewcode-back" href="../../../../core/metrics.html#twiga.core.metrics.point.skill_score">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">skill_score</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">y_naive</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mae&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the Skill Score of a forecast relative to a naive baseline.</span>
+
+<span class="sd">    The Skill Score quantifies the relative improvement of a model over a</span>
+<span class="sd">    naive baseline forecast:</span>
+<span class="sd">    \[</span>
+<span class="sd">    SS = 1 - \frac{\text{metric}(y, \hat{y})}{\text{metric}(y, y_{\text{naive}})}</span>
+<span class="sd">    \]</span>
+<span class="sd">    A positive score indicates improvement over the baseline; 0 means no</span>
+<span class="sd">    improvement; negative values indicate the model is worse than the baseline.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y: Actual values, shape (n_samples,).</span>
+<span class="sd">        y_hat: Model predictions, same shape as `y`.</span>
+<span class="sd">        y_naive: Naive baseline predictions (e.g. seasonal naïve, persistence),</span>
+<span class="sd">            same shape as `y`.</span>
+<span class="sd">        metric: Error metric to use for comparison.  One of ``&#39;mae&#39;``, ``&#39;mse&#39;``,</span>
+<span class="sd">            ``&#39;rmse&#39;``.  Defaults to ``&#39;mae&#39;``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Skill score, typically in (-∞, 1]. Perfect skill = 1.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If `metric` is not one of the supported values.</span>
+<span class="sd">        ValueError: If the naive baseline metric is zero.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([1.0, 2.0, 3.0, 4.0])</span>
+<span class="sd">        &gt;&gt;&gt; y_hat = np.array([1.1, 2.1, 3.0, 4.0])</span>
+<span class="sd">        &gt;&gt;&gt; y_naive = np.array([1.0, 1.0, 1.0, 1.0])</span>
+<span class="sd">        &gt;&gt;&gt; skill_score(y, y_hat, y_naive, metric=&quot;mae&quot;)</span>
+<span class="sd">        0.9333...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">metric_fns</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;mae&quot;</span><span class="p">:</span> <span class="n">mae</span><span class="p">,</span> <span class="s2">&quot;mse&quot;</span><span class="p">:</span> <span class="n">mse</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">:</span> <span class="n">rmse</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">metric</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metric_fns</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;metric must be one of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">metric_fns</span><span class="p">)</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">metric</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="n">metric_fns</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span>
+    <span class="n">score_model</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+    <span class="n">score_naive</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_naive</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">score_naive</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Naive baseline metric is zero; skill score is undefined.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">score_model</span> <span class="o">/</span> <span class="n">score_naive</span><span class="p">)</span></div>
+
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">get_pointwise_metrics</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">metric_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute specified metrics for actual and predicted values.</span>
 
@@ -1759,7 +1923,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        y_hat: Predicted values, must be a 1D array or Series with the same shape as `y`.</span>
 <span class="sd">        metric_names: List of metric names to compute. Supported metrics that return</span>
 <span class="sd">            aggregate values are: &#39;res&#39;, &#39;mae&#39;, &#39;mase&#39;, &#39;mse&#39;, &#39;msse&#39;, &#39;rmse&#39;, &#39;rmsse&#39;,</span>
-<span class="sd">            &#39;mape&#39;, &#39;wmape&#39;, &#39;smape&#39;, &#39;ope&#39;, &#39;corr&#39;, &#39;nbias&#39;.</span>
+<span class="sd">            &#39;mape&#39;, &#39;wmape&#39;, &#39;smape&#39;, &#39;ope&#39;, &#39;corr&#39;, &#39;nbias&#39;, &#39;r2&#39;, &#39;rmsle&#39;, &#39;medae&#39;.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.DataFrame: A DataFrame with one row containing the computed metric values for all</span>
@@ -1775,19 +1939,22 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Dictionary mapping metric names to their functions.</span>
     <span class="c1"># These functions should be defined elsewhere and imported as needed.</span>
     <span class="n">metric_functions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;res&quot;</span><span class="p">:</span> <span class="n">res</span><span class="p">,</span>  <span class="c1"># Mean error</span>
-        <span class="s2">&quot;mae&quot;</span><span class="p">:</span> <span class="n">mae</span><span class="p">,</span>  <span class="c1"># Mean absolute error</span>
-        <span class="s2">&quot;mase&quot;</span><span class="p">:</span> <span class="n">mase</span><span class="p">,</span>  <span class="c1"># Mean absolute scaled error (uses h=1 by default)</span>
-        <span class="s2">&quot;mse&quot;</span><span class="p">:</span> <span class="n">mse</span><span class="p">,</span>  <span class="c1"># Mean squared error</span>
-        <span class="s2">&quot;msse&quot;</span><span class="p">:</span> <span class="n">msse</span><span class="p">,</span>  <span class="c1"># Mean squared scaled error (uses h=1 by default)</span>
-        <span class="s2">&quot;rmse&quot;</span><span class="p">:</span> <span class="n">rmse</span><span class="p">,</span>  <span class="c1"># Root mean squared error</span>
-        <span class="s2">&quot;rmsse&quot;</span><span class="p">:</span> <span class="n">rmsse</span><span class="p">,</span>  <span class="c1"># Root mean squared scaled error (uses h=1 by default)</span>
-        <span class="s2">&quot;mape&quot;</span><span class="p">:</span> <span class="n">mape</span><span class="p">,</span>  <span class="c1"># Mean absolute percentage error</span>
-        <span class="s2">&quot;wmape&quot;</span><span class="p">:</span> <span class="n">wmape</span><span class="p">,</span>  <span class="c1"># Weighted mean absolute percentage error</span>
-        <span class="s2">&quot;smape&quot;</span><span class="p">:</span> <span class="n">smape</span><span class="p">,</span>  <span class="c1"># Symmetric mean absolute percentage error</span>
-        <span class="s2">&quot;ope&quot;</span><span class="p">:</span> <span class="n">ope</span><span class="p">,</span>  <span class="c1"># Aggregate percentage error</span>
-        <span class="s2">&quot;corr&quot;</span><span class="p">:</span> <span class="n">corr</span><span class="p">,</span>  <span class="c1"># Correlation coefficient (scalar for 1D)</span>
-        <span class="s2">&quot;nbias&quot;</span><span class="p">:</span> <span class="n">nbias</span><span class="p">,</span>  <span class="c1"># Normalized bias (sum-based)</span>
+        <span class="s2">&quot;res&quot;</span><span class="p">:</span> <span class="n">res</span><span class="p">,</span>
+        <span class="s2">&quot;mae&quot;</span><span class="p">:</span> <span class="n">mae</span><span class="p">,</span>
+        <span class="s2">&quot;mase&quot;</span><span class="p">:</span> <span class="n">mase</span><span class="p">,</span>
+        <span class="s2">&quot;mse&quot;</span><span class="p">:</span> <span class="n">mse</span><span class="p">,</span>
+        <span class="s2">&quot;msse&quot;</span><span class="p">:</span> <span class="n">msse</span><span class="p">,</span>
+        <span class="s2">&quot;rmse&quot;</span><span class="p">:</span> <span class="n">rmse</span><span class="p">,</span>
+        <span class="s2">&quot;rmsse&quot;</span><span class="p">:</span> <span class="n">rmsse</span><span class="p">,</span>
+        <span class="s2">&quot;mape&quot;</span><span class="p">:</span> <span class="n">mape</span><span class="p">,</span>
+        <span class="s2">&quot;wmape&quot;</span><span class="p">:</span> <span class="n">wmape</span><span class="p">,</span>
+        <span class="s2">&quot;smape&quot;</span><span class="p">:</span> <span class="n">smape</span><span class="p">,</span>
+        <span class="s2">&quot;ope&quot;</span><span class="p">:</span> <span class="n">ope</span><span class="p">,</span>
+        <span class="s2">&quot;corr&quot;</span><span class="p">:</span> <span class="n">corr</span><span class="p">,</span>
+        <span class="s2">&quot;nbias&quot;</span><span class="p">:</span> <span class="n">nbias</span><span class="p">,</span>
+        <span class="s2">&quot;r2&quot;</span><span class="p">:</span> <span class="n">r_squared</span><span class="p">,</span>
+        <span class="s2">&quot;rmsle&quot;</span><span class="p">:</span> <span class="n">rmsle</span><span class="p">,</span>
+        <span class="s2">&quot;medae&quot;</span><span class="p">:</span> <span class="n">medae</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="c1"># Initialize the results dictionary.</span>
