@@ -14,7 +14,10 @@
 - `twiga/models/nn/nhits_model.py` - `NHITSModel` / `NHITSConfig`
 - `twiga/models/nn/rnn_model.py` - `RNNModel` / `RNNConfig`
 - `twiga/models/nn/mlpfqr_model.py` - `MLPFQRModel` / `MLPFQRConfig`
+- `twiga/models/nn/mlpfcrc_model.py` - `MLPFCRCModel` / `MLPFCRCConfig`
 - `twiga/models/nn/mlpgamcrc_model.py` - `MLPGAMCRCModel` / `MLPGAMCRCConfig`
+- `twiga/models/nn/mlpgafcrc_model.py` - `MLPGAFCRCModel` / `MLPGAFCRCConfig`
+- `twiga/models/nn/nhitscrc_model.py` - `NHITSCRCModel` / `NHITSCRCConfig`
 - `twiga/models/nn/net/` - Network architecture implementations
 - `twiga/models/nn/prob/core.py` - `ProbabilisticModel` / `ProbabilisticNetwork`
 - `twiga/models/nn/prob/rnn_parametric.py` - RNN parametric distribution wrappers
@@ -103,7 +106,10 @@ classDiagram
     BaseNeuralForecast <|-- NHITSModel
     BaseNeuralForecast <|-- RNNModel
     BaseNeuralForecast <|-- MLPFQRModel
+    BaseNeuralForecast <|-- MLPFCRCModel
     BaseNeuralForecast <|-- MLPGAMCRCModel
+    BaseNeuralForecast <|-- MLPGAFCRCModel
+    BaseNeuralForecast <|-- NHITSCRCModel
 ```
 
 ### BaseNeuralForecast
@@ -382,15 +388,15 @@ Each base architecture supports these distribution heads:
 
 | Distribution | MLPF | MLPGAM | MLPGAF | NHITS | RNN | Config suffix |
 | --- | --- | --- | --- | --- | --- | --- |
-| Normal | ✓ | ✓ | ✓ | ✓ | ✓ | `NormalConfig` |
-| Laplace | ✓ | ✓ | ✓ | ✓ | ✓ | `LaplaceConfig` |
-| LogNormal | ✓ | ✓ | ✓ | ✓ | ✓ | `LogNormalConfig` |
-| Gamma | ✓ | ✓ | ✓ | ✓ | ✓ | `GammaConfig` |
-| Beta | ✓ | ✓ | ✓ | ✓ | ✓ | `BetaConfig` |
-| StudentT | - | ✓ | ✓ | ✓ | ✓ | `StudentTConfig` |
-| QR | ✓ | ✓ | ✓ | ✓ | ✓ | `QRConfig` |
-| FPQR | ✓ | ✓ | ✓ | ✓ | ✓ | `FPQRConfig` |
-| CRC | ✓ | ✓ | - | - | - | `CRCConfig` |
+| Normal | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `NormalConfig` |
+| Laplace | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `LaplaceConfig` |
+| LogNormal | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `LogNormalConfig` |
+| Gamma | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `GammaConfig` |
+| Beta | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `BetaConfig` |
+| StudentT | — | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `StudentTConfig` |
+| QR | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `QRConfig` |
+| FPQR | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `FPQRConfig` |
+| CRC | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | — | `CRCConfig` |
 
 ```python
 from twiga.models.nn.mlpfnormal_model import MLPFNormalConfig
@@ -435,9 +441,9 @@ Registered name: `"mlpfqr"` | Domain: `"nn"` | Extends: `MLPFConfig`
 All other fields are inherited from `MLPFConfig`. See [Quantile Regression](../probabilistic/quantile-regression.md) for details on the loss functions and quantile calibration.
 
 
-### MLPGAM-CRC - MLPGAM with Conformal Residual Coverage
+### MLPGAM-CRC - MLPGAM with Conditional Residual Calibration
 
-Extends `MLPGAMModel` with a conformal residual coverage (CRC) head. The architecture is identical to MLPGAM, but the model produces outputs that are compatible with the conformal prediction framework. Configuration inherits all fields from `MLPGAMConfig` without additions.
+Pairs the MLPGAM backbone with an `AdditiveCRCDistribution` head. The backbone's additive mean (the sum of group-wise projections) is used directly as $\mu$ — no extra linear projection is applied — so the GAM decomposition is fully preserved. A two-layer sigma MLP, conditioned on the detached $\mu$, learns to predict the per-step absolute residual $|y - \mu|$.
 
 :::{admonition} Config class: `MLPGAMCRCConfig`
 :class: info
@@ -445,8 +451,15 @@ Extends `MLPGAMModel` with a conformal residual coverage (CRC) head. The archite
 Registered name: `"mlpgamcrc"` | Domain: `"nn"` | Extends: `MLPGAMConfig`
 :::
 
+`MLPGAMCRCConfig` inherits every field from `MLPGAMConfig` (including `lambda_lasso`) and adds:
 
-`MLPGAMCRCConfig` inherits every field from `MLPGAMConfig` (including `lambda_lasso`) and changes only the model `name` to `"mlpgamcrc"`. See the [Conformal Prediction](../probabilistic/conformal-prediction.md) documentation for how conformal calibration wraps this model.
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `two_stage` | `bool` | `True` | Enable two-stage training: Stage 1 trains the backbone and mu path; Stage 2 freezes the backbone and trains only the sigma MLP. Set `False` to train jointly with a single optimizer. |
+| `sigma_loss_fn` | `Literal["hybrid", "gaussian", "laplace", "mse"]` | `"hybrid"` | Calibration objective for the scale estimate σ. `"hybrid"` uses `α·MSE + (1-α)·MAE`; others use the corresponding NLL or MSE. |
+| `alpha` | `float` | `0.1` | Weight for MSE vs MAE in both the mu loss and the `"hybrid"` sigma loss. |
+
+See [CRC Distribution](../probabilistic/distributions.md#conditional-residual-calibration-crc) for the full head architecture and loss equations.
 
 
 ## Model Comparison
@@ -456,7 +469,7 @@ Registered name: `"mlpgamcrc"` | Domain: `"nn"` | Extends: `MLPGAMConfig`
 | **MLPF** | Point | Attention / weighted / additive | - | - | Normal, Laplace, LogNormal, Gamma, Beta, QR, FPQR, CRC | General-purpose deep forecasting |
 | **MLPGAM** | Point | Additive (GAM) | Yes | L1 Lasso | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Interpretable group-additive forecasts |
 | **MLPGAF** | Point | Gated additive features | Yes | Gate + weight Lasso | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Feature selection with uncertainty |
-| **N-HiTS** | Point | Hierarchical stack sum | Decomposable | - | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR | Multi-resolution temporal patterns |
+| **N-HiTS** | Point | Hierarchical stack sum | Decomposable | - | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Multi-resolution temporal patterns |
 | **RNN** | Point | Recurrent (GRU/LSTM) | - | - | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR | Sequential dependencies, variable-length lookback |
 
 :::{admonition} Choosing a distribution
@@ -569,34 +582,357 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
 
 ## API Reference
 
-### BaseNeuralForecast
-
+### Base classes
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.core.base.BaseNeuralForecast
    :members:
    :show-inheritance:
-```
 
-
-### BaseNeuralModel
-
-
-```{eval-rst}
 .. autoclass:: twiga.models.nn.core.base_model.BaseNeuralModel
    :members:
    :show-inheritance:
-```
 
-
-### BaseArchitecture
-
-
-```{eval-rst}
 .. autoclass:: twiga.models.nn.core.base_arch.BaseArchitecture
    :members:
    :show-inheritance:
 ```
 
+### Probabilistic core
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.prob.core.ProbabilisticNetwork
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.prob.core.ProbabilisticModel
+   :members:
+   :show-inheritance:
+```
+
+### MLPF — point model
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.mlpf_model.MLPFConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpf_model.MLPFModel
+   :members:
+   :show-inheritance:
+```
+
+### MLPF — parametric variants
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.mlpfnormal_model.MLPFNormalConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpfnormal_model.MLPFNormalModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpflaplace_model.MLPFLaplaceConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpflaplace_model.MLPFLaplaceModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpflognormal_model.MLPFLogNormalConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpflognormal_model.MLPFLogNormalModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpfgamma_model.MLPFGammaConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpfgamma_model.MLPFGammaModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpfbeta_model.MLPFBetaConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpfbeta_model.MLPFBetaModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpfstudentt_model.MLPFStudentTConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpfstudentt_model.MLPFStudentTModel
+   :show-inheritance:
+```
+
+### MLPF — quantile variants
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.mlpfqr_model.MLPFQRConfig
+   :members:
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpfqr_model.MLPFQRModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpffpqr_model.MLPFFPQRConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpffpqr_model.MLPFFPQRModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpfcrc_model.MLPFCRCConfig
+   :members:
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpfcrc_model.MLPFCRCModel
+   :show-inheritance:
+```
+
+### MLPGAM — point model
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.mlpgam_model.MLPGAMConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgam_model.MLPGAMModel
+   :members:
+   :show-inheritance:
+```
+
+### MLPGAM — parametric variants
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.mlpgamnormal_model.MLPGAMNormalConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgamnormal_model.MLPGAMNormalModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgamlaplace_model.MLPGAMLaplaceConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgamlaplace_model.MLPGAMLaplaceModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgamlognormal_model.MLPGAMLogNormalConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgamlognormal_model.MLPGAMLogNormalModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgamgamma_model.MLPGAMGammaConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgamgamma_model.MLPGAMGammaModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgambeta_model.MLPGAMBetaConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgambeta_model.MLPGAMBetaModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgamstudentt_model.MLPGAMStudentTConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgamstudentt_model.MLPGAMStudentTModel
+   :show-inheritance:
+```
+
+### MLPGAM — quantile and CRC variants
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.mlpgamqr_model.MLPGAMQRConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgamqr_model.MLPGAMQRModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgamfpqr_model.MLPGAMFPQRConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgamfpqr_model.MLPGAMFPQRModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig
+   :members:
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgamcrc_model.MLPGAMCRCModel
+   :show-inheritance:
+```
+
+### MLPGAF — point model
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.mlpgaf_model.MLPGAFConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgaf_model.MLPGAFModel
+   :members:
+   :show-inheritance:
+```
+
+### MLPGAF — parametric variants
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.mlpgafnormal_model.MLPGAFNormalConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgafnormal_model.MLPGAFNormalModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgaflaplace_model.MLPGAFLaplaceConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgaflaplace_model.MLPGAFLaplaceModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgaflognormal_model.MLPGAFLogNormalConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgaflognormal_model.MLPGAFLogNormalModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgafgamma_model.MLPGAFGammaConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgafgamma_model.MLPGAFGammaModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgafbeta_model.MLPGAFBetaConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgafbeta_model.MLPGAFBetaModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgafstudentt_model.MLPGAFStudentTConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgafstudentt_model.MLPGAFStudentTModel
+   :show-inheritance:
+```
+
+### MLPGAF — quantile and CRC variants
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.mlpgafqr_model.MLPGAFQRConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgafqr_model.MLPGAFQRModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgaffpqr_model.MLPGAFFPQRConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgaffpqr_model.MLPGAFFPQRModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig
+   :members:
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.mlpgafcrc_model.MLPGAFCRCModel
+   :show-inheritance:
+```
+
+### N-HiTS — point model
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.nhits_model.NHITSConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.nhits_model.NHITSModel
+   :members:
+   :show-inheritance:
+```
+
+### N-HiTS — parametric variants
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.nhitsnormal_model.NHITSNormalConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.nhitsnormal_model.NHITSNormalModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.nhitslaplace_model.NHITSLaplaceConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.nhitslaplace_model.NHITSLaplaceModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.nhitslognormal_model.NHITSLogNormalConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.nhitslognormal_model.NHITSLogNormalModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.nhitsgamma_model.NHITSGammaConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.nhitsgamma_model.NHITSGammaModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.nhitsbeta_model.NHITSBetaConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.nhitsbeta_model.NHITSBetaModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.nhitsstudentt_model.NHITSStudentTConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.nhitsstudentt_model.NHITSStudentTModel
+   :show-inheritance:
+```
+
+### N-HiTS — quantile and CRC variants
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.nhitsqr_model.NHITSQRConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.nhitsqr_model.NHITSQRModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.nhitsqr_model.NHITSFPQRConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.nhitsqr_model.NHITSFPQRModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.nhitscrc_model.NHITSCRCConfig
+   :members:
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.nhitscrc_model.NHITSCRCModel
+   :show-inheritance:
+```
+
+### RNN — point model
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.rnn_model.RNNConfig
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.rnn_model.RNNModel
+   :members:
+   :show-inheritance:
+```
+
+### RNN — parametric variants
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.rnnnormal_model.RNNNormalConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.rnnnormal_model.RNNNormalModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.rnnlaplace_model.RNNLaplaceConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.rnnlaplace_model.RNNLaplaceModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.rnnlognormal_model.RNNLogNormalConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.rnnlognormal_model.RNNLogNormalModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.rnngamma_model.RNNGammaConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.rnngamma_model.RNNGammaModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.rnnbeta_model.RNNBetaConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.rnnbeta_model.RNNBetaModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.rnnstudentt_model.RNNStudentTConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.rnnstudentt_model.RNNStudentTModel
+   :show-inheritance:
+```
+
+### RNN — quantile variants
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.rnnqr_model.RNNQRConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.rnnqr_model.RNNQRModel
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.rnnqr_model.RNNFPQRConfig
+   :show-inheritance:
+.. autoclass:: twiga.models.nn.rnnqr_model.RNNFPQRModel
+   :show-inheritance:
+```
 
 **See also:** [Model Catalog](index.md) | [Configuration System](../core/config.md) | [TwigaForecaster](../core/forecaster.md) | [Data Pipeline](../core/data-pipeline.md) | [Quantile Regression](../probabilistic/quantile-regression.md)

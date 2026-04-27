@@ -6,6 +6,7 @@
 - `twiga/distributions/nn/parametric.py`
 - `twiga/distributions/nn/quantile.py`
 - `twiga/distributions/nn/fpquantile.py`
+- `twiga/distributions/nn/residual_conformal.py`
 - `twiga/models/nn/prob/core.py`
 - `twiga/models/ml/gausscatboost_model.py`  -  `GAUSSCATBOOSTConfig` / `GAUSSCATBOOSTModel`
 - `twiga/models/ml/ngboostnormal_model.py`  -  `NGBOOSTNORMALConfig` / `NGBOOSTNORMALModel`
@@ -246,6 +247,76 @@ The training loss combines three terms:
 $$\mathcal{L} = \mathcal{L}_{\text{quantile}} + \mathcal{L}_{\text{proposal}} - \mathbb{H}(\text{probs})$$
 
 where $\mathbb{H}$ is the entropy of the proposed quantile distribution, acting as a diversity regulariser.
+
+
+### Conditional Residual Calibration (CRC)
+
+CRC heads (`twiga/distributions/nn/residual_conformal.py`) learn a point forecast $\mu$ and a per-step scale $\sigma$ **end-to-end** — no post-hoc conformal calibration step required. The scale MLP is trained to approximate the absolute residual $|y - \mu|$, giving prediction intervals of the form $[\mu \pm z_\alpha \sigma]$ at inference time.
+
+Two variants exist, differing only in how $\mu$ is computed:
+
+| Class | Backbone family | Mu path |
+|---|---|---|
+| `CRCDistribution` | MLPF, NHiTS, RNN | Linear projection from latent `z (B, hidden_size)` → `(B, H×O)` |
+| `AdditiveCRCDistribution` | MLPGAM, MLPGAF | `encode()` already returns the additive mean directly — no projection, preserving the GAM decomposition |
+
+**Loss function:**
+
+The joint training objective is:
+
+$$\mathcal{L} = \underbrace{\alpha \cdot \text{MSE}(\mu, y) + (1-\alpha) \cdot \text{MAE}(\mu, y)}_{\mathcal{L}_\mu} + \underbrace{\mathcal{L}_\sigma(\sigma,\, |y-\mu|)}_{\text{sigma calibration}}$$
+
+The sigma calibration loss $\mathcal{L}_\sigma$ is selected via `sigma_loss_fn`:
+
+| `sigma_loss_fn` | Formula | Use when |
+|---|---|---|
+| `"hybrid"` (default) | $\alpha \cdot \text{MSE}(\sigma, r) + (1-\alpha) \cdot \text{MAE}(\sigma, r)$ | General purpose; same $\alpha$ as mu loss |
+| `"gaussian"` | $\frac{1}{2}\left(\frac{r^2}{\sigma^2} + \log \sigma^2\right)$ | Heteroscedastic Gaussian NLL |
+| `"laplace"` | $\frac{r}{\sigma} + \log(2\sigma)$ | Robust to heavy-tailed residuals |
+| `"mse"` | $(\sigma - r)^2$ | Distribution-free MSE on residual magnitude |
+
+where $r = |y - \mu|$.
+
+**Two-stage training** (`MLPGAMCRC` default, controlled by `two_stage=True`):
+
+```{mermaid}
+graph LR
+    S1["Stage 1\nBackbone + mu_layer\n(sigma_net frozen)"] --> S2["Stage 2\nSigma MLP only\n(backbone frozen)"]
+```
+
+In stage 1 the backbone and mu path are updated via the combined $\mathcal{L}_\mu + \mathcal{L}_\sigma$ loss. In stage 2 only `sigma_net` parameters receive gradients — the backbone is frozen by Lightning's `toggle_optimizer`. This prevents the scale head from distorting the point forecast.
+
+```python
+from twiga.distributions.nn.residual_conformal import CRCDistribution, AdditiveCRCDistribution
+
+# Standard backbone (MLPF, NHiTS)
+crc = CRCDistribution(
+    num_target_output=1,
+    hidden_size=256,         # injected from backbone.encode_size
+    forecast_horizon=48,
+    sigma_loss_fn="hybrid",  # "hybrid" | "gaussian" | "laplace" | "mse"
+    alpha=0.1,
+)
+mu, sigma = crc(z)                           # z: (B, hidden_size)
+loss = crc.get_log_likelihood(mu, sigma, y)  # alpha*MSE + (1-alpha)*MAE + sigma_loss
+
+# Sigma-only step (stage 2 of two-stage training)
+loss, metric = crc.step_sigma(z, y, metric_fn)
+
+# Additive backbone (MLPGAM, MLPGAF) — no mu projection
+add_crc = AdditiveCRCDistribution(
+    num_target_output=1,
+    hidden_size=48,          # must equal forecast_horizon * num_target_output
+    forecast_horizon=48,
+)
+mu, sigma = add_crc(z)      # z is already the additive mean (B, H*O)
+```
+
+:::{admonition} CRC vs post-hoc conformal
+:class: note
+
+Post-hoc conformal prediction (see [Conformal Prediction](conformal-prediction.md)) wraps any already-trained model and provides finite-sample coverage guarantees. CRC bakes the calibration objective directly into training — no separate calibration split needed — but the coverage guarantee is empirical rather than distribution-free. CRC typically produces tighter intervals when the signal-to-noise ratio is high.
+:::
 
 
 ## ML Parametric Models
@@ -510,6 +581,121 @@ for model_name, (lower, point, upper) in interval_dict.items():
 
 ## API Reference
 
+### Parametric distribution base
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.nn.parametric.BaseDistribution
+   :members:
+   :show-inheritance:
+```
+
+### Parametric heads — standard backbones
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.nn.parametric.NormalDistribution
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.parametric.LaplaceDistribution
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.parametric.LogNormalDistribution
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.parametric.GammaDistribution
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.parametric.BetaDistribution
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.parametric.StudentTDistribution
+   :members:
+   :show-inheritance:
+```
+
+### Parametric heads — additive backbones (MLPGAM / MLPGAF)
+
+These variants receive the pre-summed additive mean directly from the backbone
+instead of a latent vector, preserving the GAM decomposition.
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.nn.parametric.AdditiveNormalDistribution
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.parametric.AdditiveLaplaceDistribution
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.parametric.AdditiveLogNormalDistribution
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.parametric.AdditiveStudentTDistribution
+   :members:
+   :show-inheritance:
+```
+
+### Quantile regression distribution
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.nn.quantile.QRDistribution
+   :members:
+   :show-inheritance:
+
+.. autofunction:: twiga.distributions.nn.quantile.get_median_quantile
+```
+
+### FPQR components
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.nn.fpquantile.QuantileProposal
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.fpquantile.CosinetauEmbedding
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.fpquantile.FPQRDistribution
+   :members:
+   :show-inheritance:
+```
+
+### CRC distribution classes
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.nn.residual_conformal.CRCDistribution
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution
+   :members:
+   :show-inheritance:
+```
+
+### Custom loss functions
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.nn.custom_loss.QuantileLoss
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.custom_loss.QuantileHuberLoss
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.custom_loss.QuantileProposalLoss
+   :members:
+   :show-inheritance:
+```
+
+### ML parametric models
+
 ```{eval-rst}
 .. autoclass:: twiga.models.ml.gausscatboost_model.GAUSSCATBOOSTConfig
    :members:
@@ -542,4 +728,14 @@ for model_name, (lower, point, upper) in interval_dict.items():
 .. autoclass:: twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALModel
    :members:
    :show-inheritance:
+```
+
+### ML distribution utilities
+
+```{eval-rst}
+.. autofunction:: twiga.distributions.ml.utils.interpolate_quantile
+
+.. autofunction:: twiga.distributions.ml.utils.get_median_prediction
+
+.. autofunction:: twiga.distributions.ml.utils.get_sigma_prediction
 ```

@@ -7,10 +7,7 @@
    "source": [
     "# 07 — Neural Network Models\n",
     "\n",
-    "![Level](https://img.shields.io/badge/level-intermediate-yellow)\n",
-    "![Python](https://img.shields.io/badge/python-3.10%2B-blue)\n",
-    "![Twiga](https://img.shields.io/badge/twiga-forecast-orange)\n",
-    "![Time](https://img.shields.io/badge/time-~30%20min-lightgrey)\n",
+    "![Level](https://img.shields.io/badge/level-intermediate-yellow) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~30%20min-lightgrey)\n",
     "\n",
     "---\n",
     "\n",
@@ -68,20 +65,22 @@
    "metadata": {},
    "outputs": [],
    "source": [
+    "import os\n",
     "import warnings\n",
     "\n",
-    "from great_tables import GT\n",
+    "from great_tables import GT, md\n",
     "from IPython.display import clear_output\n",
     "from lets_plot import LetsPlot\n",
     "import pandas as pd\n",
     "\n",
     "LetsPlot.setup_html()\n",
     "\n",
-    "from twiga.core.plot.letsplot.basic_plot import (\n",
+    "from twiga.core.plot import (\n",
     "    plot_forecast,\n",
     "    plot_forecast_grid,\n",
     "    plot_metrics_bar,\n",
     ")\n",
+    "from twiga.core.plot.gt import twiga_gt, twiga_report\n",
     "from twiga.core.utils import configure, get_logger\n",
     "\n",
     "warnings.filterwarnings(\"ignore\")\n",
@@ -114,7 +113,7 @@
     "data = data.drop_duplicates(subset=\"timestamp\").reset_index(drop=True)\n",
     "\n",
     "log.info(\"Shape: %s\", data.shape)\n",
-    "GT(data.head().round(2))"
+    "twiga_gt(GT(data.head().round(2)))"
    ]
   },
   {
@@ -132,21 +131,17 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "from great_tables import GT, md\n",
-    "\n",
-    "from twiga.core.plot.gt import twiga_gt\n",
-    "\n",
     "splits_df = pd.DataFrame(\n",
     "    {\n",
     "        \"Split\": [\"Train\", \"Validation\", \"Test\"],\n",
-    "        \"Period\": [\"before 2021-01-01\", \"2021-01-01 – 2021-06-30\", \"2021-07-01 onwards\"],\n",
+    "        \"Period\": [\"before 2021-01-01\", \"2021-01-01-2021-06-30\", \"2021-07-01 onwards\"],\n",
     "        \"Purpose\": [\"Model learning\", \"Early-stopping / overfitting guard\", \"Final honest evaluation\"],\n",
     "    }\n",
     ")\n",
     "\n",
     "twiga_gt(\n",
     "    GT(splits_df)\n",
-    "    .tab_header(title=md(\"**Data Splits**\"), subtitle=\"Chronological — no shuffling, no overlap\")\n",
+    "    .tab_header(title=md(\"**Data Splits**\"), subtitle=\"Chronological - no shuffling, no overlap\")\n",
     "    .cols_label(**{c: md(f\"**{c}**\") for c in splits_df.columns})\n",
     "    .tab_source_note(\"Twiga Forecast\"),\n",
     "    n_rows=len(splits_df),\n",
@@ -202,12 +197,13 @@
     "    calendar_features=[\"hour\", \"day_night\"],\n",
     "    exogenous_features=[\"Ghi\"],\n",
     "    forecast_horizon=48,\n",
-    "    lookback_window_size=96,\n",
+    "    stride=48,\n",
+    "    lookback_window_size=48,\n",
     "    input_scaler=StandardScaler(),\n",
     "    target_scaler=RobustScaler(),\n",
     ")\n",
     "\n",
-    "train_config = ForecasterConfig(split_freq=\"months\", train_size=3, test_size=1)\n",
+    "train_config = ForecasterConfig(project_name=\"neural-network-tutorial\")\n",
     "\n",
     "data_config"
    ]
@@ -260,23 +256,8 @@
    ]
   },
   {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "13",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "from twiga.models.nn import MLPFConfig\n",
-    "\n",
-    "mlpf_config = MLPFConfig(max_epochs=5, rich_progress_bar=False)\n",
-    "\n",
-    "log.info(\"forecast_horizon (before fit): %s\", mlpf_config.forecast_horizon)  # 0 — sentinel\n",
-    "log.info(\"max_epochs      : %s\", mlpf_config.max_epochs)"
-   ]
-  },
-  {
    "cell_type": "markdown",
-   "id": "14",
+   "id": "13",
    "metadata": {},
    "source": [
     "## 4. MLPF — Plain MLP backbone\n",
@@ -288,7 +269,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "15",
+   "id": "14",
    "metadata": {},
    "source": [
     "> **Key concept — Lightning training loop**\n",
@@ -304,7 +285,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "16",
+   "id": "15",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -319,18 +300,61 @@
     "    train_params=train_config,\n",
     ")\n",
     "forecaster_mlpf.fit(train_df=train_df, val_df=val_df)\n",
-    "clear_output()\n",
-    "\n",
+    "clear_output()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "16",
+   "metadata": {},
+   "outputs": [],
+   "source": [
     "pred_mlpf, metric_mlpf = forecaster_mlpf.evaluate_point_forecast(test_df=test_df)\n",
-    "clear_output()\n",
+    "log.info(\"MLPF-mean metrics across folds:\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "17",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "18",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def get_metric_table(metric_df):\n",
+    "    res = metric_df.groupby(\"Model\")[[\"mae\", \"corr\", \"nbias\", \"rmse\", \"wmape\", \"smape\"]].mean().round(2).reset_index()\n",
+    "    res = res.rename(\n",
+    "        columns={\"mae\": \"MAE\", \"corr\": \"Corr\", \"wmape\": \"WMAPE\", \"smape\": \"SMAPE\", \"nbias\": \"NBIAS\", \"rmse\": \"RMSE\"}\n",
+    "    )\n",
     "\n",
-    "log.info(\"MLPF — mean metrics across folds:\")\n",
-    "log.info(\"\\n%s\", metric_mlpf[[\"mae\", \"rmse\", \"corr\"]].mean().round(3).to_string())"
+    "    metric_name = [\"MAE\", \"Corr\", \"SMAPE\", \"RMSE\"]\n",
+    "    minimize_cols = [\"MAE\", \"SMAPE\", \"RMSE\"]\n",
+    "    maximize_cols = [\"Corr\"]\n",
+    "\n",
+    "    return twiga_report(res, metric_name, minimize_cols, maximize_cols)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "19",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "get_metric_table(metric_mlpf)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "17",
+   "id": "20",
    "metadata": {},
    "source": [
     "**Reading the MLPF metrics**\n",
@@ -340,7 +364,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "18",
+   "id": "21",
    "metadata": {},
    "source": [
     "## 5. MLPGAM — MLP + Group Additive Model\n",
@@ -353,7 +377,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "19",
+   "id": "22",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -367,18 +391,33 @@
     "    train_params=train_config,\n",
     ")\n",
     "forecaster_mlpgam.fit(train_df=train_df, val_df=val_df)\n",
-    "clear_output()\n",
-    "\n",
+    "clear_output()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "23",
+   "metadata": {},
+   "outputs": [],
+   "source": [
     "pred_mlpgam, metric_mlpgam = forecaster_mlpgam.evaluate_point_forecast(test_df=test_df)\n",
-    "clear_output()\n",
-    "\n",
-    "log.info(\"MLPGAM — mean metrics across folds:\")\n",
-    "log.info(\"\\n%s\", metric_mlpgam[[\"mae\", \"rmse\", \"corr\"]].mean().round(3).to_string())"
+    "clear_output()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "24",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "get_metric_table(metric_mlpgam)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "20",
+   "id": "25",
    "metadata": {},
    "source": [
     "## 6. MLPGAF — MLP + Group Additive Neural Forecast\n",
@@ -389,7 +428,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "21",
+   "id": "26",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -403,18 +442,24 @@
     "    train_params=train_config,\n",
     ")\n",
     "forecaster_mlpgaf.fit(train_df=train_df, val_df=val_df)\n",
-    "clear_output()\n",
-    "\n",
+    "clear_output()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "27",
+   "metadata": {},
+   "outputs": [],
+   "source": [
     "pred_mlpgaf, metric_mlpgaf = forecaster_mlpgaf.evaluate_point_forecast(test_df=test_df)\n",
     "clear_output()\n",
-    "\n",
-    "log.info(\"MLPGAF — mean metrics across folds:\")\n",
-    "log.info(\"\\n%s\", metric_mlpgaf[[\"mae\", \"rmse\", \"corr\"]].mean().round(3).to_string())"
+    "get_metric_table(metric_mlpgaf)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "22",
+   "id": "28",
    "metadata": {},
    "source": [
     "## 7. N-HiTS — Hierarchical interpolation\n",
@@ -425,7 +470,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "23",
+   "id": "29",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -444,13 +489,12 @@
     "pred_nhits, metric_nhits = forecaster_nhits.evaluate_point_forecast(test_df=test_df)\n",
     "clear_output()\n",
     "\n",
-    "log.info(\"N-HiTS — mean metrics across folds:\")\n",
-    "log.info(\"\\n%s\", metric_nhits[[\"mae\", \"rmse\", \"corr\"]].mean().round(3).to_string())"
+    "get_metric_table(metric_nhits)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "24",
+   "id": "30",
    "metadata": {},
    "source": [
     "**Reading the N-HiTS metrics**\n",
@@ -460,10 +504,43 @@
   },
   {
    "cell_type": "markdown",
-   "id": "25",
+   "id": "31",
    "metadata": {},
    "source": [
-    "## 8. Embedding options\n",
+    "### RNN"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "32",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from twiga.models.nn import RNNConfig\n",
+    "\n",
+    "rnn_config = RNNConfig(max_epochs=5, rich_progress_bar=False)\n",
+    "\n",
+    "forecaster_rnn = TwigaForecaster(\n",
+    "    data_params=data_config,\n",
+    "    model_params=[rnn_config],\n",
+    "    train_params=train_config,\n",
+    ")\n",
+    "forecaster_rnn.fit(train_df=train_df, val_df=val_df)\n",
+    "clear_output()\n",
+    "\n",
+    "pred_rnn, metric_rnn = forecaster_rnn.evaluate_point_forecast(test_df=test_df)\n",
+    "clear_output()\n",
+    "\n",
+    "get_metric_table(metric_rnn)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "33",
+   "metadata": {},
+   "source": [
+    "## 9. Embedding options\n",
     "\n",
     "All MLP-based configs expose two embedding knobs that control how raw input features are represented before entering the network. These are config-level settings — no architecture changes required."
    ]
@@ -471,7 +548,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "26",
+   "id": "34",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -532,7 +609,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "27",
+   "id": "35",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -552,7 +629,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "28",
+   "id": "36",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -562,7 +639,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "29",
+   "id": "37",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -577,13 +654,12 @@
     "pred_mlpgam_emb, metric_mlpgam_emb = forecaster_mlpgam_emb.evaluate_point_forecast(test_df=test_df)\n",
     "clear_output()\n",
     "\n",
-    "log.info(\"MLPGAM + LinearEmb + LearnPosEmb — mean metrics:\")\n",
-    "log.info(\"\\n%s\", metric_mlpgam_emb[[\"mae\", \"rmse\", \"corr\"]].mean().round(3).to_string())"
+    "get_metric_table(metric_mlpgam_emb)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "30",
+   "id": "38",
    "metadata": {},
    "source": [
     "## 9. Checkpoint loading\n",
@@ -594,7 +670,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "31",
+   "id": "39",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -604,7 +680,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "32",
+   "id": "40",
    "metadata": {},
    "source": [
     "## 10. Results comparison — all NN models\n",
@@ -615,42 +691,25 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "33",
+   "id": "41",
    "metadata": {},
    "outputs": [],
    "source": [
-    "from twiga.core.plot.gt import create_model_performance_table\n",
-    "\n",
     "# Assign human-readable model labels\n",
-    "metric_mlpf[\"Model\"] = \"MLPF\"\n",
-    "metric_mlpgam[\"Model\"] = \"MLPGAM\"\n",
-    "metric_mlpgaf[\"Model\"] = \"MLPGAF\"\n",
-    "metric_nhits[\"Model\"] = \"N-HiTS\"\n",
     "metric_mlpgam_emb[\"Model\"] = \"MLPGAM+Emb\"\n",
     "\n",
     "all_metrics = pd.concat(\n",
-    "    [metric_mlpf, metric_mlpgam, metric_mlpgaf, metric_nhits, metric_mlpgam_emb],\n",
+    "    [metric_mlpf, metric_mlpgam, metric_mlpgaf, metric_rnn, metric_nhits, metric_mlpgam_emb],\n",
     "    ignore_index=True,\n",
     ")\n",
     "\n",
-    "summary = (\n",
-    "    all_metrics.groupby(\"Model\")[[\"mae\", \"corr\", \"rmse\", \"wmape\", \"smape\"]]\n",
-    "    .mean()\n",
-    "    .round(3)\n",
-    "    .reset_index()\n",
-    "    .rename(columns={\"mae\": \"MAE\", \"corr\": \"Corr\", \"rmse\": \"RMSE\", \"wmape\": \"WMAPE\", \"smape\": \"SMAPE\"})\n",
-    ")\n",
     "\n",
-    "metric_name = [\"MAE\", \"Corr\", \"RMSE\", \"SMAPE\"]\n",
-    "minimize_cols = [\"MAE\", \"RMSE\", \"SMAPE\"]\n",
-    "maximize_cols = [\"Corr\"]\n",
-    "\n",
-    "create_model_performance_table(summary, metric_name, minimize_cols, maximize_cols)"
+    "get_metric_table(all_metrics)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "34",
+   "id": "42",
    "metadata": {},
    "source": [
     "### Forecast plot — first 7 days of test set"
@@ -659,21 +718,11 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "35",
+   "id": "43",
    "metadata": {},
    "outputs": [],
    "source": [
-    "# Build a combined DataFrame for multi-model comparison\n",
-    "pred_mlpf_copy = pred_mlpf.copy()\n",
-    "pred_mlpf_copy[\"Model\"] = \"MLPF\"\n",
-    "pred_mlpgam_copy = pred_mlpgam.copy()\n",
-    "pred_mlpgam_copy[\"Model\"] = \"MLPGAM\"\n",
-    "pred_mlpgaf_copy = pred_mlpgaf.copy()\n",
-    "pred_mlpgaf_copy[\"Model\"] = \"MLPGAF\"\n",
-    "pred_nhits_copy = pred_nhits.copy()\n",
-    "pred_nhits_copy[\"Model\"] = \"N-HiTS\"\n",
-    "\n",
-    "all_preds = pd.concat([pred_mlpf_copy, pred_mlpgam_copy, pred_nhits_copy, pred_mlpgaf_copy], ignore_index=True)\n",
+    "all_preds = pd.concat([pred_mlpf, pred_mlpgam, pred_nhits, pred_mlpgaf, pred_rnn], ignore_index=True)\n",
     "\n",
     "p = plot_forecast_grid(\n",
     "    all_preds,\n",
@@ -683,13 +732,14 @@
     "    n_samples_per_model=7 * 48,\n",
     "    y_label=\"Net Load (kW)\",\n",
     "    title=\"NN point forecasts — first 7 days of test set (max_epochs=5)\",\n",
+    "    fig_size=(920, 400),\n",
     ")\n",
     "p"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "36",
+   "id": "44",
    "metadata": {},
    "source": [
     "## 11. NN vs ML comparison\n",
@@ -702,7 +752,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "37",
+   "id": "45",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -721,65 +771,12 @@
     "pred_lgbm, metric_lgbm = forecaster_lgbm.evaluate_point_forecast(test_df=test_df)\n",
     "clear_output()\n",
     "\n",
-    "log.info(\"LightGBM — mean metrics across folds:\")\n",
-    "log.info(\"\\n%s\", metric_lgbm[[\"mae\", \"rmse\", \"corr\"]].mean().round(3).to_string())"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "38",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "metric_lgbm[\"Model\"] = \"LightGBM\"\n",
-    "\n",
-    "all_metrics_with_ml = pd.concat(\n",
-    "    [metric_mlpf, metric_mlpgam, metric_mlpgaf, metric_nhits, metric_lgbm],\n",
-    "    ignore_index=True,\n",
-    ")\n",
-    "\n",
-    "summary_vs_ml = (\n",
-    "    all_metrics_with_ml.groupby(\"Model\")[[\"mae\", \"corr\", \"rmse\", \"wmape\", \"smape\"]]\n",
-    "    .mean()\n",
-    "    .round(3)\n",
-    "    .reset_index()\n",
-    "    .rename(columns={\"mae\": \"MAE\", \"corr\": \"Corr\", \"rmse\": \"RMSE\", \"wmape\": \"WMAPE\", \"smape\": \"SMAPE\"})\n",
-    ")\n",
-    "\n",
-    "create_model_performance_table(summary_vs_ml, metric_name, minimize_cols, maximize_cols)"
+    "get_metric_table(metric_lgbm)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "39",
-   "metadata": {},
-   "source": [
-    "### NN vs ML — MAE bar chart"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "40",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "p = plot_metrics_bar(\n",
-    "    summary_vs_ml,\n",
-    "    metric_col=\"MAE\",\n",
-    "    model_col=\"Model\",\n",
-    "    lower_is_better=True,\n",
-    "    title=\"NN vs ML — Mean Absolute Error (lower is better)\\nNN models trained with max_epochs=5\",\n",
-    "    x_label=\"MAE (mean across folds)\",\n",
-    "    horizontal=True,\n",
-    ")\n",
-    "p"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "41",
+   "id": "46",
    "metadata": {},
    "source": [
     "## Wrapping up\n",
@@ -810,7 +807,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "42",
+   "id": "47",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -899,7 +896,7 @@
  ],
  "metadata": {
   "kernelspec": {
-   "display_name": "twiga",
+   "display_name": "Python 3 (ipykernel)",
    "language": "python",
    "name": "python3"
   },

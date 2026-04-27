@@ -185,7 +185,7 @@ Because `RandomForestQuantileRegressor` stores the full leaf-node empirical dist
 
 ## NN Quantile Models
 
-All four NN architectures (MLPF, MLPGAM, MLPGAF, NHITS) support QR, FPQR, and CRC heads via the [backbone/head architecture](../models/nn-models.md#probabilistic-models).
+All five NN architectures (MLPF, MLPGAM, MLPGAF, NHiTS, RNN) support QR and FPQR heads; MLPF, MLPGAM, MLPGAF, and NHiTS additionally support CRC heads. All are wired via the [backbone/head architecture](../models/nn-models.md#probabilistic-models).
 
 ### QR Models
 
@@ -257,9 +257,16 @@ config.max_epochs = 20
 
 See [FPQR Distribution](distributions.md#full-parameterised-quantile-regression-fpqr) for the full architecture description including `QuantileProposal` and `CosinetauEmbedding`.
 
-### CRC Models (Conformal Residual Coverage)
+### CRC Models (Conditional Residual Calibration)
 
-CRC models wrap a backbone with a conformal prediction head trained end-to-end. Unlike post-hoc conformal wrappers, `CRCDistribution` is trained jointly with the backbone using a coverage loss that directly optimises prediction interval width while maintaining the target coverage level.
+CRC models pair a backbone with a learned scale head that approximates the absolute residual $|y - \mu|$, giving calibrated prediction intervals without a separate conformal calibration step. The joint training objective is:
+
+$$\mathcal{L} = \underbrace{\alpha \cdot \text{MSE}(\mu, y) + (1-\alpha) \cdot \text{MAE}(\mu, y)}_{\mathcal{L}_\mu} + \mathcal{L}_\sigma(\sigma,\, |y-\mu|)$$
+
+Two head variants are used depending on the backbone:
+
+- **`CRCDistribution`** (MLPF, NHiTS): adds a linear projection from the backbone's latent vector to $\mu$.
+- **`AdditiveCRCDistribution`** (MLPGAM, MLPGAF): uses the backbone's additive mean directly as $\mu$, preserving the GAM decomposition.
 
 | Model | Name | Config Class | Source Module |
 | --- | --- | --- | --- |
@@ -268,19 +275,31 @@ CRC models wrap a backbone with a conformal prediction head trained end-to-end. 
 | MLPGAF-CRC | `mlpgafcrc` | `MLPGAFCRCConfig` | `twiga.models.nn.mlpgafcrc_model` |
 | N-HiTS-CRC | `nhitscrc` | `NHITSCRCConfig` | `twiga.models.nn.nhitscrc_model` |
 
-```python
-from twiga.models.nn.mlpfcrc_model import MLPFCRCConfig   # same pattern for all CRC variants
+All CRC configs share these additional fields (on top of their backbone config):
 
-config = MLPFCRCConfig.from_data_config(data_config)
-config.conf_level = 0.1     # target 90% coverage
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `sigma_loss_fn` | `Literal["hybrid","gaussian","laplace","mse"]` | `"hybrid"` | Calibration objective for σ |
+| `alpha` | `float` | `0.1` | MSE weight in the mu and hybrid sigma losses |
+| `two_stage` | `bool` | `True` | Two-stage training (stage 1: backbone; stage 2: sigma MLP only) |
+
+```python
+from twiga.models.nn.mlpgamcrc_model import MLPGAMCRCConfig
+
+config = MLPGAMCRCConfig.from_data_config(data_config)
+config.sigma_loss_fn = "hybrid"   # default — alpha*MSE + (1-alpha)*MAE on |y - mu|
+config.alpha = 0.1
+config.two_stage = True           # freeze backbone for sigma-only stage 2
 config.max_epochs = 30
 ```
 
 :::{admonition} CRC vs post-hoc conformal prediction
 :class: note
 
-CRC is trained jointly and bakes coverage directly into the loss. [Post-hoc conformal prediction](conformal-prediction.md) wraps any already-trained model during the calibration step and makes no distributional assumptions. CRC typically produces tighter intervals; post-hoc conformal is model-agnostic and always valid.
+CRC is trained jointly — no held-out calibration split required. [Post-hoc conformal prediction](conformal-prediction.md) wraps any already-trained model and provides finite-sample distribution-free coverage guarantees. CRC typically produces tighter intervals when the residual signal is strong; post-hoc conformal is always valid regardless of model quality.
 :::
+
+See [CRC Distribution](distributions.md#conditional-residual-calibration-crc) for the full head architecture and loss equations.
 
 
 ## ML Distribution Utilities
