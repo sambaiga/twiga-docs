@@ -34,7 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/css/twiga.css?v=ed7c69f2" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/twiga.css?v=79a279a3" />
     <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   
   <!-- So that users can add custom icons -->
@@ -1464,21 +1464,29 @@ window.runMermaid = runMermaid;</script>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;hybrid&quot;</span></code> (default)</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;hybrid_sqrt&quot;</span></code> (default)</p></td>
+<td><p><span class="math notranslate nohighlight">\(\alpha \cdot \text{MSE}(\sigma, \sqrt{r}) + (1-\alpha) \cdot \text{MAE}(\sigma, \sqrt{r})\)</span></p></td>
+<td><p>General purpose; variance-stabilised residual</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;hybrid&quot;</span></code></p></td>
 <td><p><span class="math notranslate nohighlight">\(\alpha \cdot \text{MSE}(\sigma, r) + (1-\alpha) \cdot \text{MAE}(\sigma, r)\)</span></p></td>
 <td><p>General purpose; same <span class="math notranslate nohighlight">\(\alpha\)</span> as mu loss</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;gaussian&quot;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;gaussian&quot;</span></code></p></td>
 <td><p><span class="math notranslate nohighlight">\(\frac{1}{2}\left(\frac{r^2}{\sigma^2} + \log \sigma^2\right)\)</span></p></td>
 <td><p>Heteroscedastic Gaussian NLL</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;laplace&quot;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;laplace&quot;</span></code></p></td>
 <td><p><span class="math notranslate nohighlight">\(\frac{r}{\sigma} + \log(2\sigma)\)</span></p></td>
 <td><p>Robust to heavy-tailed residuals</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;mse&quot;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;mse&quot;</span></code></p></td>
 <td><p><span class="math notranslate nohighlight">\((\sigma - r)^2\)</span></p></td>
 <td><p>Distribution-free MSE on residual magnitude</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;log&quot;</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(\log(1 + (\sigma - r)^2)\)</span></p></td>
+<td><p>Robust MSE with log-damping of large errors</p></td>
 </tr>
 </tbody>
 </table>
@@ -1487,8 +1495,8 @@ window.runMermaid = runMermaid;</script>
 <p><strong>Two-stage training</strong> (<code class="docutils literal notranslate"><span class="pre">MLPGAMCRC</span></code> default, controlled by <code class="docutils literal notranslate"><span class="pre">two_stage=True</span></code>):</p>
 <pre  class="mermaid">
         graph LR
-    S1[&quot;Stage 1\nBackbone + mu_layer\n(sigma_net frozen)&quot;] --&gt; S2[&quot;Stage 2\nSigma MLP only\n(backbone frozen)&quot;]
-    </pre><p>In stage 1 the backbone and mu path are updated via the combined <span class="math notranslate nohighlight">\(\mathcal{L}_\mu + \mathcal{L}_\sigma\)</span> loss. In stage 2 only <code class="docutils literal notranslate"><span class="pre">sigma_net</span></code> parameters receive gradients — the backbone is frozen by Lightning’s <code class="docutils literal notranslate"><span class="pre">toggle_optimizer</span></code>. This prevents the scale head from distorting the point forecast.</p>
+    S1[&quot;Stage 1\nBackbone + mu_layer\n(sigma_layer frozen)&quot;] --&gt; S2[&quot;Stage 2\nSigma MLP only\n(backbone frozen)&quot;]
+    </pre><p>In stage 1 the backbone and mu path are updated via the combined <span class="math notranslate nohighlight">\(\mathcal{L}_\mu + \mathcal{L}_\sigma\)</span> loss. In stage 2 only <code class="docutils literal notranslate"><span class="pre">sigma_layer</span></code> parameters receive gradients — the backbone is frozen by Lightning’s <code class="docutils literal notranslate"><span class="pre">toggle_optimizer</span></code>. This prevents the scale head from distorting the point forecast.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.distributions.nn.residual_conformal</span><span class="w"> </span><span class="kn">import</span> <span class="n">CRCDistribution</span><span class="p">,</span> <span class="n">AdditiveCRCDistribution</span>
 
 <span class="c1"># Standard backbone (MLPF, NHiTS)</span>
@@ -1500,18 +1508,18 @@ window.runMermaid = runMermaid;</script>
     <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="n">crc</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>                           <span class="c1"># z: (B, hidden_size)</span>
-<span class="n">loss</span> <span class="o">=</span> <span class="n">crc</span><span class="o">.</span><span class="n">get_log_likelihood</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>  <span class="c1"># alpha*MSE + (1-alpha)*MAE + sigma_loss</span>
+<span class="n">loss</span> <span class="o">=</span> <span class="n">crc</span><span class="o">.</span><span class="n">get_log_likelihood</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>  <span class="c1"># sigma calibration loss only (not point loss)</span>
 
 <span class="c1"># Sigma-only step (stage 2 of two-stage training)</span>
 <span class="n">loss</span><span class="p">,</span> <span class="n">metric</span> <span class="o">=</span> <span class="n">crc</span><span class="o">.</span><span class="n">step_sigma</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">metric_fn</span><span class="p">)</span>
 
-<span class="c1"># Additive backbone (MLPGAM, MLPGAF) — no mu projection</span>
+<span class="c1"># Additive backbone (MLPGAM, MLPGAF) — mu_layer is Identity, no linear projection</span>
 <span class="n">add_crc</span> <span class="o">=</span> <span class="n">AdditiveCRCDistribution</span><span class="p">(</span>
     <span class="n">num_target_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">hidden_size</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>          <span class="c1"># must equal forecast_horizon * num_target_output</span>
+    <span class="n">hidden_dim</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>          <span class="c1"># internal sigma MLP width (independent of H*O)</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="n">add_crc</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>      <span class="c1"># z is already the additive mean (B, H*O)</span>
+<span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="n">add_crc</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>      <span class="c1"># z shape (B, H*O); mu = reshape(z), sigma from ResidualSigmaHead</span>
 </pre></div>
 </div>
 <div class="note admonition">
@@ -2922,32 +2930,45 @@ shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <s
 <dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.CRCDistribution">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.distributions.nn.residual_conformal.</span></span><span class="sig-name descname"><span class="pre">CRCDistribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_target_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_horizon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">48</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_activation_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_loss_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hybrid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ReLU'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.CRCDistribution" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#twiga.distributions.nn.parametric.BaseDistribution" title="twiga.distributions.nn.parametric.BaseDistribution"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDistribution</span></code></a></p>
-<p>CRC head for standard (non-additive) backbones such as MLPFNetwork.</p>
-<p>The mean is computed by projecting the latent vector <code class="docutils literal notranslate"><span class="pre">z</span></code> (shape
-<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">hidden_size)</span></code>) through a linear layer to <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H*O)</span></code>.  The scale
-is then predicted by a two-layer MLP conditioned on the detached mean.</p>
+<p>CRC head for standard backbones (e.g. MLPFNetwork).</p>
+<p>The mean is computed by projecting the latent vector <cite>z</cite> through a linear
+layer, then reshaping to <cite>(B, H, O)</cite>. The scale is predicted by a sigma layer
+applied to the <strong>detached</strong> mean (flattened), ensuring that gradients do not
+flow back into the backbone during sigma-only training.</p>
+<dl class="simple">
+<dt>Training follows a two-stage protocol:</dt><dd><p>Stage 1 — <code class="docutils literal notranslate"><span class="pre">step()</span></code>: optimise μ (backbone + mu_layer), σ is not updated.
+Stage 2 — <code class="docutils literal notranslate"><span class="pre">step_sigma()</span></code>: freeze backbone, optimise σ-head only.</p>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>num_target_output</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Number of output features per time step.</p></li>
-<li><p><strong>hidden_size</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Dimensionality of the backbone latent vector.</p></li>
+<li><p><strong>hidden_dim</strong> – Dimensionality of the backbone latent vector.</p></li>
 <li><p><strong>forecast_horizon</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Number of forecast time steps.</p></li>
 <li><p><strong>out_activation_function</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Optional activation applied to the mean output.</p></li>
-<li><p><strong>sigma_loss_fn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Calibration objective for σ - one of <code class="docutils literal notranslate"><span class="pre">&quot;gaussian&quot;</span></code>,
-<code class="docutils literal notranslate"><span class="pre">&quot;laplace&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mse&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;hybrid&quot;</span></code> (default).</p></li>
-<li><p><strong>alpha</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Weight for MSE vs L1 used in both the mu loss and (when
-<code class="docutils literal notranslate"><span class="pre">sigma_loss_fn=&quot;hybrid&quot;</span></code>) the sigma calibration loss.</p></li>
-<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Hidden-layer activation name for the sigma MLP.</p></li>
+<li><p><strong>sigma_loss_fn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Calibration objective for σ. One of <code class="docutils literal notranslate"><span class="pre">_SIGMA_LOSS_FNS</span></code>.
+Default: <code class="docutils literal notranslate"><span class="pre">&quot;hybrid&quot;</span></code>.</p></li>
+<li><p><strong>alpha</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Weight for MSE vs L1 in the mu and hybrid sigma losses.</p></li>
+<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Unused; kept for API compatibility.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">sigma_loss_fn</span></code> is not one of the supported values.</p>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.CRCDistribution.forecast">
 <span class="sig-name descname"><span class="pre">forecast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.CRCDistribution.forecast" title="Link to this definition">#</a></dt>
-<dd><p>Inference-mode prediction (no gradient).</p>
+<dd><p>Inference-only prediction (no gradients).</p>
+<p>For <code class="docutils literal notranslate"><span class="pre">&quot;hybrid_sqrt&quot;</span></code> the scale is squared to convert from <code class="docutils literal notranslate"><span class="pre">√|r|</span></code>
+space back to residual magnitude space.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict with <code class="docutils literal notranslate"><span class="pre">&quot;loc&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;scale&quot;</span></code> in prediction space.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2958,14 +2979,13 @@ is then predicted by a two-layer MLP conditioned on the detached mean.</p>
 <dd><p>Predict mean and scale.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Latent tensor of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">hidden_size)</span></code>.</p>
+<dd class="field-odd"><p><strong>x</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Latent tensor of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">hidden_dim)</span></code>.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple of <code class="docutils literal notranslate"><span class="pre">(mu,</span> <span class="pre">sigma)</span></code>, each of shape
-<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">forecast_horizon,</span> <span class="pre">num_target_output)</span></code>.</p>
+<dd class="field-odd"><p>Tuple <code class="docutils literal notranslate"><span class="pre">(mu,</span> <span class="pre">sigma)</span></code> each of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">forecast_horizon,</span> <span class="pre">num_target_output)</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2973,10 +2993,22 @@ is then predicted by a two-layer MLP conditioned on the detached mean.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.CRCDistribution.get_distribution">
 <span class="sig-name descname"><span class="pre">get_distribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.CRCDistribution.get_distribution" title="Link to this definition">#</a></dt>
-<dd><p>Construct a torch Distribution from predicted parameters.</p>
+<dd><p>Construct a torch distribution for interval generation.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">Laplace(μ,</span> <span class="pre">σ)</span></code> for <code class="docutils literal notranslate"><span class="pre">&quot;laplace&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">Normal(μ,</span> <span class="pre">σ)</span></code> for all
+other modes, treating σ as an empirical scale estimate. For
+<code class="docutils literal notranslate"><span class="pre">&quot;hybrid_sqrt&quot;</span></code> callers must pass the forecast-adjusted (squared) σ.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/distributions.html#torch.distributions.normal.Normal" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a></span></p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mu</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Mean tensor of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H,</span> <span class="pre">O)</span></code>.</p></li>
+<li><p><strong>sigma</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Scale tensor in prediction space, same shape.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/distributions.html#torch.distributions.normal.Normal" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a> | <a class="reference external" href="https://docs.pytorch.org/docs/stable/distributions.html#torch.distributions.laplace.Laplace" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Laplace</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">Normal</span></code> or <code class="docutils literal notranslate"><span class="pre">Laplace</span></code> distribution.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2984,10 +3016,20 @@ is then predicted by a two-layer MLP conditioned on the detached mean.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.CRCDistribution.get_log_likelihood">
 <span class="sig-name descname"><span class="pre">get_log_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.CRCDistribution.get_log_likelihood" title="Link to this definition">#</a></dt>
-<dd><p>CRC loss: α·MSE + (1−α)·MAE on mean + calibration loss on scale.</p>
+<dd><p>Compute the sigma calibration loss (NLL for probabilistic modes).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span></p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mu</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Predicted mean.</p></li>
+<li><p><strong>sigma</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Predicted scale in learned space (as returned by <code class="docutils literal notranslate"><span class="pre">forward</span></code>).</p></li>
+<li><p><strong>targets</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Ground-truth targets.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Scalar loss tensor.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2995,10 +3037,21 @@ is then predicted by a two-layer MLP conditioned on the detached mean.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.CRCDistribution.step">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.CRCDistribution.step" title="Link to this definition">#</a></dt>
-<dd><p>Compute CRC loss and metric for one training step.</p>
+<dd><p>Stage-1 training step: optimise mean parameters.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>z</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Latent tensor from backbone.</p></li>
+<li><p><strong>y</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Target values.</p></li>
+<li><p><strong>metric_fn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/constants.html#Ellipsis" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span>) – Callable <code class="docutils literal notranslate"><span class="pre">(pred,</span> <span class="pre">target)</span> <span class="pre">→</span> <span class="pre">scalar</span></code>.</p></li>
+<li><p><strong>epoch</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Current epoch (unused; kept for API uniformity).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple <code class="docutils literal notranslate"><span class="pre">(loss,</span> <span class="pre">metric)</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3006,12 +3059,22 @@ is then predicted by a two-layer MLP conditioned on the detached mean.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.CRCDistribution.step_sigma">
 <span class="sig-name descname"><span class="pre">step_sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_fn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.CRCDistribution.step_sigma" title="Link to this definition">#</a></dt>
-<dd><p>Sigma-only step used in two-stage training (backbone frozen by toggle_optimizer).</p>
-<p>Recomputes mu under no_grad so the sigma calibration loss does not
-create any gradient path into the backbone.</p>
+<dd><p>Stage-2 training step: optimise sigma with frozen backbone.</p>
+<p>The mean is recomputed under <code class="docutils literal notranslate"><span class="pre">no_grad</span></code> so sigma learns to predict
+residual magnitude without influencing point predictions.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>z</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Latent tensor from backbone.</p></li>
+<li><p><strong>y</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Target values.</p></li>
+<li><p><strong>metric_fn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/constants.html#Ellipsis" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span>) – Callable <code class="docutils literal notranslate"><span class="pre">(pred,</span> <span class="pre">target)</span> <span class="pre">→</span> <span class="pre">scalar</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple <code class="docutils literal notranslate"><span class="pre">(sigma_loss,</span> <span class="pre">metric)</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3020,99 +3083,53 @@ create any gradient path into the backbone.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.distributions.nn.residual_conformal.</span></span><span class="sig-name descname"><span class="pre">AdditiveCRCDistribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_target_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_horizon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">48</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_activation_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_loss_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hybrid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ReLU'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#twiga.distributions.nn.parametric.BaseDistribution" title="twiga.distributions.nn.parametric.BaseDistribution"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDistribution</span></code></a></p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.distributions.nn.residual_conformal.</span></span><span class="sig-name descname"><span class="pre">AdditiveCRCDistribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_target_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_horizon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">48</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_activation_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_loss_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hybrid_sqrt'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SiLU'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#twiga.distributions.nn.residual_conformal.CRCDistribution" title="twiga.distributions.nn.residual_conformal.CRCDistribution"><code class="xref py py-class docutils literal notranslate"><span class="pre">CRCDistribution</span></code></a></p>
 <p>CRC head for additive backbones (MLPGAMNetwork, MLPGAFNetwork).</p>
-<p>The backbone’s <code class="docutils literal notranslate"><span class="pre">encode()</span></code> already returns the additive mean as a flat
-<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H*O)</span></code> vector - no further projection is applied to preserve the
-additive decomposition.  Only the scale MLP is learned.</p>
+<p>Inherits all training and inference logic from <code class="docutils literal notranslate"><span class="pre">CRCDistribution</span></code>.
+Two architectural differences from the parent:</p>
+<ol class="arabic simple">
+<li><p><strong>mu_layer</strong> — identity (or optional activation): the backbone’s
+<code class="docutils literal notranslate"><span class="pre">encode()</span></code> already returns the additive mean as <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H*O)</span></code>, so no
+linear projection is needed.</p></li>
+<li><p><strong>sigma_layer</strong> — <code class="docutils literal notranslate"><span class="pre">ResidualSigmaHead</span></code> (two-layer MLP + LayerNorm +
+Dropout): a deeper network better suited to modeling conditional
+heteroscedasticity from the additive mean signal.</p></li>
+</ol>
+<p>All other methods — <code class="docutils literal notranslate"><span class="pre">step</span></code>, <code class="docutils literal notranslate"><span class="pre">step_sigma</span></code>, <code class="docutils literal notranslate"><span class="pre">forecast</span></code>,
+<code class="docutils literal notranslate"><span class="pre">get_distribution</span></code>, <code class="docutils literal notranslate"><span class="pre">get_log_likelihood</span></code> — are inherited unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>num_target_output</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Number of output features per time step.</p></li>
-<li><p><strong>hidden_size</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Must equal <code class="docutils literal notranslate"><span class="pre">forecast_horizon</span> <span class="pre">*</span> <span class="pre">num_target_output</span></code>
-(the additive backbone’s encode_size).</p></li>
+<li><p><strong>hidden_dim</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Hidden dimension of the sigma MLP. Independent of <code class="docutils literal notranslate"><span class="pre">H*O</span></code>.</p></li>
 <li><p><strong>forecast_horizon</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Number of forecast time steps.</p></li>
 <li><p><strong>out_activation_function</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Optional activation applied to the mean.</p></li>
-<li><p><strong>sigma_loss_fn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Calibration objective for σ - one of <code class="docutils literal notranslate"><span class="pre">&quot;gaussian&quot;</span></code>,
-<code class="docutils literal notranslate"><span class="pre">&quot;laplace&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mse&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;hybrid&quot;</span></code> (default).</p></li>
-<li><p><strong>alpha</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Weight for MSE vs L1 used in both the mu loss and (when
-<code class="docutils literal notranslate"><span class="pre">sigma_loss_fn=&quot;hybrid&quot;</span></code>) the sigma calibration loss.</p></li>
-<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Hidden-layer activation name for the sigma MLP.</p></li>
+<li><p><strong>sigma_loss_fn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Calibration objective (see <code class="docutils literal notranslate"><span class="pre">CRCDistribution</span></code>).
+Default: <code class="docutils literal notranslate"><span class="pre">&quot;hybrid_sqrt&quot;</span></code>.</p></li>
+<li><p><strong>alpha</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – MSE/L1 weight. Default: <code class="docutils literal notranslate"><span class="pre">0.5</span></code>.</p></li>
+<li><p><strong>sigma_dropout</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Dropout rate in the sigma MLP.</p></li>
+<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Activation name for the sigma MLP. Default: <code class="docutils literal notranslate"><span class="pre">&quot;SiLU&quot;</span></code>.</p></li>
 </ul>
 </dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.forecast">
-<span class="sig-name descname"><span class="pre">forecast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.forecast" title="Link to this definition">#</a></dt>
-<dd><p>Inference-mode prediction (no gradient).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">sigma_loss_fn</span></code> is not one of the supported values.</p>
 </dd>
 </dl>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.forward" title="Link to this definition">#</a></dt>
 <dd><p>Predict mean and scale.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Latent tensor of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">hidden_size)</span></code> - the additive mean.</p>
+<dd class="field-odd"><p><strong>x</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – Flattened additive mean from backbone, shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H*O)</span></code>.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple of <code class="docutils literal notranslate"><span class="pre">(mu,</span> <span class="pre">sigma)</span></code>, each of shape
+<dd class="field-odd"><p>Tuple <code class="docutils literal notranslate"><span class="pre">(mu,</span> <span class="pre">sigma)</span></code> each of shape
 <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">forecast_horizon,</span> <span class="pre">num_target_output)</span></code>.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.get_distribution">
-<span class="sig-name descname"><span class="pre">get_distribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.get_distribution" title="Link to this definition">#</a></dt>
-<dd><p>Construct a torch Distribution from predicted parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/distributions.html#torch.distributions.normal.Normal" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.get_log_likelihood">
-<span class="sig-name descname"><span class="pre">get_log_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.get_log_likelihood" title="Link to this definition">#</a></dt>
-<dd><p>CRC loss: α·MSE + (1−α)·MAE on mean + calibration loss on scale.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.step">
-<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.step" title="Link to this definition">#</a></dt>
-<dd><p>Compute CRC loss and metric for one training step.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.step_sigma">
-<span class="sig-name descname"><span class="pre">step_sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_fn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.step_sigma" title="Link to this definition">#</a></dt>
-<dd><p>Sigma-only step used in two-stage training (backbone frozen by toggle_optimizer).</p>
-<p>Recomputes mu under no_grad so the sigma calibration loss does not
-create any gradient path into the backbone.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -4611,12 +4628,7 @@ Q is number of quantiles, and C is number of channels.</p></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution"><code class="docutils literal notranslate"><span class="pre">AdditiveCRCDistribution</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.forecast"><code class="docutils literal notranslate"><span class="pre">AdditiveCRCDistribution.forecast()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.forward"><code class="docutils literal notranslate"><span class="pre">AdditiveCRCDistribution.forward()</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.get_distribution"><code class="docutils literal notranslate"><span class="pre">AdditiveCRCDistribution.get_distribution()</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.get_log_likelihood"><code class="docutils literal notranslate"><span class="pre">AdditiveCRCDistribution.get_log_likelihood()</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.step"><code class="docutils literal notranslate"><span class="pre">AdditiveCRCDistribution.step()</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.residual_conformal.AdditiveCRCDistribution.step_sigma"><code class="docutils literal notranslate"><span class="pre">AdditiveCRCDistribution.step_sigma()</span></code></a></li>
 </ul>
 </li>
 </ul>

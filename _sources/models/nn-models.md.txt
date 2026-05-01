@@ -456,8 +456,10 @@ Registered name: `"mlpgamcrc"` | Domain: `"nn"` | Extends: `MLPGAMConfig`
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `two_stage` | `bool` | `True` | Enable two-stage training: Stage 1 trains the backbone and mu path; Stage 2 freezes the backbone and trains only the sigma MLP. Set `False` to train jointly with a single optimizer. |
-| `sigma_loss_fn` | `Literal["hybrid", "gaussian", "laplace", "mse"]` | `"hybrid"` | Calibration objective for the scale estimate σ. `"hybrid"` uses `α·MSE + (1-α)·MAE`; others use the corresponding NLL or MSE. |
-| `alpha` | `float` | `0.1` | Weight for MSE vs MAE in both the mu loss and the `"hybrid"` sigma loss. |
+| `stage1_epochs` | `int \| None` | `None` | Epochs allocated to Stage 1 (backbone + mu only). When set, uses sequential two-stage training: epochs `0..stage1_epochs-1` train mu; epochs `stage1_epochs..max_epochs` train sigma with frozen backbone. When `None`, uses per-batch optimizer alternation. |
+| `sigma_loss_fn` | `Literal["hybrid_sqrt", "hybrid", "gaussian", "laplace", "mse", "log"]` | `"hybrid_sqrt"` | Calibration objective for the scale estimate σ. `"hybrid_sqrt"` uses variance-stabilised residuals; see [CRC Distribution](../probabilistic/distributions.md#conditional-residual-calibration-crc) for all options. |
+| `alpha` | `float` | `0.1` | Weight for MSE vs MAE in the `"hybrid"` / `"hybrid_sqrt"` sigma loss. |
+| `monitor` | `Literal["loss", "mae", "mse", "smape", "sigma_loss"] \| None` | `None` | Metric key for EarlyStopping and ModelCheckpoint. `None` defers to the `metric` field. Use `"sigma_loss"` to monitor sigma calibration loss during CRC Stage 2 training. |
 
 See [CRC Distribution](../probabilistic/distributions.md#conditional-residual-calibration-crc) for the full head architecture and loss equations.
 

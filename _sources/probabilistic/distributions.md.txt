@@ -270,10 +270,12 @@ The sigma calibration loss $\mathcal{L}_\sigma$ is selected via `sigma_loss_fn`:
 
 | `sigma_loss_fn` | Formula | Use when |
 |---|---|---|
-| `"hybrid"` (default) | $\alpha \cdot \text{MSE}(\sigma, r) + (1-\alpha) \cdot \text{MAE}(\sigma, r)$ | General purpose; same $\alpha$ as mu loss |
+| `"hybrid_sqrt"` (default) | $\alpha \cdot \text{MSE}(\sigma, \sqrt{r}) + (1-\alpha) \cdot \text{MAE}(\sigma, \sqrt{r})$ | General purpose; variance-stabilised residual |
+| `"hybrid"` | $\alpha \cdot \text{MSE}(\sigma, r) + (1-\alpha) \cdot \text{MAE}(\sigma, r)$ | General purpose; same $\alpha$ as mu loss |
 | `"gaussian"` | $\frac{1}{2}\left(\frac{r^2}{\sigma^2} + \log \sigma^2\right)$ | Heteroscedastic Gaussian NLL |
 | `"laplace"` | $\frac{r}{\sigma} + \log(2\sigma)$ | Robust to heavy-tailed residuals |
 | `"mse"` | $(\sigma - r)^2$ | Distribution-free MSE on residual magnitude |
+| `"log"` | $\log(1 + (\sigma - r)^2)$ | Robust MSE with log-damping of large errors |
 
 where $r = |y - \mu|$.
 
@@ -281,10 +283,10 @@ where $r = |y - \mu|$.
 
 ```{mermaid}
 graph LR
-    S1["Stage 1\nBackbone + mu_layer\n(sigma_net frozen)"] --> S2["Stage 2\nSigma MLP only\n(backbone frozen)"]
+    S1["Stage 1\nBackbone + mu_layer\n(sigma_layer frozen)"] --> S2["Stage 2\nSigma MLP only\n(backbone frozen)"]
 ```
 
-In stage 1 the backbone and mu path are updated via the combined $\mathcal{L}_\mu + \mathcal{L}_\sigma$ loss. In stage 2 only `sigma_net` parameters receive gradients — the backbone is frozen by Lightning's `toggle_optimizer`. This prevents the scale head from distorting the point forecast.
+In stage 1 the backbone and mu path are updated via the combined $\mathcal{L}_\mu + \mathcal{L}_\sigma$ loss. In stage 2 only `sigma_layer` parameters receive gradients — the backbone is frozen by Lightning's `toggle_optimizer`. This prevents the scale head from distorting the point forecast.
 
 ```python
 from twiga.distributions.nn.residual_conformal import CRCDistribution, AdditiveCRCDistribution
@@ -298,18 +300,18 @@ crc = CRCDistribution(
     alpha=0.1,
 )
 mu, sigma = crc(z)                           # z: (B, hidden_size)
-loss = crc.get_log_likelihood(mu, sigma, y)  # alpha*MSE + (1-alpha)*MAE + sigma_loss
+loss = crc.get_log_likelihood(mu, sigma, y)  # sigma calibration loss only (not point loss)
 
 # Sigma-only step (stage 2 of two-stage training)
 loss, metric = crc.step_sigma(z, y, metric_fn)
 
-# Additive backbone (MLPGAM, MLPGAF) — no mu projection
+# Additive backbone (MLPGAM, MLPGAF) — mu_layer is Identity, no linear projection
 add_crc = AdditiveCRCDistribution(
     num_target_output=1,
-    hidden_size=48,          # must equal forecast_horizon * num_target_output
+    hidden_dim=256,          # internal sigma MLP width (independent of H*O)
     forecast_horizon=48,
 )
-mu, sigma = add_crc(z)      # z is already the additive mean (B, H*O)
+mu, sigma = add_crc(z)      # z shape (B, H*O); mu = reshape(z), sigma from ResidualSigmaHead
 ```
 
 :::{admonition} CRC vs post-hoc conformal

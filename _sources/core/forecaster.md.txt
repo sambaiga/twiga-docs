@@ -290,17 +290,31 @@ See [Backtesting](backtesting.md) for a detailed explanation of the cross-valida
 
 ### Hyperparameter Tuning
 
-| Method | Signature | Returns |
-|---|---|---|
-| `tune` | `tune(train_df, val_df, num_trials=10, reduction_factor=3, patience=10, load_if_exists=True, initial_params=None, direction="minimize", sampler=None, base_pruner=None)` | `None` |
+| Method | Returns |
+|--------|---------|
+| `tune` | `None`  |
+
+```python
+forecaster.tune(
+    train_df, val_df,
+    num_trials=10, reduction_factor=3, patience=10,
+    load_if_exists=True, initial_params=None,
+    direction="minimize", sampler=None, base_pruner=None,
+    objective_metric=None, calib_df=None, conformal_params=None,
+)
+```
 
 `tune` performs Optuna-based hyperparameter optimisation for every registered model. For each model it:
 
 1. Creates an Optuna study (or loads an existing one from a `JournalFileBackend` log).
 2. Configures a `HyperbandPruner` wrapped in a `PatientPruner` and a `TPESampler` (seeded with `self.seed`).
 3. Enqueues `initial_params` if provided.
-4. Runs `num_trials` trials. Each trial calls `model.update(trial)` to sample hyperparameters, then `_fit` and `_evaluate` to compute a cost (mean MAE across targets).
+4. Runs `num_trials` trials. Each trial calls `model.update(trial)` to sample hyperparameters, then `_fit` and `_evaluate` to compute a cost.
 5. Replaces each model instance with a new one instantiated from the best parameters.
+
+**Interval-metric tuning (Strategy 1):** Pass `calib_df` alongside `conformal_params` to extend each trial with a calibrate → evaluate-interval step. The trial score then reflects an interval quality metric (e.g. PICP, PINAW) instead of a point-forecast error. Use `objective_metric` to select which column of the metrics DataFrame to optimise; defaults to the first entry in `self.metrics` or `"mae"`.
+
+`conformal_params` overrides `self.conformal_params` for the duration of the tuning loop only — the original value is restored afterward.
 
 After tuning, call `fit` again to train with the optimised configuration.
 

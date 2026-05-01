@@ -34,7 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/css/twiga.css?v=ed7c69f2" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/twiga.css?v=79a279a3" />
     <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   
   <!-- So that users can add custom icons -->
@@ -1971,15 +1971,25 @@ window.runMermaid = runMermaid;</script>
 <td><p><code class="docutils literal notranslate"><span class="pre">True</span></code></p></td>
 <td><p>Enable two-stage training: Stage 1 trains the backbone and mu path; Stage 2 freezes the backbone and trains only the sigma MLP. Set <code class="docutils literal notranslate"><span class="pre">False</span></code> to train jointly with a single optimizer.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sigma_loss_fn</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;hybrid&quot;,</span> <span class="pre">&quot;gaussian&quot;,</span> <span class="pre">&quot;laplace&quot;,</span> <span class="pre">&quot;mse&quot;]</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">&quot;hybrid&quot;</span></code></p></td>
-<td><p>Calibration objective for the scale estimate σ. <code class="docutils literal notranslate"><span class="pre">&quot;hybrid&quot;</span></code> uses <code class="docutils literal notranslate"><span class="pre">α·MSE</span> <span class="pre">+</span> <span class="pre">(1-α)·MAE</span></code>; others use the corresponding NLL or MSE.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">stage1_epochs</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>Epochs allocated to Stage 1 (backbone + mu only). When set, uses sequential two-stage training: epochs <code class="docutils literal notranslate"><span class="pre">0..stage1_epochs-1</span></code> train mu; epochs <code class="docutils literal notranslate"><span class="pre">stage1_epochs..max_epochs</span></code> train sigma with frozen backbone. When <code class="docutils literal notranslate"><span class="pre">None</span></code>, uses per-batch optimizer alternation.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alpha</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sigma_loss_fn</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;hybrid_sqrt&quot;,</span> <span class="pre">&quot;hybrid&quot;,</span> <span class="pre">&quot;gaussian&quot;,</span> <span class="pre">&quot;laplace&quot;,</span> <span class="pre">&quot;mse&quot;,</span> <span class="pre">&quot;log&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;hybrid_sqrt&quot;</span></code></p></td>
+<td><p>Calibration objective for the scale estimate σ. <code class="docutils literal notranslate"><span class="pre">&quot;hybrid_sqrt&quot;</span></code> uses variance-stabilised residuals; see <a class="reference internal" href="../probabilistic/distributions.html#conditional-residual-calibration-crc"><span class="std std-ref">CRC Distribution</span></a> for all options.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">alpha</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">float</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">0.1</span></code></p></td>
-<td><p>Weight for MSE vs MAE in both the mu loss and the <code class="docutils literal notranslate"><span class="pre">&quot;hybrid&quot;</span></code> sigma loss.</p></td>
+<td><p>Weight for MSE vs MAE in the <code class="docutils literal notranslate"><span class="pre">&quot;hybrid&quot;</span></code> / <code class="docutils literal notranslate"><span class="pre">&quot;hybrid_sqrt&quot;</span></code> sigma loss.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">monitor</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;loss&quot;,</span> <span class="pre">&quot;mae&quot;,</span> <span class="pre">&quot;mse&quot;,</span> <span class="pre">&quot;smape&quot;,</span> <span class="pre">&quot;sigma_loss&quot;]</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>Metric key for EarlyStopping and ModelCheckpoint. <code class="docutils literal notranslate"><span class="pre">None</span></code> defers to the <code class="docutils literal notranslate"><span class="pre">metric</span></code> field. Use <code class="docutils literal notranslate"><span class="pre">&quot;sigma_loss&quot;</span></code> to monitor sigma calibration loss during CRC Stage 2 training.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2432,6 +2442,23 @@ Supported schedulers (all native torch.optim.lr_scheduler): ‘step’,
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.models.nn.core.base_model.BaseNeuralModel.on_train_epoch_start">
+<span class="sig-name descname"><span class="pre">on_train_epoch_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.nn.core.base_model.BaseNeuralModel.on_train_epoch_start" title="Link to this definition">#</a></dt>
+<dd><p>Switch EarlyStopping monitor from backbone metric to sigma loss at stage-2 boundary.</p>
+<p>When sequential two-stage training is active (<code class="docutils literal notranslate"><span class="pre">stage1_epochs</span></code> is set), the
+validation metric logged in stage 1 (<code class="docutils literal notranslate"><span class="pre">val_mae</span></code>) is constant in stage 2
+because the backbone is frozen.  Without intervention, EarlyStopping fires
+after <code class="docutils literal notranslate"><span class="pre">patience</span></code> epochs in stage 2.</p>
+<p>At the first epoch of stage 2 this hook resets the ES state and changes its
+monitor to <code class="docutils literal notranslate"><span class="pre">&quot;val_sigma_loss&quot;</span></code> so that early stopping tracks sigma progress.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -3764,6 +3791,21 @@ absolute residuals. Inherits all MLPF architecture parameters.</p>
 <span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.search_space" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.sigma_loss_fn">
+<span class="sig-name descname"><span class="pre">sigma_loss_fn</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'gaussian'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'laplace'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'mse'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'hybrid'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'hybrid_sqrt'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'log'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.sigma_loss_fn" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.stage1_epochs">
+<span class="sig-name descname"><span class="pre">stage1_epochs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.stage1_epochs" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.two_stage">
+<span class="sig-name descname"><span class="pre">two_stage</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.two_stage" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -4715,8 +4757,13 @@ frozen-backbone Stage 2.  Set False for joint single-optimizer training.</p></li
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.search_space">
-<span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.search_space" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.sigma_loss_fn">
+<span class="sig-name descname"><span class="pre">sigma_loss_fn</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'gaussian'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'laplace'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'mse'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'hybrid'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'hybrid_sqrt'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'log'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.sigma_loss_fn" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.stage1_epochs">
+<span class="sig-name descname"><span class="pre">stage1_epochs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.stage1_epochs" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -5720,6 +5767,21 @@ GAF decomposition; the scale MLP is conditioned on the detached mean.</p>
 <span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.search_space" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.sigma_loss_fn">
+<span class="sig-name descname"><span class="pre">sigma_loss_fn</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'gaussian'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'laplace'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'mse'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'hybrid'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'hybrid_sqrt'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'log'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.sigma_loss_fn" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.stage1_epochs">
+<span class="sig-name descname"><span class="pre">stage1_epochs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.stage1_epochs" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.two_stage">
+<span class="sig-name descname"><span class="pre">two_stage</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.two_stage" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -6636,6 +6698,21 @@ absolute residuals. Inherits all NHiTS architecture parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.nn.nhitscrc_model.NHITSCRCConfig.search_space">
 <span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.nn.nhitscrc_model.NHITSCRCConfig.search_space" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.nn.nhitscrc_model.NHITSCRCConfig.sigma_loss_fn">
+<span class="sig-name descname"><span class="pre">sigma_loss_fn</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'gaussian'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'laplace'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'mse'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'hybrid'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'hybrid_sqrt'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'log'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.nn.nhitscrc_model.NHITSCRCConfig.sigma_loss_fn" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.nn.nhitscrc_model.NHITSCRCConfig.stage1_epochs">
+<span class="sig-name descname"><span class="pre">stage1_epochs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.nn.nhitscrc_model.NHITSCRCConfig.stage1_epochs" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.nn.nhitscrc_model.NHITSCRCConfig.two_stage">
+<span class="sig-name descname"><span class="pre">two_stage</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#twiga.models.nn.nhitscrc_model.NHITSCRCConfig.two_stage" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -7615,6 +7692,7 @@ search space defined in <a class="reference internal" href="#twiga.models.nn.rnn
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.core.base_model.BaseNeuralModel.forward"><code class="docutils literal notranslate"><span class="pre">BaseNeuralModel.forward()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.core.base_model.BaseNeuralModel.on_load_checkpoint"><code class="docutils literal notranslate"><span class="pre">BaseNeuralModel.on_load_checkpoint()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.core.base_model.BaseNeuralModel.on_save_checkpoint"><code class="docutils literal notranslate"><span class="pre">BaseNeuralModel.on_save_checkpoint()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.core.base_model.BaseNeuralModel.on_train_epoch_start"><code class="docutils literal notranslate"><span class="pre">BaseNeuralModel.on_train_epoch_start()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.core.base_model.BaseNeuralModel.training_step"><code class="docutils literal notranslate"><span class="pre">BaseNeuralModel.training_step()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.core.base_model.BaseNeuralModel.validate_params"><code class="docutils literal notranslate"><span class="pre">BaseNeuralModel.validate_params()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.core.base_model.BaseNeuralModel.validation_step"><code class="docutils literal notranslate"><span class="pre">BaseNeuralModel.validation_step()</span></code></a></li>
@@ -7782,6 +7860,9 @@ search space defined in <a class="reference internal" href="#twiga.models.nn.rnn
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.model_config"><code class="docutils literal notranslate"><span class="pre">MLPFCRCConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.name"><code class="docutils literal notranslate"><span class="pre">MLPFCRCConfig.name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.search_space"><code class="docutils literal notranslate"><span class="pre">MLPFCRCConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.sigma_loss_fn"><code class="docutils literal notranslate"><span class="pre">MLPFCRCConfig.sigma_loss_fn</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.stage1_epochs"><code class="docutils literal notranslate"><span class="pre">MLPFCRCConfig.stage1_epochs</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCConfig.two_stage"><code class="docutils literal notranslate"><span class="pre">MLPFCRCConfig.two_stage</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpfcrc_model.MLPFCRCModel"><code class="docutils literal notranslate"><span class="pre">MLPFCRCModel</span></code></a><ul class="nav section-nav flex-column">
@@ -7919,7 +8000,8 @@ search space defined in <a class="reference internal" href="#twiga.models.nn.rnn
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig"><code class="docutils literal notranslate"><span class="pre">MLPGAMCRCConfig</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.model_config"><code class="docutils literal notranslate"><span class="pre">MLPGAMCRCConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.name"><code class="docutils literal notranslate"><span class="pre">MLPGAMCRCConfig.name</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.search_space"><code class="docutils literal notranslate"><span class="pre">MLPGAMCRCConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.sigma_loss_fn"><code class="docutils literal notranslate"><span class="pre">MLPGAMCRCConfig.sigma_loss_fn</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.stage1_epochs"><code class="docutils literal notranslate"><span class="pre">MLPGAMCRCConfig.stage1_epochs</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgamcrc_model.MLPGAMCRCConfig.two_stage"><code class="docutils literal notranslate"><span class="pre">MLPGAMCRCConfig.two_stage</span></code></a></li>
 </ul>
 </li>
@@ -8065,6 +8147,9 @@ search space defined in <a class="reference internal" href="#twiga.models.nn.rnn
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.model_config"><code class="docutils literal notranslate"><span class="pre">MLPGAFCRCConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.name"><code class="docutils literal notranslate"><span class="pre">MLPGAFCRCConfig.name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.search_space"><code class="docutils literal notranslate"><span class="pre">MLPGAFCRCConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.sigma_loss_fn"><code class="docutils literal notranslate"><span class="pre">MLPGAFCRCConfig.sigma_loss_fn</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.stage1_epochs"><code class="docutils literal notranslate"><span class="pre">MLPGAFCRCConfig.stage1_epochs</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCConfig.two_stage"><code class="docutils literal notranslate"><span class="pre">MLPGAFCRCConfig.two_stage</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.mlpgafcrc_model.MLPGAFCRCModel"><code class="docutils literal notranslate"><span class="pre">MLPGAFCRCModel</span></code></a><ul class="nav section-nav flex-column">
@@ -8213,6 +8298,9 @@ search space defined in <a class="reference internal" href="#twiga.models.nn.rnn
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.nhitscrc_model.NHITSCRCConfig.model_config"><code class="docutils literal notranslate"><span class="pre">NHITSCRCConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.nhitscrc_model.NHITSCRCConfig.name"><code class="docutils literal notranslate"><span class="pre">NHITSCRCConfig.name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.nhitscrc_model.NHITSCRCConfig.search_space"><code class="docutils literal notranslate"><span class="pre">NHITSCRCConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.nhitscrc_model.NHITSCRCConfig.sigma_loss_fn"><code class="docutils literal notranslate"><span class="pre">NHITSCRCConfig.sigma_loss_fn</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.nhitscrc_model.NHITSCRCConfig.stage1_epochs"><code class="docutils literal notranslate"><span class="pre">NHITSCRCConfig.stage1_epochs</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.nhitscrc_model.NHITSCRCConfig.two_stage"><code class="docutils literal notranslate"><span class="pre">NHITSCRCConfig.two_stage</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.nn.nhitscrc_model.NHITSCRCModel"><code class="docutils literal notranslate"><span class="pre">NHITSCRCModel</span></code></a><ul class="nav section-nav flex-column">

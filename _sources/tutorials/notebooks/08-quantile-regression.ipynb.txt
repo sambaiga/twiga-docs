@@ -7,10 +7,7 @@
    "source": [
     "# 08 — Quantile Regression\n",
     "\n",
-    "![Level](https://img.shields.io/badge/level-intermediate-yellow)\n",
-    "![Python](https://img.shields.io/badge/python-3.10%2B-blue)\n",
-    "![Twiga](https://img.shields.io/badge/twiga-forecast-orange)\n",
-    "![Time](https://img.shields.io/badge/time-~20%20min-lightgrey)\n",
+    "![Level](https://img.shields.io/badge/level-intermediate-yellow) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange)![Time](https://img.shields.io/badge/time-~20%20min-lightgrey)\n",
     "\n",
     "---\n",
     "\n",
@@ -143,7 +140,7 @@
     "import pandas as pd\n",
     "from sklearn.preprocessing import RobustScaler, StandardScaler\n",
     "\n",
-    "from twiga.core.plot.gt import twiga_gt\n",
+    "from twiga.core.plot.gt import twiga_gt, twiga_report\n",
     "\n",
     "LetsPlot.setup_html()\n",
     "\n",
@@ -336,25 +333,9 @@
    ]
   },
   {
-   "cell_type": "raw",
+   "cell_type": "code",
+   "execution_count": null,
    "id": "18",
-   "metadata": {},
-   "source": []
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "19",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "from twiga.core.plot.gt import twiga_gt, twiga_report"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "20",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -386,7 +367,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "21",
+   "id": "19",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -395,7 +376,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "22",
+   "id": "20",
    "metadata": {},
    "source": [
     "## 4. NN Quantile Model — MLPF QR\n",
@@ -408,7 +389,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "23",
+   "id": "21",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -429,7 +410,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "24",
+   "id": "22",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -440,7 +421,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "25",
+   "id": "23",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -449,7 +430,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "26",
+   "id": "24",
    "metadata": {},
    "source": [
     "## 4b. NN Flexible-Quantile Model — MLPGAM FPQR\n",
@@ -474,7 +455,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "27",
+   "id": "25",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -499,185 +480,18 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "28",
+   "id": "26",
    "metadata": {},
    "outputs": [],
    "source": [
     "pred_fpqr_mlpf, metrics_fpqr_mlpf = forecaster_fpqr_mlpf.evaluate_quantile_forecast(test_df=test_df)\n",
     "# clear_output()\n",
-    "# get_metric_table(metrics_fpqr_mlpf)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "29",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "from twiga.core.metrics import get_interval_metrics\n",
-    "\n",
-    "pred_interval_fpqr_gam_iv, metrics_fpqr_gam_iv = forecaster_fpqr_gam.evaluate_interval_forecast(test_df=test_df)\n",
-    "clear_output()\n",
-    "\n",
-    "interval_metrics_fpqr = get_interval_metrics(\n",
-    "    pred=pred_interval_fpqr_gam_iv[\"forecast\"].values,\n",
-    "    true=pred_interval_fpqr_gam_iv[\"Actual\"].values,\n",
-    "    lower=pred_interval_fpqr_gam_iv[\"lower\"].values,\n",
-    "    upper=pred_interval_fpqr_gam_iv[\"upper\"].values,\n",
-    "    alpha=0.1,\n",
-    ")\n",
-    "log.info(\"MLPGAM FPQR — interval metrics (alpha=0.10, target coverage=90%)\")\n",
-    "log.info(\"\\n%s\", interval_metrics_fpqr.round(4).to_string(index=False))"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "30",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "p_fpqr = plot_forecast(\n",
-    "    pred_interval_fpqr_gam_iv.iloc[: 7 * 48],\n",
-    "    actual_col=\"Actual\",\n",
-    "    forecast_col=\"forecast\",\n",
-    "    lower_col=\"lower\",\n",
-    "    upper_col=\"upper\",\n",
-    "    title=\"MLPGAM FPQR — 90% Prediction Interval (first 7 days of test)\",\n",
-    "    y_label=\"NetLoad (kW)\",\n",
-    "    x_label=\"Time step (30-min)\",\n",
-    ")\n",
-    "p_fpqr"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "31",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "pred_interval_qr_gam, metrics_interval_qr_gam = forecaster_qr_gam.evaluate_quantile_forecast(test_df=test_df)\n",
-    "clear_output()\n",
-    "\n",
-    "log.info(\"MLPGAMQR interval result columns: %s\", pred_interval_qr_gam.columns.tolist())\n",
-    "GT(pred_interval_qr_gam.head())"
+    "get_metric_table(metrics_fpqr_mlpf)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "32",
-   "metadata": {},
-   "source": [
-    "## 5. Interval Metrics\n",
-    "\n",
-    "Three standard metrics assess prediction interval quality. Raw QR intervals do not carry a formal coverage guarantee — empirical PICP may differ from the nominal level. For guaranteed coverage, apply conformal calibration (NB09)."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "33",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "from great_tables import GT, md\n",
-    "import pandas as pd\n",
-    "\n",
-    "from twiga.core.plot.gt import twiga_gt\n",
-    "\n",
-    "interval_metrics_df = pd.DataFrame(\n",
-    "    {\n",
-    "        \"Metric\": [\"PICP\", \"NMPI\", \"Winkler score\"],\n",
-    "        \"Full name\": [\n",
-    "            \"Prediction Interval Coverage Probability\",\n",
-    "            \"Normalised Mean Prediction Interval\",\n",
-    "            \"Winkler (1972)\",\n",
-    "        ],\n",
-    "        \"Interpretation\": [\n",
-    "            \"Fraction of true values inside the interval. Should be ≥ 1 − alpha.\",\n",
-    "            \"Average interval width normalised by the target range. Smaller = sharper.\",\n",
-    "            \"Combines sharpness and coverage in one number. Lower is better.\",\n",
-    "        ],\n",
-    "    }\n",
-    ")\n",
-    "\n",
-    "twiga_gt(\n",
-    "    GT(interval_metrics_df)\n",
-    "    .tab_header(title=md(\"**Interval Evaluation Metrics**\"), subtitle=\"Reliability, sharpness, and their synthesis\")\n",
-    "    .cols_label(**{c: md(f\"**{c}**\") for c in interval_metrics_df.columns})\n",
-    "    .tab_source_note(\"Twiga Forecast\"),\n",
-    "    n_rows=len(interval_metrics_df),\n",
-    ")"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "34",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "from twiga.core.metrics import get_interval_metrics\n",
-    "\n",
-    "interval_metrics_xg = get_interval_metrics(\n",
-    "    pred=pred_interval_qr_xg[\"forecast\"].values,\n",
-    "    true=pred_interval_qr_xg[\"Actual\"].values,\n",
-    "    lower=pred_interval_qr_xg[\"lower\"].values,\n",
-    "    upper=pred_interval_qr_xg[\"upper\"].values,\n",
-    "    alpha=0.1,\n",
-    ")\n",
-    "log.info(\"QR XGBoost — interval metrics (alpha=0.10, target coverage=90%)\")\n",
-    "log.info(\"\\n%s\", interval_metrics_xg.round(4).to_string(index=False))"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "35",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "model_results = {\n",
-    "    \"QR XGBoost\": pred_interval_qr_xg,\n",
-    "    \"MLPGAMQR\": pred_interval_qr_gam,\n",
-    "    \"MLPGAMFPQR\": pred_interval_fpqr_gam_iv,\n",
-    "}\n",
-    "\n",
-    "rows = []\n",
-    "for name, df in model_results.items():\n",
-    "    m = get_interval_metrics(\n",
-    "        pred=df[\"forecast\"].values,\n",
-    "        true=df[\"Actual\"].values,\n",
-    "        lower=df[\"lower\"].values,\n",
-    "        upper=df[\"upper\"].values,\n",
-    "        alpha=0.1,\n",
-    "    )\n",
-    "    m.insert(0, \"Model\", name)\n",
-    "    rows.append(m)\n",
-    "\n",
-    "comparison_df = pd.concat(rows, ignore_index=True).round(4)\n",
-    "log.info(\"Interval metric comparison — all models (alpha=0.10)\")\n",
-    "comparison_df"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "36",
-   "metadata": {},
-   "source": [
-    "**Reading the interval metric comparison**\n",
-    "\n",
-    "- A model with **PICP < 1 − alpha** is under-covering — its intervals are too narrow and will miss more events than claimed. For a 90 % interval (alpha = 0.10), PICP below 0.90 indicates miscalibration.\n",
-    "- Among models with adequate PICP, prefer the one with the **smallest NMPI** (sharpest bounds) and **lowest Winkler score**.\n",
-    "- If all models under-cover, the raw quantile bounds need conformal calibration (NB09) to meet the nominal guarantee.\n",
-    "- FPQR may show different PICP than fixed-grid QR because its quantile grid adapts per sample — check both coverage and sharpness before choosing."
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "37",
+   "id": "27",
    "metadata": {},
    "source": [
     "## 6. Visualising Prediction Intervals\n",
@@ -688,7 +502,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "38",
+   "id": "28",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -698,7 +512,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "39",
+   "id": "29",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -717,7 +531,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "40",
+   "id": "30",
    "metadata": {},
    "source": [
     "### Side-by-side comparison across models"
@@ -726,7 +540,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "41",
+   "id": "31",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -751,110 +565,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "42",
-   "metadata": {},
-   "source": [
-    "## 7. Comparing Alpha Levels\n",
-    "\n",
-    "The choice of `alpha` controls the trade-off between coverage and sharpness. We retrain QR XGBoost with each alpha and compare PICP and NMPI."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "43",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "from great_tables import GT, md\n",
-    "import pandas as pd\n",
-    "\n",
-    "from twiga.core.plot.gt import twiga_gt\n",
-    "\n",
-    "alpha_guide_df = pd.DataFrame(\n",
-    "    {\n",
-    "        \"alpha\": [0.05, 0.10, 0.20],\n",
-    "        \"Target coverage\": [\"95 %\", \"90 %\", \"80 %\"],\n",
-    "        \"Interpretation\": [\n",
-    "            \"Wide band, high safety margin — use when missing an event is very costly\",\n",
-    "            \"Standard operating interval for most energy dispatch decisions\",\n",
-    "            \"Narrower band, more aggressive — use in real-time spot markets or when sharpness matters more\",\n",
-    "        ],\n",
-    "    }\n",
-    ")\n",
-    "\n",
-    "twiga_gt(\n",
-    "    GT(alpha_guide_df)\n",
-    "    .tab_header(title=md(\"**Alpha Level Guide**\"), subtitle=\"Coverage vs. sharpness trade-off\")\n",
-    "    .cols_label(**{c: md(f\"**{c}**\") for c in alpha_guide_df.columns})\n",
-    "    .tab_source_note(\"Twiga Forecast\"),\n",
-    "    n_rows=len(alpha_guide_df),\n",
-    ")"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "44",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "alphas = [0.05, 0.10, 0.20]\n",
-    "alpha_rows = []\n",
-    "\n",
-    "for alpha_val in alphas:\n",
-    "    qr_a = TwigaForecaster(\n",
-    "        data_params=data_config,\n",
-    "        model_params=[QRXGBOOSTConfig(device=\"cpu\", alpha=alpha_val)],\n",
-    "        train_params=train_config,\n",
-    "    )\n",
-    "    qr_a.fit(train_df=train_df, val_df=val_df)\n",
-    "    clear_output()\n",
-    "\n",
-    "    pred_a, _ = qr_a.evaluate_interval_forecast(test_df=test_df)\n",
-    "    clear_output()\n",
-    "\n",
-    "    m = get_interval_metrics(\n",
-    "        pred=pred_a[\"forecast\"].values,\n",
-    "        true=pred_a[\"Actual\"].values,\n",
-    "        lower=pred_a[\"lower\"].values,\n",
-    "        upper=pred_a[\"upper\"].values,\n",
-    "        alpha=alpha_val,\n",
-    "    )\n",
-    "    m.insert(0, \"alpha\", alpha_val)\n",
-    "    m.insert(1, \"target_coverage\", f\"{int((1 - alpha_val) * 100)}%\")\n",
-    "    alpha_rows.append(m)\n",
-    "\n",
-    "alpha_comparison = pd.concat(alpha_rows, ignore_index=True)\n",
-    "log.info(\"Coverage vs. sharpness across alpha levels — QR XGBoost\")\n",
-    "alpha_comparison[[\"alpha\", \"target_coverage\", \"picp\", \"nmpi\", \"winkle-score\"]].round(4)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "45",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "alpha_bar_df = alpha_comparison[[\"alpha\", \"target_coverage\", \"picp\", \"nmpi\", \"winkle-score\"]].copy()\n",
-    "alpha_bar_df[\"Configuration\"] = alpha_bar_df[\"target_coverage\"]\n",
-    "\n",
-    "p_picp = plot_metrics_bar(\n",
-    "    alpha_bar_df.rename(columns={\"picp\": \"PICP\", \"Configuration\": \"Model\"}),\n",
-    "    metric_col=\"PICP\",\n",
-    "    model_col=\"Model\",\n",
-    "    lower_is_better=False,\n",
-    "    title=\"Coverage (PICP) by Alpha — QR XGBoost\",\n",
-    "    x_label=\"PICP\",\n",
-    "    horizontal=False,\n",
-    ")\n",
-    "p_picp"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "46",
+   "id": "32",
    "metadata": {},
    "source": [
     "### Key observations\n",
@@ -866,7 +577,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "47",
+   "id": "33",
    "metadata": {},
    "source": [
     "## Wrapping up\n",
@@ -899,7 +610,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "48",
+   "id": "34",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -934,7 +645,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "49",
+   "id": "35",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -977,7 +688,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "50",
+   "id": "36",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -1065,7 +776,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "51",
+   "id": "37",
    "metadata": {},
    "source": [
     "---\n",
@@ -1079,7 +790,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "52",
+   "id": "38",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -1099,7 +810,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "53",
+   "id": "39",
    "metadata": {},
    "source": [
     "## Interval Comparison\n",
@@ -1112,7 +823,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "54",
+   "id": "40",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -1153,7 +864,7 @@
  ],
  "metadata": {
   "kernelspec": {
-   "display_name": "Python 3 (ipykernel)",
+   "display_name": "twiga-forecast",
    "language": "python",
    "name": "python3"
   },

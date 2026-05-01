@@ -35,7 +35,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=ed7c69f2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=79a279a3" />
     <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   
   <!-- So that users can add custom icons -->
@@ -611,7 +611,7 @@
                   
   <section id="08-—-Quantile-Regression">
 <h1><span class="section-number">9. </span>08 — Quantile Regression<a class="headerlink" href="#08-—-Quantile-Regression" title="Link to this heading">#</a></h1>
-<p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
+<p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /><img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
 <hr class="docutils" />
 <p><strong>What you’ll build</strong></p>
 <p>Prediction-interval forecasters using QR-LightGBM, QR-XGBoost, and FPQR-LightGBM, evaluated on PICP, NMPI, and Winkler score — giving you calibrated uncertainty estimates instead of point predictions.</p>
@@ -729,7 +729,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span><span class="p">,</span> <span class="n">twiga_report</span>
 
 <span class="n">LetsPlot</span><span class="o">.</span><span class="n">setup_html</span><span class="p">()</span>
 
@@ -882,14 +882,6 @@
 </pre></div>
 </div>
 </div>
-<!-- empty raw cell --><div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span><span class="p">,</span> <span class="n">twiga_report</span>
-</pre></div>
-</div>
-</div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -1031,156 +1023,13 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_fpqr_mlpf</span><span class="p">,</span> <span class="n">metrics_fpqr_mlpf</span> <span class="o">=</span> <span class="n">forecaster_fpqr_mlpf</span><span class="o">.</span><span class="n">evaluate_quantile_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
 <span class="c1"># clear_output()</span>
-<span class="c1"># get_metric_table(metrics_fpqr_mlpf)</span>
+<span class="n">get_metric_table</span><span class="p">(</span><span class="n">metrics_fpqr_mlpf</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_interval_metrics</span>
-
-<span class="n">pred_interval_fpqr_gam_iv</span><span class="p">,</span> <span class="n">metrics_fpqr_gam_iv</span> <span class="o">=</span> <span class="n">forecaster_fpqr_gam</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
-<span class="n">clear_output</span><span class="p">()</span>
-
-<span class="n">interval_metrics_fpqr</span> <span class="o">=</span> <span class="n">get_interval_metrics</span><span class="p">(</span>
-    <span class="n">pred</span><span class="o">=</span><span class="n">pred_interval_fpqr_gam_iv</span><span class="p">[</span><span class="s2">&quot;forecast&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-    <span class="n">true</span><span class="o">=</span><span class="n">pred_interval_fpqr_gam_iv</span><span class="p">[</span><span class="s2">&quot;Actual&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-    <span class="n">lower</span><span class="o">=</span><span class="n">pred_interval_fpqr_gam_iv</span><span class="p">[</span><span class="s2">&quot;lower&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-    <span class="n">upper</span><span class="o">=</span><span class="n">pred_interval_fpqr_gam_iv</span><span class="p">[</span><span class="s2">&quot;upper&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;MLPGAM FPQR — interval metrics (alpha=0.10, target coverage=90%)&quot;</span><span class="p">)</span>
-<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">interval_metrics_fpqr</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_fpqr</span> <span class="o">=</span> <span class="n">plot_forecast</span><span class="p">(</span>
-    <span class="n">pred_interval_fpqr_gam_iv</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span><span class="p">],</span>
-    <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
-    <span class="n">forecast_col</span><span class="o">=</span><span class="s2">&quot;forecast&quot;</span><span class="p">,</span>
-    <span class="n">lower_col</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span>
-    <span class="n">upper_col</span><span class="o">=</span><span class="s2">&quot;upper&quot;</span><span class="p">,</span>
-    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;MLPGAM FPQR — 90% Prediction Interval (first 7 days of test)&quot;</span><span class="p">,</span>
-    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;NetLoad (kW)&quot;</span><span class="p">,</span>
-    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;Time step (30-min)&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">p_fpqr</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_interval_qr_gam</span><span class="p">,</span> <span class="n">metrics_interval_qr_gam</span> <span class="o">=</span> <span class="n">forecaster_qr_gam</span><span class="o">.</span><span class="n">evaluate_quantile_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
-<span class="n">clear_output</span><span class="p">()</span>
-
-<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;MLPGAMQR interval result columns: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">pred_interval_qr_gam</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
-<span class="n">GT</span><span class="p">(</span><span class="n">pred_interval_qr_gam</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
-</pre></div>
-</div>
-</div>
-</section>
-<section id="5.-Interval-Metrics">
-<h2><span class="section-number">9.6. </span>5. Interval Metrics<a class="headerlink" href="#5.-Interval-Metrics" title="Link to this heading">#</a></h2>
-<p>Three standard metrics assess prediction interval quality. Raw QR intervals do not carry a formal coverage guarantee — empirical PICP may differ from the nominal level. For guaranteed coverage, apply conformal calibration (NB09).</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
-
-<span class="n">interval_metrics_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-    <span class="p">{</span>
-        <span class="s2">&quot;Metric&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;PICP&quot;</span><span class="p">,</span> <span class="s2">&quot;NMPI&quot;</span><span class="p">,</span> <span class="s2">&quot;Winkler score&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;Full name&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;Prediction Interval Coverage Probability&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Normalised Mean Prediction Interval&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Winkler (1972)&quot;</span><span class="p">,</span>
-        <span class="p">],</span>
-        <span class="s2">&quot;Interpretation&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;Fraction of true values inside the interval. Should be ≥ 1 − alpha.&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Average interval width normalised by the target range. Smaller = sharper.&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Combines sharpness and coverage in one number. Lower is better.&quot;</span><span class="p">,</span>
-        <span class="p">],</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-
-<span class="n">twiga_gt</span><span class="p">(</span>
-    <span class="n">GT</span><span class="p">(</span><span class="n">interval_metrics_df</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Interval Evaluation Metrics**&quot;</span><span class="p">),</span> <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Reliability, sharpness, and their synthesis&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">interval_metrics_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
-    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
-    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">interval_metrics_df</span><span class="p">),</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_interval_metrics</span>
-
-<span class="n">interval_metrics_xg</span> <span class="o">=</span> <span class="n">get_interval_metrics</span><span class="p">(</span>
-    <span class="n">pred</span><span class="o">=</span><span class="n">pred_interval_qr_xg</span><span class="p">[</span><span class="s2">&quot;forecast&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-    <span class="n">true</span><span class="o">=</span><span class="n">pred_interval_qr_xg</span><span class="p">[</span><span class="s2">&quot;Actual&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-    <span class="n">lower</span><span class="o">=</span><span class="n">pred_interval_qr_xg</span><span class="p">[</span><span class="s2">&quot;lower&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-    <span class="n">upper</span><span class="o">=</span><span class="n">pred_interval_qr_xg</span><span class="p">[</span><span class="s2">&quot;upper&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;QR XGBoost — interval metrics (alpha=0.10, target coverage=90%)&quot;</span><span class="p">)</span>
-<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">interval_metrics_xg</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model_results</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;QR XGBoost&quot;</span><span class="p">:</span> <span class="n">pred_interval_qr_xg</span><span class="p">,</span>
-    <span class="s2">&quot;MLPGAMQR&quot;</span><span class="p">:</span> <span class="n">pred_interval_qr_gam</span><span class="p">,</span>
-    <span class="s2">&quot;MLPGAMFPQR&quot;</span><span class="p">:</span> <span class="n">pred_interval_fpqr_gam_iv</span><span class="p">,</span>
-<span class="p">}</span>
-
-<span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">model_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">get_interval_metrics</span><span class="p">(</span>
-        <span class="n">pred</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;forecast&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">true</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;Actual&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">lower</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;lower&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">upper</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;upper&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">m</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-    <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-
-<span class="n">comparison_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Interval metric comparison — all models (alpha=0.10)&quot;</span><span class="p">)</span>
-<span class="n">comparison_df</span>
-</pre></div>
-</div>
-</div>
-<p><strong>Reading the interval metric comparison</strong></p>
-<ul class="simple">
-<li><p>A model with <strong>PICP &lt; 1 − alpha</strong> is under-covering — its intervals are too narrow and will miss more events than claimed. For a 90 % interval (alpha = 0.10), PICP below 0.90 indicates miscalibration.</p></li>
-<li><p>Among models with adequate PICP, prefer the one with the <strong>smallest NMPI</strong> (sharpest bounds) and <strong>lowest Winkler score</strong>.</p></li>
-<li><p>If all models under-cover, the raw quantile bounds need conformal calibration (NB09) to meet the nominal guarantee.</p></li>
-<li><p>FPQR may show different PICP than fixed-grid QR because its quantile grid adapts per sample — check both coverage and sharpness before choosing.</p></li>
-</ul>
 </section>
 <section id="6.-Visualising-Prediction-Intervals">
-<h2><span class="section-number">9.7. </span>6. Visualising Prediction Intervals<a class="headerlink" href="#6.-Visualising-Prediction-Intervals" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">9.6. </span>6. Visualising Prediction Intervals<a class="headerlink" href="#6.-Visualising-Prediction-Intervals" title="Link to this heading">#</a></h2>
 <p>A shaded band plot is the standard way to communicate intervals to stakeholders. We plot 7 days (336 half-hour steps) of actuals, the median forecast, and the 90 % band.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -1209,7 +1058,7 @@
 </div>
 </div>
 <section id="Side-by-side-comparison-across-models">
-<h3><span class="section-number">9.7.1. </span>Side-by-side comparison across models<a class="headerlink" href="#Side-by-side-comparison-across-models" title="Link to this heading">#</a></h3>
+<h3><span class="section-number">9.6.1. </span>Side-by-side comparison across models<a class="headerlink" href="#Side-by-side-comparison-across-models" title="Link to this heading">#</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -1235,99 +1084,8 @@
 </div>
 </div>
 </section>
-</section>
-<section id="7.-Comparing-Alpha-Levels">
-<h2><span class="section-number">9.8. </span>7. Comparing Alpha Levels<a class="headerlink" href="#7.-Comparing-Alpha-Levels" title="Link to this heading">#</a></h2>
-<p>The choice of <code class="docutils literal notranslate"><span class="pre">alpha</span></code> controls the trade-off between coverage and sharpness. We retrain QR XGBoost with each alpha and compare PICP and NMPI.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
-
-<span class="n">alpha_guide_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-    <span class="p">{</span>
-        <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">],</span>
-        <span class="s2">&quot;Target coverage&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;95 %&quot;</span><span class="p">,</span> <span class="s2">&quot;90 %&quot;</span><span class="p">,</span> <span class="s2">&quot;80 %&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;Interpretation&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;Wide band, high safety margin — use when missing an event is very costly&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Standard operating interval for most energy dispatch decisions&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Narrower band, more aggressive — use in real-time spot markets or when sharpness matters more&quot;</span><span class="p">,</span>
-        <span class="p">],</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-
-<span class="n">twiga_gt</span><span class="p">(</span>
-    <span class="n">GT</span><span class="p">(</span><span class="n">alpha_guide_df</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">tab_header</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">md</span><span class="p">(</span><span class="s2">&quot;**Alpha Level Guide**&quot;</span><span class="p">),</span> <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;Coverage vs. sharpness trade-off&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">cols_label</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alpha_guide_df</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
-    <span class="o">.</span><span class="n">tab_source_note</span><span class="p">(</span><span class="s2">&quot;Twiga Forecast&quot;</span><span class="p">),</span>
-    <span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">alpha_guide_df</span><span class="p">),</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">alphas</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">]</span>
-<span class="n">alpha_rows</span> <span class="o">=</span> <span class="p">[]</span>
-
-<span class="k">for</span> <span class="n">alpha_val</span> <span class="ow">in</span> <span class="n">alphas</span><span class="p">:</span>
-    <span class="n">qr_a</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
-        <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
-        <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">QRXGBOOSTConfig</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_val</span><span class="p">)],</span>
-        <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">qr_a</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
-    <span class="n">clear_output</span><span class="p">()</span>
-
-    <span class="n">pred_a</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">qr_a</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
-    <span class="n">clear_output</span><span class="p">()</span>
-
-    <span class="n">m</span> <span class="o">=</span> <span class="n">get_interval_metrics</span><span class="p">(</span>
-        <span class="n">pred</span><span class="o">=</span><span class="n">pred_a</span><span class="p">[</span><span class="s2">&quot;forecast&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">true</span><span class="o">=</span><span class="n">pred_a</span><span class="p">[</span><span class="s2">&quot;Actual&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">lower</span><span class="o">=</span><span class="n">pred_a</span><span class="p">[</span><span class="s2">&quot;lower&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">upper</span><span class="o">=</span><span class="n">pred_a</span><span class="p">[</span><span class="s2">&quot;upper&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_val</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">m</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="n">alpha_val</span><span class="p">)</span>
-    <span class="n">m</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;target_coverage&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">((</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">alpha_val</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
-    <span class="n">alpha_rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-
-<span class="n">alpha_comparison</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">alpha_rows</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Coverage vs. sharpness across alpha levels — QR XGBoost&quot;</span><span class="p">)</span>
-<span class="n">alpha_comparison</span><span class="p">[[</span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;target_coverage&quot;</span><span class="p">,</span> <span class="s2">&quot;picp&quot;</span><span class="p">,</span> <span class="s2">&quot;nmpi&quot;</span><span class="p">,</span> <span class="s2">&quot;winkle-score&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">alpha_bar_df</span> <span class="o">=</span> <span class="n">alpha_comparison</span><span class="p">[[</span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;target_coverage&quot;</span><span class="p">,</span> <span class="s2">&quot;picp&quot;</span><span class="p">,</span> <span class="s2">&quot;nmpi&quot;</span><span class="p">,</span> <span class="s2">&quot;winkle-score&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-<span class="n">alpha_bar_df</span><span class="p">[</span><span class="s2">&quot;Configuration&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha_bar_df</span><span class="p">[</span><span class="s2">&quot;target_coverage&quot;</span><span class="p">]</span>
-
-<span class="n">p_picp</span> <span class="o">=</span> <span class="n">plot_metrics_bar</span><span class="p">(</span>
-    <span class="n">alpha_bar_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;picp&quot;</span><span class="p">:</span> <span class="s2">&quot;PICP&quot;</span><span class="p">,</span> <span class="s2">&quot;Configuration&quot;</span><span class="p">:</span> <span class="s2">&quot;Model&quot;</span><span class="p">}),</span>
-    <span class="n">metric_col</span><span class="o">=</span><span class="s2">&quot;PICP&quot;</span><span class="p">,</span>
-    <span class="n">model_col</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
-    <span class="n">lower_is_better</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Coverage (PICP) by Alpha — QR XGBoost&quot;</span><span class="p">,</span>
-    <span class="n">x_label</span><span class="o">=</span><span class="s2">&quot;PICP&quot;</span><span class="p">,</span>
-    <span class="n">horizontal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">p_picp</span>
-</pre></div>
-</div>
-</div>
 <section id="Key-observations">
-<h3><span class="section-number">9.8.1. </span>Key observations<a class="headerlink" href="#Key-observations" title="Link to this heading">#</a></h3>
+<h3><span class="section-number">9.6.2. </span>Key observations<a class="headerlink" href="#Key-observations" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><strong>PICP</strong> may fall short of the nominal target (<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">alpha</span></code>) because raw quantile bounds carry no formal coverage guarantee. For guaranteed coverage, apply conformal calibration (NB09).</p></li>
 <li><p><strong>NMPI</strong> increases as <code class="docutils literal notranslate"><span class="pre">alpha</span></code> decreases (wider intervals for higher coverage) — the fundamental coverage-sharpness trade-off.</p></li>
@@ -1336,7 +1094,7 @@
 </section>
 </section>
 <section id="Wrapping-up">
-<h2><span class="section-number">9.9. </span>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">9.7. </span>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
 <p><strong>What you did</strong></p>
 <ul class="simple">
 <li><p>☒ Explained the pinball loss and why it produces calibrated conditional quantiles without distributional assumptions</p></li>
@@ -1357,7 +1115,7 @@
 </section>
 <hr class="docutils" />
 <section id="What's-next?">
-<h2><span class="section-number">9.10. </span>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">9.8. </span>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
 <p><a class="reference external" href="08-parametric-distributions.ipynb">08 — Parametric Distributions</a> — Move from non-parametric quantile bounds to full distribution forecasting: Normal, Laplace, Gamma, and Beta heads learn their parameters directly, producing richer uncertainty estimates via negative log-likelihood training.</p>
 <p><a class="reference external" href="09-conformal-prediction.ipynb">09 — Conformal Prediction</a> — Apply conformal calibration on top of any model (including QR) to obtain <strong>formal coverage guarantees</strong> — empirical PICP will meet or exceed <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">−</span> <span class="pre">alpha</span></code> by construction.</p>
 <div class="nbinput nblast docutils container">
@@ -1524,7 +1282,7 @@
 </section>
 <hr class="docutils" />
 <section id="Fan-Chart">
-<h2><span class="section-number">9.11. </span>Fan Chart<a class="headerlink" href="#Fan-Chart" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">9.9. </span>Fan Chart<a class="headerlink" href="#Fan-Chart" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">plot_quantile_fan</span></code> renders graduated ribbon bands from widest to narrowest, with the median line on top — the standard chart for communicating quantile forecast uncertainty in energy and meteorological forecasting.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -1547,7 +1305,7 @@
 </div>
 </section>
 <section id="Interval-Comparison">
-<h2><span class="section-number">9.12. </span>Interval Comparison<a class="headerlink" href="#Interval-Comparison" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">9.10. </span>Interval Comparison<a class="headerlink" href="#Interval-Comparison" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">plot_forecast_intervals</span></code> overlays multiple models’ prediction intervals as semi-transparent ribbons — useful for visually comparing sharpness and coverage across methods on the same axis.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -1648,19 +1406,15 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-ML-Quantile-Model-—-QR-XGBoost">9.3. 3. ML Quantile Model — QR XGBoost</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-NN-Quantile-Model-—-MLPF-QR">9.4. 4. NN Quantile Model — MLPF QR</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4b.-NN-Flexible-Quantile-Model-—-MLPGAM-FPQR">9.5. 4b. NN Flexible-Quantile Model — MLPGAM FPQR</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Interval-Metrics">9.6. 5. Interval Metrics</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Visualising-Prediction-Intervals">9.7. 6. Visualising Prediction Intervals</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Side-by-side-comparison-across-models">9.7.1. Side-by-side comparison across models</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Visualising-Prediction-Intervals">9.6. 6. Visualising Prediction Intervals</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Side-by-side-comparison-across-models">9.6.1. Side-by-side comparison across models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Key-observations">9.6.2. Key observations</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-Comparing-Alpha-Levels">9.8. 7. Comparing Alpha Levels</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Key-observations">9.8.1. Key observations</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">9.9. Wrapping up</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">9.10. What’s next?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Fan-Chart">9.11. Fan Chart</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Interval-Comparison">9.12. Interval Comparison</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">9.7. Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">9.8. What’s next?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Fan-Chart">9.9. Fan Chart</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Interval-Comparison">9.10. Interval Comparison</a></li>
 </ul>
   </nav></div>
 
