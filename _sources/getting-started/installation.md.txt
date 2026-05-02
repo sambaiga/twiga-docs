@@ -1,64 +1,108 @@
 # Installation & Setup
 
-Source: `pyproject.toml`
+<details>
+<summary>Source Files</summary>
+
+- `pyproject.toml`
+
+</details>
 
 ## Quick Install
 
 ```bash
+# Core (tree models + lets-plot + great-tables)
 pip install twiga
+
+# + Matplotlib, Plotly, SciencePlots
+pip install "twiga[plots]"
+
+# + Neural networks (PyTorch Lightning)
+pip install "twiga[nn]"
+
+# Everything
+pip install "twiga[all]"
 ```
 
-## Development Setup with uv
+> **Batteries included** — XGBoost, LightGBM, CatBoost, NGBoost, lets-plot and Great Tables ship with the base install.
 
-For development, use [uv](https://docs.astral.sh/uv/) to manage dependencies:
+| Extra | What it adds |
+| --- | --- |
+| `plots` | Matplotlib, Plotly, SciencePlots (publication-quality & interactive charts) |
+| `nn` | PyTorch, Lightning, TorchMetrics, TensorBoard |
+| `explain` | SHAP feature attribution |
+| `mlops` | MLflow, FastAPI, Evidently, Prefect |
+| `all` | Everything above |
+
+## GPU (CUDA) Support for Neural Networks
+
+The default `twiga[nn]` install pulls the CPU-only PyTorch wheel from PyPI. To use a GPU, point your installer at the PyTorch CUDA index instead:
+
+```bash
+# pip
+pip install "twiga[nn]" --extra-index-url https://download.pytorch.org/whl/cu124
+
+# uv  (--index-strategy required so uv falls back to PyPI for non-torch packages)
+uv pip install "twiga[nn]" \
+  --extra-index-url https://download.pytorch.org/whl/cu124 \
+  --index-strategy unsafe-best-match
+```
+
+Replace `cu124` with the suffix that matches your driver — run `nvidia-smi` to check:
+
+| CUDA version | Suffix |
+| --- | --- |
+| 11.8 | `cu118` |
+| 12.1 | `cu121` |
+| 12.4 | `cu124` |
+| 12.6 | `cu126` |
+
+Verify the GPU build:
+
+```python
+import torch
+print(torch.cuda.is_available())    # True
+print(torch.cuda.get_device_name()) # e.g. NVIDIA A100
+```
+
+## Development Setup
+
+### Prerequisites
+
+- **Python 3.12** (required: `>=3.12,<3.13`)
+- **[uv](https://docs.astral.sh/uv/)** — fast Python package manager
+- **Git** with pre-commit hook support
+
+### Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/sambaiga/twiga-forecast.git
 cd twiga-forecast
 
-# Create a virtual environment and sync all extras
-uv sync --all-extras
+# Install all development dependencies (including dev tools and all extras)
+uv sync --all-extras --dev
 ```
 
-## Optional Dependency Groups
+### GPU Support in Dev Environment
 
-Tree models (XGBoost, LightGBM, CatBoost, NGBoost) and lets-plot are included in the base install. Install optional extras only for what you need beyond that:
-
-| Group | Purpose | Install Command | Key Packages |
-| --- | --- | --- | --- |
-| `plots` | Matplotlib, Plotly & SciencePlots | `pip install "twiga[plots]"` | `matplotlib`, `plotly`, `scienceplots` |
-| `nn` | Neural network models (PyTorch + Lightning) | `pip install "twiga[nn]"` | `torch`, `lightning`, `torchmetrics`, `tensorboard` |
-| `mlops` | Production MLOps stack | `pip install "twiga[mlops]"` | `mlflow`, `fastapi`, `uvicorn`, `evidently`, `prefect` |
-| `explain` | Model explainability | `pip install "twiga[explain]"` | `shap` |
-| `tuning` | Optuna dashboard | `pip install "twiga[tuning]"` | `optuna-dashboard` |
-| `tracking` | Experiment tracking | `pip install "twiga[tracking]"` | `tensorboard` |
-| `dev` | Development tools, docs, testing | `pip install "twiga[dev]"` | `ruff`, `pre-commit`, `pytest`, `sphinx` |
-
-To install multiple groups at once:
+The default `uv sync --all-extras` installs the CPU-only PyTorch wheel. To replace it with a CUDA build:
 
 ```bash
-pip install "twiga[nn,mlops]"
-```
+# 1. Sync everything first (installs CPU torch into .venv)
+uv sync --all-extras --dev
 
-## PyTorch Backend
-
-### CPU Only
-
-```bash
-pip install torch>=2.8.0 --index-url https://download.pytorch.org/whl/cpu
-```
-
-### CUDA (GPU)
-
-```bash
-pip install torch>=2.8.0 --index-url https://download.pytorch.org/whl/cu124
+# 2. Force-reinstall torch from the CUDA index
+#    --index-strategy unsafe-best-match lets uv fall back to PyPI for packages
+#    like torchmetrics and numpy whose CUDA-index builds are outdated.
+uv pip install --reinstall torch \
+  --index-url https://download.pytorch.org/whl/cu124 \
+  --index-strategy unsafe-best-match
 ```
 
 :::{admonition} Note
 :class: note
 
-GPU support is optional. All ML models run on CPU by default. Neural network models benefit from GPU acceleration but work on CPU as well. CatBoost supports GPU training via `task_type="GPU"` and XGBoost via `device="cuda"` in their respective configs.
+`uv sync` will revert torch to the CPU wheel from `uv.lock`. Re-run step 2 after any `uv sync`.
 :::
 
 ## Core Dependencies
@@ -67,27 +111,27 @@ The base install (`pip install twiga`) includes:
 
 | Package | Version | Purpose |
 | --- | --- | --- |
-| `pydantic` | >=2.13.0 | Configuration validation |
+| `pydantic` | >=2.10.6 | Configuration validation |
 | `numpy` | >=2.0.0 | Numerical computation |
 | `pandas` | >=2.2.3 | Data manipulation |
-| `scikit-learn` | >=1.6.0 | Base transformers and utilities |
+| `scikit-learn` | >=1.8.0 | Base transformers and utilities |
 | `optuna` | >=4.7.0 | Hyperparameter optimization |
 | `statsmodels` | >=0.14.0 | Statistical modeling |
 | `astral` | >=3.2 | Sunrise/sunset calculations |
 | `rich` | >=13.0.0 | Terminal formatting |
 | `tqdm` | >=4.66.4 | Progress bars |
-| `xgboost` | >=3.2.0 | Gradient boosted trees |
+| `xgboost` | >=3.1.3 | Gradient boosted trees |
 | `lightgbm` | >=4.6.0 | Gradient boosted trees |
-| `catboost` | >=1.2.10 | Gradient boosted trees |
+| `catboost` | >=1.2.8 | Gradient boosted trees |
 | `ngboost` | >=0.5.9 | Probabilistic boosting |
 | `lets-plot` | >=4.9.0 | Primary interactive plots |
 | `great-tables` | >=0.21.0 | Result tables |
 
-## Prerequisites
+## System Requirements
 
-- **Python**: 3.12+ (required — `>=3.12`)
+- **Python**: 3.12 or 3.13 (required — `>=3.12`)
 - **OS**: Linux, macOS, Windows
-- **GPU**: Optional, for neural network models and CatBoost GPU mode
+- **GPU**: Optional — for neural network models and tree model GPU modes
 
 ## Verification
 

@@ -1268,14 +1268,25 @@ window.runMermaid = runMermaid;</script>
 <td><p><code class="docutils literal notranslate"><span class="pre">predict_interval(test_df,</span> <span class="pre">covariate_df=None,</span> <span class="pre">ensemble_strategy=None,</span> <span class="pre">ensemble_weights=None,</span> <span class="pre">prepare_test_data=True)</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">tuple[dict[str,</span> <span class="pre">tuple[np.ndarray,</span> <span class="pre">np.ndarray,</span> <span class="pre">np.ndarray]],</span> <span class="pre">dict[str,</span> <span class="pre">float]]</span></code></p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">forecast</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">forecast(test_df,</span> <span class="pre">covariate_df=None,</span> <span class="pre">ensemble_strategy=None,</span> <span class="pre">ensemble_weights=None)</span></code></p></td>
+<td><p><a class="reference internal" href="#forecast-result-types"><span class="std std-ref">ForecastCollection</span></a></p></td>
+</tr>
 </tbody>
 </table>
 </div>
-<p>Both methods return a two-element tuple:</p>
+<p><code class="docutils literal notranslate"><span class="pre">predict</span></code> and <code class="docutils literal notranslate"><span class="pre">predict_interval</span></code> return a two-element tuple:</p>
 <ol class="arabic simple">
 <li><p><strong>Prediction dictionary</strong> - keys are model names (and optionally <code class="docutils literal notranslate"><span class="pre">&quot;Ensemble&quot;</span></code>), values are 3-D NumPy arrays <code class="docutils literal notranslate"><span class="pre">(num_samples,</span> <span class="pre">horizon,</span> <span class="pre">num_targets)</span></code> for point forecasts, or <code class="docutils literal notranslate"><span class="pre">(lower,</span> <span class="pre">point,</span> <span class="pre">upper)</span></code> tuples for intervals.</p></li>
 <li><p><strong>Inference time dictionary</strong> - keys are model names, values are wall-clock seconds.</p></li>
 </ol>
+<p><code class="docutils literal notranslate"><span class="pre">forecast</span></code> is the higher-level alternative: it wraps each model’s output in a typed <a class="reference internal" href="#forecast-result-types"><span class="std std-ref">ForecastResult</span></a> and returns a <a class="reference internal" href="#forecast-result-types"><span class="std std-ref">ForecastCollection</span></a>. Ground truth is automatically extracted from <code class="docutils literal notranslate"><span class="pre">test_df</span></code> and attached to every <code class="docutils literal notranslate"><span class="pre">ForecastResult</span></code>. Use <code class="docutils literal notranslate"><span class="pre">forecast</span></code> when you want structured downstream access (<code class="docutils literal notranslate"><span class="pre">.to_dataframe()</span></code>, <code class="docutils literal notranslate"><span class="pre">.evaluate()</span></code>, etc.).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">collection</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">collection</span><span class="p">[</span><span class="s2">&quot;xgboost&quot;</span><span class="p">]</span>          <span class="c1"># ForecastResult</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>          <span class="c1"># tidy long-format DataFrame</span>
+<span class="n">metrics</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>         <span class="c1"># metrics DataFrame across all models</span>
+</pre></div>
+</div>
 <p><code class="docutils literal notranslate"><span class="pre">predict_interval</span></code> requires that <code class="docutils literal notranslate"><span class="pre">conformal_params</span></code> was supplied at construction and that <code class="docutils literal notranslate"><span class="pre">calibrate()</span></code> has been called.</p>
 <div class="warning admonition">
 <p class="admonition-title">Warning</p>
@@ -1327,6 +1338,23 @@ window.runMermaid = runMermaid;</script>
 </table>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast</span></code> and <code class="docutils literal notranslate"><span class="pre">evaluate_interval_forecast</span></code> are convenience wrappers around <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> that pre-bind the appropriate prediction and evaluation functions.</p>
+<p>When using <code class="docutils literal notranslate"><span class="pre">forecast()</span></code>, evaluation is also available directly on the returned <code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Signature</p></th>
+<th class="head"><p>Returns</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ForecastCollection.evaluate</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">evaluate(**kwargs)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ForecastCollection.evaluate()</span></code> calls <code class="docutils literal notranslate"><span class="pre">ForecastResult.evaluate()</span></code> on each result in the collection and concatenates the metrics into a single DataFrame. This is the preferred path when you have already called <code class="docutils literal notranslate"><span class="pre">forecast()</span></code>, since ground truth is attached automatically.</p>
 <p>The returned DataFrames have the following structure:</p>
 <p><strong>Results DataFrame</strong> (<code class="docutils literal notranslate"><span class="pre">results_df</span></code>):</p>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -2414,6 +2442,32 @@ Optional: actual (when ground_truth is present).</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.forecaster.result.ForecastCollection.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.result.ForecastCollection.evaluate" title="Link to this definition">#</a></dt>
+<dd><p>Evaluate all models and return a combined metrics DataFrame.</p>
+<p>Calls <a class="reference internal" href="#twiga.forecaster.result.ForecastResult.evaluate" title="twiga.forecaster.result.ForecastResult.evaluate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ForecastResult.evaluate()</span></code></a> on each result and concatenates
+the output, adding a <code class="docutils literal notranslate"><span class="pre">&quot;Model&quot;</span></code> column derived from each result’s
+<code class="docutils literal notranslate"><span class="pre">model_name</span></code>.  Ground truth must be attached to each result (i.e.
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">forecast()</span></code> must have been called with test
+data that contains the target column).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – Forwarded to each <a class="reference internal" href="#twiga.forecaster.result.ForecastResult.evaluate" title="twiga.forecaster.result.ForecastResult.evaluate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ForecastResult.evaluate()</span></code></a> call
+(e.g. <code class="docutils literal notranslate"><span class="pre">metric_names</span></code>, <code class="docutils literal notranslate"><span class="pre">freq</span></code>).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Combined metrics DataFrame with a <code class="docutils literal notranslate"><span class="pre">&quot;Model&quot;</span></code> column.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the collection is empty or any result lacks ground truth.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="twiga.forecaster.result.ForecastCollection.model_names">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">model_names</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.forecaster.result.ForecastCollection.model_names" title="Link to this definition">#</a></dt>
@@ -2684,6 +2738,7 @@ EnsembleStrategy.WEIGHTED. Defaults to None.</p></li>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.result.ForecastCollection"><code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.result.ForecastCollection.add"><code class="docutils literal notranslate"><span class="pre">ForecastCollection.add()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.result.ForecastCollection.evaluate"><code class="docutils literal notranslate"><span class="pre">ForecastCollection.evaluate()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.result.ForecastCollection.model_names"><code class="docutils literal notranslate"><span class="pre">ForecastCollection.model_names</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.result.ForecastCollection.results"><code class="docutils literal notranslate"><span class="pre">ForecastCollection.results</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.result.ForecastCollection.to_dataframe"><code class="docutils literal notranslate"><span class="pre">ForecastCollection.to_dataframe()</span></code></a></li>

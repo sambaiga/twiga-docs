@@ -205,11 +205,21 @@ The data pipeline is fitted **once** on the first call. Subsequent calls to `fit
 |---|---|---|
 | `predict` | `predict(test_df, covariate_df=None, ensemble_strategy=None, ensemble_weights=None, prepare_test_data=True)` | `tuple[dict[str, np.ndarray], dict[str, float]]` |
 | `predict_interval` | `predict_interval(test_df, covariate_df=None, ensemble_strategy=None, ensemble_weights=None, prepare_test_data=True)` | `tuple[dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]], dict[str, float]]` |
+| `forecast` | `forecast(test_df, covariate_df=None, ensemble_strategy=None, ensemble_weights=None)` | [`ForecastCollection`](#forecast-result-types) |
 
-Both methods return a two-element tuple:
+`predict` and `predict_interval` return a two-element tuple:
 
 1. **Prediction dictionary** - keys are model names (and optionally `"Ensemble"`), values are 3-D NumPy arrays `(num_samples, horizon, num_targets)` for point forecasts, or `(lower, point, upper)` tuples for intervals.
 2. **Inference time dictionary** - keys are model names, values are wall-clock seconds.
+
+`forecast` is the higher-level alternative: it wraps each model's output in a typed [`ForecastResult`](#forecast-result-types) and returns a [`ForecastCollection`](#forecast-result-types). Ground truth is automatically extracted from `test_df` and attached to every `ForecastResult`. Use `forecast` when you want structured downstream access (`.to_dataframe()`, `.evaluate()`, etc.).
+
+```python
+collection = forecaster.forecast(test_df)
+result = collection["xgboost"]          # ForecastResult
+df = collection.to_dataframe()          # tidy long-format DataFrame
+metrics = collection.evaluate()         # metrics DataFrame across all models
+```
 
 `predict_interval` requires that `conformal_params` was supplied at construction and that `calibrate()` has been called.
 
@@ -237,6 +247,14 @@ See [Conformal Prediction](../probabilistic/conformal-prediction.md) for the ava
 | `evaluate_interval_forecast` | `evaluate_interval_forecast(test_df=None, covariate_df=None, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
 
 `evaluate_point_forecast` and `evaluate_interval_forecast` are convenience wrappers around `evaluate` that pre-bind the appropriate prediction and evaluation functions.
+
+When using `forecast()`, evaluation is also available directly on the returned `ForecastCollection`:
+
+| Method                        | Signature            | Returns        |
+|-------------------------------|----------------------|----------------|
+| `ForecastCollection.evaluate` | `evaluate(**kwargs)` | `pd.DataFrame` |
+
+`ForecastCollection.evaluate()` calls `ForecastResult.evaluate()` on each result in the collection and concatenates the metrics into a single DataFrame. This is the preferred path when you have already called `forecast()`, since ground truth is attached automatically.
 
 The returned DataFrames have the following structure:
 

@@ -1042,81 +1042,11 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="6.-Visualising-Prediction-Intervals">
-<h2>6. Visualising Prediction Intervals<a class="headerlink" href="#6.-Visualising-Prediction-Intervals" title="Link to this heading">#</a></h2>
-<p>A shaded band plot is the standard way to communicate intervals to stakeholders. We plot 7 days (336 half-hour steps) of actuals, the median forecast, and the 90 % band.</p>
-<section id="Side-by-side-comparison-across-models">
-<h3>Side-by-side comparison across models<a class="headerlink" href="#Side-by-side-comparison-across-models" title="Link to this heading">#</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span>
-
-<span class="n">combined_interval_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">Model</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">model_results</span><span class="o">.</span><span class="n">items</span><span class="p">()],</span>
-    <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast_grid</span><span class="p">(</span>
-    <span class="n">combined_interval_df</span><span class="p">,</span>
-    <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
-    <span class="n">forecast_col</span><span class="o">=</span><span class="s2">&quot;forecast&quot;</span><span class="p">,</span>
-    <span class="n">model_col</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
-    <span class="n">n_samples_per_model</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
-    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;90% Prediction Intervals — first 7 days of test set&quot;</span><span class="p">,</span>
-    <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;NetLoad (kW)&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">p</span>
-</pre></div>
-</div>
-</div>
-</section>
-<section id="Key-observations">
-<h3>Key observations<a class="headerlink" href="#Key-observations" title="Link to this heading">#</a></h3>
-<ul class="simple">
-<li><p><strong>PICP</strong> may fall short of the nominal target (<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">alpha</span></code>) because raw quantile bounds carry no formal coverage guarantee. For guaranteed coverage, apply conformal calibration (NB09).</p></li>
-<li><p><strong>NMPI</strong> increases as <code class="docutils literal notranslate"><span class="pre">alpha</span></code> decreases (wider intervals for higher coverage) - the fundamental coverage-sharpness trade-off.</p></li>
-<li><p><strong>Winkler score</strong> synthesises both. The best alpha is context-dependent: energy operators with high cost of misses favour lower alpha (95 % coverage); real-time spot-market participants may tolerate alpha=0.20 for sharper signals.</p></li>
-</ul>
-</section>
-</section>
-<section id="Wrapping-up">
-<h2>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
-<p><strong>What you did</strong></p>
-<ul class="simple">
-<li><p>☒ Explained the pinball loss and why it produces calibrated conditional quantiles without distributional assumptions</p></li>
-<li><p>☒ Trained QR-XGBoost and MLPGAM QR (fixed-grid) quantile models via the Twiga API</p></li>
-<li><p>☒ Trained MLPGAM FPQR with a learned quantile grid and compared it to fixed-grid QR</p></li>
-<li><p>☒ Evaluated interval quality with PICP, NMPI, and Winkler score</p></li>
-<li><p>☒ Explored the coverage - sharpness trade-off across alpha levels (0.05, 0.10, 0.20)</p></li>
-<li><p>☒ Visualised prediction intervals as shaded band plots, grids, and fan charts</p></li>
-</ul>
-<p><strong>Key takeaways</strong></p>
-<ol class="arabic simple">
-<li><p>The pinball loss targets specific conditional quantiles; pairs of quantiles form prediction intervals with no distributional assumption needed.</p></li>
-<li><p>PICP measures reliability (is the interval wide enough?); NMPI measures sharpness (is it tight?); Winkler score synthesises both - always report all three.</p></li>
-<li><p>Raw QR intervals may under-cover (PICP &lt; 1 − alpha). For a formal guarantee, apply conformal calibration (NB09).</p></li>
-<li><p>FPQR adapts its quantile grid per sample, giving better uncertainty shape on skewed signals; fixed-grid QR is easier to audit at specific quantile levels.</p></li>
-<li><p>Increasing alpha narrows the band (higher sharpness) but risks under-coverage - choose alpha based on the operational cost of missing events.</p></li>
-</ol>
-</section>
-<hr class="docutils" />
-<section id="What's-next?">
-<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
-<p><a class="reference external" href="08-parametric-distributions.ipynb">08 - Parametric Distributions</a> - Move from non-parametric quantile bounds to full distribution forecasting: Normal, Laplace, Gamma, and Beta heads learn their parameters directly, producing richer uncertainty estimates via negative log-likelihood training.</p>
-<p><a class="reference external" href="09-conformal-prediction.ipynb">09 - Conformal Prediction</a> - Apply conformal calibration on top of any model (including QR) to obtain <strong>formal coverage guarantees</strong> - empirical PICP will meet or exceed <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">−</span> <span class="pre">alpha</span></code> by construction.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
-
-<span class="c1"># QR workflow summary</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># QR workflow summary</span>
 <span class="n">workflow_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;Step&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Choose a QR model&quot;</span><span class="p">,</span> <span class="s2">&quot;Assemble forecaster&quot;</span><span class="p">,</span> <span class="s2">&quot;Train&quot;</span><span class="p">,</span> <span class="s2">&quot;Get interval predictions&quot;</span><span class="p">,</span> <span class="s2">&quot;Compute metrics&quot;</span><span class="p">],</span>
@@ -1337,13 +1267,6 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-ML-Quantile-Model:-QR-XGBoost">3. ML Quantile Model: QR XGBoost</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-NN-Quantile-Model:-MLPF-QR">4. NN Quantile Model: MLPF QR</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4b.-NN-Flexible-Quantile-Model:-MLPGAM-FPQR">4b. NN Flexible-Quantile Model: MLPGAM FPQR</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Visualising-Prediction-Intervals">6. Visualising Prediction Intervals</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Side-by-side-comparison-across-models">Side-by-side comparison across models</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Key-observations">Key observations</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">Wrapping up</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">What’s next?</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Fan-Chart">Fan Chart</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Interval-Comparison">Interval Comparison</a></li>
 </ul>

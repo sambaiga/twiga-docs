@@ -44,7 +44,11 @@ The default `uv sync --all-extras` installs the CPU-only PyTorch wheel. To repla
 uv sync --all-extras --dev
 
 # 2. Force-reinstall torch from the CUDA index into the same .venv
-uv pip install --reinstall torch --index-url https://download.pytorch.org/whl/cu124
+#    --index-strategy unsafe-best-match lets uv fall back to PyPI for packages
+#    like torchmetrics and numpy whose CUDA-index builds are outdated.
+uv pip install --reinstall torch \
+  --index-url https://download.pytorch.org/whl/cu124 \
+  --index-strategy unsafe-best-match
 ```
 
 > **Note**: `uv sync` will revert torch to the CPU wheel from `uv.lock`. Re-run step 2 after any `uv sync`.
