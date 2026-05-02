@@ -5,7 +5,7 @@
    "id": "0",
    "metadata": {},
    "source": [
-    "# 03 — Feature Engineering\n",
+    "# Feature Engineering\n",
     "\n",
     "![Level](https://img.shields.io/badge/level-beginner-green) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~20%20min-lightgrey)\n",
     "\n",
@@ -13,12 +13,12 @@
     "\n",
     "**What you'll build**\n",
     "\n",
-    "A fully-engineered feature matrix from the MLVS-PT net-load signal — including lag features, rolling-window statistics, cyclic calendar encodings, and Fourier terms — wired into a `DataPipelineConfig` that any Twiga forecaster can consume directly.\n",
+    "A fully-engineered feature matrix from the MLVS-PT net-load signal - including lag features, rolling-window statistics, cyclic calendar encodings, and Fourier terms - wired into a `DataPipelineConfig` that any Twiga forecaster can consume directly.\n",
     "\n",
     "**Prerequisites**\n",
     "- Basic Python (lists, dicts, imports)\n",
-    "- [NB01 — Getting Started](01-getting-started.ipynb)\n",
-    "- [NB02 — Forecastability Analysis](02-forecastability-analysis.ipynb) *(recommended — provides the parameter rationale)*\n",
+    "- [NB01 - Getting Started](01-getting-started.ipynb)\n",
+    "- [NB02 - Forecastability Analysis](02-forecastability-analysis.ipynb) *(recommended - provides the parameter rationale)*\n",
     "\n",
     "**Learning objectives**\n",
     "\n",
@@ -37,7 +37,7 @@
     "(parquet)    (calendar signals)    (lags, windows)   (rank & filter)       (pipeline-ready)\n",
     "```\n",
     "\n",
-    "Each section in this notebook maps to one step in the pipeline — by the end you will have a complete, reproducible feature-engineering configuration."
+    "Each section in this notebook maps to one step in the pipeline - by the end you will have a complete, reproducible feature-engineering configuration."
    ]
   },
   {
@@ -49,12 +49,12 @@
     "\n",
     "We import four groups of libraries:\n",
     "\n",
-    "- **`warnings`** — suppress noisy deprecation messages so output stays readable.\n",
-    "- **`great_tables` / `lets_plot`** — rendering styled tables and interactive plots inside the notebook.\n",
-    "- **`numpy` / `pandas`** — array maths and tabular data manipulation.\n",
-    "- **Twiga utilities** — `configure()` sets up logging; `get_logger()` gives us a labelled logger for clean output.\n",
-    "- **Twiga feature transformers** — `TemporalFeatureTransformer` adds calendar features; `AutoregressTransformer` builds lag and rolling-window columns.\n",
-    "- **Twiga plot helpers** — `plot_timeseries`, `line_plot`, and `scatter_matrix` are thin wrappers around LetsPlot tuned for time series work."
+    "- **`warnings`**: suppress noisy deprecation messages so output stays readable.\n",
+    "- **`great_tables` / `lets_plot`**: rendering styled tables and interactive plots inside the notebook.\n",
+    "- **`numpy` / `pandas`**: array maths and tabular data manipulation.\n",
+    "- **Twiga utilities**: `configure()` sets up logging; `get_logger()` gives us a labelled logger for clean output.\n",
+    "- **Twiga feature transformers**: `TemporalFeatureTransformer` adds calendar features; `AutoregressTransformer` builds lag and rolling-window columns.\n",
+    "- **Twiga plot helpers**: `plot_timeseries`, `line_plot`, and `scatter_matrix` are thin wrappers around LetsPlot tuned for time series work."
    ]
   },
   {
@@ -102,7 +102,7 @@
     "raw[\"timestamp\"] = pd.to_datetime(raw[\"timestamp\"])\n",
     "\n",
     "# Filter to the study period\n",
-    "data = raw[(raw[\"timestamp\"] >= \"2019-02-01\") & (raw[\"timestamp\"] <= \"2021-12-31\")].copy()\n",
+    "data = raw[(raw[\"timestamp\"] >= \"2019-01-01\") & (raw[\"timestamp\"] <= \"2020-12-31\")].copy()\n",
     "data = data.reset_index(drop=True)\n",
     "\n",
     "log.info(f\"Shape : {data.shape}\")\n",
@@ -117,7 +117,7 @@
    "source": [
     "## 2. Temporal Features\n",
     "\n",
-    "> **Key concept — Calendar features**\n",
+    "> **Key concept - Calendar features**\n",
     ">\n",
     "> A time series model sees numbers, not timestamps. Calendar features translate the human notion of time (\"it's 8 am on a Monday\") into numbers a model can use as inputs. The trick is to encode *cyclic* variables (hour 23 is close to hour 0, not far from it) using sin/cos pairs so the model sees the circular structure rather than a linear scale.\n",
     "\n",
@@ -126,9 +126,9 @@
     "\n",
     "| Feature | Type | Description |\n",
     "|---|---|---|\n",
-    "| `hour` | trigonometric (sin/cos) | Hour of day (0–23) |\n",
-    "| `wday` | trigonometric (sin/cos) | Day of week (0–6) |\n",
-    "| `month` | trigonometric (sin/cos) | Month of year (1–12) |\n",
+    "| `hour` | trigonometric (sin/cos) | Hour of day (0 - 23) |\n",
+    "| `wday` | trigonometric (sin/cos) | Day of week (0 - 6) |\n",
+    "| `month` | trigonometric (sin/cos) | Month of year (1 - 12) |\n",
     "| `day_night` | binary | 1 = daytime, 0 = night |\n",
     "\n",
     "> **`day_night` and solar geometry:** Twiga uses the [`astral`](https://astral.readthedocs.io/) library to compute accurate sunrise/sunset times per day for the specified location.  \n",
@@ -184,16 +184,16 @@
    "id": "6",
    "metadata": {},
    "source": [
-    "> **Key concept — Temporal features**\n",
+    "> **Key concept - Temporal features**\n",
     ">\n",
     "> Raw timestamps carry rich information, but a model cannot interpret a datetime object directly.\n",
     "> Temporal features extract the useful dimensions:\n",
     ">\n",
-    "> - **Calendar features** (`hour`, `weekday`, `month`) — tell the model where in the daily or weekly cycle a sample falls.  Net load is typically higher on weekday mornings than Sunday nights; a model with no `hour` feature cannot learn this.\n",
-    "> - **Day/night flag** — Madeira Island receives meaningful solar irradiance only during daylight.  A binary day/night column lets even a simple tree model split on light vs. dark without needing to reason about solar angles.\n",
-    "> - **Solar-angle features** — if you pass latitude and longitude, `TemporalFeatureTransformer` computes the exact solar elevation angle for each timestamp.  This is more precise than a fixed day/night cutoff and captures seasonal variation in sunrise/sunset times.\n",
+    "> - **Calendar features** (`hour`, `weekday`, `month`) - tell the model where in the daily or weekly cycle a sample falls.  Net load is typically higher on weekday mornings than Sunday nights; a model with no `hour` feature cannot learn this.\n",
+    "> - **Day/night flag** - Madeira Island receives meaningful solar irradiance only during daylight.  A binary day/night column lets even a simple tree model split on light vs. dark without needing to reason about solar angles.\n",
+    "> - **Solar-angle features** - if you pass latitude and longitude, `TemporalFeatureTransformer` computes the exact solar elevation angle for each timestamp.  This is more precise than a fixed day/night cutoff and captures seasonal variation in sunrise/sunset times.\n",
     ">\n",
-    "> All of these are computed once during `fit_transform()` and then reproduced identically at prediction time — ensuring train/test consistency."
+    "> All of these are computed once during `fit_transform()` and then reproduced identically at prediction time - ensuring train/test consistency."
    ]
   },
   {
@@ -263,18 +263,18 @@
    "source": [
     "## 3. Autoregressive Features\n",
     "\n",
-    "> **Key concept — Lag features**\n",
+    "> **Key concept - Lag features**\n",
     ">\n",
     "> A **lag feature** is simply the value of the target variable from some number of steps in the past. If electricity demand follows a daily pattern, then \"what was demand exactly 24 hours ago?\" is an extremely useful input to predict \"what will demand be now?\". Lag features let a machine-learning model exploit this temporal memory without you having to design a recurrence mechanism from scratch.\n",
     "\n",
-    "> **Key concept — Rolling windows**\n",
+    "> **Key concept - Rolling windows**\n",
     ">\n",
-    "> A **rolling-window feature** summarises recent history into a single number — the mean, standard deviation, or another aggregate over a sliding window. Where a lag feature answers \"what was the value at time t−k?\", a rolling mean answers \"what was the *typical* value over the last k steps?\". Rolling statistics smooth out noise and capture trend shifts that individual lags might miss.\n",
+    "> A **rolling-window feature** summarises recent history into a single number - the mean, standard deviation, or another aggregate over a sliding window. Where a lag feature answers \"what was the value at time t−k?\", a rolling mean answers \"what was the *typical* value over the last k steps?\". Rolling statistics smooth out noise and capture trend shifts that individual lags might miss.\n",
     "\n",
     "`AutoregressTransformer` creates two families of features:\n",
     "\n",
-    "* **Lag features** — value of the target `n_samples * lag` timesteps ago  \n",
-    "* **Rolling features** — aggregate (mean, std, …) over a window of `n_samples * window` timesteps\n",
+    "* **Lag features**: value of the target `n_samples * lag` timesteps ago  \n",
+    "* **Rolling features**: aggregate (mean, std, …) over a window of `n_samples * window` timesteps\n",
     "\n",
     "### Understanding the `n_samples` multiplier\n",
     "\n",
@@ -339,15 +339,15 @@
    "id": "12",
    "metadata": {},
    "source": [
-    "> **Key concept — Lag features and rolling windows**\n",
+    "> **Key concept - Lag features and rolling windows**\n",
     ">\n",
-    "> Tree-based models (LightGBM, XGBoost, CatBoost) cannot process sequences — they see one flat feature vector per sample.\n",
+    "> Tree-based models (LightGBM, XGBoost, CatBoost) cannot process sequences - they see one flat feature vector per sample.\n",
     "> To give them access to the past, we engineer explicit historical features:\n",
     ">\n",
-    "> - **Lag features** — copy the target value from `n_samples × lag` steps ago.  For 30-min data, `lag=1` means 1 day ago (48 steps), `lag=7` means 1 week ago (336 steps).  The forecastability analysis in NB02 showed strong ACF peaks at lags 48 and 336 — those are the lags worth including.\n",
-    "> - **Rolling-window statistics** — summarise a window of recent values into a single number (mean, std, min, max).  A rolling mean smooths short-term noise; a rolling std captures volatility.  Window size should be at least as large as the dominant seasonal period.\n",
+    "> - **Lag features** - copy the target value from `n_samples × lag` steps ago.  For 30-min data, `lag=1` means 1 day ago (48 steps), `lag=7` means 1 week ago (336 steps).  The forecastability analysis in NB02 showed strong ACF peaks at lags 48 and 336 - those are the lags worth including.\n",
+    "> - **Rolling-window statistics** - summarise a window of recent values into a single number (mean, std, min, max).  A rolling mean smooths short-term noise; a rolling std captures volatility.  Window size should be at least as large as the dominant seasonal period.\n",
     ">\n",
-    "> Both features are aligned so that at time *t* the model only sees values from *before* time *t* — there is no look-ahead leakage.  `AutoregressTransformer` handles this alignment automatically."
+    "> Both features are aligned so that at time *t* the model only sees values from *before* time *t* - there is no look-ahead leakage.  `AutoregressTransformer` handles this alignment automatically."
    ]
   },
   {
@@ -478,9 +478,9 @@
    "source": [
     "## 4. Feature Selection\n",
     "\n",
-    "> **Key concept — Feature matrix**\n",
+    "> **Key concept - Feature matrix**\n",
     ">\n",
-    "> After applying temporal and autoregressive transformers, we have a **feature matrix** — a table where each row is one timestep and each column is one input signal the model will see. Feature matrices can easily have 50–200 columns, many of which are redundant or noisy. Feature selection trims this down to the most informative subset, reducing overfitting risk and training time.\n",
+    "> After applying temporal and autoregressive transformers, we have a **feature matrix** - a table where each row is one timestep and each column is one input signal the model will see. Feature matrices can easily have 50 - 200 columns, many of which are redundant or noisy. Feature selection trims this down to the most informative subset, reducing overfitting risk and training time.\n",
     "\n",
     "`select_top_features` ranks candidate features using a **multi-metric ensemble**:\n",
     "\n",
@@ -534,7 +534,7 @@
    "outputs": [],
    "source": [
     "# Visualise the selected lag features side-by-side with the target\n",
-    "sample = ar_clean[(ar_clean[\"timestamp\"] >= \"2021-03-01\") & (ar_clean[\"timestamp\"] < \"2021-03-08\")].copy()\n",
+    "sample = ar_clean[(ar_clean[\"timestamp\"] >= \"2019-03-01\") & (ar_clean[\"timestamp\"] < \"2019-03-08\")].copy()\n",
     "\n",
     "p = plot_timeseries(\n",
     "    sample,\n",
@@ -575,9 +575,9 @@
    "id": "23",
    "metadata": {},
    "source": [
-    "> **Key concept — Fourier encoding for cyclic variables**\n",
+    "> **Key concept - Fourier encoding for cyclic variables**\n",
     ">\n",
-    "> Calendar variables like `hour` (0–23) and `month` (1–12) are **cyclic**: hour 23 is just one step away from hour 0, but the integer 23 is far from 0 in Euclidean space.\n",
+    "> Calendar variables like `hour` (0 - 23) and `month` (1 - 12) are **cyclic**: hour 23 is just one step away from hour 0, but the integer 23 is far from 0 in Euclidean space.\n",
     "> A tree model or neural network that receives raw integers will not naturally understand this wrap-around.\n",
     ">\n",
     "> **Fourier encoding** projects each value onto a unit circle using sine and cosine:\n",
@@ -588,7 +588,7 @@
     "> ```\n",
     ">\n",
     "> For `hour` with period 24, hours 0 and 23 land at nearly the same point on the circle.\n",
-    "> The model receives two continuous numbers (sin, cos) per cyclic feature instead of a raw integer — the circular distance is now correctly represented.\n",
+    "> The model receives two continuous numbers (sin, cos) per cyclic feature instead of a raw integer - the circular distance is now correctly represented.\n",
     ">\n",
     "> Use Fourier encoding whenever a calendar variable has natural wrap-around: hour (period 24), weekday (period 7), month (period 12), day-of-year (period 365)."
    ]
@@ -654,14 +654,14 @@
    "id": "27",
    "metadata": {},
    "source": [
-    "> **Key concept — The feature matrix**\n",
+    "> **Key concept - The feature matrix**\n",
     ">\n",
     "> `DataPipeline` transforms a raw DataFrame into a pair of 3-D NumPy arrays:\n",
     ">\n",
-    "> - **X** — shape `(n_samples, lookback_window_size, n_features)` — the input tensor fed to the model.  Each sample is a window of `lookback_window_size` timesteps, each with `n_features` values (target history + calendar + exogenous + lag + rolling columns).\n",
-    "> - **y** — shape `(n_samples, forecast_horizon, n_targets)` — the corresponding future target values the model must predict.\n",
+    "> - **X** - shape `(n_samples, lookback_window_size, n_features)` - the input tensor fed to the model.  Each sample is a window of `lookback_window_size` timesteps, each with `n_features` values (target history + calendar + exogenous + lag + rolling columns).\n",
+    "> - **y** - shape `(n_samples, forecast_horizon, n_targets)` - the corresponding future target values the model must predict.\n",
     ">\n",
-    "> This 3-D format is the universal interface between feature engineering and all Twiga models (ML and NN alike).  `DataPipeline.fit()` learns the scalers from training data; `DataPipeline.transform()` applies them to any split without refitting — preventing data leakage."
+    "> This 3-D format is the universal interface between feature engineering and all Twiga models (ML and NN alike).  `DataPipeline.fit()` learns the scalers from training data; `DataPipeline.transform()` applies them to any split without refitting - preventing data leakage."
    ]
   },
   {
@@ -766,7 +766,7 @@
     "4. Slices the scaled data into overlapping (lookback, horizon) sequence windows\n",
     "\n",
     "The output `X` has shape `(n_samples, lookback_window_size, n_features)` and  \n",
-    "`y` has shape `(n_samples, forecast_horizon, n_targets)` — ready to feed directly into a neural network."
+    "`y` has shape `(n_samples, forecast_horizon, n_targets)` - ready to feed directly into a neural network."
    ]
   },
   {
@@ -798,7 +798,7 @@
     ")\n",
     "\n",
     "# Pass raw train_df — pipeline handles all feature computation internally\n",
-    "train_df = data[data[\"timestamp\"] < \"2021-01-01\"].copy()\n",
+    "train_df = data[data[\"timestamp\"] < \"2020-01-01\"].copy()\n",
     "pipeline.fit(train_df)\n",
     "log.info(\"Pipeline fitted successfully.\")"
    ]
@@ -996,7 +996,7 @@
    "metadata": {},
    "source": [
     "---\n",
-    "## 9. EDA — Visual Feature Inspection\n",
+    "## 9. EDA: Visual Feature Inspection\n",
     "\n",
     "Before passing engineered features to a model it is worth spending a few minutes on\n",
     "exploratory visualisation. The three helpers below give fast answers to common\n",
@@ -1004,9 +1004,9 @@
     "\n",
     "| Question | Tool |\n",
     "|---|---|\n",
-    "| Does the raw signal look as expected? | `line_plot` — any 1-D window, no DataFrame needed |\n",
-    "| Do my covariates correlate with the target? | `scatter_plot` — colour-encoded scatter + LOESS trend |\n",
-    "| Are lag features jointly informative? | `scatter_matrix` — pair-plot grid across features and target |\n",
+    "| Does the raw signal look as expected? | `line_plot` - any 1-D window, no DataFrame needed |\n",
+    "| Do my covariates correlate with the target? | `scatter_plot` - colour-encoded scatter + LOESS trend |\n",
+    "| Are lag features jointly informative? | `scatter_matrix` - pair-plot grid across features and target |\n",
     "\n",
     "All three accept the same Twiga theme parameters (`font_size`, `grid`, `legend_pos`, …)\n",
     "as every other plotting utility in the library."
@@ -1027,9 +1027,9 @@
    "id": "41",
    "metadata": {},
    "source": [
-    "### `line_plot` — one-week load profile\n",
+    "### `line_plot`: one-week load profile\n",
     "\n",
-    "`line_plot` accepts a plain Python list or 1-D NumPy array — no DataFrame required.\n",
+    "`line_plot` accepts a plain Python list or 1-D NumPy array - no DataFrame required.\n",
     "It is the fastest way to sanity-check a raw signal, inspect seasonality, or verify\n",
     "that a transformation (differencing, scaling) behaved as expected.\n",
     "\n",
@@ -1045,13 +1045,13 @@
    "source": [
     "# line_plot takes a plain 1-D sequence — no DataFrame needed\n",
     "sample_week = data_with_temporal[\n",
-    "    (data_with_temporal[\"timestamp\"] >= \"2021-06-01\") & (data_with_temporal[\"timestamp\"] < \"2021-06-08\")\n",
+    "    (data_with_temporal[\"timestamp\"] >= \"2019-06-01\") & (data_with_temporal[\"timestamp\"] < \"2019-06-08\")\n",
     "][\"NetLoad(kW)\"].values\n",
     "\n",
     "p = line_plot(\n",
     "    x=None,\n",
     "    y=sample_week,\n",
-    "    title=\"Net Load — one week (Jun 2021)\",\n",
+    "    title=\"Net Load — one week (Jun 2019)\",\n",
     "    y_label=\"Net Load (kW)\",\n",
     "    x_label=\"30-min step\",\n",
     "    fig_size=(900, 300),\n",
@@ -1064,16 +1064,16 @@
    "id": "43",
    "metadata": {},
    "source": [
-    "### `scatter_plot` — GHI vs Net Load by day/night\n",
+    "### `scatter_plot`: GHI vs Net Load by day/night\n",
     "\n",
     "`scatter_plot` renders a 2-D scatter with optional colour grouping and a LOESS\n",
     "smoothing curve. It is ideal for assessing whether a covariate has a meaningful\n",
     "(possibly non-linear) relationship with the target before committing to feature selection.\n",
     "\n",
     "The `hue_col` parameter expects a **string** column. Numeric flags like `day_night`\n",
-    "should be mapped first — see the `.assign(group=…)` call below.\n",
+    "should be mapped first - see the `.assign(group=…)` call below.\n",
     "\n",
-    "> **When to use it:** check covariate–target correlations and detect regime differences\n",
+    "> **When to use it:** check covariate - target correlations and detect regime differences\n",
     "> (e.g. day vs night, weekday vs weekend) that a model should learn."
    ]
   },
@@ -1106,7 +1106,7 @@
    "id": "45",
    "metadata": {},
    "source": [
-    "### `scatter_matrix` — lag features vs target\n",
+    "### `scatter_matrix`: lag features vs target\n",
     "\n",
     "`scatter_matrix` renders a pair-plot grid across the selected feature columns and the\n",
     "target. Each off-diagonal cell is a scatter; the diagonal shows the marginal distribution.\n",
@@ -1165,17 +1165,17 @@
     "- [x] Wired all feature choices into a `DataPipelineConfig` and verified the pipeline output shape\n",
     "\n",
     "**Key takeaways for beginners**\n",
-    "1. **Calendar features must be encoded cyclically** — plain integer hours (0–23) tell the model that hour 23 and hour 0 are far apart, which is wrong. Sin/cos encoding places them correctly on a circle.\n",
-    "2. **Lag = yesterday at this time** — a lag-1 feature on 30-min data is 48 steps back (24 hours). Always multiply your \"intuitive\" lag by `n_samples`.\n",
-    "3. **Rolling means smooth out noise** — individual lag values can be noisy; rolling means give the model a stable picture of recent average demand.\n",
-    "4. **Feature selection prevents overfitting** — more features is not always better. `select_top_features` uses four complementary metrics to keep only columns that genuinely predict the target.\n",
-    "5. **`DataPipelineConfig` is the single source of truth** — all feature choices live in one Pydantic config object, making experiments reproducible and easy to share.\n",
+    "1. **Calendar features must be encoded cyclically** - plain integer hours (0 - 23) tell the model that hour 23 and hour 0 are far apart, which is wrong. Sin/cos encoding places them correctly on a circle.\n",
+    "2. **Lag = yesterday at this time** - a lag-1 feature on 30-min data is 48 steps back (24 hours). Always multiply your \"intuitive\" lag by `n_samples`.\n",
+    "3. **Rolling means smooth out noise** - individual lag values can be noisy; rolling means give the model a stable picture of recent average demand.\n",
+    "4. **Feature selection prevents overfitting** - more features is not always better. `select_top_features` uses four complementary metrics to keep only columns that genuinely predict the target.\n",
+    "5. **`DataPipelineConfig` is the single source of truth** - all feature choices live in one Pydantic config object, making experiments reproducible and easy to share.\n",
     "\n",
     "---\n",
     "\n",
     "## What's next?\n",
     "\n",
-    "**NB04 — ML Point Forecasting** shows how to pass `DataPipelineConfig` into `TwigaForecaster`, select an ML model (LightGBM, XGBoost, CatBoost, or Linear Regression), and evaluate point predictions using the built-in metrics module."
+    "**NB04 - ML Point Forecasting** shows how to pass `DataPipelineConfig` into `TwigaForecaster`, select an ML model (LightGBM, XGBoost, CatBoost, or Linear Regression), and evaluate point predictions using the built-in metrics module."
    ]
   },
   {

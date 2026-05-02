@@ -5,7 +5,7 @@
    "id": "0",
    "metadata": {},
    "source": [
-    "# 12 — Ensemble Strategies\n",
+    "# Ensemble Strategies\n",
     "\n",
     "![Level](https://img.shields.io/badge/level-advanced-red)\n",
     "![Python](https://img.shields.io/badge/python-3.10%2B-blue)\n",
@@ -19,9 +19,9 @@
     "A 6-model ensemble (LinearReg, LightGBM, XGBoost, CatBoost, MLPF, N-HiTS) evaluated with mean, median, and inverse-error weighted-mean strategies, compared on MAE and RMSE to identify when ensembling beats individual models.\n",
     "\n",
     "**Prerequisites**\n",
-    "- [05 — ML Point Forecasting](05-ml-point-forecasting.ipynb) (multi-model setup)\n",
-    "- [07 — Neural Networks](07-neural-networks.ipynb) (MLPF, NHiTS)\n",
-    "- [11 — Hyperparameter Tuning](11-hyperparameter-tuning.ipynb) (optional, for tuned component models)\n",
+    "- [05 - ML Point Forecasting](05-ml-point-forecasting.ipynb) (multi-model setup)\n",
+    "- [07 - Neural Networks](07-neural-networks.ipynb) (MLPF, NHiTS)\n",
+    "- [11 - Hyperparameter Tuning](11-hyperparameter-tuning.ipynb) (optional, for tuned component models)\n",
     "- Python: basic statistics\n",
     "\n",
     "**Learning objectives**\n",
@@ -42,7 +42,7 @@
    "source": [
     "## 1. Motivation\n",
     "\n",
-    "A single model can fail for many reasons: a poorly tuned learning rate, a bad random seed, a blind spot in its inductive bias. When several models make **uncorrelated errors**, averaging them cancels noise and reduces variance — a classic result from the bias-variance decomposition.\n",
+    "A single model can fail for many reasons: a poorly tuned learning rate, a bad random seed, a blind spot in its inductive bias. When several models make **uncorrelated errors**, averaging them cancels noise and reduces variance - a classic result from the bias-variance decomposition.\n",
     "\n",
     "The key condition is **diversity**: if two models fail on exactly the same days, averaging does nothing. When a tree-based model and a neural network fail on different days, their average is better than either alone.\n",
     "\n",
@@ -54,12 +54,12 @@
    "id": "2",
    "metadata": {},
    "source": [
-    "> **Key concept — ensemble learning**\n",
+    "> **Key concept - ensemble learning**\n",
     ">\n",
     "> The **bias-variance decomposition** tells us that total prediction error =\n",
     "> bias² + variance + irreducible noise. A single high-capacity model often has\n",
     "> low bias but high variance (it overfits specific training patterns). Averaging\n",
-    "> multiple models keeps bias low while reducing variance — provided the models\n",
+    "> multiple models keeps bias low while reducing variance - provided the models\n",
     "> make *different* errors.\n",
     ">\n",
     "> This is the \"wisdom of crowds\" effect: a crowd of diverse, independently\n",
@@ -133,6 +133,8 @@
     "data = data[[\"timestamp\", \"NetLoad(kW)\", \"Ghi\", \"Temperature\"]]\n",
     "data[\"timestamp\"] = pd.to_datetime(data[\"timestamp\"])\n",
     "data = data.drop_duplicates(subset=\"timestamp\").reset_index(drop=True)\n",
+    "# Restrict to 2019-2020 to keep tutorial execution fast\n",
+    "data = data[(data[\"timestamp\"] >= \"2019-01-01\") & (data[\"timestamp\"] <= \"2020-12-31\")].reset_index(drop=True)\n",
     "\n",
     "log.info(\"Shape: %s\", data.shape)\n",
     "GT(data.head())"
@@ -161,7 +163,7 @@
     "splits_df = pd.DataFrame(\n",
     "    {\n",
     "        \"Split\": [\"Train\", \"Validation\", \"Test\"],\n",
-    "        \"Period\": [\"before 2021-01-01\", \"2021-01-01 – 2021-06-30\", \"2021-07-01 onwards\"],\n",
+    "        \"Period\": [\"before 2020-01-01\", \"2020-01-01 – 2020-06-30\", \"2020-07-01 onwards\"],\n",
     "        \"Purpose\": [\n",
     "            \"Model learning across CV folds\",\n",
     "            \"Weighted ensemble weight calibration\",\n",
@@ -189,9 +191,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "train_df = data[data[\"timestamp\"] < \"2021-01-01\"].reset_index(drop=True)\n",
-    "val_df = data[(data[\"timestamp\"] >= \"2021-01-01\") & (data[\"timestamp\"] < \"2021-07-01\")].reset_index(drop=True)\n",
-    "test_df = data[data[\"timestamp\"] >= \"2021-07-01\"].reset_index(drop=True)\n",
+    "train_df = data[data[\"timestamp\"] < \"2020-01-01\"].reset_index(drop=True)\n",
+    "val_df = data[(data[\"timestamp\"] >= \"2020-01-01\") & (data[\"timestamp\"] < \"2020-07-01\")].reset_index(drop=True)\n",
+    "test_df = data[data[\"timestamp\"] >= \"2020-07-01\"].reset_index(drop=True)\n",
     "\n",
     "log.info(\n",
     "    f\"train : {train_df.shape[0]:,} rows  ({train_df['timestamp'].min().date()} → {train_df['timestamp'].max().date()})\"\n",
@@ -209,7 +211,7 @@
    "source": [
     "### Shared data config\n",
     "\n",
-    "All models share the same `DataPipelineConfig` — identical target, resolution, location, features, and horizon — ensuring a fair comparison."
+    "All models share the same `DataPipelineConfig` - identical target, resolution, location, features, and horizon - ensuring a fair comparison."
    ]
   },
   {
@@ -249,7 +251,7 @@
     "\n",
     "Passing multiple model configs to `TwigaForecaster` trains all of them in a single `fit()` call. Here we combine four ML tree models with two NN models.\n",
     "\n",
-    "> **Why mix ML and NN?** Tree models (LightGBM, XGBoost, CatBoost) are strong on tabular feature interactions; NN models (MLPF, MLPGAM) learn sequential patterns and temporal structure. Their error patterns tend to be complementary — ideal for ensembling."
+    "> **Why mix ML and NN?** Tree models (LightGBM, XGBoost, CatBoost) are strong on tabular feature interactions; NN models (MLPF, MLPGAM) learn sequential patterns and temporal structure. Their error patterns tend to be complementary - ideal for ensembling."
    ]
   },
   {
@@ -295,7 +297,7 @@
    "id": "14",
    "metadata": {},
    "source": [
-    "## 4. Strategy 1 — Mean\n",
+    "## 4. Strategy 1: Mean\n",
     "\n",
     "The simplest strategy: average predictions from all models equally. Works well when models are roughly equally accurate and errors are independent."
    ]
@@ -320,9 +322,9 @@
    "id": "16",
    "metadata": {},
    "source": [
-    "## 5. Strategy 2 — Median\n",
+    "## 5. Strategy 2: Median\n",
     "\n",
-    "The median is robust to outlier models. If one model produces a wildly inaccurate forecast on a given day, the median ignores it — unlike the mean, which is pulled toward extreme values.\n",
+    "The median is robust to outlier models. If one model produces a wildly inaccurate forecast on a given day, the median ignores it - unlike the mean, which is pulled toward extreme values.\n",
     "\n",
     "> Use `median` when you suspect that one or more models may occasionally produce large errors. Use `mean` when all models are well-calibrated and you want to exploit all available information."
    ]
@@ -347,9 +349,9 @@
    "id": "18",
    "metadata": {},
    "source": [
-    "## 6. Strategy 3 — Weighted\n",
+    "## 6. Strategy 3: Weighted\n",
     "\n",
-    "In the weighted ensemble, each model's contribution is scaled by its validation performance. Models that achieved lower validation error receive a higher weight — in effect, the ensemble automatically up-weights the best models.\n",
+    "In the weighted ensemble, each model's contribution is scaled by its validation performance. Models that achieved lower validation error receive a higher weight - in effect, the ensemble automatically up-weights the best models.\n",
     "\n",
     "Weights are computed internally from the validation data passed to `fit()` and are inversely proportional to each model's validation MAE. You do not need to specify weights manually."
    ]
@@ -359,7 +361,7 @@
    "id": "19",
    "metadata": {},
    "source": [
-    "> **Key concept — weighted ensemble**\n",
+    "> **Key concept - weighted ensemble**\n",
     ">\n",
     "> In the weighted strategy, each model's contribution is scaled inversely to its\n",
     "> validation MAE: a model with half the MAE of another gets twice the weight.\n",
@@ -374,7 +376,7 @@
     "> - When you want the ensemble to adapt automatically without manual tuning\n",
     ">\n",
     "> **When to prefer mean:**\n",
-    "> - When all models have similar validation errors — weighting adds noise without benefit\n",
+    "> - When all models have similar validation errors - weighting adds noise without benefit\n",
     "> - When the validation set is small and MAE estimates are noisy (weighting amplifies noise)\n",
     ">\n",
     "> **Important caveat:** the weights are derived from the validation set passed to\n",
@@ -405,7 +407,7 @@
    "source": [
     "## 7. Per-model breakdown\n",
     "\n",
-    "The metrics DataFrame contains a row for every model — including the `ENSEMBLE` row. Let's isolate individual model performance and compare it directly to the ensemble."
+    "The metrics DataFrame contains a row for every model - including the `ENSEMBLE` row. Let's isolate individual model performance and compare it directly to the ensemble."
    ]
   },
   {
@@ -444,7 +446,7 @@
    "id": "24",
    "metadata": {},
    "source": [
-    "### Bar chart — individual models vs ensemble"
+    "### Bar chart: individual models vs ensemble"
    ]
   },
   {
@@ -535,7 +537,7 @@
    "id": "29",
    "metadata": {},
    "source": [
-    "## 9. Forecast plot — ensemble vs best individual model\n",
+    "## 9. Forecast plot: ensemble vs best individual model\n",
     "\n",
     "Visual comparison over the first 7 days of the test set."
    ]
@@ -585,7 +587,7 @@
     "\n",
     "**Ensembles don't help much when:**\n",
     "- All models overfit in the same way (same family, same features)\n",
-    "- All models are underfitting — averaging underfits does not help\n",
+    "- All models are underfitting - averaging underfits does not help\n",
     "- Models make identical errors (pairwise error correlation > 0.9)\n",
     "\n",
     "### Quick error correlation check\n",
@@ -646,7 +648,7 @@
    "source": [
     "## 11. Mixing ML and NN\n",
     "\n",
-    "Tree-based ML models and NN models have complementary inductive biases — a key reason\n",
+    "Tree-based ML models and NN models have complementary inductive biases - a key reason\n",
     "this combination produces lower-correlated errors than within-family ensembles."
    ]
   },
@@ -696,7 +698,7 @@
    "id": "37",
    "metadata": {},
    "source": [
-    "## 12. Strategy comparison — twiga_gt summary"
+    "## 12. Strategy comparison: twiga_gt summary"
    ]
   },
   {
@@ -762,18 +764,18 @@
     "\n",
     "**Key takeaways**\n",
     "\n",
-    "1. **Diversity beats quantity** — two uncorrelated models ensemble better than five correlated ones. Check pairwise error correlation before adding more models.\n",
+    "1. **Diversity beats quantity** - two uncorrelated models ensemble better than five correlated ones. Check pairwise error correlation before adding more models.\n",
     "2. **Mixing ML and NN** is the most reliable diversity strategy: tree splits vs. smooth learned representations produce complementary errors.\n",
     "3. **Mean** is the safest default; switch to **weighted** only when models differ substantially in quality and your validation set is representative.\n",
-    "4. **Median** is preferable when you suspect occasional catastrophic failures in one model — it ignores extreme values.\n",
+    "4. **Median** is preferable when you suspect occasional catastrophic failures in one model - it ignores extreme values.\n",
     "5. If pairwise error correlation is > 0.9 for all pairs, tuning a single model (NB10) will outperform any ensemble strategy.\n",
     "\n",
     "---\n",
     "\n",
     "## What's next?\n",
     "\n",
-    "Notebook 12 shows how to register a completely custom model class — including any\n",
-    "sklearn-compatible estimator — in the Twiga model registry, giving you full control\n",
+    "Notebook 12 shows how to register a completely custom model class - including any\n",
+    "sklearn-compatible estimator - in the Twiga model registry, giving you full control\n",
     "over the model architecture while keeping the rest of the pipeline unchanged."
    ]
   },

@@ -4,7 +4,7 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "# 15 — Baseline Benchmarking\n",
+    "# Baseline Benchmarking\n",
     "\n",
     "![Beginner](https://img.shields.io/badge/level-beginner-green)\n",
     "![Python](https://img.shields.io/badge/python-3.10%2B-blue)\n",
@@ -15,17 +15,17 @@
     "\n",
     "**What you'll build**\n",
     "\n",
-    "A complete baseline benchmark comparing Naive, Seasonal Naive, Window Average, and Drift against LightGBM on the MLVS-PT dataset — with skill scores and forecast traces to diagnose whether a learned model is actually earning its complexity.\n",
+    "A complete baseline benchmark comparing Naive, Seasonal Naive, Window Average, and Drift against LightGBM on the MLVS-PT dataset - with skill scores and forecast traces to diagnose whether a learned model is actually earning its complexity.\n",
     "\n",
     "**Prerequisites**\n",
-    "- [01 — Getting Started](01-getting-started.ipynb)\n",
-    "- [03 — Feature Engineering](03-feature-engineering.ipynb)\n",
+    "- [01 - Getting Started](01-getting-started.ipynb)\n",
+    "- [03 - Feature Engineering](03-feature-engineering.ipynb)\n",
     "\n",
     "**Learning objectives**\n",
     "\n",
     "By the end of this notebook you will be able to:\n",
     "\n",
-    "1. Explain why baselines must come before advanced models — if LightGBM cannot beat Seasonal Naive, the problem is upstream of the model\n",
+    "1. Explain why baselines must come before advanced models - if LightGBM cannot beat Seasonal Naive, the problem is upstream of the model\n",
     "2. Configure and run all four parameter-free baselines through `TwigaForecaster`\n",
     "3. Read a benchmark table and identify the strongest reference model\n",
     "4. Compute and interpret MAE and RMSE skill scores relative to the best baseline\n",
@@ -77,7 +77,7 @@
    "source": [
     "## 1. Load Data\n",
     "\n",
-    "We use the MLVS-PT dataset — 30-minute net electrical load readings from a distribution substation in Madeira, Portugal. It exhibits strong daily and weekly seasonality driven by residential consumption patterns, making it a realistic benchmark for energy forecasting.\n",
+    "We use the MLVS-PT dataset - 30-minute net electrical load readings from a distribution substation in Madeira, Portugal. It exhibits strong daily and weekly seasonality driven by residential consumption patterns, making it a realistic benchmark for energy forecasting.\n",
     "\n",
     "We keep only the two columns needed for this tutorial: `timestamp` and `NetLoad(kW)`."
    ]
@@ -91,6 +91,8 @@
     "raw = pd.read_parquet(\"../data/MLVS-PT.parquet\")\n",
     "df = raw[[\"timestamp\", \"NetLoad(kW)\"]].copy()\n",
     "df = df.sort_values(\"timestamp\").reset_index(drop=True)\n",
+    "# Restrict to 2019-2020 to keep tutorial execution fast\n",
+    "df = df[(df[\"timestamp\"] >= \"2019-01-01\") & (df[\"timestamp\"] <= \"2020-12-31\")].reset_index(drop=True)\n",
     "\n",
     "log.info(\"Shape  : %s\", df.shape)\n",
     "log.info(\"Period : %s  ->  %s\", df[\"timestamp\"].min().date(), df[\"timestamp\"].max().date())\n",
@@ -145,9 +147,9 @@
    "source": [
     "## 2. Train / Test Split\n",
     "\n",
-    "For time series you must **never shuffle** rows before splitting. We hold out the last six months as the test set — these rows are never seen during training or CV fold construction.\n",
+    "For time series you must **never shuffle** rows before splitting. We hold out the last six months as the test set - these rows are never seen during training or CV fold construction.\n",
     "\n",
-    "> **Key concept — chronological splits**\n",
+    "> **Key concept - chronological splits**\n",
     ">\n",
     "> Shuffling a time series before splitting leaks the future into the training window.\n",
     "> A model trained on data from 2021 and evaluated on 2020 appears accurate\n",
@@ -160,8 +162,8 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "train_df = df[df[\"timestamp\"] < \"2021-07-01\"].reset_index(drop=True)\n",
-    "test_df = df[df[\"timestamp\"] >= \"2021-07-01\"].reset_index(drop=True)\n",
+    "train_df = df[df[\"timestamp\"] < \"2020-07-01\"].reset_index(drop=True)\n",
+    "test_df = df[df[\"timestamp\"] >= \"2020-07-01\"].reset_index(drop=True)\n",
     "\n",
     "log.info(\n",
     "    \"train : %d rows  (%s -> %s)\",\n",
@@ -227,14 +229,14 @@
     "\n",
     "`DataPipelineConfig` describes **what** to forecast and **how** to build input features.  We use a 96-step (48 h) lookback window and a 48-step (24 h) forecast horizon, matching the setup from Tutorial 01.\n",
     "\n",
-    "`lags` and `windows` are specified in **days** — Twiga multiplies by `n_samples` (48 for 30-min data) to convert to steps.  So `lags=[1, 7]` creates lag features at 1 day (48 steps) and 1 week (336 steps) ago.\n",
+    "`lags` and `windows` are specified in **days** - Twiga multiplies by `n_samples` (48 for 30-min data) to convert to steps.  So `lags=[1, 7]` creates lag features at 1 day (48 steps) and 1 week (336 steps) ago.\n",
     "\n",
     "> **Key constraint for baseline models**\n",
     ">\n",
     "> Even parameter-free baselines flow through the same `DataPipeline` as ML models.\n",
     "> The pipeline places raw target values in the **leading feature columns** so that\n",
     "> `X[:, t, :num_targets]` contains the observed target at time step *t*.\n",
-    "> Twiga's default pipeline satisfies this automatically — target lags are prepended first.\n",
+    "> Twiga's default pipeline satisfies this automatically - target lags are prepended first.\n",
     "\n",
     "### Why two pipeline configs?\n",
     "\n",
@@ -242,8 +244,8 @@
     "\n",
     "| Config | `stride` | Use case |\n",
     "|---|---|---|\n",
-    "| `data_config` | `1` (default) | ML / NN training — more windows = more training samples |\n",
-    "| `baseline_data_config` | `forecast_horizon` | Baseline evaluation — non-overlapping windows give independent, honest metrics |\n",
+    "| `data_config` | `1` (default) | ML / NN training - more windows = more training samples |\n",
+    "| `baseline_data_config` | `forecast_horizon` | Baseline evaluation - non-overlapping windows give independent, honest metrics |\n",
     "\n",
     "With `stride=1`, consecutive windows overlap by `lookback_window_size − 1` steps, producing ~N correlated predictions that **overstate statistical confidence** in backtesting metrics.  Setting `stride=forecast_horizon` ensures each prediction window is independent."
    ]
@@ -297,13 +299,13 @@
    "source": [
     "## 4. Baseline Models\n",
     "\n",
-    "All four models are **parameter-free** — no gradient descent, no hyperparameter search, and typically under a second per CV fold.  Their purpose is to set the minimum bar that any trained model must clear before it earns a place in production.\n",
+    "All four models are **parameter-free** - no gradient descent, no hyperparameter search, and typically under a second per CV fold.  Their purpose is to set the minimum bar that any trained model must clear before it earns a place in production.\n",
     "\n",
-    "> **Rule of thumb — always run Seasonal Naive first**\n",
+    "> **Rule of thumb - always run Seasonal Naive first**\n",
     ">\n",
     "> On any series with clear daily or weekly periodicity, Seasonal Naive is the\n",
     "> hardest cheap baseline to beat.  If LightGBM cannot outperform it on MAE,\n",
-    "> the problem is in your data or features — not the model architecture."
+    "> the problem is in your data or features - not the model architecture."
    ]
   },
   {
@@ -350,7 +352,7 @@
    "source": [
     "### 4.1 Naive (window_last)\n",
     "\n",
-    "The simplest possible forecast: for every test window, repeat the last observed target value across all 48 horizon steps.  This is the classical **persistence** forecast — y-hat_{t+h} = y_t for all h."
+    "The simplest possible forecast: for every test window, repeat the last observed target value across all 48 horizon steps.  This is the classical **persistence** forecast - y-hat_{t+h} = y_t for all h."
    ]
   },
   {
@@ -383,7 +385,7 @@
    "source": [
     "### 4.2 Seasonal Naive\n",
     "\n",
-    "Repeat the value observed exactly one season ago.  With `period=\"1D\"` and `freq=\"30min\"`, the seasonal lag is 48 steps — every 30-min slot *s* is predicted as the observed value at the same slot yesterday.  This is the canonical benchmark for any series with daily periodicity."
+    "Repeat the value observed exactly one season ago.  With `period=\"1D\"` and `freq=\"30min\"`, the seasonal lag is 48 steps - every 30-min slot *s* is predicted as the observed value at the same slot yesterday.  This is the canonical benchmark for any series with daily periodicity."
    ]
   },
   {
@@ -502,7 +504,7 @@
     "3. The candidate with **minimum Euclidean distance** to the query is selected.\n",
     "4. The *H* values **immediately following** the best match are returned as the forecast.\n",
     "\n",
-    "The `embedding_dim` (*D*) is the Takens delay-embedding dimension — larger values\n",
+    "The `embedding_dim` (*D*) is the Takens delay-embedding dimension - larger values\n",
     "capture more context structure at the cost of requiring a longer lookback.\n",
     "`min_seq_len = 2 * embedding_dim + 1` must be satisfied by the pipeline's `lookback_window_size`.\n",
     "\n",
@@ -539,11 +541,11 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "## 5. ML Comparison — LightGBM\n",
+    "## 5. ML Comparison: LightGBM\n",
     "\n",
-    "We now run LightGBM through the same pipeline and CV schedule.  Default hyperparameters only — the goal is a fair apples-to-apples comparison, not a tuned champion model.\n",
+    "We now run LightGBM through the same pipeline and CV schedule.  Default hyperparameters only - the goal is a fair apples-to-apples comparison, not a tuned champion model.\n",
     "\n",
-    "We also pass `Ghi` (global horizontal irradiance) as an exogenous feature, which is known for the full horizon (solar forecasts are available).  The baselines do not use this signal — so any improvement from LightGBM is partly due to the additional input."
+    "We also pass `Ghi` (global horizontal irradiance) as an exogenous feature, which is known for the full horizon (solar forecasts are available).  The baselines do not use this signal - so any improvement from LightGBM is partly due to the additional input."
    ]
   },
   {
@@ -652,8 +654,8 @@
     "| Score | Meaning |\n",
     "|---|---|\n",
     "| **> 0 %** | Model beats the baseline by that margin |\n",
-    "| **= 0 %** | Tied — added complexity brings no benefit |\n",
-    "| **< 0 %** | Model is *worse* than the naive reference — investigate data and features |\n",
+    "| **= 0 %** | Tied - added complexity brings no benefit |\n",
+    "| **< 0 %** | Model is *worse* than the naive reference - investigate data and features |\n",
     "\n",
     "We use the **best baseline** (lowest MAE across the four parameter-free models) as the reference."
    ]
@@ -783,10 +785,10 @@
     "- [x] Plotted forecast traces to understand each model's failure mode\n",
     "\n",
     "**Key takeaways**\n",
-    "1. Always run baselines before ML — they are fast, interpretable, and diagnostic\n",
+    "1. Always run baselines before ML - they are fast, interpretable, and diagnostic\n",
     "2. Seasonal Naive is the hardest cheap baseline to beat on any periodic series\n",
     "3. A skill score near 0 % means added complexity provides no value\n",
-    "4. A negative skill score is a red flag — investigate data and features before tuning\n",
+    "4. A negative skill score is a red flag - investigate data and features before tuning\n",
     "5. Forecast traces reveal failure modes that aggregate metrics hide\n",
     "\n",
     "---\n",

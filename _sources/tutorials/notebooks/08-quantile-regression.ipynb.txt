@@ -5,7 +5,7 @@
    "id": "0",
    "metadata": {},
    "source": [
-    "# 08 — Quantile Regression\n",
+    "# Quantile Regression\n",
     "\n",
     "![Level](https://img.shields.io/badge/level-intermediate-yellow) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange)![Time](https://img.shields.io/badge/time-~20%20min-lightgrey)\n",
     "\n",
@@ -13,12 +13,12 @@
     "\n",
     "**What you'll build**\n",
     "\n",
-    "Prediction-interval forecasters using QR-LightGBM, QR-XGBoost, and FPQR-LightGBM, evaluated on PICP, NMPI, and Winkler score — giving you calibrated uncertainty estimates instead of point predictions.\n",
+    "Prediction-interval forecasters using QR-LightGBM, QR-XGBoost, and FPQR-LightGBM, evaluated on PICP, NMPI, and Winkler score - giving you calibrated uncertainty estimates instead of point predictions.\n",
     "\n",
     "**Prerequisites**\n",
-    "- [01 — Getting Started](01-getting-started.ipynb) (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)\n",
-    "- [05 — ML Point Forecasting](05-ml-point-forecasting.ipynb) (gradient-boosted trees)\n",
-    "- [07 — Neural Networks](07-neural-networks.ipynb) (helpful but optional)\n",
+    "- [01 - Getting Started](01-getting-started.ipynb) (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)\n",
+    "- [05 - ML Point Forecasting](05-ml-point-forecasting.ipynb) (gradient-boosted trees)\n",
+    "- [07 - Neural Networks](07-neural-networks.ipynb) (helpful but optional)\n",
     "- Python: basic statistics, quartile concepts\n",
     "\n",
     "**Learning objectives**\n",
@@ -37,22 +37,22 @@
    "id": "1",
    "metadata": {},
    "source": [
-    "## 1. Motivation — Why a Single Number Is Not Enough\n",
+    "## 1. Motivation: Why a Single Number Is Not Enough\n",
     "\n",
     "A point forecast gives one number per time step: the model's best guess for net load at 14:30 tomorrow.  \n",
     "For many operational decisions that single number is not enough.\n",
     "\n",
     "**Energy dispatch example**  \n",
     "A grid operator scheduling spinning reserves needs to know not just the expected net load but the *range of plausible outcomes*. If net load could realistically be 15 % higher than the median, reserves must cover that upside. Ignoring uncertainty leads to either:\n",
-    "- **under-reservation** — system reliability at risk, or  \n",
-    "- **over-reservation** — unnecessarily expensive.\n",
+    "- **under-reservation**: system reliability at risk, or  \n",
+    "- **over-reservation**: unnecessarily expensive.\n",
     "\n",
-    "**Prediction intervals** address this by providing a lower and upper bound that should contain the true value with a specified probability — e.g. a 90 % prediction interval should cover the actual observation 90 % of the time over many forecasts.\n",
+    "**Prediction intervals** address this by providing a lower and upper bound that should contain the true value with a specified probability - e.g. a 90 % prediction interval should cover the actual observation 90 % of the time over many forecasts.\n",
     "\n",
     "**Quantile Regression (QR)** is one of the most practical approaches:\n",
     "- Train separate models (or a single multi-output model) for different quantile levels, e.g. q=0.05, 0.5, 0.95.\n",
     "- The q=0.05 output is the lower bound and q=0.95 the upper bound for a 90 % interval.\n",
-    "- No distributional assumption is required — the model learns the conditional quantiles directly from data.\n",
+    "- No distributional assumption is required - the model learns the conditional quantiles directly from data.\n",
     "- Conformal post-processing can be applied to provide coverage guarantees."
    ]
   },
@@ -61,7 +61,7 @@
    "id": "2",
    "metadata": {},
    "source": [
-    "> **Key concept — quantile regression and pinball loss**\n",
+    "> **Key concept - quantile regression and pinball loss**\n",
     ">\n",
     "> A standard regression model minimises the **mean squared error** (MSE), which targets the conditional mean of the output. A quantile regression model instead minimises the **pinball loss** (also called quantile loss) for a chosen quantile level τ ∈ (0, 1):\n",
     ">\n",
@@ -70,11 +70,11 @@
     "> ```\n",
     ">\n",
     "> Concretely:\n",
-    "> - When τ = 0.5, the pinball loss is equivalent to mean absolute error — the model targets the **median**.\n",
-    "> - When τ = 0.05, over-predictions are penalised 19× more than under-predictions — the model learns the **5th percentile** of the conditional distribution.\n",
-    "> - When τ = 0.95, under-predictions are penalised 19× more — the model learns the **95th percentile**.\n",
+    "> - When τ = 0.5, the pinball loss is equivalent to mean absolute error - the model targets the **median**.\n",
+    "> - When τ = 0.05, over-predictions are penalised 19× more than under-predictions - the model learns the **5th percentile** of the conditional distribution.\n",
+    "> - When τ = 0.95, under-predictions are penalised 19× more - the model learns the **95th percentile**.\n",
     ">\n",
-    "> The pair (q₀.₀₅, q₀.₉₅) forms a **90 % prediction interval**. No distributional assumption (Gaussian, etc.) is required — the model learns the quantile structure directly from data."
+    "> The pair (q₀.₀₅, q₀.₉₅) forms a **90 % prediction interval**. No distributional assumption (Gaussian, etc.) is required - the model learns the quantile structure directly from data."
    ]
   },
   {
@@ -82,7 +82,7 @@
    "id": "3",
    "metadata": {},
    "source": [
-    "> **Key concept — prediction interval evaluation metrics**\n",
+    "> **Key concept - prediction interval evaluation metrics**\n",
     ">\n",
     "> Three complementary metrics assess whether a prediction interval is both **reliable** and **sharp**:\n",
     ">\n",
@@ -96,7 +96,7 @@
     "> - **NMPI** measures sharpness: are the bounds tight? An interval covering ±∞ has perfect PICP but is useless in practice.\n",
     "> - **Winkler score** synthesises both: it equals the interval width when the actual is inside, and adds a large penalty when the actual falls outside. Lower is better, and it rewards narrow-but-accurate intervals over wide-but-safe ones.\n",
     ">\n",
-    "> Raw QR bounds carry no formal coverage guarantee — empirical PICP may fall below `1 − α`. For a guarantee, apply conformal calibration (NB09)."
+    "> Raw QR bounds carry no formal coverage guarantee - empirical PICP may fall below `1 − α`. For a guarantee, apply conformal calibration (NB09)."
    ]
   },
   {
@@ -104,14 +104,14 @@
    "id": "4",
    "metadata": {},
    "source": [
-    "> **Key concept — FPQR vs fixed-grid QR**\n",
+    "> **Key concept - FPQR vs fixed-grid QR**\n",
     ">\n",
-    "> Standard quantile regression uses a **fixed grid** of τ values specified at training time (e.g. 0.05, 0.10, …, 0.95). The model learns a separate output for each τ — an independent pinball loss is minimised for each level.\n",
+    "> Standard quantile regression uses a **fixed grid** of τ values specified at training time (e.g. 0.05, 0.10, …, 0.95). The model learns a separate output for each τ - an independent pinball loss is minimised for each level.\n",
     ">\n",
     "> **Flexible Proportional Quantile Regression (FPQR)** takes a different approach: a small `QuantileProposal` network learns to *propose* its own quantile grid adaptively, per sample and per horizon step. This has two practical consequences:\n",
     ">\n",
-    "> 1. **Coverage shape adapts to the data** — if the conditional distribution is skewed or multimodal, FPQR can allocate more quantile mass where uncertainty is highest.\n",
-    "> 2. **Point forecast quality improves** — instead of reading off the median from a fixed grid, FPQR computes a weighted expectation ∑ τ̂ᵢ · qᵢ, which is a smoother and often more accurate point estimate.\n",
+    "> 1. **Coverage shape adapts to the data** - if the conditional distribution is skewed or multimodal, FPQR can allocate more quantile mass where uncertainty is highest.\n",
+    "> 2. **Point forecast quality improves** - instead of reading off the median from a fixed grid, FPQR computes a weighted expectation ∑ τ̂ᵢ · qᵢ, which is a smoother and often more accurate point estimate.\n",
     ">\n",
     "> The trade-off: fixed QR lets you audit specific quantile levels (e.g. \"what is the 5th percentile?\") directly. FPQR returns an averaged grid that is harder to interpret at a specific level but better captures complex uncertainty shapes.\n",
     ">\n",
@@ -178,6 +178,8 @@
     "data = data[[\"timestamp\", \"NetLoad(kW)\", \"Ghi\", \"Temperature\"]]\n",
     "data[\"timestamp\"] = pd.to_datetime(data[\"timestamp\"])\n",
     "data = data.drop_duplicates(subset=\"timestamp\").reset_index(drop=True)\n",
+    "# Restrict to 2019-2020 to keep tutorial execution fast\n",
+    "data = data[(data[\"timestamp\"] >= \"2019-01-01\") & (data[\"timestamp\"] <= \"2020-12-31\")].reset_index(drop=True)\n",
     "\n",
     "log.info(\"Shape: %s\", data.shape)\n",
     "twiga_gt(GT(data.head().round(2)))"
@@ -205,7 +207,7 @@
     "splits_df = pd.DataFrame(\n",
     "    {\n",
     "        \"Split\": [\"Train\", \"Validation\", \"Test\"],\n",
-    "        \"Period\": [\"before 2021-01-01\", \"2021-01-01 – 2021-06-30\", \"2021-07-01 onwards\"],\n",
+    "        \"Period\": [\"before 2020-01-01\", \"2020-01-01 – 2020-06-30\", \"2020-07-01 onwards\"],\n",
     "        \"Purpose\": [\"Model learning\", \"Early-stopping / overfitting guard\", \"Final honest evaluation\"],\n",
     "    }\n",
     ")\n",
@@ -226,9 +228,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "train_df = data[data[\"timestamp\"] < \"2021-01-01\"].reset_index(drop=True)\n",
-    "val_df = data[(data[\"timestamp\"] >= \"2021-01-01\") & (data[\"timestamp\"] < \"2021-07-01\")].reset_index(drop=True)\n",
-    "test_df = data[data[\"timestamp\"] >= \"2021-07-01\"].reset_index(drop=True)\n",
+    "train_df = data[data[\"timestamp\"] < \"2020-01-01\"].reset_index(drop=True)\n",
+    "val_df = data[(data[\"timestamp\"] >= \"2020-01-01\") & (data[\"timestamp\"] < \"2020-07-01\")].reset_index(drop=True)\n",
+    "test_df = data[data[\"timestamp\"] >= \"2020-07-01\"].reset_index(drop=True)\n",
     "\n",
     "log.info(\n",
     "    f\"train : {train_df.shape[0]:,} rows  ({train_df['timestamp'].min().date()} → {train_df['timestamp'].max().date()})\"\n",
@@ -278,11 +280,11 @@
    "id": "14",
    "metadata": {},
    "source": [
-    "## 3. ML Quantile Model — QR XGBoost\n",
+    "## 3. ML Quantile Model: QR XGBoost\n",
     "\n",
     "`QRXGBOOSTConfig` trains a multi-quantile XGBoost model. Each quantile level is a separate output; the median (`q=0.5`) becomes the point forecast and the outer quantiles (`q=0.05`, `q=0.95`) form a 90 % prediction band.\n",
     "\n",
-    "The interval emerges directly from the model — **no distributional assumption required**. For coverage-guaranteed intervals via conformal post-processing, see NB09 — Conformal Prediction."
+    "The interval emerges directly from the model - **no distributional assumption required**. For coverage-guaranteed intervals via conformal post-processing, see NB09 - Conformal Prediction."
    ]
   },
   {
@@ -315,9 +317,9 @@
    "source": [
     "**Reading QR XGBoost quantile metrics**\n",
     "\n",
-    "- **`pinball`** — the mean pinball loss averaged across all quantile levels and time steps. Lower is better; compare across models on the same dataset but do not compare across different `alpha` settings.\n",
-    "- **`sharpness`** — mean interval width (upper − lower). Smaller values indicate tighter, more informative intervals — desirable as long as PICP is maintained.\n",
-    "- **`mae` / `rmse`** — point forecast quality using the median quantile as the prediction. These match what you would see from a standard point-forecast model."
+    "- **`pinball`**: the mean pinball loss averaged across all quantile levels and time steps. Lower is better; compare across models on the same dataset but do not compare across different `alpha` settings.\n",
+    "- **`sharpness`**: mean interval width (upper − lower). Smaller values indicate tighter, more informative intervals - desirable as long as PICP is maintained.\n",
+    "- **`mae` / `rmse`**: point forecast quality using the median quantile as the prediction. These match what you would see from a standard point-forecast model."
    ]
   },
   {
@@ -379,9 +381,9 @@
    "id": "20",
    "metadata": {},
    "source": [
-    "## 4. NN Quantile Model — MLPF QR\n",
+    "## 4. NN Quantile Model: MLPF QR\n",
     "\n",
-    "`MLPFConfig(distribution=\"qr\")` adds a Group Additive Model head on top of the MLP encoder, giving the model an inductive bias toward additive feature contributions — useful when solar irradiance and calendar effects have near-separable impacts on net load.\n",
+    "`MLPFConfig(distribution=\"qr\")` adds a Group Additive Model head on top of the MLP encoder, giving the model an inductive bias toward additive feature contributions - useful when solar irradiance and calendar effects have near-separable impacts on net load.\n",
     "\n",
     "As with the ML model, the quantile outputs form the interval directly. No calibration step is needed to obtain bounds."
    ]
@@ -433,7 +435,7 @@
    "id": "24",
    "metadata": {},
    "source": [
-    "## 4b. NN Flexible-Quantile Model — MLPGAM FPQR\n",
+    "## 4b. NN Flexible-Quantile Model: MLPGAM FPQR\n",
     "\n",
     "`MLPGAMFPQRConfig` pairs the GAM backbone with a **Flexible Proportional Quantile Regression** head.\n",
     "Unlike fixed-grid QR (where `τ` values are pre-specified), FPQR learns its own quantile grid\n",
@@ -500,38 +502,8 @@
    ]
   },
   {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "28",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "log.info(\"Available columns in interval result: %s\", pred_interval_qr_xg.columns.tolist())"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "29",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "p = plot_forecast(\n",
-    "    pred_interval_qr_xg.iloc[: 7 * 48],\n",
-    "    actual_col=\"Actual\",\n",
-    "    forecast_col=\"forecast\",\n",
-    "    lower_col=\"lower\",\n",
-    "    upper_col=\"upper\",\n",
-    "    title=\"QR XGBoost — 90% Prediction Interval (first 7 days of test)\",\n",
-    "    y_label=\"NetLoad (kW)\",\n",
-    "    x_label=\"Time step (30-min)\",\n",
-    ")\n",
-    "p"
-   ]
-  },
-  {
    "cell_type": "markdown",
-   "id": "30",
+   "id": "28",
    "metadata": {},
    "source": [
     "### Side-by-side comparison across models"
@@ -540,7 +512,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "31",
+   "id": "29",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -565,19 +537,19 @@
   },
   {
    "cell_type": "markdown",
-   "id": "32",
+   "id": "30",
    "metadata": {},
    "source": [
     "### Key observations\n",
     "\n",
     "- **PICP** may fall short of the nominal target (`1 - alpha`) because raw quantile bounds carry no formal coverage guarantee. For guaranteed coverage, apply conformal calibration (NB09).\n",
-    "- **NMPI** increases as `alpha` decreases (wider intervals for higher coverage) — the fundamental coverage-sharpness trade-off.\n",
+    "- **NMPI** increases as `alpha` decreases (wider intervals for higher coverage) - the fundamental coverage-sharpness trade-off.\n",
     "- **Winkler score** synthesises both. The best alpha is context-dependent: energy operators with high cost of misses favour lower alpha (95 % coverage); real-time spot-market participants may tolerate alpha=0.20 for sharper signals."
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "33",
+   "id": "31",
    "metadata": {},
    "source": [
     "## Wrapping up\n",
@@ -587,30 +559,30 @@
     "- [x] Trained QR-XGBoost and MLPGAM QR (fixed-grid) quantile models via the Twiga API\n",
     "- [x] Trained MLPGAM FPQR with a learned quantile grid and compared it to fixed-grid QR\n",
     "- [x] Evaluated interval quality with PICP, NMPI, and Winkler score\n",
-    "- [x] Explored the coverage–sharpness trade-off across alpha levels (0.05, 0.10, 0.20)\n",
+    "- [x] Explored the coverage - sharpness trade-off across alpha levels (0.05, 0.10, 0.20)\n",
     "- [x] Visualised prediction intervals as shaded band plots, grids, and fan charts\n",
     "\n",
     "**Key takeaways**\n",
     "\n",
     "1. The pinball loss targets specific conditional quantiles; pairs of quantiles form prediction intervals with no distributional assumption needed.\n",
-    "2. PICP measures reliability (is the interval wide enough?); NMPI measures sharpness (is it tight?); Winkler score synthesises both — always report all three.\n",
+    "2. PICP measures reliability (is the interval wide enough?); NMPI measures sharpness (is it tight?); Winkler score synthesises both - always report all three.\n",
     "3. Raw QR intervals may under-cover (PICP < 1 − alpha). For a formal guarantee, apply conformal calibration (NB09).\n",
     "4. FPQR adapts its quantile grid per sample, giving better uncertainty shape on skewed signals; fixed-grid QR is easier to audit at specific quantile levels.\n",
-    "5. Increasing alpha narrows the band (higher sharpness) but risks under-coverage — choose alpha based on the operational cost of missing events.\n",
+    "5. Increasing alpha narrows the band (higher sharpness) but risks under-coverage - choose alpha based on the operational cost of missing events.\n",
     "\n",
     "---\n",
     "\n",
     "## What's next?\n",
     "\n",
-    "**[08 — Parametric Distributions](08-parametric-distributions.ipynb)** — Move from non-parametric quantile bounds to full distribution forecasting: Normal, Laplace, Gamma, and Beta heads learn their parameters directly, producing richer uncertainty estimates via negative log-likelihood training.\n",
+    "**[08 - Parametric Distributions](08-parametric-distributions.ipynb)** - Move from non-parametric quantile bounds to full distribution forecasting: Normal, Laplace, Gamma, and Beta heads learn their parameters directly, producing richer uncertainty estimates via negative log-likelihood training.\n",
     "\n",
-    "**[09 — Conformal Prediction](09-conformal-prediction.ipynb)** — Apply conformal calibration on top of any model (including QR) to obtain **formal coverage guarantees** — empirical PICP will meet or exceed `1 − alpha` by construction."
+    "**[09 - Conformal Prediction](09-conformal-prediction.ipynb)** - Apply conformal calibration on top of any model (including QR) to obtain **formal coverage guarantees** - empirical PICP will meet or exceed `1 − alpha` by construction."
    ]
   },
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "34",
+   "id": "32",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -645,7 +617,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "35",
+   "id": "33",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -688,7 +660,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "36",
+   "id": "34",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -776,89 +748,27 @@
   },
   {
    "cell_type": "markdown",
-   "id": "37",
+   "id": "35",
    "metadata": {},
    "source": [
     "---\n",
     "## Fan Chart\n",
     "\n",
     "`plot_quantile_fan` renders graduated ribbon bands from widest to narrowest,\n",
-    "with the median line on top — the standard chart for communicating quantile\n",
+    "with the median line on top - the standard chart for communicating quantile\n",
     "forecast uncertainty in energy and meteorological forecasting."
    ]
   },
   {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "38",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "from twiga.core.plot import plot_forecast_intervals, plot_quantile_fan\n",
-    "\n",
-    "p_fan = plot_quantile_fan(\n",
-    "    pred_interval_qr_xg.iloc[: 7 * 48],\n",
-    "    actual_col=\"Actual\",\n",
-    "    median_col=\"forecast\",\n",
-    "    quantile_pairs=[(\"lower\", \"upper\")],\n",
-    "    title=\"QR XGBoost — Fan Chart (90 % interval)\",\n",
-    "    y_label=\"Net Load (kW)\",\n",
-    "    fig_size=(820, 380),\n",
-    ")\n",
-    "p_fan"
-   ]
-  },
-  {
    "cell_type": "markdown",
-   "id": "39",
+   "id": "36",
    "metadata": {},
    "source": [
     "## Interval Comparison\n",
     "\n",
     "`plot_forecast_intervals` overlays multiple models' prediction intervals as\n",
-    "semi-transparent ribbons — useful for visually comparing sharpness and coverage\n",
+    "semi-transparent ribbons - useful for visually comparing sharpness and coverage\n",
     "across methods on the same axis."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "40",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "n_plot = 48  # one day\n",
-    "\n",
-    "base_df = pd.DataFrame(\n",
-    "    {\n",
-    "        \"Actual\": pred_interval_qr_xg[\"Actual\"].values[:n_plot],\n",
-    "        \"xg_lo\": pred_interval_qr_xg[\"lower\"].values[:n_plot],\n",
-    "        \"xg_hi\": pred_interval_qr_xg[\"upper\"].values[:n_plot],\n",
-    "        \"xg_fc\": pred_interval_qr_xg[\"forecast\"].values[:n_plot],\n",
-    "        \"gam_lo\": pred_interval_qr_gam[\"lower\"].values[:n_plot],\n",
-    "        \"gam_hi\": pred_interval_qr_gam[\"upper\"].values[:n_plot],\n",
-    "        \"gam_fc\": pred_interval_qr_gam[\"forecast\"].values[:n_plot],\n",
-    "        \"fpqr_lo\": pred_interval_fpqr_gam_iv[\"lower\"].values[:n_plot],\n",
-    "        \"fpqr_hi\": pred_interval_fpqr_gam_iv[\"upper\"].values[:n_plot],\n",
-    "        \"fpqr_fc\": pred_interval_fpqr_gam_iv[\"forecast\"].values[:n_plot],\n",
-    "    }\n",
-    ")\n",
-    "\n",
-    "interval_specs = [\n",
-    "    {\"model\": \"QR XGBoost\", \"lower\": \"xg_lo\", \"upper\": \"xg_hi\", \"center\": \"xg_fc\"},\n",
-    "    {\"model\": \"MLPGAMQR\", \"lower\": \"gam_lo\", \"upper\": \"gam_hi\", \"center\": \"gam_fc\"},\n",
-    "    {\"model\": \"MLPGAMFPQR\", \"lower\": \"fpqr_lo\", \"upper\": \"fpqr_hi\", \"center\": \"fpqr_fc\"},\n",
-    "]\n",
-    "\n",
-    "p_cmp = plot_forecast_intervals(\n",
-    "    base_df,\n",
-    "    interval_specs=interval_specs,\n",
-    "    actual_col=\"Actual\",\n",
-    "    title=\"QR XGBoost vs MLPGAM QR vs MLPGAM FPQR — 90 % Interval Comparison\",\n",
-    "    y_label=\"Net Load (kW)\",\n",
-    "    fig_size=(820, 380),\n",
-    ")\n",
-    "p_cmp"
    ]
   }
  ],

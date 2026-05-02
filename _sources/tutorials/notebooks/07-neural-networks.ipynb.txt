@@ -5,7 +5,7 @@
    "id": "0",
    "metadata": {},
    "source": [
-    "# 07 — Neural Network Models\n",
+    "# Neural Network Models\n",
     "\n",
     "![Level](https://img.shields.io/badge/level-intermediate-yellow) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~30%20min-lightgrey)\n",
     "\n",
@@ -13,13 +13,13 @@
     "\n",
     "**What you'll build**\n",
     "\n",
-    "Two neural network forecasters — a multi-layer perceptron (`MLPF`) and N-HiTS — trained with PyTorch Lightning on the MLVS-PT net-load dataset, benchmarked against the LightGBM baseline from NB05, and compared on MAE and training speed.\n",
+    "Two neural network forecasters - a multi-layer perceptron (`MLPF`) and N-HiTS - trained with PyTorch Lightning on the MLVS-PT net-load dataset, benchmarked against the LightGBM baseline from NB05, and compared on MAE and training speed.\n",
     "\n",
     "**Prerequisites**\n",
-    "- [01 — Getting Started](01-getting-started.ipynb) (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)\n",
-    "- [03 — Feature Engineering](03-feature-engineering.ipynb) (understanding the (B, L, F) tensor)\n",
-    "- [05 — ML Point Forecasting](05-ml-point-forecasting.ipynb) (ML baseline to beat)\n",
-    "- [06 — Backtesting & Evaluation](06-backtesting-and-evaluation.ipynb) (metric interpretation)\n",
+    "- [01 - Getting Started](01-getting-started.ipynb) (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)\n",
+    "- [03 - Feature Engineering](03-feature-engineering.ipynb) (understanding the (B, L, F) tensor)\n",
+    "- [05 - ML Point Forecasting](05-ml-point-forecasting.ipynb) (ML baseline to beat)\n",
+    "- [06 - Backtesting & Evaluation](06-backtesting-and-evaluation.ipynb) (metric interpretation)\n",
     "- Python: basic PyTorch awareness (not required to write any)\n",
     "\n",
     "**Learning objectives**\n",
@@ -38,16 +38,16 @@
    "id": "1",
    "metadata": {},
    "source": [
-    "> **Key concept — why neural networks?**\n",
+    "> **Key concept - why neural networks?**\n",
     ">\n",
     "> Gradient boosting (LightGBM, XGBoost, CatBoost) is hard to beat on tabular data with hand-crafted features. Neural networks earn their keep when:\n",
     ">\n",
-    "> - **The dataset is large** — NNs scale better with data volume; tree models plateau.\n",
-    "> - **Raw sequences matter** — NNs can learn from the full look-back window without manual lag selection.\n",
-    "> - **You need probabilistic outputs** — distribution heads (NB07–08) attach naturally to NN backbones.\n",
-    "> - **Transfer learning is on the table** — pretrained NN weights can be fine-tuned on new sites.\n",
+    "> - **The dataset is large** - NNs scale better with data volume; tree models plateau.\n",
+    "> - **Raw sequences matter** - NNs can learn from the full look-back window without manual lag selection.\n",
+    "> - **You need probabilistic outputs** - distribution heads (NB07 - 08) attach naturally to NN backbones.\n",
+    "> - **Transfer learning is on the table** - pretrained NN weights can be fine-tuned on new sites.\n",
     ">\n",
-    "> With only `max_epochs=5` in this tutorial, LightGBM will likely win. That is intentional — it illustrates the training-budget trade-off. With ≥ 50 epochs and a proper learning-rate schedule the NN models typically match or surpass tree-based models on this dataset."
+    "> With only `max_epochs=5` in this tutorial, LightGBM will likely win. That is intentional - it illustrates the training-budget trade-off. With ≥ 50 epochs and a proper learning-rate schedule the NN models typically match or surpass tree-based models on this dataset."
    ]
   },
   {
@@ -111,6 +111,8 @@
     "data = data[[\"timestamp\", \"NetLoad(kW)\", \"Ghi\", \"Temperature\"]]\n",
     "data[\"timestamp\"] = pd.to_datetime(data[\"timestamp\"])\n",
     "data = data.drop_duplicates(subset=\"timestamp\").reset_index(drop=True)\n",
+    "# Restrict to 2019-2020 to keep tutorial execution fast\n",
+    "data = data[(data[\"timestamp\"] >= \"2019-01-01\") & (data[\"timestamp\"] <= \"2020-12-31\")].reset_index(drop=True)\n",
     "\n",
     "log.info(\"Shape: %s\", data.shape)\n",
     "twiga_gt(GT(data.head().round(2)))"
@@ -134,7 +136,7 @@
     "splits_df = pd.DataFrame(\n",
     "    {\n",
     "        \"Split\": [\"Train\", \"Validation\", \"Test\"],\n",
-    "        \"Period\": [\"before 2021-01-01\", \"2021-01-01-2021-06-30\", \"2021-07-01 onwards\"],\n",
+    "        \"Period\": [\"before 2020-01-01\", \"2020-01-01-2020-06-30\", \"2020-07-01 onwards\"],\n",
     "        \"Purpose\": [\"Model learning\", \"Early-stopping / overfitting guard\", \"Final honest evaluation\"],\n",
     "    }\n",
     ")\n",
@@ -155,9 +157,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "train_df = data[data[\"timestamp\"] < \"2021-01-01\"].reset_index(drop=True)\n",
-    "val_df = data[(data[\"timestamp\"] >= \"2021-01-01\") & (data[\"timestamp\"] < \"2021-07-01\")].reset_index(drop=True)\n",
-    "test_df = data[data[\"timestamp\"] >= \"2021-07-01\"].reset_index(drop=True)\n",
+    "train_df = data[data[\"timestamp\"] < \"2020-01-01\"].reset_index(drop=True)\n",
+    "val_df = data[(data[\"timestamp\"] >= \"2020-01-01\") & (data[\"timestamp\"] < \"2020-07-01\")].reset_index(drop=True)\n",
+    "test_df = data[data[\"timestamp\"] >= \"2020-07-01\"].reset_index(drop=True)\n",
     "\n",
     "log.info(\n",
     "    f\"train : {train_df.shape[0]:,} rows  ({train_df['timestamp'].min().date()} → {train_df['timestamp'].max().date()})\"\n",
@@ -175,7 +177,7 @@
    "source": [
     "## 2. Data config\n",
     "\n",
-    "`DataPipelineConfig` is identical to previous notebooks — same target, resolution, location, features, and horizon. This ensures that all models are evaluated on the exact same problem setup."
+    "`DataPipelineConfig` is identical to previous notebooks - same target, resolution, location, features, and horizon. This ensures that all models are evaluated on the exact same problem setup."
    ]
   },
   {
@@ -213,15 +215,15 @@
    "id": "11",
    "metadata": {},
    "source": [
-    "## 3. NN Config Dimensions — Auto-populated\n",
+    "## 3. NN Config Dimensions: Auto-populated\n",
     "\n",
-    "ML model configs (e.g. `LIGHTGBMConfig`) need no knowledge of input shape — the library infers it at training time.\n",
+    "ML model configs (e.g. `LIGHTGBMConfig`) need no knowledge of input shape - the library infers it at training time.\n",
     "\n",
     "NN configs are different. A neural network must know:\n",
     "\n",
-    "- **`num_target_feature`** — number of target variables to forecast\n",
-    "- **`forecast_horizon`** — how many steps ahead to predict\n",
-    "- **`lookback_window_size`** — length of the input sequence\n",
+    "- **`num_target_feature`**: number of target variables to forecast\n",
+    "- **`forecast_horizon`**: how many steps ahead to predict\n",
+    "- **`lookback_window_size`**: length of the input sequence\n",
     "- **`num_historical_features`**, **`num_calendar_features`**, **`num_exogenous_features`**, **`num_future_covariates`**\n",
     "\n",
     "**In the current API, all of these default to `0` and are auto-populated by `TwigaForecaster`** from `DataPipelineConfig`.  \n",
@@ -230,7 +232,7 @@
     "```python\n",
     "from twiga.models.nn import MLPFConfig\n",
     "\n",
-    "# Dims are filled automatically — just set training knobs\n",
+    "# Dims are filled automatically - just set training knobs\n",
     "mlpf_config = MLPFConfig(max_epochs=5, rich_progress_bar=False)\n",
     "```\n",
     "\n",
@@ -242,15 +244,15 @@
    "id": "12",
    "metadata": {},
    "source": [
-    "> **Key concept — sequence embedding and the (B, L, F) tensor**\n",
+    "> **Key concept - sequence embedding and the (B, L, F) tensor**\n",
     ">\n",
     "> Every Twiga NN model receives inputs as a 3-D tensor of shape **(B, L, F)**:\n",
     ">\n",
     "> | Axis | Meaning | Example (this notebook) |\n",
     "> |------|---------|------------------------|\n",
-    "> | B | Batch size — number of windows processed simultaneously | 32 windows |\n",
-    "> | L | Lookback length — time steps in the input sequence | 96 steps = 48 h |\n",
-    "> | F | Feature count — target + calendar + exogenous features per step | ~5 features |\n",
+    "> | B | Batch size - number of windows processed simultaneously | 32 windows |\n",
+    "> | L | Lookback length - time steps in the input sequence | 96 steps = 48 h |\n",
+    "> | F | Feature count - target + calendar + exogenous features per step | ~5 features |\n",
     ">\n",
     "> Before entering the MLP encoder, each time step can optionally be projected into a richer latent space via a **value embedding** (e.g. `LinearEmb` applies a shared linear layer across all L steps), and **positional information** is injected via a **positional embedding** (e.g. `LearnPosEmb` adds a trained vector to each position).  Section 8 of this notebook shows how to toggle these with config knobs."
    ]
@@ -260,7 +262,7 @@
    "id": "13",
    "metadata": {},
    "source": [
-    "## 4. MLPF — Plain MLP backbone\n",
+    "## 4. MLPF: Plain MLP backbone\n",
     "\n",
     "**MLPF** (MLP Fusion) is the baseline neural architecture. It encodes past and future covariates with separate MLP branches and fuses them via attention, weighted sum, or addition before predicting the horizon.\n",
     "\n",
@@ -272,14 +274,14 @@
    "id": "14",
    "metadata": {},
    "source": [
-    "> **Key concept — Lightning training loop**\n",
+    "> **Key concept - Lightning training loop**\n",
     ">\n",
     "> Twiga NN models are trained with [PyTorch Lightning](https://lightning.ai/), which manages the boilerplate (device placement, gradient steps, logging) so you only set high-level knobs:\n",
     ">\n",
-    "> - **`max_epochs`** — how many full passes over the training set. More epochs = more learning time, but also more risk of overfitting. In production, 50–200 epochs is typical.\n",
-    "> - **Early stopping** — Lightning monitors the validation loss after each epoch. If it does not improve for `patience` consecutive epochs the run terminates early, saving the best checkpoint automatically.\n",
-    "> - **Checkpoint** — the weights at the epoch with the lowest validation loss are saved to `checkpoints/<project_name>/<model>/best_*.ckpt`. You can reload them at any time (Section 9).\n",
-    "> - **`rich_progress_bar=False`** — we disable the progress bar here to keep notebook output clean. Set it to `True` to watch loss values epoch-by-epoch during development."
+    "> - **`max_epochs`** - how many full passes over the training set. More epochs = more learning time, but also more risk of overfitting. In production, 50 - 200 epochs is typical.\n",
+    "> - **Early stopping** - Lightning monitors the validation loss after each epoch. If it does not improve for `patience` consecutive epochs the run terminates early, saving the best checkpoint automatically.\n",
+    "> - **Checkpoint** - the weights at the epoch with the lowest validation loss are saved to `checkpoints/<project_name>/<model>/best_*.ckpt`. You can reload them at any time (Section 9).\n",
+    "> - **`rich_progress_bar=False`** - we disable the progress bar here to keep notebook output clean. Set it to `True` to watch loss values epoch-by-epoch during development."
    ]
   },
   {
@@ -359,7 +361,7 @@
    "source": [
     "**Reading the MLPF metrics**\n",
     "\n",
-    "With `max_epochs=5`, MLPF is severely under-trained. A Pearson correlation near 0 means the forecast is almost uncorrelated with the actuals — the model has not yet learned the daily cycle. This is expected at 5 epochs and will improve significantly with more training. Use it as a baseline lower bound, not a performance ceiling."
+    "With `max_epochs=5`, MLPF is severely under-trained. A Pearson correlation near 0 means the forecast is almost uncorrelated with the actuals - the model has not yet learned the daily cycle. This is expected at 5 epochs and will improve significantly with more training. Use it as a baseline lower bound, not a performance ceiling."
    ]
   },
   {
@@ -367,7 +369,7 @@
    "id": "21",
    "metadata": {},
    "source": [
-    "## 5. MLPGAM — MLP + Group Additive Model\n",
+    "## 5. MLPGAM: MLP + Group Additive Model\n",
     "\n",
     "**MLPGAM** augments the MLP backbone with a Additive Model (GAM) branch. The GAM branch learns per-feature additive effects (similar in spirit to classical GAMs), which are then combined with the MLP's global representation. This often improves interpretability and generalisation on structured tabular-temporal data.\n",
     "\n",
@@ -420,7 +422,7 @@
    "id": "25",
    "metadata": {},
    "source": [
-    "## 6. MLPGAF — MLP + Group Additive Neural Forecast\n",
+    "## 6. MLPGAF: MLP + Group Additive Neural Forecast\n",
     "\n",
     "**MLPGAF** replaces the simple combination step with a Gated Attention Fusion (GAF) mechanism. A learned gate decides, for each position and feature group, how much weight to give to each input stream. This can capture non-linear inter-feature interactions that the plain MLP fusion misses."
    ]
@@ -462,7 +464,7 @@
    "id": "28",
    "metadata": {},
    "source": [
-    "## 7. N-HiTS — Hierarchical interpolation\n",
+    "## 7. N-HiTS: Hierarchical interpolation\n",
     "\n",
     "**N-HiTS** (Neural Hierarchical Interpolation for Time Series) decomposes the forecast horizon into multiple scales using a stack of MLP blocks, each operating at a different temporal resolution. Long-range trends are captured by blocks with low sampling rates; short-range patterns by blocks with high sampling rates. The outputs are summed (residual connections) to produce the final forecast."
    ]
@@ -542,7 +544,7 @@
    "source": [
     "## 9. Embedding options\n",
     "\n",
-    "All MLP-based configs expose two embedding knobs that control how raw input features are represented before entering the network. These are config-level settings — no architecture changes required."
+    "All MLP-based configs expose two embedding knobs that control how raw input features are represented before entering the network. These are config-level settings - no architecture changes required."
    ]
   },
   {
@@ -664,7 +666,7 @@
    "source": [
     "## 9. Checkpoint loading\n",
     "\n",
-    "After training, Twiga saves a Lightning checkpoint automatically. You can reload it at any time — this is useful when you want to avoid retraining or when resuming a session."
+    "After training, Twiga saves a Lightning checkpoint automatically. You can reload it at any time - this is useful when you want to avoid retraining or when resuming a session."
    ]
   },
   {
@@ -683,7 +685,7 @@
    "id": "40",
    "metadata": {},
    "source": [
-    "## 10. Results comparison — all NN models\n",
+    "## 10. Results comparison: all NN models\n",
     "\n",
     "Concatenate per-fold metrics from each model and display a unified comparison table."
    ]
@@ -712,7 +714,7 @@
    "id": "42",
    "metadata": {},
    "source": [
-    "### Forecast plot — first 7 days of test set"
+    "### Forecast plot: first 7 days of test set"
    ]
   },
   {
@@ -732,7 +734,8 @@
     "    n_samples_per_model=7 * 48,\n",
     "    y_label=\"Net Load (kW)\",\n",
     "    title=\"NN point forecasts — first 7 days of test set (max_epochs=5)\",\n",
-    "    fig_size=(920, 400),\n",
+    "    fig_width=920,\n",
+    "    panel_height=400,\n",
     ")\n",
     "p"
    ]
@@ -784,24 +787,24 @@
     "**What you did**\n",
     "- [x] Understood when and why neural networks beat gradient boosting (and vice versa)\n",
     "- [x] Learned the (B, L, F) tensor format consumed by all Twiga NN models\n",
-    "- [x] Trained four NN architectures — MLPF, MLPGAM, MLPGAF, N-HiTS — using the Lightning training loop\n",
+    "- [x] Trained four NN architectures - MLPF, MLPGAM, MLPGAF, N-HiTS - using the Lightning training loop\n",
     "- [x] Configured value embeddings (`LinearEmb`, `ConvEmb`, `PatchEmb`) and positional embeddings (`LearnPosEmb`, `RotaryEmb`) via config knobs\n",
     "- [x] Compared NN vs ML (LightGBM) performance on the same test data and understood the epoch-budget trade-off\n",
     "- [x] Reloaded a saved Lightning checkpoint without retraining\n",
     "\n",
     "**Key takeaways**\n",
     "\n",
-    "1. At low epoch counts, gradient boosting almost always wins — NNs need sufficient training time to beat tabular baselines.\n",
+    "1. At low epoch counts, gradient boosting almost always wins - NNs need sufficient training time to beat tabular baselines.\n",
     "2. MLPGAM and N-HiTS tend to converge faster than plain MLPF; they are the recommended starting architectures for energy data.\n",
-    "3. All NN dims (`forecast_horizon`, `lookback_window_size`, feature counts) are auto-populated by `TwigaForecaster` — you only need to set training hyperparameters in the config.\n",
+    "3. All NN dims (`forecast_horizon`, `lookback_window_size`, feature counts) are auto-populated by `TwigaForecaster` - you only need to set training hyperparameters in the config.\n",
     "4. Lightning checkpointing is automatic: the best-validation-loss weights are saved and can be reloaded with `.load_checkpoint()`.\n",
-    "5. Value and positional embeddings are orthogonal knobs — experiment with them independently before combining.\n",
+    "5. Value and positional embeddings are orthogonal knobs - experiment with them independently before combining.\n",
     "\n",
     "---\n",
     "\n",
     "## What's next?\n",
     "\n",
-    "**[07 — Quantile Regression](07-quantile-regression.ipynb)** — Add probabilistic outputs to your forecasts by training QR-LightGBM, QR-XGBoost, and FPQR models that produce calibrated prediction intervals instead of single point values."
+    "**[07 - Quantile Regression](07-quantile-regression.ipynb)** - Add probabilistic outputs to your forecasts by training QR-LightGBM, QR-XGBoost, and FPQR models that produce calibrated prediction intervals instead of single point values."
    ]
   },
   {

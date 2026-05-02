@@ -5,7 +5,7 @@
    "id": "0",
    "metadata": {},
    "source": [
-    "# 02 — Forecastability Analysis\n",
+    "# Forecastability Analysis\n",
     "\n",
     "![Beginner](https://img.shields.io/badge/level-beginner-green) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~20%20min-lightgrey)\n",
     "\n",
@@ -13,10 +13,10 @@
     "\n",
     "**What you'll build**\n",
     "\n",
-    "A **Forecastability Profile** for the MLVS-PT net-load signal — a concise set of metrics (entropy, seasonality, stationarity, feature correlation) that tells you how predictable the series is and directly maps to every parameter in `DataPipelineConfig`.\n",
+    "A **Forecastability Profile** for the MLVS-PT net-load signal - a concise set of metrics (entropy, seasonality, stationarity, feature correlation) that tells you how predictable the series is and directly maps to every parameter in `DataPipelineConfig`.\n",
     "\n",
     "**Prerequisites**\n",
-    "- [NB01 — Getting Started](01-getting-started.ipynb)\n",
+    "- [NB01 - Getting Started](01-getting-started.ipynb)\n",
     "- Basic Python (lists, dicts, imports)\n",
     "\n",
     "**Learning objectives**\n",
@@ -45,7 +45,7 @@
     "\n",
     "\n",
     "\n",
-    "Every analysis step in this notebook produces a concrete recommendation for `DataPipelineConfig` — the profile at the end assembles them all."
+    "Every analysis step in this notebook produces a concrete recommendation for `DataPipelineConfig` - the profile at the end assembles them all."
    ]
   },
   {
@@ -57,11 +57,11 @@
     "\n",
     "We import four groups of libraries:\n",
     "\n",
-    "- **`warnings`** — suppress noisy deprecation messages so output stays readable.\n",
-    "- **`great_tables` / `lets_plot`** — rendering styled tables and interactive plots inside the notebook.\n",
-    "- **`numpy` / `pandas`** — array maths and tabular data manipulation.\n",
-    "- **Twiga utilities** — `configure()` sets up logging; `get_logger()` gives us a labelled logger for clean output.\n",
-    "- **Twiga plot helpers** — `plot_acf`, `plot_metrics_bar`, `plot_timeseries` are thin wrappers around LetsPlot tuned for time series work."
+    "- **`warnings`**: suppress noisy deprecation messages so output stays readable.\n",
+    "- **`great_tables` / `lets_plot`**: rendering styled tables and interactive plots inside the notebook.\n",
+    "- **`numpy` / `pandas`**: array maths and tabular data manipulation.\n",
+    "- **Twiga utilities**: `configure()` sets up logging; `get_logger()` gives us a labelled logger for clean output.\n",
+    "- **Twiga plot helpers**: `plot_acf`, `plot_metrics_bar`, `plot_timeseries` are thin wrappers around LetsPlot tuned for time series work."
    ]
   },
   {
@@ -102,6 +102,8 @@
     "# Load dataset\n",
     "data = pd.read_parquet(\"../data/MLVS-PT.parquet\", columns=[\"timestamp\", \"NetLoad(kW)\", \"Ghi\", \"Temperature\", \"Season\"])\n",
     "data[\"timestamp\"] = pd.to_datetime(data[\"timestamp\"])\n",
+    "# Restrict to 2019-2020 to keep tutorial execution fast\n",
+    "data = data[(data[\"timestamp\"] >= \"2019-01-01\") & (data[\"timestamp\"] <= \"2020-12-31\")].reset_index(drop=True)\n",
     "\n",
     "log.info(f\"Shape : {data.shape}\")\n",
     "log.info(f\"Period: {data['timestamp'].min()} → {data['timestamp'].max()}\")\n",
@@ -134,7 +136,7 @@
     "    data,\n",
     "    date_col=\"timestamp\",\n",
     "    y_cols=\"NetLoad(kW)\",\n",
-    "    title=\"Net Load — MLVS-PT (2019 – 2021)\",\n",
+    "    title=\"Net Load — MLVS-PT (2019 – 2020)\",\n",
     "    y_label=\"Net Load (kW)\",\n",
     "    x_label=\"Date\",\n",
     "    fig_size=(920, 280),\n",
@@ -147,21 +149,21 @@
    "id": "6",
    "metadata": {},
    "source": [
-    "> **Key concept — Entropy**\n",
+    "> **Key concept - Entropy**\n",
     ">\n",
     "> In information theory, **entropy** measures how unpredictable a sequence is.\n",
-    "> A completely regular signal (e.g., a perfect sine wave) has near-zero entropy — you\n",
+    "> A completely regular signal (e.g., a perfect sine wave) has near-zero entropy - you\n",
     "> can predict each value perfectly from the pattern.  A completely random sequence\n",
-    "> (white noise) has maximum entropy — there is no pattern to exploit.\n",
+    "> (white noise) has maximum entropy - there is no pattern to exploit.\n",
     ">\n",
     "> For time series forecasting, lower entropy means the signal has more exploitable\n",
     "> structure, so a model can learn better.  The metrics below each capture a different\n",
     "> aspect of this regularity:\n",
     ">\n",
-    "> - **Permutation Entropy (PE)** — compares the frequency of ordinal patterns in the series.  Near 0 = highly regular; near 1 = chaotic.\n",
-    "> - **Sample Entropy (SampEn)** — measures the probability that similar subsequences remain similar when extended by one step.  Low values mean the series is self-similar (predictable).\n",
-    "> - **Hurst Exponent (H)** — tests for long-range memory.  H > 0.5 means the series is *persistent*: an upward trend tends to continue; a downward trend tends to continue.  H < 0.5 means mean-reverting (less useful for direct forecasting).\n",
-    "> - **DFA Exponent (α)** — Detrended Fluctuation Analysis; similar interpretation to the Hurst exponent but more robust to non-stationarity."
+    "> - **Permutation Entropy (PE)** - compares the frequency of ordinal patterns in the series.  Near 0 = highly regular; near 1 = chaotic.\n",
+    "> - **Sample Entropy (SampEn)** - measures the probability that similar subsequences remain similar when extended by one step.  Low values mean the series is self-similar (predictable).\n",
+    "> - **Hurst Exponent (H)** - tests for long-range memory.  H > 0.5 means the series is *persistent*: an upward trend tends to continue; a downward trend tends to continue.  H < 0.5 means mean-reverting (less useful for direct forecasting).\n",
+    "> - **DFA Exponent (α)** - Detrended Fluctuation Analysis; similar interpretation to the Hurst exponent but more robust to non-stationarity."
    ]
   },
   {
@@ -170,7 +172,7 @@
    "metadata": {},
    "source": [
     "---\n",
-    "## 1. Entropy — How much structure exists?\n",
+    "## 1. Entropy: How much structure exists?\n",
     "\n",
     "Entropy metrics quantify the balance between regularity and randomness in the signal.\n",
     "A series with low entropy has strong, repeating patterns and is generally easier to forecast.\n",
@@ -308,7 +310,7 @@
    "id": "11",
    "metadata": {},
    "source": [
-    "**Takeaway:** A Hurst exponent H > 0.5 confirms the net-load series has **persistent long-range memory** — past values are informative for future ones. A low PE confirms repeating daily/weekly patterns dominate the signal, making it well-suited for model-based forecasting."
+    "**Takeaway:** A Hurst exponent H > 0.5 confirms the net-load series has **persistent long-range memory** - past values are informative for future ones. A low PE confirms repeating daily/weekly patterns dominate the signal, making it well-suited for model-based forecasting."
    ]
   },
   {
@@ -317,7 +319,7 @@
    "metadata": {},
    "source": [
     "---\n",
-    "## 2. Seasonality — What cycles can we exploit?\n",
+    "## 2. Seasonality: What cycles can we exploit?\n",
     "\n",
     "The Autocorrelation Function (ACF) reveals periodic structure. Peaks at multiples of the sampling frequency indicate exploitable seasonality.\n",
     "\n",
@@ -383,7 +385,7 @@
    "metadata": {},
    "source": [
     "---\n",
-    "## 3. Autoregressive Order — Which lags are informative?\n",
+    "## 3. Autoregressive Order: Which lags are informative?\n",
     "\n",
     "The Partial Autocorrelation Function (PACF) isolates the direct effect of each lag after removing the influence of shorter lags. The lag at which PACF cuts off estimates the AR order p."
    ]
@@ -482,13 +484,13 @@
    "id": "22",
    "metadata": {},
    "source": [
-    "> **Key concept — Stationarity**\n",
+    "> **Key concept - Stationarity**\n",
     ">\n",
     "> A time series is **stationary** if its statistical properties (mean, variance, autocorrelation) do not change over time.\n",
-    "> Most forecasting models implicitly assume stationarity — if the distribution shifts, a model trained on historical data may perform poorly on future data.\n",
+    "> Most forecasting models implicitly assume stationarity - if the distribution shifts, a model trained on historical data may perform poorly on future data.\n",
     ">\n",
-    "> - **ADF test (Augmented Dickey-Fuller)**: tests the null hypothesis that the series has a unit root (non-stationary).  A small p-value (< 0.05) means we can reject the unit root — the series is likely stationary.\n",
-    "> - **KPSS test (Kwiatkowski–Phillips–Schmidt–Shin)**: tests the null hypothesis that the series *is* stationary.  A large p-value (> 0.05) means we cannot reject stationarity — consistent with a stationary series.\n",
+    "> - **ADF test (Augmented Dickey-Fuller)**: tests the null hypothesis that the series has a unit root (non-stationary).  A small p-value (< 0.05) means we can reject the unit root - the series is likely stationary.\n",
+    "> - **KPSS test (Kwiatkowski - Phillips - Schmidt - Shin)**: tests the null hypothesis that the series *is* stationary.  A large p-value (> 0.05) means we cannot reject stationarity - consistent with a stationary series.\n",
     ">\n",
     "> Using both tests together gives stronger evidence.  If they agree (ADF rejects unit root AND KPSS cannot reject stationarity), a standard `StandardScaler` is appropriate.  If they disagree, consider differencing or a `RobustScaler`."
    ]
@@ -499,16 +501,16 @@
    "metadata": {},
    "source": [
     "---\n",
-    "## 4. Stationarity — Is the distribution stable?\n",
+    "## 4. Stationarity: Is the distribution stable?\n",
     "\n",
     "A stationary series has constant mean and variance over time. This determines the appropriate scaler and whether differencing is needed.\n",
     "\n",
     "| ADF p-value | KPSS p-value | Conclusion |\n",
     "|---|---|---|\n",
-    "| < 0.05 | > 0.05 | **Stationary** — standard scaling sufficient |\n",
-    "| > 0.05 | < 0.05 | **Non-stationary** — consider differencing or robust scaling |\n",
-    "| < 0.05 | < 0.05 | **Trend-stationary** — trend present, detrend before fitting |\n",
-    "| > 0.05 | > 0.05 | Inconclusive — inspect further |"
+    "| < 0.05 | > 0.05 | **Stationary** - standard scaling sufficient |\n",
+    "| > 0.05 | < 0.05 | **Non-stationary** - consider differencing or robust scaling |\n",
+    "| < 0.05 | < 0.05 | **Trend-stationary** - trend present, detrend before fitting |\n",
+    "| > 0.05 | > 0.05 | Inconclusive - inspect further |"
    ]
   },
   {
@@ -639,7 +641,7 @@
     "\n",
     "`ami_h1` anchors the signal strength at the shortest horizon.  `rel_auc = mean_AMI / AMI(h=1)` measures *persistence*: a high `rel_auc` means the signal decays slowly across horizons; a low `rel_auc` means it collapses immediately.\n",
     "\n",
-    "`effective_horizon` is the first horizon where AMI drops below `ami_noise_floor × AMI(h=1)` — the practical boundary of the useful forecast window."
+    "`effective_horizon` is the first horizon where AMI drops below `ami_noise_floor × AMI(h=1)` - the practical boundary of the useful forecast window."
    ]
   },
   {
@@ -687,11 +689,11 @@
    "id": "30",
    "metadata": {},
    "source": [
-    "> **Key concept — AMI vs. ACF**\n",
+    "> **Key concept - AMI vs. ACF**\n",
     ">\n",
     "> ACF measures *linear* autocorrelation at lag h.  AMI captures *any* dependence (linear or nonlinear) between past increments and future increments.  A series can have low ACF but high AMI, indicating nonlinear structure that linear models will miss.\n",
     ">\n",
-    "> AMI is computed on **first-differenced** values to remove level persistence.  A series with strong trend will show high level-based AMI even if it contains no exploitable structure — differencing removes this deceptive baseline."
+    "> AMI is computed on **first-differenced** values to remove level persistence.  A series with strong trend will show high level-based AMI even if it contains no exploitable structure - differencing removes this deceptive baseline."
    ]
   },
   {
@@ -856,7 +858,7 @@
    "metadata": {},
    "source": [
     "---\n",
-    "## 7. Signal Characterisation — One call to rule them all\n",
+    "## 7. Signal Characterisation: One call to rule them all\n",
     "\n",
     "The individual steps above (entropy, ACF/PACF, stationarity, AMI) are wrapped into a single `SignalCharacteriser` that runs all four diagnostic dimensions in one call and returns an immutable `CharacterisationResult`.\n",
     "\n",
@@ -935,7 +937,7 @@
    "id": "43",
    "metadata": {},
    "source": [
-    "### Pipeline hints — from characterisation to DataPipeline"
+    "### Pipeline hints: from characterisation to DataPipeline"
    ]
   },
   {
@@ -969,17 +971,17 @@
     "- [x] Assembled a complete Forecastability Profile and mapped it to `DataPipelineConfig` parameters\n",
     "\n",
     "**Key takeaways for beginners**\n",
-    "1. **Entropy tells you how hard forecasting will be** — a high Hurst exponent (H > 0.5) means the series has memory and patterns that a model can exploit.\n",
-    "2. **ACF peaks are your lags** — a strong peak at lag 48 means \"yesterday at this time is a good predictor\". Set `lags` and `lookback_window_size` accordingly.\n",
-    "3. **PACF gives the minimum AR order** — lags beyond the PACF cutoff are redundant; including them adds noise but not signal.\n",
-    "4. **Always test stationarity before choosing a scaler** — `StandardScaler` works for stationary series; non-stationary series may need differencing or `RobustScaler`.\n",
-    "5. **Xi correlation ranks features fairly** — it captures non-linear dependencies and is more reliable than Pearson correlation for engineering signals.\n",
+    "1. **Entropy tells you how hard forecasting will be** - a high Hurst exponent (H > 0.5) means the series has memory and patterns that a model can exploit.\n",
+    "2. **ACF peaks are your lags** - a strong peak at lag 48 means \"yesterday at this time is a good predictor\". Set `lags` and `lookback_window_size` accordingly.\n",
+    "3. **PACF gives the minimum AR order** - lags beyond the PACF cutoff are redundant; including them adds noise but not signal.\n",
+    "4. **Always test stationarity before choosing a scaler** - `StandardScaler` works for stationary series; non-stationary series may need differencing or `RobustScaler`.\n",
+    "5. **Xi correlation ranks features fairly** - it captures non-linear dependencies and is more reliable than Pearson correlation for engineering signals.\n",
     "\n",
     "---\n",
     "\n",
     "## What's next?\n",
     "\n",
-    "**NB03 — Feature Engineering** covers:\n",
+    "**NB03 - Feature Engineering** covers:\n",
     "- Constructing `DataPipelineConfig` from the profile above\n",
     "- Lag and rolling-window feature generation\n",
     "- Temporal and exogenous feature encoding\n",

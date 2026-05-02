@@ -5,7 +5,7 @@
    "id": "0",
    "metadata": {},
    "source": [
-    "# 10 — Conformal Prediction & Guaranteed Coverage\n",
+    "# Conformal Prediction & Guaranteed Coverage\n",
     "\n",
     "![Level](https://img.shields.io/badge/level-intermediate-yellow) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~20%20min-lightgrey)\n",
     "\n",
@@ -16,8 +16,8 @@
     "Coverage-guaranteed prediction intervals using Conformalised Quantile Regression (CQR) and Conformal Risk Control (CRC) applied as post-training wrappers on any trained Twiga model.\n",
     "\n",
     "**Prerequisites**\n",
-    "- [08 — Quantile Regression](08-quantile-regression.ipynb) (QR models and interval metrics)\n",
-    "- [09 — Parametric Distributions](09-parametric-distributions.ipynb) (parametric probabilistic heads)\n",
+    "- [08 - Quantile Regression](08-quantile-regression.ipynb) (QR models and interval metrics)\n",
+    "- [09 - Parametric Distributions](09-parametric-distributions.ipynb) (parametric probabilistic heads)\n",
     "- Python: basic probability, coverage concepts\n",
     "\n",
     "**Learning objectives**\n",
@@ -43,27 +43,27 @@
     "- **Parametric (NB08)**: assumes data follows a known distribution family. Wrong family → miscalibrated coverage.\n",
     "- **Quantile Regression (NB07)**: relies on asymptotic regime. Finite-sample coverage is not guaranteed.\n",
     "\n",
-    "> **Key concept — conformal prediction**\n",
+    "> **Key concept - conformal prediction**\n",
     ">\n",
     "> Conformal prediction produces prediction intervals with a **finite-sample, distribution-free coverage guarantee**. Formally, for a significance level α ∈ (0, 1), it constructs intervals [l̂, û] such that:\n",
     ">\n",
     "> P(y_{n+1} ∈ [l̂_{n+1}, û_{n+1}]) ≥ 1 − α\n",
     ">\n",
-    "> This is a **marginal coverage guarantee** — it holds over the randomness of the calibration and test draw, with no distributional assumption required. It works with *any* underlying model: tree ensembles, neural networks, or linear models.\n",
+    "> This is a **marginal coverage guarantee** - it holds over the randomness of the calibration and test draw, with no distributional assumption required. It works with *any* underlying model: tree ensembles, neural networks, or linear models.\n",
     ">\n",
-    "> The key ingredient is a **calibration set** — a held-out set of labeled examples (separate from training) used to compute **nonconformity scores**, which measure how surprised the model is by each observation. The coverage guarantee follows directly from the exchangeability of calibration and test data.\n",
+    "> The key ingredient is a **calibration set** - a held-out set of labeled examples (separate from training) used to compute **nonconformity scores**, which measure how surprised the model is by each observation. The coverage guarantee follows directly from the exchangeability of calibration and test data.\n",
     "\n",
-    "> **Key concept — CQR vs. CRC**\n",
+    "> **Key concept - CQR vs. CRC**\n",
     ">\n",
     "> Twiga provides three conformal methods, differing in how they compute and adjust nonconformity scores:\n",
     ">\n",
-    "> - **Split Conformal** (`method=\"residual\"`): the simplest approach. Nonconformity score = |y − ŷ|. Interval = ŷ ± q_{1−α}(scores). Produces constant-width intervals — cannot adapt to local uncertainty.\n",
-    "> - **CQR — Conformal Quantile Regression** (`method=\"quantile\"`): requires a QR base model. Adjusts the QR interval using calibration residuals. Inherits the adaptive width of the underlying QR model while adding the coverage guarantee. Best when you already have a QR model (NB07) and want sharper, locally adaptive intervals.\n",
-    "> - **CRC — Conformal Residual Calibration** (`method=\"residual-fitting\"`): fits a secondary model to predict residual magnitude. Most expressive — interval width adapts to predicted local uncertainty. Best for heteroscedastic signals (e.g. solar-driven net load with strong day/night cycles).\n",
+    "> - **Split Conformal** (`method=\"residual\"`): the simplest approach. Nonconformity score = |y − ŷ|. Interval = ŷ ± q_{1−α}(scores). Produces constant-width intervals - cannot adapt to local uncertainty.\n",
+    "> - **CQR - Conformal Quantile Regression** (`method=\"quantile\"`): requires a QR base model. Adjusts the QR interval using calibration residuals. Inherits the adaptive width of the underlying QR model while adding the coverage guarantee. Best when you already have a QR model (NB07) and want sharper, locally adaptive intervals.\n",
+    "> - **CRC - Conformal Residual Calibration** (`method=\"residual-fitting\"`): fits a secondary model to predict residual magnitude. Most expressive - interval width adapts to predicted local uncertainty. Best for heteroscedastic signals (e.g. solar-driven net load with strong day/night cycles).\n",
     "\n",
-    "> **Key concept — coverage vs. sharpness trade-off**\n",
+    "> **Key concept - coverage vs. sharpness trade-off**\n",
     ">\n",
-    "> All three methods satisfy the marginal coverage guarantee, but they differ in **sharpness** — how narrow the intervals are on average. Wider intervals are trivially easy to achieve (just make them very wide), so a good method is one that achieves the nominal coverage with the *smallest* possible interval width. This is measured by metrics like NMPI (Normalised Mean Prediction Interval width) and the Winkler score, which penalises both excess width and coverage violations jointly. The reliability diagram reveals whether a method is over- or under-covering systematically, while the sharpness comparison reveals which method produces the tightest intervals at the same nominal level."
+    "> All three methods satisfy the marginal coverage guarantee, but they differ in **sharpness** - how narrow the intervals are on average. Wider intervals are trivially easy to achieve (just make them very wide), so a good method is one that achieves the nominal coverage with the *smallest* possible interval width. This is measured by metrics like NMPI (Normalised Mean Prediction Interval width) and the Winkler score, which penalises both excess width and coverage violations jointly. The reliability diagram reveals whether a method is over- or under-covering systematically, while the sharpness comparison reveals which method produces the tightest intervals at the same nominal level."
    ]
   },
   {
@@ -165,6 +165,8 @@
     "data = data[[\"timestamp\", \"NetLoad(kW)\", \"Ghi\", \"Temperature\"]]\n",
     "data[\"timestamp\"] = pd.to_datetime(data[\"timestamp\"])\n",
     "data = data.drop_duplicates(subset=\"timestamp\").reset_index(drop=True)\n",
+    "# Restrict to 2019-2020 to keep tutorial execution fast\n",
+    "data = data[(data[\"timestamp\"] >= \"2019-01-01\") & (data[\"timestamp\"] <= \"2020-12-31\")].reset_index(drop=True)\n",
     "\n",
     "log.info(\"Shape: %s\", data.shape)\n",
     "twiga_gt(GT(data.head()))"
@@ -177,7 +179,7 @@
    "source": [
     "### Train / val / test splits\n",
     "\n",
-    "We use the same fixed temporal split as all other tutorials. The **validation set doubles as the calibration set** — it is held out of training and used to compute nonconformity scores."
+    "We use the same fixed temporal split as all other tutorials. The **validation set doubles as the calibration set** - it is held out of training and used to compute nonconformity scores."
    ]
   },
   {
@@ -190,7 +192,7 @@
     "df_splits = pd.DataFrame(\n",
     "    {\n",
     "        \"Split\": [\"train\", \"val / calibration\", \"test\"],\n",
-    "        \"Period\": [\"before 2021-01-01\", \"2021-01-01 – 2021-06-30\", \"2021-07-01 onwards\"],\n",
+    "        \"Period\": [\"before 2020-01-01\", \"2020-01-01 – 2020-06-30\", \"2020-07-01 onwards\"],\n",
     "        \"Role\": [\n",
     "            \"Model training\",\n",
     "            \"Early stopping + conformal calibration (nonconformity scores)\",\n",
@@ -218,9 +220,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "train_df = data[data[\"timestamp\"] < \"2021-01-01\"].reset_index(drop=True)\n",
-    "val_df = data[(data[\"timestamp\"] >= \"2021-01-01\") & (data[\"timestamp\"] < \"2021-07-01\")].reset_index(drop=True)\n",
-    "test_df = data[data[\"timestamp\"] >= \"2021-07-01\"].reset_index(drop=True)\n",
+    "train_df = data[data[\"timestamp\"] < \"2020-01-01\"].reset_index(drop=True)\n",
+    "val_df = data[(data[\"timestamp\"] >= \"2020-01-01\") & (data[\"timestamp\"] < \"2020-07-01\")].reset_index(drop=True)\n",
+    "test_df = data[data[\"timestamp\"] >= \"2020-07-01\"].reset_index(drop=True)\n",
     "\n",
     "# The calibration set is the validation set\n",
     "calibrate_df = val_df.copy()\n",
@@ -283,7 +285,7 @@
    "id": "12",
    "metadata": {},
    "source": [
-    "## 3. Method 1 — Split Conformal (`method=\"residual\"`)\n",
+    "## 3. Method 1: Split Conformal (`method=\"residual\"`)\n",
     "\n",
     "Split conformal (also called inductive conformal prediction) is the simplest approach:\n",
     "\n",
@@ -292,7 +294,7 @@
     "3. At test time, construct the interval as $\\hat{y} \\pm q_{1-\\alpha}(s)$ where $q_{1-\\alpha}$ is the $(1-\\alpha)(1 + 1/n)$-quantile of the calibration scores.\n",
     "\n",
     "**Pros**: works with any base model, fast calibration, finite-sample coverage guarantee.  \n",
-    "**Cons**: produces constant-width intervals — cannot adapt to regions of higher or lower uncertainty."
+    "**Cons**: produces constant-width intervals - cannot adapt to regions of higher or lower uncertainty."
    ]
   },
   {
@@ -347,7 +349,7 @@
    "source": [
     "## . Interval Metrics\n",
     "\n",
-    "Three standard metrics assess prediction interval quality. Raw QR intervals do not carry a formal coverage guarantee — empirical PICP may differ from the nominal level. For guaranteed coverage, apply conformal calibration (NB09)."
+    "Three standard metrics assess prediction interval quality. Raw QR intervals do not carry a formal coverage guarantee - empirical PICP may differ from the nominal level. For guaranteed coverage, apply conformal calibration (NB09)."
    ]
   },
   {
@@ -389,10 +391,10 @@
    "source": [
     "**Reading the interval metric comparison**\n",
     "\n",
-    "- A model with **PICP < 1 − alpha** is under-covering — its intervals are too narrow and will miss more events than claimed. For a 90 % interval (alpha = 0.10), PICP below 0.90 indicates miscalibration.\n",
+    "- A model with **PICP < 1 − alpha** is under-covering - its intervals are too narrow and will miss more events than claimed. For a 90 % interval (alpha = 0.10), PICP below 0.90 indicates miscalibration.\n",
     "- Among models with adequate PICP, prefer the one with the **smallest NMPI** (sharpest bounds) and **lowest Winkler score**.\n",
     "- If all models under-cover, the raw quantile bounds need conformal calibration (NB09) to meet the nominal guarantee.\n",
-    "- FPQR may show different PICP than fixed-grid QR because its quantile grid adapts per sample — check both coverage and sharpness before choosing."
+    "- FPQR may show different PICP than fixed-grid QR because its quantile grid adapts per sample - check both coverage and sharpness before choosing."
    ]
   },
   {
@@ -486,7 +488,7 @@
    "id": "23",
    "metadata": {},
    "source": [
-    "## 4. Method 2 — CQR: Conformal Quantile Regression (`method=\"quantile\"`)\n",
+    "## 4. Method 2: CQR: Conformal Quantile Regression (`method=\"quantile\"`)\n",
     "\n",
     "CQR (Angelopoulos & Bates, 2021) extends split conformal to models that already output quantile estimates:\n",
     "\n",
@@ -584,9 +586,9 @@
    "id": "30",
    "metadata": {},
    "source": [
-    "## 5. Method 3 — CRC: Conformal Residual Calibration (`method=\"residual-fitting\"`)\n",
+    "## 5. Method 3: CRC: Conformal Residual Calibration (`method=\"residual-fitting\"`)\n",
     "\n",
-    "CRC takes a different approach: instead of a fixed correction term, it **fits a secondary model** that predicts the magnitude of the residuals. This gives the interval an adaptive width — wider where the model is uncertain, narrower where it is confident.\n",
+    "CRC takes a different approach: instead of a fixed correction term, it **fits a secondary model** that predicts the magnitude of the residuals. This gives the interval an adaptive width - wider where the model is uncertain, narrower where it is confident.\n",
     "\n",
     "CRC requires a base model that outputs both a **location** (point forecast) and a **scale** (predicted uncertainty). The `MLPGAMCRCConfig` model is purpose-built for this: it is a Group Additive Model with a conformal residual calibration head.\n",
     "\n",
@@ -688,7 +690,7 @@
     "## 9. When to Use Which Method\n",
     "\n",
     "**General guidance:**\n",
-    "- Start with **Split Conformal** — it requires zero additional modelling effort and provides the coverage guarantee immediately with any point forecasting model.\n",
+    "- Start with **Split Conformal**: it requires zero additional modelling effort and provides the coverage guarantee immediately with any point forecasting model.\n",
     "- If you already have a quantile regression model (NB07), upgrade to **CQR** for free: it only adds a calibration step on top of your existing QR model and gives locally adaptive intervals.\n",
     "- Use **CRC** when you have reason to believe uncertainty varies significantly across time (e.g. solar-driven net load, day/night cycles) and are willing to pay the cost of training a neural network backbone.\n",
     "\n",
@@ -751,9 +753,9 @@
     "- [x] Compared all three methods on coverage (reliability diagram) and sharpness (mean interval width)\n",
     "\n",
     "**Key takeaways**\n",
-    "1. Conformal prediction produces finite-sample coverage-guaranteed intervals without any distributional assumption — it works with any base model.\n",
+    "1. Conformal prediction produces finite-sample coverage-guaranteed intervals without any distributional assumption - it works with any base model.\n",
     "2. The calibration set (held-out labeled data) is the core ingredient: nonconformity scores from this set drive the coverage guarantee.\n",
-    "3. Split Conformal is the safest starting point — zero modelling overhead, immediate guarantee.\n",
+    "3. Split Conformal is the safest starting point - zero modelling overhead, immediate guarantee.\n",
     "4. CQR inherits adaptive width from the underlying QR model; CRC trains a secondary residual model for maximum adaptivity.\n",
     "5. The reliability diagram is the primary diagnostic: all conformal methods should meet or exceed the diagonal; persistent under-coverage signals a violation of the exchangeability assumption.\n",
     "\n",
@@ -761,7 +763,7 @@
     "\n",
     "## What's next?\n",
     "\n",
-    "**NB10 — Hyperparameter Optimisation** (`10-hyperparameter-tuning.ipynb`)\n",
+    "**NB10 - Hyperparameter Optimisation** (`10-hyperparameter-tuning.ipynb`)\n",
     "\n",
     "Learn how to use Optuna-powered HPO via `forecaster.tune()` to automatically search for optimal model hyperparameters across any model type, with resumable SQLite-backed studies."
    ]

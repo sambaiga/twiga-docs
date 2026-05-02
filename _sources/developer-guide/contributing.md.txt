@@ -37,12 +37,36 @@ This installs **all** optional dependency groups needed for development: PyTorch
 
 ### Optional: GPU Support
 
-For CUDA-enabled PyTorch (Linux/Windows):
+The default `uv sync --all-extras` installs the CPU-only PyTorch wheel. To replace it with a CUDA build you must use `uv pip install --reinstall` — plain `pip install` targets the system Python, not the uv-managed `.venv`, and `uv pip install` without `--reinstall` skips packages that already satisfy the version constraint.
 
 ```bash
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+# 1. Sync everything (installs CPU torch into .venv)
+uv sync --all-extras --dev
+
+# 2. Force-reinstall torch from the CUDA index into the same .venv
+uv pip install --reinstall torch --index-url https://download.pytorch.org/whl/cu124
 ```
 
+> **Note**: `uv sync` will revert torch to the CPU wheel from `uv.lock`. Re-run step 2 after any `uv sync`.
+
+Check your CUDA version with `nvidia-smi`. Common suffixes:
+
+| CUDA | Suffix |
+| --- | --- |
+| 11.8 | `cu118` |
+| 12.1 | `cu121` |
+| 12.4 | `cu124` |
+| 12.6 | `cu126` |
+
+Verify the GPU build was installed:
+
+```python
+import torch
+print(torch.cuda.is_available())   # True
+print(torch.cuda.get_device_name()) # e.g. NVIDIA A100
+```
+
+The `pytorch-cu124` index is registered in `pyproject.toml` under `[tool.uv.index]` with `explicit = true`, so uv will not automatically pull from it — you must request it explicitly as shown above.
 
 ## Project Structure
 

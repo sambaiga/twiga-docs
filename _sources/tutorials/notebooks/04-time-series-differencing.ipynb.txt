@@ -5,7 +5,7 @@
    "id": "0",
    "metadata": {},
    "source": [
-    "# 04 — Time Series Differencing\n",
+    "# Time Series Differencing\n",
     "\n",
     "![Level](https://img.shields.io/badge/level-intermediate-yellow)\n",
     "![Python](https://img.shields.io/badge/python-3.10%2B-blue)\n",
@@ -19,9 +19,9 @@
     "A stationarity-aware preprocessing pipeline for net-load data: detect non-stationarity with ADF and KPSS tests, apply first-order and seasonal differencing with `TimeSeriesDifferentiator`, train a LightGBM model on the transformed target, and invert the transformation to recover physical-unit forecasts.\n",
     "\n",
     "**Prerequisites**\n",
-    "- [01 — Getting Started](01-getting-started.ipynb) (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)\n",
-    "- [02 — Forecastability Analysis](02-forecastability-analysis.ipynb) (ADF/KPSS stationarity tests)\n",
-    "- [03 — Feature Engineering](03-feature-engineering.ipynb) (lag features and the feature matrix)\n",
+    "- [01 - Getting Started](01-getting-started.ipynb) (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)\n",
+    "- [02 - Forecastability Analysis](02-forecastability-analysis.ipynb) (ADF/KPSS stationarity tests)\n",
+    "- [03 - Feature Engineering](03-feature-engineering.ipynb) (lag features and the feature matrix)\n",
     "- Python: basic statistics, numpy familiarity\n",
     "\n",
     "**Learning objectives**\n",
@@ -83,7 +83,7 @@
    "source": [
     "data = pd.read_parquet(\"../data/MLVS-PT.parquet\", columns=[\"timestamp\", \"NetLoad(kW)\"])\n",
     "data[\"timestamp\"] = pd.to_datetime(data[\"timestamp\"])\n",
-    "data = data[(data[\"timestamp\"] >= \"2020-01-01\") & (data[\"timestamp\"] < \"2021-07-01\")].copy()\n",
+    "data = data[(data[\"timestamp\"] >= \"2019-01-01\") & (data[\"timestamp\"] < \"2020-07-01\")].copy()\n",
     "data = data.reset_index(drop=True)\n",
     "\n",
     "log.info(\"Shape : %s\", data.shape)\n",
@@ -96,7 +96,7 @@
    "id": "4",
    "metadata": {},
    "source": [
-    "## 2. Stationarity — Diagnosis\n",
+    "## 2. Stationarity: Diagnosis\n",
     "\n",
     "A **stationary** time series has constant mean and variance over time.  \n",
     "Many regression-based forecasters (including tree models) implicitly assume the target distribution is roughly constant across the training window.  \n",
@@ -105,7 +105,7 @@
     "### Augmented Dickey-Fuller test\n",
     "\n",
     "The **ADF test** examines the null hypothesis that a unit root is present (i.e., the series is *non-stationary*).  \n",
-    "A **p-value > 0.05** means we cannot reject the null — the series is likely non-stationary."
+    "A **p-value > 0.05** means we cannot reject the null - the series is likely non-stationary."
    ]
   },
   {
@@ -113,15 +113,15 @@
    "id": "5",
    "metadata": {},
    "source": [
-    "> **Key concept — stationarity**\n",
+    "> **Key concept - stationarity**\n",
     ">\n",
     "> A **stationary** time series has a constant mean, constant variance, and autocorrelation structure that does not change over time.\n",
     "> Many regression-based forecasters (tree models, linear models) implicitly assume the target distribution is roughly stable across the training window.\n",
-    "> When the mean drifts or variance grows, the model sees a different distribution at test time than it saw during training — and generalisation degrades.\n",
+    "> When the mean drifts or variance grows, the model sees a different distribution at test time than it saw during training - and generalisation degrades.\n",
     ">\n",
     "> Two common tests:\n",
-    "> - **ADF (Augmented Dickey-Fuller)** — null hypothesis: the series has a unit root (non-stationary). A p-value > 0.05 means we cannot reject non-stationarity.\n",
-    "> - **KPSS** — null hypothesis: the series is stationary. Use both together for a more robust diagnosis.\n",
+    "> - **ADF (Augmented Dickey-Fuller)** - null hypothesis: the series has a unit root (non-stationary). A p-value > 0.05 means we cannot reject non-stationarity.\n",
+    "> - **KPSS** - null hypothesis: the series is stationary. Use both together for a more robust diagnosis.\n",
     ">\n",
     "> Rolling statistics are a fast visual check: if the rolling mean or standard deviation drifts significantly, the series is likely non-stationary."
    ]
@@ -248,14 +248,14 @@
    "id": "11",
    "metadata": {},
    "source": [
-    "> **Key concept — first-order differencing**\n",
+    "> **Key concept - first-order differencing**\n",
     ">\n",
     "> First-order differencing transforms a series by subtracting each value from its predecessor:\n",
-    "> `Δy_t = y_t − y_{t−1}`. This removes linear trends — if the original series drifts upward at a roughly constant rate, the differenced series will oscillate around zero.\n",
+    "> `Δy_t = y_t − y_{t−1}`. This removes linear trends - if the original series drifts upward at a roughly constant rate, the differenced series will oscillate around zero.\n",
     ">\n",
     "> **Seasonal differencing** subtracts a lag equal to the seasonal period (e.g., lag-48 for a 30-min series with a 24-hour cycle): `Δy_t = y_t − y_{t−48}`. This removes repeating patterns without destroying the trend information.\n",
     ">\n",
-    "> The `TimeSeriesDifferentiator` stores boundary values (the initial and final observations at each order) so the transformation can be perfectly inverted. No information is lost — the original series can be reconstructed exactly from the differenced series plus the stored anchors."
+    "> The `TimeSeriesDifferentiator` stores boundary values (the initial and final observations at each order) so the transformation can be perfectly inverted. No information is lost - the original series can be reconstructed exactly from the differenced series plus the stored anchors."
    ]
   },
   {
@@ -389,19 +389,19 @@
    "id": "20",
    "metadata": {},
    "source": [
-    "> **Key concept — inversion**\n",
+    "> **Key concept - inversion**\n",
     ">\n",
     "> When you forecast on a differenced series, your model predicts **changes** (Δy), not levels (y).\n",
-    "> To get back to the original scale you must integrate the changes — that is, take a cumulative sum starting from a known anchor.\n",
+    "> To get back to the original scale you must integrate the changes - that is, take a cumulative sum starting from a known anchor.\n",
     ">\n",
     "> For **batch regression** (where each step is predicted independently), the correct anchor is always the *actual* previous value, not a predicted one:\n",
-    "> `ŷ_t = y_{t−1}^{actual} + Δŷ_t`. This keeps errors from accumulating — each step's error is independent.\n",
+    "> `ŷ_t = y_{t−1}^{actual} + Δŷ_t`. This keeps errors from accumulating - each step's error is independent.\n",
     ">\n",
     "> For **AR horizon forecasting** (where a model generates an entire horizon window in one shot, like a neural network), the deltas are chained intentionally within that window:\n",
     "> `ŷ_1 = y_last^{train} + Δŷ_1`, `ŷ_2 = ŷ_1 + Δŷ_2`, …\n",
     "> `TimeSeriesDifferentiator.forecast_inverse(horizon_deltas)` implements this correctly.\n",
     ">\n",
-    "> Twiga handles both patterns — you choose the right one based on your model architecture."
+    "> Twiga handles both patterns - you choose the right one based on your model architecture."
    ]
   },
   {
@@ -420,10 +420,10 @@
     "  ├─ transform(train)  → Δ_train  (train the model on Δy)\n",
     "  │\n",
     "  └─ reconstruction:   y_t = y_{t-1}_actual + Δy_t_predicted\n",
-    "                            ↑ actual, not predicted — errors never accumulate\n",
+    "                            ↑ actual, not predicted - errors never accumulate\n",
     "```\n",
     "\n",
-    "> `forecast_inverse` is designed for **sequential AR forecasting** — a model that generates a single horizon window all at once (e.g. 48-step-ahead), where chaining the deltas within that window is intentional. For independent step-by-step batch regression, use `actual_prev + Δy_pred`."
+    "> `forecast_inverse` is designed for **sequential AR forecasting** - a model that generates a single horizon window all at once (e.g. 48-step-ahead), where chaining the deltas within that window is intentional. For independent step-by-step batch regression, use `actual_prev + Δy_pred`."
    ]
   },
   {
@@ -728,11 +728,11 @@
    "id": "33",
    "metadata": {},
    "source": [
-    "## 8. `forecast_inverse` — When to Use It\n",
+    "## 8. `forecast_inverse`: When to Use It\n",
     "\n",
     "`forecast_inverse` is correct when a model produces an entire **forecast horizon in one shot** (e.g. a neural network that outputs 48 future deltas at once). It chains all deltas together starting from the last observed training value.\n",
     "\n",
-    "**This is intentional chaining**, not an error — within a single forward pass the deltas are sequentially dependent.\n",
+    "**This is intentional chaining**, not an error - within a single forward pass the deltas are sequentially dependent.\n",
     "\n",
     "```\n",
     "last_train_value\n",
@@ -786,7 +786,7 @@
     "\n",
     "Key caveats:\n",
     "- Always fit the differentiator on **training data only** to prevent leakage.\n",
-    "- **Do not difference lag features** — they provide the level context needed to predict levels.\n",
+    "- **Do not difference lag features**: they provide the level context needed to predict levels.\n",
     "- Keep the fitted differentiator at inference time for reconstruction.\n",
     "- `inverse_transform` reconstructs the **full history** (needs leading NaNs); `forecast_inverse` is for future horizons only."
    ]
@@ -956,9 +956,9 @@
     "\n",
     "**Key takeaways**\n",
     "\n",
-    "1. Stationarity is a practical concern, not just theory — a drifting target distribution degrades tree model generalisation at test time.\n",
+    "1. Stationarity is a practical concern, not just theory - a drifting target distribution degrades tree model generalisation at test time.\n",
     "2. `TimeSeriesDifferentiator` is lossless: the original series can always be recovered exactly from the differenced series + stored anchors.\n",
-    "3. For batch regression, inversion is `ŷ_t = y_{t−1}^{actual} + Δŷ_t` — never accumulate predicted errors.\n",
+    "3. For batch regression, inversion is `ŷ_t = y_{t−1}^{actual} + Δŷ_t` - never accumulate predicted errors.\n",
     "4. Always fit the differentiator on training data only; use original-scale lag features to preserve level context.\n",
     "5. `forecast_inverse` is the right tool for AR horizon models that generate a full window at once.\n",
     "\n",
@@ -966,7 +966,7 @@
     "\n",
     "## What's next?\n",
     "\n",
-    "Combine differencing with the full Twiga pipeline in [NB04 — ML Point Forecasting](04-ml-point-forecasting.ipynb) by pre-processing your DataFrame with `TimeSeriesDifferentiator` before passing it to `TwigaForecaster`, or explore [NB14 — Typed Forecast Results](14-typed-forecast-results.ipynb) for structured output handling."
+    "Combine differencing with the full Twiga pipeline in [NB04 - ML Point Forecasting](04-ml-point-forecasting.ipynb) by pre-processing your DataFrame with `TimeSeriesDifferentiator` before passing it to `TwigaForecaster`, or explore [NB14 - Typed Forecast Results](14-typed-forecast-results.ipynb) for structured output handling."
    ]
   },
   {
