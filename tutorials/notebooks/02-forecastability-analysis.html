@@ -32,9 +32,9 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=79a279a3" />
     <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   
@@ -55,10 +55,6 @@
     <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/02-forecastability-analysis';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../../_static/twiga-icon.svg"/>
@@ -622,15 +618,15 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="Forecastability-Analysis">
-<h1>Forecastability Analysis<a class="headerlink" href="#Forecastability-Analysis" title="Link to this heading">#</a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="forecastability-analysis">
+<h1>Forecastability Analysis<a class="headerlink" href="#forecastability-analysis" title="Link to this heading">#</a></h1>
 <p><img alt="Beginner" src="https://img.shields.io/badge/level-beginner-green" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
 <hr class="docutils" />
 <p><strong>What you’ll build</strong></p>
 <p>A <strong>Forecastability Profile</strong> for the MLVS-PT net-load signal - a concise set of metrics (entropy, seasonality, stationarity, feature correlation) that tells you how predictable the series is and directly maps to every parameter in <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>.</p>
 <p><strong>Prerequisites</strong></p>
 <ul class="simple">
-<li><p><a class="reference internal" href="01-getting-started.html"><span class="doc">NB01 - Getting Started</span></a></p></li>
+<li><p><span class="xref myst">NB01 - Getting Started</span></p></li>
 <li><p>Basic Python (lists, dicts, imports)</p></li>
 </ul>
 <p><strong>Learning objectives</strong></p>
@@ -655,21 +651,19 @@
 </pre></div>
 </div>
 <p>Every analysis step in this notebook produces a concrete recommendation for <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> - the profile at the end assembles them all.</p>
-<section id="Setup">
-<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading">#</a></h2>
+<section id="setup">
+<h2>Setup<a class="headerlink" href="#setup" title="Link to this heading">#</a></h2>
 <p>We import four groups of libraries:</p>
 <ul class="simple">
-<li><p><strong>``warnings``</strong>: suppress noisy deprecation messages so output stays readable.</p></li>
-<li><p><strong>``great_tables`` / ``lets_plot``</strong>: rendering styled tables and interactive plots inside the notebook.</p></li>
-<li><p><strong>``numpy`` / ``pandas``</strong>: array maths and tabular data manipulation.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">warnings</span></code></strong>: suppress noisy deprecation messages so output stays readable.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">great_tables</span></code> / <code class="docutils literal notranslate"><span class="pre">lets_plot</span></code></strong>: rendering styled tables and interactive plots inside the notebook.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">numpy</span></code> / <code class="docutils literal notranslate"><span class="pre">pandas</span></code></strong>: array maths and tabular data manipulation.</p></li>
 <li><p><strong>Twiga utilities</strong>: <code class="docutils literal notranslate"><span class="pre">configure()</span></code> sets up logging; <code class="docutils literal notranslate"><span class="pre">get_logger()</span></code> gives us a labelled logger for clean output.</p></li>
 <li><p><strong>Twiga plot helpers</strong>: <code class="docutils literal notranslate"><span class="pre">plot_acf</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_metrics_bar</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_timeseries</span></code> are thin wrappers around LetsPlot tuned for time series work.</p></li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
 
@@ -691,11 +685,43 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+        <div id="z0DzKV"></div>
+        <script type="text/javascript" data-lets-plot-script="library">
+            if(!window.letsPlotCallQueue) {
+                window.letsPlotCallQueue = [];
+            };
+            window.letsPlotCall = function(f) {
+                window.letsPlotCallQueue.push(f);
+            };
+            (function() {
+                var script = document.createElement("script");
+                script.type = "text/javascript";
+                script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.9.0/js-package/distr/lets-plot.min.js";
+                script.onload = function() {
+                    window.letsPlotCall = function(f) {f();};
+                    window.letsPlotCallQueue.forEach(function(f) {f();});
+                    window.letsPlotCallQueue = [];
+                    
+                };
+                script.onerror = function(event) {
+                    window.letsPlotCall = function(f) {};    // noop
+                    window.letsPlotCallQueue = [];
+                    var div = document.createElement("div");
+                    div.style.color = 'darkred';
+                    div.textContent = 'Error loading Lets-Plot JS';
+                    document.getElementById("z0DzKV").appendChild(div);
+                };
+                var e = document.getElementById("z0DzKV");
+                e.appendChild(script);
+            })()
+        </script>
+        </div></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load dataset</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load dataset</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">,</span> <span class="s2">&quot;Season&quot;</span><span class="p">])</span>
 <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
 <span class="c1"># Restrict to 2019-2020 to keep tutorial execution fast</span>
@@ -707,11 +733,79 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">FileNotFoundError</span><span class="g g-Whitespace">                         </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">line</span> <span class="mi">2</span>
+<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="c1"># Load dataset</span>
+<span class="ne">----&gt; </span><span class="mi">2</span> <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">,</span> <span class="s2">&quot;Season&quot;</span><span class="p">])</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="c1"># Restrict to 2019-2020 to keep tutorial execution fast</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2019-01-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="s2">&quot;2020-12-31&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:669,</span> in <span class="ni">read_parquet</span><span class="nt">(path, engine, columns, storage_options, use_nullable_dtypes, dtype_backend, filesystem, filters, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">666</span>     <span class="n">use_nullable_dtypes</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="g g-Whitespace">    </span><span class="mi">667</span> <span class="n">check_dtype_backend</span><span class="p">(</span><span class="n">dtype_backend</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">669</span> <span class="k">return</span> <span class="n">impl</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">670</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">671</span>     <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">672</span>     <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">673</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">674</span>     <span class="n">use_nullable_dtypes</span><span class="o">=</span><span class="n">use_nullable_dtypes</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">675</span>     <span class="n">dtype_backend</span><span class="o">=</span><span class="n">dtype_backend</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">676</span>     <span class="n">filesystem</span><span class="o">=</span><span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">677</span>     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">678</span> <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:258,</span> in <span class="ni">PyArrowImpl.read</span><span class="nt">(self, path, columns, filters, use_nullable_dtypes, dtype_backend, storage_options, filesystem, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">256</span> <span class="k">if</span> <span class="n">manager</span> <span class="o">==</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">257</span>     <span class="n">to_pandas_kwargs</span><span class="p">[</span><span class="s2">&quot;split_blocks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="ne">--&gt; </span><span class="mi">258</span> <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">handles</span><span class="p">,</span> <span class="n">filesystem</span> <span class="o">=</span> <span class="n">_get_path_or_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">259</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">260</span>     <span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">261</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">262</span>     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">263</span> <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">264</span> <span class="k">try</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">265</span>     <span class="n">pa_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">parquet</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">266</span>         <span class="n">path_or_handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">267</span>         <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">270</span>         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">271</span>     <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:141,</span> in <span class="ni">_get_path_or_handle</span><span class="nt">(path, fs, storage_options, mode, is_dir)</span>
+<span class="g g-Whitespace">    </span><span class="mi">131</span> <span class="n">handles</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">132</span> <span class="k">if</span> <span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">133</span>     <span class="ow">not</span> <span class="n">fs</span>
+<span class="g g-Whitespace">    </span><span class="mi">134</span>     <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_dir</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">139</span>     <span class="c1"># fsspec resources can also point to directories</span>
+<span class="g g-Whitespace">    </span><span class="mi">140</span>     <span class="c1"># this branch is used for example when reading from non-fsspec URLs</span>
+<span class="ne">--&gt; </span><span class="mi">141</span>     <span class="n">handles</span> <span class="o">=</span> <span class="n">get_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">142</span>         <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">is_text</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span>
+<span class="g g-Whitespace">    </span><span class="mi">143</span>     <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">144</span>     <span class="n">fs</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">145</span>     <span class="n">path_or_handle</span> <span class="o">=</span> <span class="n">handles</span><span class="o">.</span><span class="n">handle</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/common.py:882,</span> in <span class="ni">get_handle</span><span class="nt">(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)</span>
+<span class="g g-Whitespace">    </span><span class="mi">873</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">874</span>             <span class="n">handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">875</span>             <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">878</span>             <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">879</span>         <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">880</span>     <span class="k">else</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">881</span>         <span class="c1"># Binary mode</span>
+<span class="ne">--&gt; </span><span class="mi">882</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">883</span>     <span class="n">handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">885</span> <span class="c1"># Convert BytesIO or file objects passed with an encoding</span>
+
+<span class="ne">FileNotFoundError</span>: [Errno 2] No such file or directory: &#39;../data/MLVS-PT.parquet&#39;
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Extract target as numpy array — used throughout</span>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Extract target as numpy array — used throughout</span>
 <span class="n">series</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Series length : </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> samples&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Min / Max     : </span><span class="si">{</span><span class="n">series</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">series</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> kW&quot;</span><span class="p">)</span>
@@ -719,11 +813,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visual overview — full series so we can see structure, cycles, and any anomalies</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visual overview — full series so we can see structure, cycles, and any anomalies</span>
 <span class="n">p</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
     <span class="n">data</span><span class="p">,</span>
     <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span>
@@ -737,22 +830,29 @@
 </pre></div>
 </div>
 </div>
+</div>
 <blockquote>
 <div><p><strong>Key concept - Entropy</strong></p>
-<p>In information theory, <strong>entropy</strong> measures how unpredictable a sequence is. A completely regular signal (e.g., a perfect sine wave) has near-zero entropy - you can predict each value perfectly from the pattern. A completely random sequence (white noise) has maximum entropy - there is no pattern to exploit.</p>
-<p>For time series forecasting, lower entropy means the signal has more exploitable structure, so a model can learn better. The metrics below each capture a different aspect of this regularity:</p>
+<p>In information theory, <strong>entropy</strong> measures how unpredictable a sequence is.
+A completely regular signal (e.g., a perfect sine wave) has near-zero entropy - you
+can predict each value perfectly from the pattern.  A completely random sequence
+(white noise) has maximum entropy - there is no pattern to exploit.</p>
+<p>For time series forecasting, lower entropy means the signal has more exploitable
+structure, so a model can learn better.  The metrics below each capture a different
+aspect of this regularity:</p>
 <ul class="simple">
-<li><p><strong>Permutation Entropy (PE)</strong> - compares the frequency of ordinal patterns in the series. Near 0 = highly regular; near 1 = chaotic.</p></li>
-<li><p><strong>Sample Entropy (SampEn)</strong> - measures the probability that similar subsequences remain similar when extended by one step. Low values mean the series is self-similar (predictable).</p></li>
-<li><p><strong>Hurst Exponent (H)</strong> - tests for long-range memory. H &gt; 0.5 means the series is <em>persistent</em>: an upward trend tends to continue; a downward trend tends to continue. H &lt; 0.5 means mean-reverting (less useful for direct forecasting).</p></li>
+<li><p><strong>Permutation Entropy (PE)</strong> - compares the frequency of ordinal patterns in the series.  Near 0 = highly regular; near 1 = chaotic.</p></li>
+<li><p><strong>Sample Entropy (SampEn)</strong> - measures the probability that similar subsequences remain similar when extended by one step.  Low values mean the series is self-similar (predictable).</p></li>
+<li><p><strong>Hurst Exponent (H)</strong> - tests for long-range memory.  H &gt; 0.5 means the series is <em>persistent</em>: an upward trend tends to continue; a downward trend tends to continue.  H &lt; 0.5 means mean-reverting (less useful for direct forecasting).</p></li>
 <li><p><strong>DFA Exponent (α)</strong> - Detrended Fluctuation Analysis; similar interpretation to the Hurst exponent but more robust to non-stationarity.</p></li>
 </ul>
 </div></blockquote>
 </section>
 <hr class="docutils" />
-<section id="1.-Entropy:-How-much-structure-exists?">
-<h2>1. Entropy: How much structure exists?<a class="headerlink" href="#1.-Entropy:-How-much-structure-exists?" title="Link to this heading">#</a></h2>
-<p>Entropy metrics quantify the balance between regularity and randomness in the signal. A series with low entropy has strong, repeating patterns and is generally easier to forecast.</p>
+<section id="entropy-how-much-structure-exists">
+<h2>1. Entropy: How much structure exists?<a class="headerlink" href="#entropy-how-much-structure-exists" title="Link to this heading">#</a></h2>
+<p>Entropy metrics quantify the balance between regularity and randomness in the signal.
+A series with low entropy has strong, repeating patterns and is generally easier to forecast.</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Metric</p></th>
@@ -784,11 +884,9 @@
 </tbody>
 </table>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">entropy_ref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">entropy_ref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;Metric&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="s2">&quot;Permutation Entropy (PE)&quot;</span><span class="p">,</span>
@@ -826,11 +924,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats.entropy</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats.entropy</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">get_approx_entropy</span><span class="p">,</span>
     <span class="n">get_dfa_exponent</span><span class="p">,</span>
     <span class="n">get_hurst_exponent</span><span class="p">,</span>
@@ -840,11 +937,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Computing entropy metrics (this may take ~30 s) ...&quot;</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Computing entropy metrics (this may take ~30 s) ...&quot;</span><span class="p">)</span>
 
 <span class="n">pe</span> <span class="o">=</span> <span class="n">get_permutation_entropy</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
 <span class="n">apen</span> <span class="o">=</span> <span class="n">get_approx_entropy</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
@@ -897,30 +993,28 @@
 </pre></div>
 </div>
 </div>
+</div>
 <p><strong>Takeaway:</strong> A Hurst exponent H &gt; 0.5 confirms the net-load series has <strong>persistent long-range memory</strong> - past values are informative for future ones. A low PE confirms repeating daily/weekly patterns dominate the signal, making it well-suited for model-based forecasting.</p>
 </section>
 <hr class="docutils" />
-<section id="2.-Seasonality:-What-cycles-can-we-exploit?">
-<h2>2. Seasonality: What cycles can we exploit?<a class="headerlink" href="#2.-Seasonality:-What-cycles-can-we-exploit?" title="Link to this heading">#</a></h2>
+<section id="seasonality-what-cycles-can-we-exploit">
+<h2>2. Seasonality: What cycles can we exploit?<a class="headerlink" href="#seasonality-what-cycles-can-we-exploit" title="Link to this heading">#</a></h2>
 <p>The Autocorrelation Function (ACF) reveals periodic structure. Peaks at multiples of the sampling frequency indicate exploitable seasonality.</p>
 <p>For 30-minute data:</p>
 <ul class="simple">
 <li><p><strong>Lag 48</strong> = 24 h daily cycle</p></li>
 <li><p><strong>Lag 336</strong> = 7-day weekly cycle</p></li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats.seasonality</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_acf_values</span>
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats.seasonality</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_acf_values</span>
-</pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute ACF — maxlag=336 covers one full week of 30-min data</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute ACF — maxlag=336 covers one full week of 30-min data</span>
 <span class="n">acf_values</span><span class="p">,</span> <span class="n">acf_confint</span> <span class="o">=</span> <span class="n">get_acf_values</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">maxlag</span><span class="o">=</span><span class="mi">336</span><span class="p">)</span>
 
 <span class="n">p</span> <span class="o">=</span> <span class="n">plot_acf</span><span class="p">(</span>
@@ -933,11 +1027,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Dominant seasonal lags: ACF &gt; 0.5</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Dominant seasonal lags: ACF &gt; 0.5</span>
 <span class="n">dominant_lags</span> <span class="o">=</span> <span class="p">[</span><span class="n">lag</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">lag</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">acf_values</span><span class="p">)</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">][:</span><span class="mi">10</span><span class="p">]</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dominant lags (|ACF| &gt; 0.5): </span><span class="si">{</span><span class="n">dominant_lags</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ACF at lag 48  (daily) : </span><span class="si">{</span><span class="n">acf_values</span><span class="p">[</span><span class="mi">47</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -945,25 +1038,23 @@
 </pre></div>
 </div>
 </div>
+</div>
 <p><strong>Takeaway:</strong> Strong ACF peaks at lag 48 and lag 336 confirm <strong>daily and weekly seasonality</strong>. These directly inform <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig.lookback_window_size</span></code> and <code class="docutils literal notranslate"><span class="pre">lags</span></code>.</p>
 </section>
 <hr class="docutils" />
-<section id="3.-Autoregressive-Order:-Which-lags-are-informative?">
-<h2>3. Autoregressive Order: Which lags are informative?<a class="headerlink" href="#3.-Autoregressive-Order:-Which-lags-are-informative?" title="Link to this heading">#</a></h2>
+<section id="autoregressive-order-which-lags-are-informative">
+<h2>3. Autoregressive Order: Which lags are informative?<a class="headerlink" href="#autoregressive-order-which-lags-are-informative" title="Link to this heading">#</a></h2>
 <p>The Partial Autocorrelation Function (PACF) isolates the direct effect of each lag after removing the influence of shorter lags. The lag at which PACF cuts off estimates the AR order p.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats.autocorr</span><span class="w"> </span><span class="kn">import</span> <span class="n">estimate_ar_order</span><span class="p">,</span> <span class="n">get_pacf_values</span>
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats.autocorr</span><span class="w"> </span><span class="kn">import</span> <span class="n">estimate_ar_order</span><span class="p">,</span> <span class="n">get_pacf_values</span>
-</pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute PACF up to lag 100</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute PACF up to lag 100</span>
 <span class="n">pacf_values</span><span class="p">,</span> <span class="n">pacf_confint</span> <span class="o">=</span> <span class="n">get_pacf_values</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">maxlag</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 
 <span class="n">p</span> <span class="o">=</span> <span class="n">plot_acf</span><span class="p">(</span>
@@ -977,11 +1068,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Estimate AR order from PACF cutoff</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Estimate AR order from PACF cutoff</span>
 <span class="n">significant_lags</span><span class="p">,</span> <span class="n">ar_order</span> <span class="o">=</span> <span class="n">estimate_ar_order</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">maxlag</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 
 <span class="n">ar_summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
@@ -1026,20 +1116,22 @@
 </pre></div>
 </div>
 </div>
+</div>
 <p><strong>Takeaway:</strong> The PACF cutoff lag gives the minimal AR order that captures direct dependencies. Any lags beyond the cutoff are already explained by shorter lags and add noise rather than signal.</p>
 <blockquote>
 <div><p><strong>Key concept - Stationarity</strong></p>
-<p>A time series is <strong>stationary</strong> if its statistical properties (mean, variance, autocorrelation) do not change over time. Most forecasting models implicitly assume stationarity - if the distribution shifts, a model trained on historical data may perform poorly on future data.</p>
+<p>A time series is <strong>stationary</strong> if its statistical properties (mean, variance, autocorrelation) do not change over time.
+Most forecasting models implicitly assume stationarity - if the distribution shifts, a model trained on historical data may perform poorly on future data.</p>
 <ul class="simple">
-<li><p><strong>ADF test (Augmented Dickey-Fuller)</strong>: tests the null hypothesis that the series has a unit root (non-stationary). A small p-value (&lt; 0.05) means we can reject the unit root - the series is likely stationary.</p></li>
-<li><p><strong>KPSS test (Kwiatkowski - Phillips - Schmidt - Shin)</strong>: tests the null hypothesis that the series <em>is</em> stationary. A large p-value (&gt; 0.05) means we cannot reject stationarity - consistent with a stationary series.</p></li>
+<li><p><strong>ADF test (Augmented Dickey-Fuller)</strong>: tests the null hypothesis that the series has a unit root (non-stationary).  A small p-value (&lt; 0.05) means we can reject the unit root - the series is likely stationary.</p></li>
+<li><p><strong>KPSS test (Kwiatkowski - Phillips - Schmidt - Shin)</strong>: tests the null hypothesis that the series <em>is</em> stationary.  A large p-value (&gt; 0.05) means we cannot reject stationarity - consistent with a stationary series.</p></li>
 </ul>
-<p>Using both tests together gives stronger evidence. If they agree (ADF rejects unit root AND KPSS cannot reject stationarity), a standard <code class="docutils literal notranslate"><span class="pre">StandardScaler</span></code> is appropriate. If they disagree, consider differencing or a <code class="docutils literal notranslate"><span class="pre">RobustScaler</span></code>.</p>
+<p>Using both tests together gives stronger evidence.  If they agree (ADF rejects unit root AND KPSS cannot reject stationarity), a standard <code class="docutils literal notranslate"><span class="pre">StandardScaler</span></code> is appropriate.  If they disagree, consider differencing or a <code class="docutils literal notranslate"><span class="pre">RobustScaler</span></code>.</p>
 </div></blockquote>
 </section>
 <hr class="docutils" />
-<section id="4.-Stationarity:-Is-the-distribution-stable?">
-<h2>4. Stationarity: Is the distribution stable?<a class="headerlink" href="#4.-Stationarity:-Is-the-distribution-stable?" title="Link to this heading">#</a></h2>
+<section id="stationarity-is-the-distribution-stable">
+<h2>4. Stationarity: Is the distribution stable?<a class="headerlink" href="#stationarity-is-the-distribution-stable" title="Link to this heading">#</a></h2>
 <p>A stationary series has constant mean and variance over time. This determines the appropriate scaler and whether differencing is needed.</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
@@ -1068,11 +1160,9 @@
 </tbody>
 </table>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stationarity_ref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stationarity_ref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;ADF p-value&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;&lt; 0.05&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt; 0.05&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt; 0.05&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt; 0.05&quot;</span><span class="p">],</span>
         <span class="s2">&quot;KPSS p-value&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;&gt; 0.05&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt; 0.05&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt; 0.05&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt; 0.05&quot;</span><span class="p">],</span>
@@ -1103,19 +1193,17 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats.stationarity</span><span class="w"> </span><span class="kn">import</span> <span class="n">adf_test</span><span class="p">,</span> <span class="n">kpss_test</span>
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats.stationarity</span><span class="w"> </span><span class="kn">import</span> <span class="n">adf_test</span><span class="p">,</span> <span class="n">kpss_test</span>
-</pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adf_result</span> <span class="o">=</span> <span class="n">adf_test</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adf_result</span> <span class="o">=</span> <span class="n">adf_test</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
 <span class="n">kpss_result</span> <span class="o">=</span> <span class="n">kpss_test</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
 
 <span class="n">adf_pval</span> <span class="o">=</span> <span class="n">adf_result</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -1179,15 +1267,14 @@
 </pre></div>
 </div>
 </div>
-<section id="5.-AMI-profile:-how-far-does-exploitable-information-reach?">
-<h3>5. AMI profile: how far does exploitable information reach?<a class="headerlink" href="#5.-AMI-profile:-how-far-does-exploitable-information-reach?" title="Link to this heading">#</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">ami_h1</span></code> anchors the signal strength at the shortest horizon. <code class="docutils literal notranslate"><span class="pre">rel_auc</span> <span class="pre">=</span> <span class="pre">mean_AMI</span> <span class="pre">/</span> <span class="pre">AMI(h=1)</span></code> measures <em>persistence</em>: a high <code class="docutils literal notranslate"><span class="pre">rel_auc</span></code> means the signal decays slowly across horizons; a low <code class="docutils literal notranslate"><span class="pre">rel_auc</span></code> means it collapses immediately.</p>
-<p><code class="docutils literal notranslate"><span class="pre">effective_horizon</span></code> is the first horizon where AMI drops below <code class="docutils literal notranslate"><span class="pre">ami_noise_floor</span> <span class="pre">×</span> <span class="pre">AMI(h=1)</span></code> - the practical boundary of the useful forecast window.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats.ami</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_ami_profile</span>
+<section id="ami-profile-how-far-does-exploitable-information-reach">
+<h3>5. AMI profile: how far does exploitable information reach?<a class="headerlink" href="#ami-profile-how-far-does-exploitable-information-reach" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">ami_h1</span></code> anchors the signal strength at the shortest horizon.  <code class="docutils literal notranslate"><span class="pre">rel_auc</span> <span class="pre">=</span> <span class="pre">mean_AMI</span> <span class="pre">/</span> <span class="pre">AMI(h=1)</span></code> measures <em>persistence</em>: a high <code class="docutils literal notranslate"><span class="pre">rel_auc</span></code> means the signal decays slowly across horizons; a low <code class="docutils literal notranslate"><span class="pre">rel_auc</span></code> means it collapses immediately.</p>
+<p><code class="docutils literal notranslate"><span class="pre">effective_horizon</span></code> is the first horizon where AMI drops below <code class="docutils literal notranslate"><span class="pre">ami_noise_floor</span> <span class="pre">×</span> <span class="pre">AMI(h=1)</span></code> - the practical boundary of the useful forecast window.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.stats.ami</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_ami_profile</span>
 
 <span class="n">ami_horizons</span><span class="p">,</span> <span class="n">ami_values</span> <span class="o">=</span> <span class="n">get_ami_profile</span><span class="p">(</span>
     <span class="n">data</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
@@ -1197,11 +1284,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ami_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ami_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;horizon&quot;</span><span class="p">:</span> <span class="n">ami_horizons</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
         <span class="s2">&quot;ami&quot;</span><span class="p">:</span> <span class="n">ami_values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
@@ -1219,22 +1305,21 @@
 </pre></div>
 </div>
 </div>
+</div>
 <blockquote>
 <div><p><strong>Key concept - AMI vs. ACF</strong></p>
-<p>ACF measures <em>linear</em> autocorrelation at lag h. AMI captures <em>any</em> dependence (linear or nonlinear) between past increments and future increments. A series can have low ACF but high AMI, indicating nonlinear structure that linear models will miss.</p>
-<p>AMI is computed on <strong>first-differenced</strong> values to remove level persistence. A series with strong trend will show high level-based AMI even if it contains no exploitable structure - differencing removes this deceptive baseline.</p>
+<p>ACF measures <em>linear</em> autocorrelation at lag h.  AMI captures <em>any</em> dependence (linear or nonlinear) between past increments and future increments.  A series can have low ACF but high AMI, indicating nonlinear structure that linear models will miss.</p>
+<p>AMI is computed on <strong>first-differenced</strong> values to remove level persistence.  A series with strong trend will show high level-based AMI even if it contains no exploitable structure - differencing removes this deceptive baseline.</p>
 </div></blockquote>
 </section>
 </section>
 <hr class="docutils" />
-<section id="6.-Forecastability-Profile">
-<h2>6. Forecastability Profile<a class="headerlink" href="#6.-Forecastability-Profile" title="Link to this heading">#</a></h2>
+<section id="forecastability-profile">
+<h2>6. Forecastability Profile<a class="headerlink" href="#forecastability-profile" title="Link to this heading">#</a></h2>
 <p>Assembling all findings into a single profile that directly maps to modelling decisions.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">profile</span> <span class="o">=</span> <span class="p">{</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">profile</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;permutation_entropy&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">pe</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
     <span class="s2">&quot;sample_entropy&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">se</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
     <span class="s2">&quot;hurst_exponent&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
@@ -1248,14 +1333,13 @@
 </pre></div>
 </div>
 </div>
-<section id="From-profile-to-model-choices">
-<h3>From profile to model choices<a class="headerlink" href="#From-profile-to-model-choices" title="Link to this heading">#</a></h3>
-<p>The table below maps each finding from the forecastability profile to a concrete <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> parameter.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">profile_decisions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<section id="from-profile-to-model-choices">
+<h3>From profile to model choices<a class="headerlink" href="#from-profile-to-model-choices" title="Link to this heading">#</a></h3>
+<p>The table below maps each finding from the forecastability profile to a concrete <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> parameter.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">profile_decisions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;Profile finding&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="s2">&quot;Strong ACF peak at lag 48&quot;</span><span class="p">,</span>
@@ -1294,6 +1378,7 @@
 </pre></div>
 </div>
 </div>
+</div>
 <p>Concretely, this profile suggests the following starting <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span>
@@ -1310,11 +1395,9 @@
 <span class="p">)</span>
 </pre></div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">profile_to_config</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">profile_to_config</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;Profile finding&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="s2">&quot;Strong ACF peak at lag 48&quot;</span><span class="p">,</span>
@@ -1353,18 +1436,17 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
 <hr class="docutils" />
-<section id="7.-Signal-Characterisation:-One-call-to-rule-them-all">
-<h2>7. Signal Characterisation: One call to rule them all<a class="headerlink" href="#7.-Signal-Characterisation:-One-call-to-rule-them-all" title="Link to this heading">#</a></h2>
+<section id="signal-characterisation-one-call-to-rule-them-all">
+<h2>7. Signal Characterisation: One call to rule them all<a class="headerlink" href="#signal-characterisation-one-call-to-rule-them-all" title="Link to this heading">#</a></h2>
 <p>The individual steps above (entropy, ACF/PACF, stationarity, AMI) are wrapped into a single <code class="docutils literal notranslate"><span class="pre">SignalCharacteriser</span></code> that runs all four diagnostic dimensions in one call and returns an immutable <code class="docutils literal notranslate"><span class="pre">CharacterisationResult</span></code>.</p>
 <p>The result’s <code class="docutils literal notranslate"><span class="pre">to_pipeline_hints()</span></code> method translates the diagnostics directly into <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> constructor kwargs, closing the loop between analysis and modelling.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.characterisation</span><span class="w"> </span><span class="kn">import</span> <span class="n">CharacterisationConfig</span><span class="p">,</span> <span class="n">SignalCharacteriser</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.characterisation</span><span class="w"> </span><span class="kn">import</span> <span class="n">CharacterisationConfig</span><span class="p">,</span> <span class="n">SignalCharacteriser</span>
 
 <span class="c1"># Cap AMI at 96 horizons (one day) to keep runtime short in this notebook.</span>
 <span class="c1"># Remove ami_max_horizons or increase it for a full profile on your own data.</span>
@@ -1378,25 +1460,23 @@
 </pre></div>
 </div>
 </div>
-<section id="Tabular-summary">
-<h3>Tabular summary<a class="headerlink" href="#Tabular-summary" title="Link to this heading">#</a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">summary_df</span> <span class="o">=</span> <span class="n">SignalCharacteriser</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<section id="tabular-summary">
+<h3>Tabular summary<a class="headerlink" href="#tabular-summary" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">summary_df</span> <span class="o">=</span> <span class="n">SignalCharacteriser</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 <span class="n">summary_df</span>
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Key-outputs">
-<h3>Key outputs<a class="headerlink" href="#Key-outputs" title="Link to this heading">#</a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Stationarity verdict  :&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">stationarity</span><span class="o">.</span><span class="n">verdict</span><span class="p">)</span>
+</section>
+<section id="key-outputs">
+<h3>Key outputs<a class="headerlink" href="#key-outputs" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Stationarity verdict  :&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">stationarity</span><span class="o">.</span><span class="n">verdict</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Integration order (d) :&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">stationarity</span><span class="o">.</span><span class="n">integration_order</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;AR order (p̂)          :&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">temporal</span><span class="o">.</span><span class="n">ar_order</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Seasonal periods      :&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">temporal</span><span class="o">.</span><span class="n">seasonal_periods</span><span class="p">)</span>
@@ -1410,33 +1490,33 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Pipeline-hints:-from-characterisation-to-DataPipeline">
-<h3>Pipeline hints: from characterisation to DataPipeline<a class="headerlink" href="#Pipeline-hints:-from-characterisation-to-DataPipeline" title="Link to this heading">#</a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hints</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">to_pipeline_hints</span><span class="p">()</span>
+</section>
+<section id="pipeline-hints-from-characterisation-to-datapipeline">
+<h3>Pipeline hints: from characterisation to DataPipeline<a class="headerlink" href="#pipeline-hints-from-characterisation-to-datapipeline" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hints</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">to_pipeline_hints</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DataPipeline hints:&quot;</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">hints</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">k</span><span class="si">:</span><span class="s2">25s</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
 <hr class="docutils" />
-<section id="Wrapping-up">
-<h2>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<section id="wrapping-up">
+<h2>Wrapping up<a class="headerlink" href="#wrapping-up" title="Link to this heading">#</a></h2>
 <p><strong>What you did</strong></p>
-<ul class="simple">
-<li><p>☒ Computed Permutation Entropy, Sample Entropy, Hurst Exponent, and DFA Exponent to quantify signal complexity</p></li>
-<li><p>☒ Identified dominant seasonal periods (daily lag 48, weekly lag 336) from the ACF</p></li>
-<li><p>☒ Estimated the AR order (p = 7) from the PACF cutoff</p></li>
-<li><p>☒ Ran ADF and KPSS stationarity tests and selected an appropriate scaler</p></li>
-<li><p>☒ Ranked exogenous features by Xi correlation to decide which to include in the config</p></li>
-<li><p>☒ Assembled a complete Forecastability Profile and mapped it to <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> parameters</p></li>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Computed Permutation Entropy, Sample Entropy, Hurst Exponent, and DFA Exponent to quantify signal complexity</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Identified dominant seasonal periods (daily lag 48, weekly lag 336) from the ACF</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Estimated the AR order (p = 7) from the PACF cutoff</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Ran ADF and KPSS stationarity tests and selected an appropriate scaler</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Ranked exogenous features by Xi correlation to decide which to include in the config</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Assembled a complete Forecastability Profile and mapped it to <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> parameters</p></li>
 </ul>
 <p><strong>Key takeaways for beginners</strong></p>
 <ol class="arabic simple">
@@ -1448,8 +1528,8 @@
 </ol>
 </section>
 <hr class="docutils" />
-<section id="What's-next?">
-<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<section id="what-s-next">
+<h2>What’s next?<a class="headerlink" href="#what-s-next" title="Link to this heading">#</a></h2>
 <p><strong>NB03 - Feature Engineering</strong> covers:</p>
 <ul class="simple">
 <li><p>Constructing <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> from the profile above</p></li>
@@ -1458,11 +1538,9 @@
 <li><p>Train / validation / test splitting with <code class="docutils literal notranslate"><span class="pre">TimeBasedCV</span></code></p></li>
 </ul>
 <p>The forecastability profile built here will be used directly to justify every parameter choice in NB03.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
 
 <span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
@@ -1545,6 +1623,7 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
 
@@ -1595,26 +1674,26 @@
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Setup">Setup</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Entropy:-How-much-structure-exists?">1. Entropy: How much structure exists?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Seasonality:-What-cycles-can-we-exploit?">2. Seasonality: What cycles can we exploit?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-Autoregressive-Order:-Which-lags-are-informative?">3. Autoregressive Order: Which lags are informative?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Stationarity:-Is-the-distribution-stable?">4. Stationarity: Is the distribution stable?</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-AMI-profile:-how-far-does-exploitable-information-reach?">5. AMI profile: how far does exploitable information reach?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup">Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#entropy-how-much-structure-exists">1. Entropy: How much structure exists?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#seasonality-what-cycles-can-we-exploit">2. Seasonality: What cycles can we exploit?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#autoregressive-order-which-lags-are-informative">3. Autoregressive Order: Which lags are informative?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stationarity-is-the-distribution-stable">4. Stationarity: Is the distribution stable?</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ami-profile-how-far-does-exploitable-information-reach">5. AMI profile: how far does exploitable information reach?</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Forecastability-Profile">6. Forecastability Profile</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#From-profile-to-model-choices">From profile to model choices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#forecastability-profile">6. Forecastability Profile</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-profile-to-model-choices">From profile to model choices</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-Signal-Characterisation:-One-call-to-rule-them-all">7. Signal Characterisation: One call to rule them all</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Tabular-summary">Tabular summary</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Key-outputs">Key outputs</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Pipeline-hints:-from-characterisation-to-DataPipeline">Pipeline hints: from characterisation to DataPipeline</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#signal-characterisation-one-call-to-rule-them-all">7. Signal Characterisation: One call to rule them all</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tabular-summary">Tabular summary</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#key-outputs">Key outputs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-hints-from-characterisation-to-datapipeline">Pipeline hints: from characterisation to DataPipeline</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">Wrapping up</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">What’s next?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#wrapping-up">Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-s-next">What’s next?</a></li>
 </ul>
   </nav></div>
 

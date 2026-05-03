@@ -32,9 +32,9 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=79a279a3" />
     <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   
@@ -55,10 +55,6 @@
     <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/14-typed-forecast-results';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../../_static/twiga-icon.svg"/>
@@ -622,18 +618,21 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="Typed-Forecast-Results">
-<h1>Typed Forecast Results<a class="headerlink" href="#Typed-Forecast-Results" title="Link to this heading">#</a></h1>
-<p><img alt="Intermediate" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~15%20min-lightgrey" /></p>
+  <section class="tex2jax_ignore mathjax_ignore" id="typed-forecast-results">
+<h1>Typed Forecast Results<a class="headerlink" href="#typed-forecast-results" title="Link to this heading">#</a></h1>
+<p><img alt="Intermediate" src="https://img.shields.io/badge/level-intermediate-yellow" />
+<img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" />
+<img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" />
+<img alt="Time" src="https://img.shields.io/badge/time-~15%20min-lightgrey" /></p>
 <hr class="docutils" />
 <p><strong>What you’ll build</strong></p>
 <p>A workflow using <code class="docutils literal notranslate"><span class="pre">ForecastResult</span></code> and <code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code> objects - typed containers that dispatch automatically to the correct evaluation and plot routines, replacing ad-hoc DataFrame wrangling with a structured, type-safe interface.</p>
 <p><strong>Prerequisites</strong></p>
 <ul class="simple">
-<li><p><a class="reference internal" href="01-getting-started.html"><span class="doc">01 - Getting Started</span></a></p></li>
-<li><p><a class="reference external" href="06-neural-networks.ipynb">06 - Neural Networks</a></p></li>
-<li><p><a class="reference external" href="07-quantile-regression.ipynb">07 - Quantile Regression</a></p></li>
-<li><p><a class="reference external" href="08-parametric-distributions.ipynb">08 - Parametric Distributions</a></p></li>
+<li><p><span class="xref myst">01 - Getting Started</span></p></li>
+<li><p><a class="reference internal" href="#06-neural-networks.ipynb"><span class="xref myst">06 - Neural Networks</span></a></p></li>
+<li><p><a class="reference internal" href="#07-quantile-regression.ipynb"><span class="xref myst">07 - Quantile Regression</span></a></p></li>
+<li><p><a class="reference internal" href="#08-parametric-distributions.ipynb"><span class="xref myst">08 - Parametric Distributions</span></a></p></li>
 </ul>
 <p><strong>Learning objectives</strong></p>
 <p>By the end of this notebook you will be able to:</p>
@@ -644,8 +643,8 @@
 <li><p>Call <code class="docutils literal notranslate"><span class="pre">.evaluate()</span></code> without knowing the forecast kind - dispatch happens automatically</p></li>
 <li><p>Use <code class="docutils literal notranslate"><span class="pre">.plot()</span></code> dispatch to visualise point, quantile, and parametric results uniformly</p></li>
 </ol>
-<section id="Setup">
-<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading">#</a></h2>
+<section id="setup">
+<h2>Setup<a class="headerlink" href="#setup" title="Link to this heading">#</a></h2>
 <blockquote>
 <div><p><strong>Key concept - typed forecast results</strong></p>
 <p>Every call to <code class="docutils literal notranslate"><span class="pre">forecaster.forecast()</span></code> returns a <code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code> whose values are <code class="docutils literal notranslate"><span class="pre">ForecastResult</span></code> objects. Each result carries a <code class="docutils literal notranslate"><span class="pre">kind</span></code> field - one of <code class="docutils literal notranslate"><span class="pre">&quot;point&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;parametric&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;quantile&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;interval&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;samples&quot;</span></code> - that encodes what the result contains.</p>
@@ -664,11 +663,9 @@
 </pre></div>
 </div>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
@@ -685,11 +682,55 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="cell_output docutils container">
+<div class="output text_html">
+        <div id="Hq0IDp"></div>
+        <script type="text/javascript" data-lets-plot-script="library">
+            if(!window.letsPlotCallQueue) {
+                window.letsPlotCallQueue = [];
+            };
+            window.letsPlotCall = function(f) {
+                window.letsPlotCallQueue.push(f);
+            };
+            (function() {
+                var script = document.createElement("script");
+                script.type = "text/javascript";
+                script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.9.0/js-package/distr/lets-plot.min.js";
+                script.onload = function() {
+                    window.letsPlotCall = function(f) {f();};
+                    window.letsPlotCallQueue.forEach(function(f) {f();});
+                    window.letsPlotCallQueue = [];
+                    
+                };
+                script.onerror = function(event) {
+                    window.letsPlotCall = function(f) {};    // noop
+                    window.letsPlotCallQueue = [];
+                    var div = document.createElement("div");
+                    div.style.color = 'darkred';
+                    div.textContent = 'Error loading Lets-Plot JS';
+                    document.getElementById("Hq0IDp").appendChild(div);
+                };
+                var e = document.getElementById("Hq0IDp");
+                e.appendChild(script);
+            })()
+        </script>
+        </div><div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">TypeError</span><span class="g g-Whitespace">                                 </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">14</span>
+<span class="g g-Whitespace">     </span><span class="mi">10</span> 
+<span class="g g-Whitespace">     </span><span class="mi">11</span> <span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span><span class="p">,</span> <span class="n">TwigaForecaster</span>
+<span class="g g-Whitespace">     </span><span class="mi">12</span> <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+<span class="g g-Whitespace">     </span><span class="mi">13</span> 
+<span class="ne">---&gt; </span><span class="mi">14</span> <span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="ne">TypeError</span>: get_logger() got an unexpected keyword argument &#39;level&#39;
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── Sample data ──────────────────────────────────────────────────────────────</span>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── Sample data ──────────────────────────────────────────────────────────────</span>
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 <span class="n">n</span> <span class="o">=</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">90</span>  <span class="c1"># 90 days of hourly data</span>
 
@@ -709,17 +750,14 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="1.-Auto-populated-NN-dimensions">
-<h2>1. Auto-populated NN dimensions<a class="headerlink" href="#1.-Auto-populated-NN-dimensions" title="Link to this heading">#</a></h2>
-<div class="line-block">
-<div class="line">Previously, creating an NN config required calling <code class="docutils literal notranslate"><span class="pre">MLPFConfig.from_data_config(data_config)</span></code> so that</div>
-<div class="line"><code class="docutils literal notranslate"><span class="pre">forecast_horizon</span></code>, <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code>, and feature counts were populated.</div>
-</div>
-<div class="line-block">
-<div class="line"><strong>Now, all dimension fields default to ``0`` (a sentinel) and ``TwigaForecaster`` fills them automatically.</strong></div>
-<div class="line">You only need to set training hyperparameters:</div>
-</div>
+<section id="auto-populated-nn-dimensions">
+<h2>1. Auto-populated NN dimensions<a class="headerlink" href="#auto-populated-nn-dimensions" title="Link to this heading">#</a></h2>
+<p>Previously, creating an NN config required calling <code class="docutils literal notranslate"><span class="pre">MLPFConfig.from_data_config(data_config)</span></code> so that<br />
+<code class="docutils literal notranslate"><span class="pre">forecast_horizon</span></code>, <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code>, and feature counts were populated.</p>
+<p><strong>Now, all dimension fields default to <code class="docutils literal notranslate"><span class="pre">0</span></code> (a sentinel) and <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> fills them automatically.</strong><br />
+You only need to set training hyperparameters:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Old API</span>
 <span class="n">mlpf_config</span> <span class="o">=</span> <span class="n">MLPFConfig</span><span class="o">.</span><span class="n">from_data_config</span><span class="p">(</span><span class="n">data_config</span><span class="p">)</span>
 <span class="n">mlpf_config</span><span class="o">.</span><span class="n">max_epochs</span> <span class="o">=</span> <span class="mi">5</span>
@@ -729,11 +767,9 @@
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">from_data_config()</span></code> still exists for standalone inspection or building configs outside a forecaster.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span>
 
 <span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
     <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;load_kw&quot;</span><span class="p">,</span>
@@ -767,18 +803,15 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="2.-The-distribution=-shorthand">
-<h2>2. The <code class="docutils literal notranslate"><span class="pre">distribution=</span></code> shorthand<a class="headerlink" href="#2.-The-distribution=-shorthand" title="Link to this heading">#</a></h2>
-<div class="line-block">
-<div class="line">Instead of importing a dedicated class for each probabilistic variant, set <code class="docutils literal notranslate"><span class="pre">distribution=</span></code> on any base arch config.</div>
-<div class="line"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> resolves it to the concrete class automatically - Pydantic validates the value at construction time.</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">md</span>
+<section id="the-distribution-shorthand">
+<h2>2. The <code class="docutils literal notranslate"><span class="pre">distribution=</span></code> shorthand<a class="headerlink" href="#the-distribution-shorthand" title="Link to this heading">#</a></h2>
+<p>Instead of importing a dedicated class for each probabilistic variant, set <code class="docutils literal notranslate"><span class="pre">distribution=</span></code> on any base arch config.<br />
+<code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> resolves it to the concrete class automatically - Pydantic validates the value at construction time.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -808,11 +841,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">arch_distributions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">arch_distributions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;Arch&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;MLPFConfig&quot;</span><span class="p">,</span> <span class="s2">&quot;MLPGAMConfig&quot;</span><span class="p">,</span> <span class="s2">&quot;MLPGAFConfig&quot;</span><span class="p">],</span>
         <span class="s2">&quot;Supported distributions&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -833,11 +865,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformalConfig</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformalConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span><span class="p">,</span> <span class="n">MLPGAMConfig</span>
 
 <span class="c1"># Normal distribution on MLPF backbone</span>
@@ -864,19 +895,19 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_prob</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_prob</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
-</pre></div>
 </div>
 </div>
 </section>
-<section id="3.-forecast():-typed-results-via-ForecastCollection">
-<h2>3. <code class="docutils literal notranslate"><span class="pre">forecast()</span></code>: typed results via <code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code><a class="headerlink" href="#3.-forecast():-typed-results-via-ForecastCollection" title="Link to this heading">#</a></h2>
+<section id="forecast-typed-results-via-forecastcollection">
+<h2>3. <code class="docutils literal notranslate"><span class="pre">forecast()</span></code>: typed results via <code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code><a class="headerlink" href="#forecast-typed-results-via-forecastcollection" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast()</span></code> and <code class="docutils literal notranslate"><span class="pre">predict()</span></code> return raw DataFrames, which is convenient but loses type information.</p>
-<p><code class="docutils literal notranslate"><span class="pre">forecaster.forecast(test_df)</span></code> returns a <strong>``ForecastCollection``</strong> - a dict-like container of <strong>``ForecastResult``</strong> objects, one per model.</p>
+<p><code class="docutils literal notranslate"><span class="pre">forecaster.forecast(test_df)</span></code> returns a <strong><code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code></strong> - a dict-like container of <strong><code class="docutils literal notranslate"><span class="pre">ForecastResult</span></code></strong> objects, one per model.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">collection</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
 <span class="n">result</span> <span class="o">=</span> <span class="n">collection</span><span class="p">[</span><span class="s2">&quot;mlpfnormal&quot;</span><span class="p">]</span>  <span class="c1"># ForecastResult</span>
 
@@ -897,11 +928,9 @@
 </ul>
 <p>Because <code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code> knows the <code class="docutils literal notranslate"><span class="pre">kind</span></code> of every result, ensemble strategies (mean, median, weighted mean) implemented in <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> can operate over results without inspecting which kind each model produced.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecastCollection</span><span class="p">,</span> <span class="n">ForecastResult</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecastCollection</span><span class="p">,</span> <span class="n">ForecastResult</span>
 
 <span class="n">collection</span> <span class="o">=</span> <span class="n">forecaster_prob</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
 
@@ -915,13 +944,12 @@
 </pre></div>
 </div>
 </div>
-<section id="Inspecting-a-single-result">
-<h3>Inspecting a single result<a class="headerlink" href="#Inspecting-a-single-result" title="Link to this heading">#</a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">collection</span><span class="p">[</span><span class="s2">&quot;mlpfnormal&quot;</span><span class="p">]</span>
+<section id="inspecting-a-single-result">
+<h3>Inspecting a single result<a class="headerlink" href="#inspecting-a-single-result" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">collection</span><span class="p">[</span><span class="s2">&quot;mlpfnormal&quot;</span><span class="p">]</span>
 
 <span class="c1"># First forecast window</span>
 <span class="n">window_0_timestamps</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">timestamps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -932,23 +960,23 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Converting-to-a-flat-DataFrame">
-<h3>Converting to a flat DataFrame<a class="headerlink" href="#Converting-to-a-flat-DataFrame" title="Link to this heading">#</a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
+</section>
+<section id="converting-to-a-flat-dataframe">
+<h3>Converting to a flat DataFrame<a class="headerlink" href="#converting-to-a-flat-dataframe" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Collection DataFrame shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
-<section id="4.-Putting-it-all-together">
-<h2>4. Putting it all together<a class="headerlink" href="#4.-Putting-it-all-together" title="Link to this heading">#</a></h2>
+<section id="putting-it-all-together">
+<h2>4. Putting it all together<a class="headerlink" href="#putting-it-all-together" title="Link to this heading">#</a></h2>
 <p>Here is the minimal end-to-end pattern with the new API:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span><span class="p">,</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span><span class="p">,</span> <span class="n">MLPGAMConfig</span>
@@ -974,11 +1002,9 @@
     <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -1011,16 +1037,17 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="Wrapping-up">
-<h2>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<section id="wrapping-up">
+<h2>Wrapping up<a class="headerlink" href="#wrapping-up" title="Link to this heading">#</a></h2>
 <p><strong>What you did</strong></p>
-<ul class="simple">
-<li><p>☒ Configured two probabilistic NN models using the <code class="docutils literal notranslate"><span class="pre">distribution=</span></code> shorthand</p></li>
-<li><p>☒ Used auto-populated dimensions - no <code class="docutils literal notranslate"><span class="pre">from_data_config()</span></code> call needed</p></li>
-<li><p>☒ Ran <code class="docutils literal notranslate"><span class="pre">forecaster.forecast(test_df)</span></code> and received a typed <code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code></p></li>
-<li><p>☒ Inspected individual <code class="docutils literal notranslate"><span class="pre">ForecastResult</span></code> objects (loc, timestamps, inference_time)</p></li>
-<li><p>☒ Converted the collection to a flat DataFrame with <code class="docutils literal notranslate"><span class="pre">.to_dataframe()</span></code></p></li>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Configured two probabilistic NN models using the <code class="docutils literal notranslate"><span class="pre">distribution=</span></code> shorthand</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Used auto-populated dimensions - no <code class="docutils literal notranslate"><span class="pre">from_data_config()</span></code> call needed</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Ran <code class="docutils literal notranslate"><span class="pre">forecaster.forecast(test_df)</span></code> and received a typed <code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Inspected individual <code class="docutils literal notranslate"><span class="pre">ForecastResult</span></code> objects (loc, timestamps, inference_time)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Converted the collection to a flat DataFrame with <code class="docutils literal notranslate"><span class="pre">.to_dataframe()</span></code></p></li>
 </ul>
 <p><strong>Key takeaways</strong></p>
 <ol class="arabic simple">
@@ -1032,13 +1059,11 @@
 </ol>
 </section>
 <hr class="docutils" />
-<section id="What's-next?">
-<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<section id="what-s-next">
+<h2>What’s next?<a class="headerlink" href="#what-s-next" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
 
 <span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
@@ -1121,6 +1146,7 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
 
@@ -1171,17 +1197,17 @@
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Setup">Setup</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Auto-populated-NN-dimensions">1. Auto-populated NN dimensions</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-The-distribution=-shorthand">2. The <code class="docutils literal notranslate"><span class="pre">distribution=</span></code> shorthand</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-forecast():-typed-results-via-ForecastCollection">3. <code class="docutils literal notranslate"><span class="pre">forecast()</span></code>: typed results via <code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Inspecting-a-single-result">Inspecting a single result</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Converting-to-a-flat-DataFrame">Converting to a flat DataFrame</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup">Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#auto-populated-nn-dimensions">1. Auto-populated NN dimensions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-distribution-shorthand">2. The <code class="docutils literal notranslate"><span class="pre">distribution=</span></code> shorthand</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#forecast-typed-results-via-forecastcollection">3. <code class="docutils literal notranslate"><span class="pre">forecast()</span></code>: typed results via <code class="docutils literal notranslate"><span class="pre">ForecastCollection</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#inspecting-a-single-result">Inspecting a single result</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#converting-to-a-flat-dataframe">Converting to a flat DataFrame</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Putting-it-all-together">4. Putting it all together</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">Wrapping up</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">What’s next?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#putting-it-all-together">4. Putting it all together</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#wrapping-up">Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-s-next">What’s next?</a></li>
 </ul>
   </nav></div>
 

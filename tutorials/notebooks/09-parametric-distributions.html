@@ -32,9 +32,9 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=79a279a3" />
     <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   
@@ -55,10 +55,6 @@
     <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/09-parametric-distributions';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../../_static/twiga-icon.svg"/>
@@ -622,16 +618,16 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="Parametric-Distributions">
-<h1>Parametric Distributions<a class="headerlink" href="#Parametric-Distributions" title="Link to this heading">#</a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="parametric-distributions">
+<h1>Parametric Distributions<a class="headerlink" href="#parametric-distributions" title="Link to this heading">#</a></h1>
 <p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~25%20min-lightgrey" /></p>
 <hr class="docutils" />
 <p><strong>What you’ll build</strong></p>
 <p>Probabilistic neural network forecasters using parametric distribution heads (Normal, Laplace, Gamma) trained with negative log-likelihood loss, evaluated on CRPS and calibration diagrams.</p>
 <p><strong>Prerequisites</strong></p>
 <ul class="simple">
-<li><p><a class="reference internal" href="07-neural-networks.html"><span class="doc">07 - Neural Networks</span></a> (MLPF, NHiTS, Lightning training loop)</p></li>
-<li><p><a class="reference internal" href="08-quantile-regression.html"><span class="doc">08 - Quantile Regression</span></a> (interval metrics: PICP, NMPI, Winkler)</p></li>
+<li><p><span class="xref myst">07 - Neural Networks</span> (MLPF, NHiTS, Lightning training loop)</p></li>
+<li><p><span class="xref myst">08 - Quantile Regression</span> (interval metrics: PICP, NMPI, Winkler)</p></li>
 <li><p>Python: basic probability distributions helpful</p></li>
 </ul>
 <p><strong>Learning objectives</strong></p>
@@ -643,13 +639,12 @@
 <li><p>Interpret reliability diagrams to diagnose over- and under-coverage</p></li>
 <li><p>Compare parametric distribution heads and select the best-calibrated model</p></li>
 </ol>
-<section id="1.-Choosing-the-right-distribution">
-<h2>1. Choosing the right distribution<a class="headerlink" href="#1.-Choosing-the-right-distribution" title="Link to this heading">#</a></h2>
+<section id="choosing-the-right-distribution">
+<h2>1. Choosing the right distribution<a class="headerlink" href="#choosing-the-right-distribution" title="Link to this heading">#</a></h2>
 <p>Different physical signals have fundamentally different statistical shapes. Picking a distribution that matches that shape is the most important modelling decision in parametric forecasting.</p>
 <blockquote>
 <div><p><strong>Key concept - parametric distributions</strong></p>
-<p>Instead of predicting a single number, a parametric model outputs the <em>parameters</em> of a probability distribution - for example, a mean µ and standard deviation σ for the Normal family. The model is trained by maximising the <strong>log-likelihood</strong> of the observed targets under the predicted distribution (equivalently, minimising the <strong>negative log-likelihood</strong>, NLL). This is fundamentally different from pinball/quantile loss, which directly targets specific quantile levels. NLL training uses all
-the information in the distributional shape, making it more data-efficient when the chosen family is a good match - but poorly calibrated when it is not.</p>
+<p>Instead of predicting a single number, a parametric model outputs the <em>parameters</em> of a probability distribution - for example, a mean µ and standard deviation σ for the Normal family. The model is trained by maximising the <strong>log-likelihood</strong> of the observed targets under the predicted distribution (equivalently, minimising the <strong>negative log-likelihood</strong>, NLL). This is fundamentally different from pinball/quantile loss, which directly targets specific quantile levels. NLL training uses all the information in the distributional shape, making it more data-efficient when the chosen family is a good match - but poorly calibrated when it is not.</p>
 <ul class="simple">
 <li><p><strong>Normal</strong>: symmetric, unbounded - the natural default for net load or temperature deltas.</p></li>
 <li><p><strong>Laplace</strong>: heavier tails than Normal - robust to outlier spikes (electricity prices, residual demand).</p></li>
@@ -658,11 +653,9 @@ the information in the distributional shape, making it more data-efficient when 
 </ul>
 </div></blockquote>
 <p>The forecastability profile from NB02 told us <code class="docutils literal notranslate"><span class="pre">NetLoad(kW)</span></code> is approximately symmetric and can go negative - <strong>Normal is the natural starting point</strong>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
@@ -691,16 +684,48 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
-</section>
-<section id="2.-Setup">
-<h2>2. Setup<a class="headerlink" href="#2.-Setup" title="Link to this heading">#</a></h2>
-<section id="Load-data">
-<h3>Load data<a class="headerlink" href="#Load-data" title="Link to this heading">#</a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+        <div id="AL3Tys"></div>
+        <script type="text/javascript" data-lets-plot-script="library">
+            if(!window.letsPlotCallQueue) {
+                window.letsPlotCallQueue = [];
+            };
+            window.letsPlotCall = function(f) {
+                window.letsPlotCallQueue.push(f);
+            };
+            (function() {
+                var script = document.createElement("script");
+                script.type = "text/javascript";
+                script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.9.0/js-package/distr/lets-plot.min.js";
+                script.onload = function() {
+                    window.letsPlotCall = function(f) {f();};
+                    window.letsPlotCallQueue.forEach(function(f) {f();});
+                    window.letsPlotCallQueue = [];
+                    
+                };
+                script.onerror = function(event) {
+                    window.letsPlotCall = function(f) {};    // noop
+                    window.letsPlotCallQueue = [];
+                    var div = document.createElement("div");
+                    div.style.color = 'darkred';
+                    div.textContent = 'Error loading Lets-Plot JS';
+                    document.getElementById("AL3Tys").appendChild(div);
+                };
+                var e = document.getElementById("AL3Tys");
+                e.appendChild(script);
+            })()
+        </script>
+        </div></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
+</section>
+<section id="setup">
+<h2>2. Setup<a class="headerlink" href="#setup" title="Link to this heading">#</a></h2>
+<section id="load-data">
+<h3>Load data<a class="headerlink" href="#load-data" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]]</span>
 <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -712,15 +737,82 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Train-/-val-/-test-splits">
-<h3>Train / val / test splits<a class="headerlink" href="#Train-/-val-/-test-splits" title="Link to this heading">#</a></h3>
-<p>We use the same fixed temporal split as all other tutorials.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">FileNotFoundError</span><span class="g g-Whitespace">                         </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">line</span> <span class="mi">1</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]]</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:669,</span> in <span class="ni">read_parquet</span><span class="nt">(path, engine, columns, storage_options, use_nullable_dtypes, dtype_backend, filesystem, filters, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">666</span>     <span class="n">use_nullable_dtypes</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="g g-Whitespace">    </span><span class="mi">667</span> <span class="n">check_dtype_backend</span><span class="p">(</span><span class="n">dtype_backend</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">669</span> <span class="k">return</span> <span class="n">impl</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">670</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">671</span>     <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">672</span>     <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">673</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">674</span>     <span class="n">use_nullable_dtypes</span><span class="o">=</span><span class="n">use_nullable_dtypes</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">675</span>     <span class="n">dtype_backend</span><span class="o">=</span><span class="n">dtype_backend</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">676</span>     <span class="n">filesystem</span><span class="o">=</span><span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">677</span>     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">678</span> <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:258,</span> in <span class="ni">PyArrowImpl.read</span><span class="nt">(self, path, columns, filters, use_nullable_dtypes, dtype_backend, storage_options, filesystem, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">256</span> <span class="k">if</span> <span class="n">manager</span> <span class="o">==</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">257</span>     <span class="n">to_pandas_kwargs</span><span class="p">[</span><span class="s2">&quot;split_blocks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="ne">--&gt; </span><span class="mi">258</span> <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">handles</span><span class="p">,</span> <span class="n">filesystem</span> <span class="o">=</span> <span class="n">_get_path_or_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">259</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">260</span>     <span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">261</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">262</span>     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">263</span> <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">264</span> <span class="k">try</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">265</span>     <span class="n">pa_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">parquet</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">266</span>         <span class="n">path_or_handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">267</span>         <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">270</span>         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">271</span>     <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:141,</span> in <span class="ni">_get_path_or_handle</span><span class="nt">(path, fs, storage_options, mode, is_dir)</span>
+<span class="g g-Whitespace">    </span><span class="mi">131</span> <span class="n">handles</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">132</span> <span class="k">if</span> <span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">133</span>     <span class="ow">not</span> <span class="n">fs</span>
+<span class="g g-Whitespace">    </span><span class="mi">134</span>     <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_dir</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">139</span>     <span class="c1"># fsspec resources can also point to directories</span>
+<span class="g g-Whitespace">    </span><span class="mi">140</span>     <span class="c1"># this branch is used for example when reading from non-fsspec URLs</span>
+<span class="ne">--&gt; </span><span class="mi">141</span>     <span class="n">handles</span> <span class="o">=</span> <span class="n">get_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">142</span>         <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">is_text</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span>
+<span class="g g-Whitespace">    </span><span class="mi">143</span>     <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">144</span>     <span class="n">fs</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">145</span>     <span class="n">path_or_handle</span> <span class="o">=</span> <span class="n">handles</span><span class="o">.</span><span class="n">handle</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/common.py:882,</span> in <span class="ni">get_handle</span><span class="nt">(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)</span>
+<span class="g g-Whitespace">    </span><span class="mi">873</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">874</span>             <span class="n">handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">875</span>             <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">878</span>             <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">879</span>         <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">880</span>     <span class="k">else</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">881</span>         <span class="c1"># Binary mode</span>
+<span class="ne">--&gt; </span><span class="mi">882</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">883</span>     <span class="n">handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">885</span> <span class="c1"># Convert BytesIO or file objects passed with an encoding</span>
+
+<span class="ne">FileNotFoundError</span>: [Errno 2] No such file or directory: &#39;../data/MLVS-PT.parquet&#39;
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_splits</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+</div>
+</div>
+</section>
+<section id="train-val-test-splits">
+<h3>Train / val / test splits<a class="headerlink" href="#train-val-test-splits" title="Link to this heading">#</a></h3>
+<p>We use the same fixed temporal split as all other tutorials.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_splits</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;Split&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">],</span>
         <span class="s2">&quot;Period&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;before 2020-01-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2020-01-01 – 2020-06-30&quot;</span><span class="p">,</span> <span class="s2">&quot;2020-07-01 onwards&quot;</span><span class="p">],</span>
@@ -738,11 +830,10 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-01-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-01-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">val_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2020-01-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-07-01&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">test_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2020-07-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -756,14 +847,13 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Data-and-training-configs">
-<h3>Data and training configs<a class="headerlink" href="#Data-and-training-configs" title="Link to this heading">#</a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformalConfig</span><span class="p">,</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+</section>
+<section id="data-and-training-configs">
+<h3>Data and training configs<a class="headerlink" href="#data-and-training-configs" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformalConfig</span><span class="p">,</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
 
 <span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
     <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
@@ -786,11 +876,10 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_dist</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_dist</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;Signal characteristic&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="s2">&quot;Symmetric, can go negative (net load, temp delta)&quot;</span><span class="p">,</span>
@@ -821,21 +910,20 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="3.-The-parametric-head-interface">
-<h3>3. The parametric head interface<a class="headerlink" href="#3.-The-parametric-head-interface" title="Link to this heading">#</a></h3>
-<p>Every distribution in Twiga is an <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code> that wraps a lightweight linear projection on top of the backbone’s latent vector. They all share the same three-method contract:</p>
+<section id="the-parametric-head-interface">
+<h3>3. The parametric head interface<a class="headerlink" href="#the-parametric-head-interface" title="Link to this heading">#</a></h3>
+<p>Every distribution in Twiga is an <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code> that wraps a lightweight linear projection on top of the backbone’s latent vector.  They all share the same three-method contract:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">forward(z)</span></code> → distribution parameters as tensors</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">get_distribution(*params)</span></code> → a <code class="docutils literal notranslate"><span class="pre">torch.distributions</span></code> object</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">get_log_likelihood(*params,</span> <span class="pre">targets)</span></code> → negative log-likelihood scalar (the training loss)</p></li>
 </ul>
 <p>The <code class="docutils literal notranslate"><span class="pre">DISTRIBUTIONS</span></code> registry maps string names to classes, and <code class="docutils literal notranslate"><span class="pre">build_distribution</span></code> instantiates them by name.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.distributions.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">DISTRIBUTIONS</span><span class="p">,</span> <span class="n">build_distribution</span>
 
@@ -854,17 +942,16 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
-<p><strong>Shape convention</strong> - all parametric heads output tensors of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">forecast_horizon,</span> <span class="pre">num_target_output)</span></code>, where <code class="docutils literal notranslate"><span class="pre">B</span></code> is the batch size. This matches the target tensor shape used throughout the training loop, so no reshaping is needed before computing the NLL loss.</p>
-</section>
-</section>
-<section id="4.-Normal-distribution:-NetLoad-(MLPF-backbone)">
-<h2>4. Normal distribution: NetLoad (MLPF backbone)<a class="headerlink" href="#4.-Normal-distribution:-NetLoad-(MLPF-backbone)" title="Link to this heading">#</a></h2>
-<p>The Normal head predicts a mean <code class="docutils literal notranslate"><span class="pre">mu</span></code> and a standard deviation <code class="docutils literal notranslate"><span class="pre">sigma</span></code> for every horizon step. The 90 % prediction interval is <code class="docutils literal notranslate"><span class="pre">[mu</span> <span class="pre">−</span> <span class="pre">1.645σ,</span> <span class="pre">mu</span> <span class="pre">+</span> <span class="pre">1.645σ]</span></code>. Because <code class="docutils literal notranslate"><span class="pre">NetLoad(kW)</span></code> is approximately symmetric and can go negative, Normal is the textbook choice.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+<p><strong>Shape convention</strong> - all parametric heads output tensors of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">forecast_horizon,</span> <span class="pre">num_target_output)</span></code>, where <code class="docutils literal notranslate"><span class="pre">B</span></code> is the batch size.  This matches the target tensor shape used throughout the training loop, so no reshaping is needed before computing the NLL loss.</p>
+</section>
+</section>
+<section id="normal-distribution-netload-mlpf-backbone">
+<h2>4. Normal distribution: NetLoad (MLPF backbone)<a class="headerlink" href="#normal-distribution-netload-mlpf-backbone" title="Link to this heading">#</a></h2>
+<p>The Normal head predicts a mean <code class="docutils literal notranslate"><span class="pre">mu</span></code> and a standard deviation <code class="docutils literal notranslate"><span class="pre">sigma</span></code> for every horizon step.  The 90 % prediction interval is <code class="docutils literal notranslate"><span class="pre">[mu</span> <span class="pre">−</span> <span class="pre">1.645σ,</span> <span class="pre">mu</span> <span class="pre">+</span> <span class="pre">1.645σ]</span></code>.  Because <code class="docutils literal notranslate"><span class="pre">NetLoad(kW)</span></code> is approximately symmetric and can go negative, Normal is the textbook choice.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span>
 
 <span class="n">normal_config</span> <span class="o">=</span> <span class="n">MLPFConfig</span><span class="p">(</span><span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="n">max_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rich_progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -880,20 +967,18 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_normal</span><span class="p">,</span> <span class="n">metric_normal</span> <span class="o">=</span> <span class="n">forecaster_normal</span><span class="o">.</span><span class="n">evaluate_parametric_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_normal</span><span class="p">,</span> <span class="n">metric_normal</span> <span class="o">=</span> <span class="n">forecaster_normal</span><span class="o">.</span><span class="n">evaluate_parametric_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
 <span class="n">clear_output</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_metric_table</span><span class="p">(</span><span class="n">metric_df</span><span class="p">):</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_metric_table</span><span class="p">(</span><span class="n">metric_df</span><span class="p">):</span>
     <span class="n">res</span> <span class="o">=</span> <span class="n">metric_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">,</span> <span class="s2">&quot;nll&quot;</span><span class="p">,</span> <span class="s2">&quot;crps&quot;</span><span class="p">,</span> <span class="s2">&quot;dss&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
     <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mae&quot;</span><span class="p">:</span> <span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">:</span> <span class="s2">&quot;Corr&quot;</span><span class="p">,</span> <span class="s2">&quot;nll&quot;</span><span class="p">:</span> <span class="s2">&quot;NLL&quot;</span><span class="p">,</span> <span class="s2">&quot;crps&quot;</span><span class="p">:</span> <span class="s2">&quot;CRPS&quot;</span><span class="p">,</span> <span class="s2">&quot;dss&quot;</span><span class="p">:</span> <span class="s2">&quot;DSS&quot;</span><span class="p">})</span>
 
@@ -905,19 +990,17 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_normal</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_normal</span><span class="p">)</span>
-</pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast</span><span class="p">(</span>
     <span class="n">pred_normal</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span><span class="p">],</span>
     <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
     <span class="n">forecast_col</span><span class="o">=</span><span class="s2">&quot;forecast&quot;</span><span class="p">,</span>
@@ -929,15 +1012,14 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
-</section>
-<section id="6.-Laplace:-heavier-tails">
-<h2>6. Laplace: heavier tails<a class="headerlink" href="#6.-Laplace:-heavier-tails" title="Link to this heading">#</a></h2>
-<p>Laplace has heavier tails than Normal - it assigns more probability to extreme events. For signals with frequent, sharp spikes (spot electricity prices, residual net load during demand response events), Laplace can produce better-calibrated intervals than Normal while using the same MLPGAM backbone’s additive structure.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span>
+</section>
+<section id="laplace-heavier-tails">
+<h2>6. Laplace: heavier tails<a class="headerlink" href="#laplace-heavier-tails" title="Link to this heading">#</a></h2>
+<p>Laplace has heavier tails than Normal - it assigns more probability to extreme events.  For signals with frequent, sharp spikes (spot electricity prices, residual net load during demand response events), Laplace can produce better-calibrated intervals than Normal while using the same MLPGAM backbone’s additive structure.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span>
 
 <span class="n">laplace_config</span> <span class="o">=</span> <span class="n">MLPFConfig</span><span class="p">(</span><span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;laplace&quot;</span><span class="p">,</span> <span class="n">max_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rich_progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
@@ -952,20 +1034,20 @@ the information in the distributional shape, making it more data-efficient when 
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_laplace</span><span class="p">,</span> <span class="n">metric_laplace</span> <span class="o">=</span> <span class="n">forecaster_laplace</span><span class="o">.</span><span class="n">evaluate_parametric_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_laplace</span><span class="p">,</span> <span class="n">metric_laplace</span> <span class="o">=</span> <span class="n">forecaster_laplace</span><span class="o">.</span><span class="n">evaluate_parametric_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
 <span class="n">clear_output</span><span class="p">()</span>
 
 <span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_laplace</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="8.-Evaluating-distributional-quality">
-<h2>8. Evaluating distributional quality<a class="headerlink" href="#8.-Evaluating-distributional-quality" title="Link to this heading">#</a></h2>
+<section id="evaluating-distributional-quality">
+<h2>8. Evaluating distributional quality<a class="headerlink" href="#evaluating-distributional-quality" title="Link to this heading">#</a></h2>
 <p>Point metrics (MAE, RMSE) only assess the mean forecast. To evaluate the full predicted distribution we need interval-aware metrics. We use the Normal model’s outputs here since it was trained on the original (unclipped) data.</p>
 <blockquote>
 <div><p><strong>Key concept - CRPS</strong></p>
@@ -975,14 +1057,13 @@ the information in the distributional shape, making it more data-efficient when 
 </div></blockquote>
 <blockquote>
 <div><p><strong>Key concept - aleatoric vs. epistemic uncertainty</strong></p>
-<p>Parametric heads capture <strong>aleatoric uncertainty</strong> - the irreducible randomness in the signal itself (e.g. weather-driven demand variability). The predicted σ grows where the data is intrinsically noisy regardless of how much more training data you add. <strong>Epistemic uncertainty</strong> - uncertainty due to limited data or model capacity - is not directly represented by a single parametric head; ensemble methods or Bayesian approaches are needed for that. When interpreting prediction intervals here,
-you are reading aleatoric uncertainty only.</p>
+<p>Parametric heads capture <strong>aleatoric uncertainty</strong> - the irreducible randomness in the signal itself (e.g. weather-driven demand variability). The predicted σ grows where the data is intrinsically noisy regardless of how much more training data you add. <strong>Epistemic uncertainty</strong> - uncertainty due to limited data or model capacity - is not directly represented by a single parametric head; ensemble methods or Bayesian approaches are needed for that. When interpreting prediction intervals here, you are reading aleatoric uncertainty only.</p>
 </div></blockquote>
-<section id="Interval-metrics-from-get_interval_metrics">
-<h3>Interval metrics from <code class="docutils literal notranslate"><span class="pre">get_interval_metrics</span></code><a class="headerlink" href="#Interval-metrics-from-get_interval_metrics" title="Link to this heading">#</a></h3>
+<section id="interval-metrics-from-get-interval-metrics">
+<h3>Interval metrics from <code class="docutils literal notranslate"><span class="pre">get_interval_metrics</span></code><a class="headerlink" href="#interval-metrics-from-get-interval-metrics" title="Link to this heading">#</a></h3>
 </section>
-<section id="Reliability-diagram">
-<h3>Reliability diagram<a class="headerlink" href="#Reliability-diagram" title="Link to this heading">#</a></h3>
+<section id="reliability-diagram">
+<h3>Reliability diagram<a class="headerlink" href="#reliability-diagram" title="Link to this heading">#</a></h3>
 <p>A reliability diagram checks <em>calibration</em>: for every nominal coverage level <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">−</span> <span class="pre">α</span></code>, the empirical fraction of test points inside the predicted interval should equal <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">−</span> <span class="pre">α</span></code>. A perfectly calibrated model lies on the diagonal.</p>
 <p><strong>How to read the plot:</strong></p>
 <ul class="simple">
@@ -992,11 +1073,9 @@ you are reading aleatoric uncertainty only.</p>
 <li><p>A systematic upward bow → the distribution family has too heavy tails (e.g. Laplace overestimates spread for a Normal signal)</p></li>
 <li><p>A systematic downward bow → the distribution family is too light-tailed, underestimating extreme events</p></li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">collection_n</span> <span class="o">=</span> <span class="n">forecaster_normal</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">collection_n</span> <span class="o">=</span> <span class="n">forecaster_normal</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
 <span class="n">results_n</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">collection_n</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
 <span class="n">collection_l</span> <span class="o">=</span> <span class="n">forecaster_laplace</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
 <span class="n">results_l</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">collection_l</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
@@ -1004,11 +1083,10 @@ you are reading aleatoric uncertainty only.</p>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mu_n</span> <span class="o">=</span> <span class="n">results_n</span><span class="o">.</span><span class="n">loc</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mu_n</span> <span class="o">=</span> <span class="n">results_n</span><span class="o">.</span><span class="n">loc</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
 <span class="n">sigma_n</span> <span class="o">=</span> <span class="n">results_n</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
 <span class="n">actual</span> <span class="o">=</span> <span class="n">results_n</span><span class="o">.</span><span class="n">ground_truth</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
 
@@ -1017,11 +1095,10 @@ you are reading aleatoric uncertainty only.</p>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">laplace</span> <span class="k">as</span> <span class="n">scipy_laplace</span><span class="p">,</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">scipy_norm</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">laplace</span> <span class="k">as</span> <span class="n">scipy_laplace</span><span class="p">,</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">scipy_norm</span>
 
 <span class="n">alphas_rd</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
 <span class="n">cov_normal</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1053,16 +1130,17 @@ you are reading aleatoric uncertainty only.</p>
 </pre></div>
 </div>
 </div>
-</section>
-</section>
-<section id="Residual-Distribution-Diagnostics">
-<h2>Residual Distribution Diagnostics<a class="headerlink" href="#Residual-Distribution-Diagnostics" title="Link to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">plot_kde</span></code> and <code class="docutils literal notranslate"><span class="pre">plot_cdf</span></code> let you inspect the shape of the forecast residuals - a quick sanity check that errors are roughly symmetric and unimodal before committing to a Gaussian distributional assumption.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_cdf</span><span class="p">,</span> <span class="n">plot_kde</span>
+</section>
+</section>
+<section id="residual-distribution-diagnostics">
+<h2>Residual Distribution Diagnostics<a class="headerlink" href="#residual-distribution-diagnostics" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">plot_kde</span></code> and <code class="docutils literal notranslate"><span class="pre">plot_cdf</span></code> let you inspect the shape of the forecast residuals -
+a quick sanity check that errors are roughly symmetric and unimodal before
+committing to a Gaussian distributional assumption.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_cdf</span><span class="p">,</span> <span class="n">plot_kde</span>
 
 <span class="n">residuals_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
@@ -1080,11 +1158,10 @@ you are reading aleatoric uncertainty only.</p>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_cdf</span> <span class="o">=</span> <span class="n">plot_cdf</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_cdf</span> <span class="o">=</span> <span class="n">plot_cdf</span><span class="p">(</span>
     <span class="n">residuals_df</span><span class="p">,</span>
     <span class="n">x_col</span><span class="o">=</span><span class="s2">&quot;residual&quot;</span><span class="p">,</span>
     <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Residual Cumulative Distribution — MLPFNormal&quot;</span><span class="p">,</span>
@@ -1094,15 +1171,16 @@ you are reading aleatoric uncertainty only.</p>
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Forecast-Error-Distribution-by-Step">
-<h2>Forecast Error Distribution by Step<a class="headerlink" href="#Forecast-Error-Distribution-by-Step" title="Link to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">plot_distribution</span></code> groups by an x-axis column and renders the per-group mean ± 1σ ribbon - useful for diagnosing whether errors are uniformly distributed across the forecast horizon or worsen at specific steps.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_distribution</span>
+</section>
+<section id="forecast-error-distribution-by-step">
+<h2>Forecast Error Distribution by Step<a class="headerlink" href="#forecast-error-distribution-by-step" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">plot_distribution</span></code> groups by an x-axis column and renders the per-group
+mean ± 1σ ribbon - useful for diagnosing whether errors are uniformly
+distributed across the forecast horizon or worsen at specific steps.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_distribution</span>
 
 <span class="n">dist_df</span> <span class="o">=</span> <span class="n">pred_normal</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <span class="n">dist_df</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dist_df</span><span class="p">))</span> <span class="o">%</span> <span class="n">data_config</span><span class="o">.</span><span class="n">forecast_horizon</span>
@@ -1120,15 +1198,17 @@ you are reading aleatoric uncertainty only.</p>
 </pre></div>
 </div>
 </div>
-</section>
-<section id="PIT-Histogram">
-<h2>PIT Histogram<a class="headerlink" href="#PIT-Histogram" title="Link to this heading">#</a></h2>
-<p>The Probability Integral Transform (PIT) histogram is the gold-standard calibration diagnostic for parametric forecasts (Gneiting et al., 2007). A flat histogram indicates perfect calibration; a hump shape means the model is overconfident (intervals too narrow); a U-shape means it is over-dispersed.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_pit_histogram</span>
+</section>
+<section id="pit-histogram">
+<h2>PIT Histogram<a class="headerlink" href="#pit-histogram" title="Link to this heading">#</a></h2>
+<p>The Probability Integral Transform (PIT) histogram is the gold-standard
+calibration diagnostic for parametric forecasts (Gneiting et al., 2007).
+A flat histogram indicates perfect calibration; a hump shape means the model
+is overconfident (intervals too narrow); a U-shape means it is over-dispersed.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_pit_histogram</span>
 
 <span class="c1"># Recover sigma from the pre-computed 90 % interval: upper = mu + z_0.95 * sigma</span>
 <span class="n">mu_pit</span> <span class="o">=</span> <span class="n">mu_n</span>
@@ -1146,15 +1226,17 @@ you are reading aleatoric uncertainty only.</p>
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Reliability-Diagram">
-<h2>Reliability Diagram<a class="headerlink" href="#Reliability-Diagram" title="Link to this heading">#</a></h2>
-<p>Plots empirical coverage against nominal coverage levels. Points on the diagonal = perfectly calibrated. Points above = conservative (intervals too wide). Points below = anti-conservative (intervals too narrow).</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_reliability_diagram</span>
+</section>
+<section id="id1">
+<h2>Reliability Diagram<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<p>Plots empirical coverage against nominal coverage levels.
+Points on the diagonal = perfectly calibrated.
+Points above = conservative (intervals too wide).
+Points below = anti-conservative (intervals too narrow).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_reliability_diagram</span>
 
 <span class="n">nominal_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mi">18</span><span class="p">)</span>
 
@@ -1181,16 +1263,17 @@ you are reading aleatoric uncertainty only.</p>
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="Wrapping-up">
-<h2>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<section id="wrapping-up">
+<h2>Wrapping up<a class="headerlink" href="#wrapping-up" title="Link to this heading">#</a></h2>
 <p><strong>What you did</strong></p>
-<ul class="simple">
-<li><p>☒ Chose distribution families based on signal characteristics (Normal, Laplace, Gamma)</p></li>
-<li><p>☒ Configured parametric distribution heads on MLPF and MLPGAM backbone architectures</p></li>
-<li><p>☒ Trained models end-to-end with NLL loss and extracted predictive mean and credible intervals</p></li>
-<li><p>☒ Compared Normal vs. Laplace tails with density plots and residual diagnostics</p></li>
-<li><p>☒ Evaluated distributional quality using CRPS, PIT histograms, and reliability diagrams</p></li>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Chose distribution families based on signal characteristics (Normal, Laplace, Gamma)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Configured parametric distribution heads on MLPF and MLPGAM backbone architectures</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Trained models end-to-end with NLL loss and extracted predictive mean and credible intervals</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Compared Normal vs. Laplace tails with density plots and residual diagnostics</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Evaluated distributional quality using CRPS, PIT histograms, and reliability diagrams</p></li>
 </ul>
 <p><strong>Key takeaways</strong></p>
 <ol class="arabic simple">
@@ -1202,15 +1285,13 @@ you are reading aleatoric uncertainty only.</p>
 </ol>
 </section>
 <hr class="docutils" />
-<section id="What's-next?">
-<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<section id="what-s-next">
+<h2>What’s next?<a class="headerlink" href="#what-s-next" title="Link to this heading">#</a></h2>
 <p><strong>NB09 - Conformal Prediction</strong> (<code class="docutils literal notranslate"><span class="pre">09-conformal-prediction.ipynb</span></code>)</p>
 <p>Learn how to wrap any fitted Twiga model with a coverage-guaranteed conformal calibration step. Conformal prediction requires no distributional assumption and works with any base model - including the parametric models you trained here.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
 
 <span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
@@ -1293,6 +1374,7 @@ you are reading aleatoric uncertainty only.</p>
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
 
@@ -1343,27 +1425,27 @@ you are reading aleatoric uncertainty only.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Choosing-the-right-distribution">1. Choosing the right distribution</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Setup">2. Setup</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Load-data">Load data</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Train-/-val-/-test-splits">Train / val / test splits</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Data-and-training-configs">Data and training configs</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-The-parametric-head-interface">3. The parametric head interface</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#choosing-the-right-distribution">1. Choosing the right distribution</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup">2. Setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#load-data">Load data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#train-val-test-splits">Train / val / test splits</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#data-and-training-configs">Data and training configs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-parametric-head-interface">3. The parametric head interface</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Normal-distribution:-NetLoad-(MLPF-backbone)">4. Normal distribution: NetLoad (MLPF backbone)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Laplace:-heavier-tails">6. Laplace: heavier tails</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-Evaluating-distributional-quality">8. Evaluating distributional quality</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Interval-metrics-from-get_interval_metrics">Interval metrics from <code class="docutils literal notranslate"><span class="pre">get_interval_metrics</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Reliability-diagram">Reliability diagram</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#normal-distribution-netload-mlpf-backbone">4. Normal distribution: NetLoad (MLPF backbone)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#laplace-heavier-tails">6. Laplace: heavier tails</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluating-distributional-quality">8. Evaluating distributional quality</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interval-metrics-from-get-interval-metrics">Interval metrics from <code class="docutils literal notranslate"><span class="pre">get_interval_metrics</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reliability-diagram">Reliability diagram</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Residual-Distribution-Diagnostics">Residual Distribution Diagnostics</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Forecast-Error-Distribution-by-Step">Forecast Error Distribution by Step</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#PIT-Histogram">PIT Histogram</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Reliability-Diagram">Reliability Diagram</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">Wrapping up</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">What’s next?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#residual-distribution-diagnostics">Residual Distribution Diagnostics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#forecast-error-distribution-by-step">Forecast Error Distribution by Step</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pit-histogram">PIT Histogram</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Reliability Diagram</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#wrapping-up">Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-s-next">What’s next?</a></li>
 </ul>
   </nav></div>
 

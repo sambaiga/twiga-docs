@@ -32,9 +32,9 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=79a279a3" />
     <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   
@@ -55,9 +55,7 @@
     <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/03-feature-engineering';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
@@ -622,8 +620,8 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="Feature-Engineering">
-<h1>Feature Engineering<a class="headerlink" href="#Feature-Engineering" title="Link to this heading">#</a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="feature-engineering">
+<h1>Feature Engineering<a class="headerlink" href="#feature-engineering" title="Link to this heading">#</a></h1>
 <p><img alt="Level" src="https://img.shields.io/badge/level-beginner-green" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
 <hr class="docutils" />
 <p><strong>What you’ll build</strong></p>
@@ -631,8 +629,8 @@
 <p><strong>Prerequisites</strong></p>
 <ul class="simple">
 <li><p>Basic Python (lists, dicts, imports)</p></li>
-<li><p><a class="reference internal" href="01-getting-started.html"><span class="doc">NB01 - Getting Started</span></a></p></li>
-<li><p><a class="reference internal" href="02-forecastability-analysis.html"><span class="doc">NB02 - Forecastability Analysis</span></a> <em>(recommended - provides the parameter rationale)</em></p></li>
+<li><p><span class="xref myst">NB01 - Getting Started</span></p></li>
+<li><p><span class="xref myst">NB02 - Forecastability Analysis</span> <em>(recommended - provides the parameter rationale)</em></p></li>
 </ul>
 <p><strong>Learning objectives</strong></p>
 <p>By the end of this notebook you will be able to:</p>
@@ -644,27 +642,25 @@
 <li><p>Wire all feature choices into a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> and pass it to <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code></p></li>
 </ol>
 <p><strong>The five-step workflow</strong></p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Raw data  →  Temporal features  →  AR features  →  Feature selection  →  DataPipelineConfig
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Raw data  →  Temporal features  →  AR features  →  Feature selection  →  DataPipelineConfig
 (parquet)    (calendar signals)    (lags, windows)   (rank &amp; filter)       (pipeline-ready)
 </pre></div>
 </div>
 <p>Each section in this notebook maps to one step in the pipeline - by the end you will have a complete, reproducible feature-engineering configuration.</p>
-<section id="1.-Setup">
-<h2>1. Setup<a class="headerlink" href="#1.-Setup" title="Link to this heading">#</a></h2>
+<section id="setup">
+<h2>1. Setup<a class="headerlink" href="#setup" title="Link to this heading">#</a></h2>
 <p>We import four groups of libraries:</p>
 <ul class="simple">
-<li><p><strong>``warnings``</strong>: suppress noisy deprecation messages so output stays readable.</p></li>
-<li><p><strong>``great_tables`` / ``lets_plot``</strong>: rendering styled tables and interactive plots inside the notebook.</p></li>
-<li><p><strong>``numpy`` / ``pandas``</strong>: array maths and tabular data manipulation.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">warnings</span></code></strong>: suppress noisy deprecation messages so output stays readable.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">great_tables</span></code> / <code class="docutils literal notranslate"><span class="pre">lets_plot</span></code></strong>: rendering styled tables and interactive plots inside the notebook.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">numpy</span></code> / <code class="docutils literal notranslate"><span class="pre">pandas</span></code></strong>: array maths and tabular data manipulation.</p></li>
 <li><p><strong>Twiga utilities</strong>: <code class="docutils literal notranslate"><span class="pre">configure()</span></code> sets up logging; <code class="docutils literal notranslate"><span class="pre">get_logger()</span></code> gives us a labelled logger for clean output.</p></li>
 <li><p><strong>Twiga feature transformers</strong>: <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> adds calendar features; <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> builds lag and rolling-window columns.</p></li>
 <li><p><strong>Twiga plot helpers</strong>: <code class="docutils literal notranslate"><span class="pre">plot_timeseries</span></code>, <code class="docutils literal notranslate"><span class="pre">line_plot</span></code>, and <code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code> are thin wrappers around LetsPlot tuned for time series work.</p></li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
 
@@ -689,11 +685,43 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+        <div id="WmRNQx"></div>
+        <script type="text/javascript" data-lets-plot-script="library">
+            if(!window.letsPlotCallQueue) {
+                window.letsPlotCallQueue = [];
+            };
+            window.letsPlotCall = function(f) {
+                window.letsPlotCallQueue.push(f);
+            };
+            (function() {
+                var script = document.createElement("script");
+                script.type = "text/javascript";
+                script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.9.0/js-package/distr/lets-plot.min.js";
+                script.onload = function() {
+                    window.letsPlotCall = function(f) {f();};
+                    window.letsPlotCallQueue.forEach(function(f) {f();});
+                    window.letsPlotCallQueue = [];
+                    
+                };
+                script.onerror = function(event) {
+                    window.letsPlotCall = function(f) {};    // noop
+                    window.letsPlotCallQueue = [];
+                    var div = document.createElement("div");
+                    div.style.color = 'darkred';
+                    div.textContent = 'Error loading Lets-Plot JS';
+                    document.getElementById("WmRNQx").appendChild(div);
+                };
+                var e = document.getElementById("WmRNQx");
+                e.appendChild(script);
+            })()
+        </script>
+        </div></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load dataset — only the columns we need</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load dataset — only the columns we need</span>
 <span class="n">COLUMNS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]</span>
 
 <span class="n">raw</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">COLUMNS</span><span class="p">)</span>
@@ -709,14 +737,87 @@
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">FileNotFoundError</span><span class="g g-Whitespace">                         </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">line</span> <span class="mi">4</span>
+<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="c1"># Load dataset — only the columns we need</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="n">COLUMNS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> 
+<span class="ne">----&gt; </span><span class="mi">4</span> <span class="n">raw</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">COLUMNS</span><span class="p">)</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+<span class="g g-Whitespace">      </span><span class="mi">6</span> 
+<span class="g g-Whitespace">      </span><span class="mi">7</span> <span class="c1"># Filter to the study period</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:669,</span> in <span class="ni">read_parquet</span><span class="nt">(path, engine, columns, storage_options, use_nullable_dtypes, dtype_backend, filesystem, filters, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">666</span>     <span class="n">use_nullable_dtypes</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="g g-Whitespace">    </span><span class="mi">667</span> <span class="n">check_dtype_backend</span><span class="p">(</span><span class="n">dtype_backend</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">669</span> <span class="k">return</span> <span class="n">impl</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">670</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">671</span>     <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">672</span>     <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">673</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">674</span>     <span class="n">use_nullable_dtypes</span><span class="o">=</span><span class="n">use_nullable_dtypes</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">675</span>     <span class="n">dtype_backend</span><span class="o">=</span><span class="n">dtype_backend</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">676</span>     <span class="n">filesystem</span><span class="o">=</span><span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">677</span>     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">678</span> <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:258,</span> in <span class="ni">PyArrowImpl.read</span><span class="nt">(self, path, columns, filters, use_nullable_dtypes, dtype_backend, storage_options, filesystem, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">256</span> <span class="k">if</span> <span class="n">manager</span> <span class="o">==</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">257</span>     <span class="n">to_pandas_kwargs</span><span class="p">[</span><span class="s2">&quot;split_blocks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="ne">--&gt; </span><span class="mi">258</span> <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">handles</span><span class="p">,</span> <span class="n">filesystem</span> <span class="o">=</span> <span class="n">_get_path_or_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">259</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">260</span>     <span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">261</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">262</span>     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">263</span> <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">264</span> <span class="k">try</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">265</span>     <span class="n">pa_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">parquet</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">266</span>         <span class="n">path_or_handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">267</span>         <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">270</span>         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">271</span>     <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:141,</span> in <span class="ni">_get_path_or_handle</span><span class="nt">(path, fs, storage_options, mode, is_dir)</span>
+<span class="g g-Whitespace">    </span><span class="mi">131</span> <span class="n">handles</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">132</span> <span class="k">if</span> <span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">133</span>     <span class="ow">not</span> <span class="n">fs</span>
+<span class="g g-Whitespace">    </span><span class="mi">134</span>     <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_dir</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">139</span>     <span class="c1"># fsspec resources can also point to directories</span>
+<span class="g g-Whitespace">    </span><span class="mi">140</span>     <span class="c1"># this branch is used for example when reading from non-fsspec URLs</span>
+<span class="ne">--&gt; </span><span class="mi">141</span>     <span class="n">handles</span> <span class="o">=</span> <span class="n">get_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">142</span>         <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">is_text</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span>
+<span class="g g-Whitespace">    </span><span class="mi">143</span>     <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">144</span>     <span class="n">fs</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">145</span>     <span class="n">path_or_handle</span> <span class="o">=</span> <span class="n">handles</span><span class="o">.</span><span class="n">handle</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/common.py:882,</span> in <span class="ni">get_handle</span><span class="nt">(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)</span>
+<span class="g g-Whitespace">    </span><span class="mi">873</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">874</span>             <span class="n">handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">875</span>             <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">878</span>             <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">879</span>         <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">880</span>     <span class="k">else</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">881</span>         <span class="c1"># Binary mode</span>
+<span class="ne">--&gt; </span><span class="mi">882</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">883</span>     <span class="n">handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">885</span> <span class="c1"># Convert BytesIO or file objects passed with an encoding</span>
+
+<span class="ne">FileNotFoundError</span>: [Errno 2] No such file or directory: &#39;../data/MLVS-PT.parquet&#39;
+</pre></div>
+</div>
+</div>
+</div>
 </section>
-<section id="2.-Temporal-Features">
-<h2>2. Temporal Features<a class="headerlink" href="#2.-Temporal-Features" title="Link to this heading">#</a></h2>
+<section id="temporal-features">
+<h2>2. Temporal Features<a class="headerlink" href="#temporal-features" title="Link to this heading">#</a></h2>
 <blockquote>
 <div><p><strong>Key concept - Calendar features</strong></p>
 <p>A time series model sees numbers, not timestamps. Calendar features translate the human notion of time (“it’s 8 am on a Monday”) into numbers a model can use as inputs. The trick is to encode <em>cyclic</em> variables (hour 23 is close to hour 0, not far from it) using sin/cos pairs so the model sees the circular structure rather than a linear scale.</p>
 </div></blockquote>
-<p><code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> adds calendar signals to a DataFrame. It wraps three building blocks:</p>
+<p><code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> adds calendar signals to a DataFrame.
+It wraps three building blocks:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Feature</p></th>
@@ -745,16 +846,13 @@
 </table>
 </div>
 <blockquote>
-<div><div class="line-block">
-<div class="line"><strong>``day_night`` and solar geometry:</strong> Twiga uses the <code class="docutils literal notranslate"><span class="pre">`astral</span></code> &lt;<a class="reference external" href="https://astral.readthedocs.io/">https://astral.readthedocs.io/</a>&gt;`__ library to compute accurate sunrise/sunset times per day for the specified location.</div>
-<div class="line">Latitude and longitude are therefore <strong>required</strong> whenever <code class="docutils literal notranslate"><span class="pre">day_night</span></code> is listed in <code class="docutils literal notranslate"><span class="pre">calendar_features</span></code>. The Madeira Island coordinates below correspond to the MLVS-PT measurement site.</div>
-</div>
+<div><p><strong><code class="docutils literal notranslate"><span class="pre">day_night</span></code> and solar geometry:</strong> Twiga uses the <a class="reference external" href="https://astral.readthedocs.io/"><code class="docutils literal notranslate"><span class="pre">astral</span></code></a> library to compute accurate sunrise/sunset times per day for the specified location.<br />
+Latitude and longitude are therefore <strong>required</strong> whenever <code class="docutils literal notranslate"><span class="pre">day_night</span></code> is listed in <code class="docutils literal notranslate"><span class="pre">calendar_features</span></code>.
+The Madeira Island coordinates below correspond to the MLVS-PT measurement site.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -791,21 +889,21 @@
 </pre></div>
 </div>
 </div>
+</div>
 <blockquote>
 <div><p><strong>Key concept - Temporal features</strong></p>
-<p>Raw timestamps carry rich information, but a model cannot interpret a datetime object directly. Temporal features extract the useful dimensions:</p>
+<p>Raw timestamps carry rich information, but a model cannot interpret a datetime object directly.
+Temporal features extract the useful dimensions:</p>
 <ul class="simple">
-<li><p><strong>Calendar features</strong> (<code class="docutils literal notranslate"><span class="pre">hour</span></code>, <code class="docutils literal notranslate"><span class="pre">weekday</span></code>, <code class="docutils literal notranslate"><span class="pre">month</span></code>) - tell the model where in the daily or weekly cycle a sample falls. Net load is typically higher on weekday mornings than Sunday nights; a model with no <code class="docutils literal notranslate"><span class="pre">hour</span></code> feature cannot learn this.</p></li>
-<li><p><strong>Day/night flag</strong> - Madeira Island receives meaningful solar irradiance only during daylight. A binary day/night column lets even a simple tree model split on light vs. dark without needing to reason about solar angles.</p></li>
-<li><p><strong>Solar-angle features</strong> - if you pass latitude and longitude, <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> computes the exact solar elevation angle for each timestamp. This is more precise than a fixed day/night cutoff and captures seasonal variation in sunrise/sunset times.</p></li>
+<li><p><strong>Calendar features</strong> (<code class="docutils literal notranslate"><span class="pre">hour</span></code>, <code class="docutils literal notranslate"><span class="pre">weekday</span></code>, <code class="docutils literal notranslate"><span class="pre">month</span></code>) - tell the model where in the daily or weekly cycle a sample falls.  Net load is typically higher on weekday mornings than Sunday nights; a model with no <code class="docutils literal notranslate"><span class="pre">hour</span></code> feature cannot learn this.</p></li>
+<li><p><strong>Day/night flag</strong> - Madeira Island receives meaningful solar irradiance only during daylight.  A binary day/night column lets even a simple tree model split on light vs. dark without needing to reason about solar angles.</p></li>
+<li><p><strong>Solar-angle features</strong> - if you pass latitude and longitude, <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> computes the exact solar elevation angle for each timestamp.  This is more precise than a fixed day/night cutoff and captures seasonal variation in sunrise/sunset times.</p></li>
 </ul>
 <p>All of these are computed once during <code class="docutils literal notranslate"><span class="pre">fit_transform()</span></code> and then reproduced identically at prediction time - ensuring train/test consistency.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.temporal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TemporalFeatureTransformer</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.temporal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TemporalFeatureTransformer</span>
 
 <span class="n">temporal</span> <span class="o">=</span> <span class="n">TemporalFeatureTransformer</span><span class="p">(</span>
     <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
@@ -823,20 +921,18 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inspect the first few rows of the new temporal columns</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inspect the first few rows of the new temporal columns</span>
 <span class="n">data_with_temporal</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">new_cols</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise day_night assignment over a single week</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise day_night assignment over a single week</span>
 <span class="n">one_week</span> <span class="o">=</span> <span class="n">data_with_temporal</span><span class="p">[</span>
     <span class="p">(</span><span class="n">data_with_temporal</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2020-06-15&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data_with_temporal</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-06-22&quot;</span><span class="p">)</span>
 <span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -855,9 +951,10 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="3.-Autoregressive-Features">
-<h2>3. Autoregressive Features<a class="headerlink" href="#3.-Autoregressive-Features" title="Link to this heading">#</a></h2>
+<section id="autoregressive-features">
+<h2>3. Autoregressive Features<a class="headerlink" href="#autoregressive-features" title="Link to this heading">#</a></h2>
 <blockquote>
 <div><p><strong>Key concept - Lag features</strong></p>
 <p>A <strong>lag feature</strong> is simply the value of the target variable from some number of steps in the past. If electricity demand follows a daily pattern, then “what was demand exactly 24 hours ago?” is an extremely useful input to predict “what will demand be now?”. Lag features let a machine-learning model exploit this temporal memory without you having to design a recurrence mechanism from scratch.</p>
@@ -871,12 +968,10 @@
 <li><p><strong>Lag features</strong>: value of the target <code class="docutils literal notranslate"><span class="pre">n_samples</span> <span class="pre">*</span> <span class="pre">lag</span></code> timesteps ago</p></li>
 <li><p><strong>Rolling features</strong>: aggregate (mean, std, …) over a window of <code class="docutils literal notranslate"><span class="pre">n_samples</span> <span class="pre">*</span> <span class="pre">window</span></code> timesteps</p></li>
 </ul>
-<section id="Understanding-the-n_samples-multiplier">
-<h3>Understanding the <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> multiplier<a class="headerlink" href="#Understanding-the-n_samples-multiplier" title="Link to this heading">#</a></h3>
-<div class="line-block">
-<div class="line">With <strong>30-minute</strong> data there are <strong>48 samples per day</strong> (<code class="docutils literal notranslate"><span class="pre">n_samples=48</span></code>).</div>
-<div class="line">Specifying <code class="docutils literal notranslate"><span class="pre">lags=[1,</span> <span class="pre">2,</span> <span class="pre">7]</span></code> therefore produces lags at:</div>
-</div>
+<section id="understanding-the-n-samples-multiplier">
+<h3>Understanding the <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> multiplier<a class="headerlink" href="#understanding-the-n-samples-multiplier" title="Link to this heading">#</a></h3>
+<p>With <strong>30-minute</strong> data there are <strong>48 samples per day</strong> (<code class="docutils literal notranslate"><span class="pre">n_samples=48</span></code>).<br />
+Specifying <code class="docutils literal notranslate"><span class="pre">lags=[1,</span> <span class="pre">2,</span> <span class="pre">7]</span></code> therefore produces lags at:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">lag</span></code> value</p></th>
@@ -901,11 +996,9 @@
 </table>
 </div>
 <p>Similarly, <code class="docutils literal notranslate"><span class="pre">windows=[1,</span> <span class="pre">2,</span> <span class="pre">7]</span></code> produces rolling windows of 48, 96, and 336 steps.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -943,20 +1036,20 @@
 </pre></div>
 </div>
 </div>
+</div>
 <blockquote>
 <div><p><strong>Key concept - Lag features and rolling windows</strong></p>
-<p>Tree-based models (LightGBM, XGBoost, CatBoost) cannot process sequences - they see one flat feature vector per sample. To give them access to the past, we engineer explicit historical features:</p>
+<p>Tree-based models (LightGBM, XGBoost, CatBoost) cannot process sequences - they see one flat feature vector per sample.
+To give them access to the past, we engineer explicit historical features:</p>
 <ul class="simple">
-<li><p><strong>Lag features</strong> - copy the target value from <code class="docutils literal notranslate"><span class="pre">n_samples</span> <span class="pre">×</span> <span class="pre">lag</span></code> steps ago. For 30-min data, <code class="docutils literal notranslate"><span class="pre">lag=1</span></code> means 1 day ago (48 steps), <code class="docutils literal notranslate"><span class="pre">lag=7</span></code> means 1 week ago (336 steps). The forecastability analysis in NB02 showed strong ACF peaks at lags 48 and 336 - those are the lags worth including.</p></li>
-<li><p><strong>Rolling-window statistics</strong> - summarise a window of recent values into a single number (mean, std, min, max). A rolling mean smooths short-term noise; a rolling std captures volatility. Window size should be at least as large as the dominant seasonal period.</p></li>
+<li><p><strong>Lag features</strong> - copy the target value from <code class="docutils literal notranslate"><span class="pre">n_samples</span> <span class="pre">×</span> <span class="pre">lag</span></code> steps ago.  For 30-min data, <code class="docutils literal notranslate"><span class="pre">lag=1</span></code> means 1 day ago (48 steps), <code class="docutils literal notranslate"><span class="pre">lag=7</span></code> means 1 week ago (336 steps).  The forecastability analysis in NB02 showed strong ACF peaks at lags 48 and 336 - those are the lags worth including.</p></li>
+<li><p><strong>Rolling-window statistics</strong> - summarise a window of recent values into a single number (mean, std, min, max).  A rolling mean smooths short-term noise; a rolling std captures volatility.  Window size should be at least as large as the dominant seasonal period.</p></li>
 </ul>
-<p>Both features are aligned so that at time <em>t</em> the model only sees values from <em>before</em> time <em>t</em> - there is no look-ahead leakage. <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> handles this alignment automatically.</p>
+<p>Both features are aligned so that at time <em>t</em> the model only sees values from <em>before</em> time <em>t</em> - there is no look-ahead leakage.  <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> handles this alignment automatically.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoregressTransformer</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoregressTransformer</span>
 
 <span class="n">auto_res</span> <span class="o">=</span> <span class="n">AutoregressTransformer</span><span class="p">(</span>
     <span class="n">n_samples</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
@@ -973,11 +1066,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inspect the lag columns generated</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inspect the lag columns generated</span>
 <span class="n">lag_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">data_with_ar</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s2">&quot;lag&quot;</span> <span class="ow">in</span> <span class="n">c</span><span class="p">]</span>
 <span class="n">rolling_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">data_with_ar</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s2">&quot;rolling&quot;</span> <span class="ow">in</span> <span class="n">c</span><span class="p">]</span>
 
@@ -986,28 +1078,25 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show values for a few rows to verify alignment</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show values for a few rows to verify alignment</span>
 <span class="n">data_with_ar</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">lag_cols</span> <span class="o">+</span> <span class="n">rolling_cols</span><span class="p">[:</span><span class="mi">4</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.relevance</span><span class="w"> </span><span class="kn">import</span> <span class="n">AssociationAnalyzer</span>
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.relevance</span><span class="w"> </span><span class="kn">import</span> <span class="n">AssociationAnalyzer</span>
-</pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">analyzer</span> <span class="o">=</span> <span class="n">AssociationAnalyzer</span><span class="p">()</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">analyzer</span> <span class="o">=</span> <span class="n">AssociationAnalyzer</span><span class="p">()</span>
 <span class="c1"># Xi correlation: exogenous variables vs. NetLoad</span>
 
 <span class="n">feature_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">,</span> <span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">lag_cols</span> <span class="o">+</span> <span class="n">rolling_cols</span>
@@ -1039,11 +1128,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Quick correlation bar chart — lag and rolling features vs target</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Quick correlation bar chart — lag and rolling features vs target</span>
 <span class="n">corr_data</span> <span class="o">=</span> <span class="n">data_with_ar</span><span class="p">[[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">lag_cols</span> <span class="o">+</span> <span class="n">rolling_cols</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
 <span class="n">corr_vals</span> <span class="o">=</span> <span class="n">corr_data</span><span class="o">.</span><span class="n">corr</span><span class="p">()[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
 <span class="n">corr_vals</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="s2">&quot;Correlation&quot;</span><span class="p">]</span>
@@ -1061,10 +1149,11 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
-<section id="4.-Feature-Selection">
-<h2>4. Feature Selection<a class="headerlink" href="#4.-Feature-Selection" title="Link to this heading">#</a></h2>
+<section id="feature-selection">
+<h2>4. Feature Selection<a class="headerlink" href="#feature-selection" title="Link to this heading">#</a></h2>
 <blockquote>
 <div><p><strong>Key concept - Feature matrix</strong></p>
 <p>After applying temporal and autoregressive transformers, we have a <strong>feature matrix</strong> - a table where each row is one timestep and each column is one input signal the model will see. Feature matrices can easily have 50 - 200 columns, many of which are redundant or noisy. Feature selection trims this down to the most informative subset, reducing overfitting risk and training time.</p>
@@ -1076,15 +1165,11 @@
 <li><p><strong>Mutual information</strong> (non-linear dependency)</p></li>
 <li><p><strong>Random Forest importance</strong> (tree-based, captures interactions)</p></li>
 </ol>
-<div class="line-block">
-<div class="line">Individual ranks are aggregated via <strong>Borda count</strong> and the top-k features are returned.</div>
-<div class="line">This multi-metric approach is more robust than any single score, especially for non-linear time series patterns.</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">select_top_features</span>
+<p>Individual ranks are aggregated via <strong>Borda count</strong> and the top-k features are returned.<br />
+This multi-metric approach is more robust than any single score, especially for non-linear time series patterns.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">select_top_features</span>
 
 <span class="c1"># Drop rows with NaN before selection</span>
 <span class="n">ar_clean</span> <span class="o">=</span> <span class="n">data_with_ar</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -1111,11 +1196,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise the selected lag features side-by-side with the target</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise the selected lag features side-by-side with the target</span>
 <span class="n">sample</span> <span class="o">=</span> <span class="n">ar_clean</span><span class="p">[(</span><span class="n">ar_clean</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2019-03-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">ar_clean</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2019-03-08&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
 <span class="n">p</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
@@ -1132,39 +1216,38 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="5.-Fourier-Features">
-<h2>5. Fourier Features<a class="headerlink" href="#5.-Fourier-Features" title="Link to this heading">#</a></h2>
-<div class="line-block">
-<div class="line">Calendar variables like <code class="docutils literal notranslate"><span class="pre">hour</span></code> are <strong>cyclic</strong>: hour 23 is closer to hour 0 than to hour 12, but a plain integer does not express this.</div>
-<div class="line">Fourier encoding projects each value onto a unit circle:</div>
 </div>
+</section>
+<section id="fourier-features">
+<h2>5. Fourier Features<a class="headerlink" href="#fourier-features" title="Link to this heading">#</a></h2>
+<p>Calendar variables like <code class="docutils literal notranslate"><span class="pre">hour</span></code> are <strong>cyclic</strong>: hour 23 is closer to hour 0 than to hour 12, but a plain integer does not express this.<br />
+Fourier encoding projects each value onto a unit circle:</p>
 <div class="math notranslate nohighlight">
-\[\text{hour\_sin} = \sin\!\left(\frac{2\pi \cdot h}{24}\right), \quad
-\text{hour\_cos} = \cos\!\left(\frac{2\pi \cdot h}{24}\right)\]</div>
+\[
+\text{hour\_sin} = \sin\!\left(\frac{2\pi \cdot h}{24}\right), \quad
+\text{hour\_cos} = \cos\!\left(\frac{2\pi \cdot h}{24}\right)
+\]</div>
 <p>A third convenience column <code class="docutils literal notranslate"><span class="pre">hour_cosin</span> <span class="pre">=</span> <span class="pre">hour_sin</span> <span class="pre">+</span> <span class="pre">hour_cos</span></code> is also added.</p>
 <blockquote>
-<div><div class="line-block">
-<div class="line"><code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> applies this automatically for trigonometric features (hour, wday, month).</div>
-<div class="line"><code class="docutils literal notranslate"><span class="pre">add_fourier_features</span></code> lets you do it manually for any column.</div>
-</div>
+<div><p><code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> applies this automatically for trigonometric features (hour, wday, month).<br />
+<code class="docutils literal notranslate"><span class="pre">add_fourier_features</span></code> lets you do it manually for any column.</p>
 </div></blockquote>
 <blockquote>
 <div><p><strong>Key concept - Fourier encoding for cyclic variables</strong></p>
-<p>Calendar variables like <code class="docutils literal notranslate"><span class="pre">hour</span></code> (0 - 23) and <code class="docutils literal notranslate"><span class="pre">month</span></code> (1 - 12) are <strong>cyclic</strong>: hour 23 is just one step away from hour 0, but the integer 23 is far from 0 in Euclidean space. A tree model or neural network that receives raw integers will not naturally understand this wrap-around.</p>
+<p>Calendar variables like <code class="docutils literal notranslate"><span class="pre">hour</span></code> (0 - 23) and <code class="docutils literal notranslate"><span class="pre">month</span></code> (1 - 12) are <strong>cyclic</strong>: hour 23 is just one step away from hour 0, but the integer 23 is far from 0 in Euclidean space.
+A tree model or neural network that receives raw integers will not naturally understand this wrap-around.</p>
 <p><strong>Fourier encoding</strong> projects each value onto a unit circle using sine and cosine:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>sin_value = sin(2π × value / period)
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>sin_value = sin(2π × value / period)
 cos_value = cos(2π × value / period)
 </pre></div>
 </div>
-<p>For <code class="docutils literal notranslate"><span class="pre">hour</span></code> with period 24, hours 0 and 23 land at nearly the same point on the circle. The model receives two continuous numbers (sin, cos) per cyclic feature instead of a raw integer - the circular distance is now correctly represented.</p>
+<p>For <code class="docutils literal notranslate"><span class="pre">hour</span></code> with period 24, hours 0 and 23 land at nearly the same point on the circle.
+The model receives two continuous numbers (sin, cos) per cyclic feature instead of a raw integer - the circular distance is now correctly represented.</p>
 <p>Use Fourier encoding whenever a calendar variable has natural wrap-around: hour (period 24), weekday (period 7), month (period 12), day-of-year (period 365).</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_fourier_features</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_fourier_features</span>
 
 <span class="c1"># We start from data_with_temporal which already has the &#39;hour&#39; integer column</span>
 <span class="n">data_fourier</span> <span class="o">=</span> <span class="n">add_fourier_features</span><span class="p">(</span>
@@ -1179,11 +1262,10 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise the sin/cos encoding of hour over one full day</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise the sin/cos encoding of hour over one full day</span>
 <span class="n">one_day</span> <span class="o">=</span> <span class="n">data_fourier</span><span class="p">[</span><span class="n">fourier_cols</span><span class="p">]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;hour&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;hour&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <span class="n">one_day</span><span class="p">[</span><span class="s2">&quot;hour_step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">one_day</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
@@ -1201,27 +1283,24 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
-</section>
-<section id="6.-Connecting-to-DataPipelineConfig">
-<h2>6. Connecting to <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code><a class="headerlink" href="#6.-Connecting-to-DataPipelineConfig" title="Link to this heading">#</a></h2>
-<div class="line-block">
-<div class="line"><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> is a <strong>Pydantic model</strong> that acts as the single source of truth for everything the pipeline needs to know.</div>
-<div class="line">The selected features from Section 4 plug directly into <code class="docutils literal notranslate"><span class="pre">historical_features</span></code>.</div>
 </div>
+</section>
+<section id="connecting-to-datapipelineconfig">
+<h2>6. Connecting to <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code><a class="headerlink" href="#connecting-to-datapipelineconfig" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> is a <strong>Pydantic model</strong> that acts as the single source of truth for everything the pipeline needs to know.<br />
+The selected features from Section 4 plug directly into <code class="docutils literal notranslate"><span class="pre">historical_features</span></code>.</p>
 <blockquote>
 <div><p><strong>Key concept - The feature matrix</strong></p>
 <p><code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> transforms a raw DataFrame into a pair of 3-D NumPy arrays:</p>
 <ul class="simple">
-<li><p><strong>X</strong> - shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">lookback_window_size,</span> <span class="pre">n_features)</span></code> - the input tensor fed to the model. Each sample is a window of <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code> timesteps, each with <code class="docutils literal notranslate"><span class="pre">n_features</span></code> values (target history + calendar + exogenous + lag + rolling columns).</p></li>
+<li><p><strong>X</strong> - shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">lookback_window_size,</span> <span class="pre">n_features)</span></code> - the input tensor fed to the model.  Each sample is a window of <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code> timesteps, each with <code class="docutils literal notranslate"><span class="pre">n_features</span></code> values (target history + calendar + exogenous + lag + rolling columns).</p></li>
 <li><p><strong>y</strong> - shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">forecast_horizon,</span> <span class="pre">n_targets)</span></code> - the corresponding future target values the model must predict.</p></li>
 </ul>
-<p>This 3-D format is the universal interface between feature engineering and all Twiga models (ML and NN alike). <code class="docutils literal notranslate"><span class="pre">DataPipeline.fit()</span></code> learns the scalers from training data; <code class="docutils literal notranslate"><span class="pre">DataPipeline.transform()</span></code> applies them to any split without refitting - preventing data leakage.</p>
+<p>This 3-D format is the universal interface between feature engineering and all Twiga models (ML and NN alike).  <code class="docutils literal notranslate"><span class="pre">DataPipeline.fit()</span></code> learns the scalers from training data; <code class="docutils literal notranslate"><span class="pre">DataPipeline.transform()</span></code> applies them to any split without refitting - preventing data leakage.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span>
 
 <span class="c1"># Two ways to specify autoregressive features in DataPipelineConfig:</span>
 <span class="c1">#</span>
@@ -1254,11 +1333,10 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Summarise what the config holds</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Summarise what the config holds</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== DataPipelineConfig summary ===&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Target        : </span><span class="si">{</span><span class="n">data_config</span><span class="o">.</span><span class="n">target_feature</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Period        : </span><span class="si">{</span><span class="n">data_config</span><span class="o">.</span><span class="n">period</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1272,14 +1350,13 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
-<section id="Validation-at-construction-time">
-<h3>Validation at construction time<a class="headerlink" href="#Validation-at-construction-time" title="Link to this heading">#</a></h3>
-<p>Because <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> is a Pydantic model, <strong>invalid values are rejected immediately</strong>. Try uncommenting the cell below to see:</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Uncomment to see Pydantic validation in action</span>
+<section id="validation-at-construction-time">
+<h3>Validation at construction time<a class="headerlink" href="#validation-at-construction-time" title="Link to this heading">#</a></h3>
+<p>Because <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> is a Pydantic model, <strong>invalid values are rejected immediately</strong>. Try uncommenting the cell below to see:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Uncomment to see Pydantic validation in action</span>
 <span class="c1"># from twiga.core.config import DataPipelineConfig</span>
 <span class="c1"># bad_config = DataPipelineConfig(</span>
 <span class="c1">#     target_feature=&quot;NetLoad(kW)&quot;,</span>
@@ -1290,29 +1367,24 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
-</section>
-</section>
-<section id="7.-How-DataPipeline-transforms-internally">
-<h2>7. How <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> transforms internally<a class="headerlink" href="#7.-How-DataPipeline-transforms-internally" title="Link to this heading">#</a></h2>
-<div class="line-block">
-<div class="line"><code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> is a scikit-learn <code class="docutils literal notranslate"><span class="pre">TransformerMixin</span></code> that builds a processing chain from a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>.</div>
-<div class="line">Internally it:</div>
 </div>
+</section>
+</section>
+<section id="how-datapipeline-transforms-internally">
+<h2>7. How <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> transforms internally<a class="headerlink" href="#how-datapipeline-transforms-internally" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> is a scikit-learn <code class="docutils literal notranslate"><span class="pre">TransformerMixin</span></code> that builds a processing chain from a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>.<br />
+Internally it:</p>
 <ol class="arabic simple">
 <li><p>Runs <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code> (if <code class="docutils literal notranslate"><span class="pre">calendar_features</span></code> are set)</p></li>
 <li><p>Runs <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> (if <code class="docutils literal notranslate"><span class="pre">lags</span></code> or <code class="docutils literal notranslate"><span class="pre">windows</span></code> are set)</p></li>
 <li><p>Applies <code class="docutils literal notranslate"><span class="pre">input_scaler</span></code> to numerical features and <code class="docutils literal notranslate"><span class="pre">target_scaler</span></code> to the target</p></li>
 <li><p>Slices the scaled data into overlapping (lookback, horizon) sequence windows</p></li>
 </ol>
-<div class="line-block">
-<div class="line">The output <code class="docutils literal notranslate"><span class="pre">X</span></code> has shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">lookback_window_size,</span> <span class="pre">n_features)</span></code> and</div>
-<div class="line"><code class="docutils literal notranslate"><span class="pre">y</span></code> has shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">forecast_horizon,</span> <span class="pre">n_targets)</span></code> - ready to feed directly into a neural network.</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipeline</span>
+<p>The output <code class="docutils literal notranslate"><span class="pre">X</span></code> has shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">lookback_window_size,</span> <span class="pre">n_features)</span></code> and<br />
+<code class="docutils literal notranslate"><span class="pre">y</span></code> has shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">forecast_horizon,</span> <span class="pre">n_targets)</span></code> - ready to feed directly into a neural network.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipeline</span>
 
 <span class="c1"># DataPipeline takes the same individual parameters as DataPipelineConfig fields.</span>
 <span class="c1"># Using lags/windows/window_funcs means the pipeline creates AR features internally</span>
@@ -1340,11 +1412,10 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
 
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;X shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (n_samples, lookback_window_size, n_features)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;y shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (n_samples, forecast_horizon, n_targets)</span>
@@ -1354,11 +1425,10 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise a single training window</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise a single training window</span>
 <span class="n">SAMPLE_IDX</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># arbitrary sample</span>
 
 <span class="n">lookback_vals</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">SAMPLE_IDX</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -1388,9 +1458,10 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="8.-Summary">
-<h2>8. Summary<a class="headerlink" href="#8.-Summary" title="Link to this heading">#</a></h2>
+<section id="summary">
+<h2>8. Summary<a class="headerlink" href="#summary" title="Link to this heading">#</a></h2>
 <p>In this notebook you learned how to:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
@@ -1424,11 +1495,9 @@ cos_value = cos(2π × value / period)
 </table>
 </div>
 <hr class="docutils" />
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -1476,11 +1545,10 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
 
@@ -1535,11 +1603,14 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 <hr class="docutils" />
-<section id="9.-EDA:-Visual-Feature-Inspection">
-<h2>9. EDA: Visual Feature Inspection<a class="headerlink" href="#9.-EDA:-Visual-Feature-Inspection" title="Link to this heading">#</a></h2>
-<p>Before passing engineered features to a model it is worth spending a few minutes on exploratory visualisation. The three helpers below give fast answers to common pre-modelling questions:</p>
+<section id="eda-visual-feature-inspection">
+<h2>9. EDA: Visual Feature Inspection<a class="headerlink" href="#eda-visual-feature-inspection" title="Link to this heading">#</a></h2>
+<p>Before passing engineered features to a model it is worth spending a few minutes on
+exploratory visualisation. The three helpers below give fast answers to common
+pre-modelling questions:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Question</p></th>
@@ -1559,26 +1630,26 @@ cos_value = cos(2π × value / period)
 </tbody>
 </table>
 </div>
-<p>All three accept the same Twiga theme parameters (<code class="docutils literal notranslate"><span class="pre">font_size</span></code>, <code class="docutils literal notranslate"><span class="pre">grid</span></code>, <code class="docutils literal notranslate"><span class="pre">legend_pos</span></code>, …) as every other plotting utility in the library.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<p>All three accept the same Twiga theme parameters (<code class="docutils literal notranslate"><span class="pre">font_size</span></code>, <code class="docutils literal notranslate"><span class="pre">grid</span></code>, <code class="docutils literal notranslate"><span class="pre">legend_pos</span></code>, …)
+as every other plotting utility in the library.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">line_plot</span><span class="p">,</span> <span class="n">scatter_matrix</span><span class="p">,</span> <span class="n">scatter_plot</span>
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">line_plot</span><span class="p">,</span> <span class="n">scatter_matrix</span><span class="p">,</span> <span class="n">scatter_plot</span>
-</pre></div>
 </div>
 </div>
-<section id="line_plot:-one-week-load-profile">
-<h3><code class="docutils literal notranslate"><span class="pre">line_plot</span></code>: one-week load profile<a class="headerlink" href="#line_plot:-one-week-load-profile" title="Link to this heading">#</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">line_plot</span></code> accepts a plain Python list or 1-D NumPy array - no DataFrame required. It is the fastest way to sanity-check a raw signal, inspect seasonality, or verify that a transformation (differencing, scaling) behaved as expected.</p>
+<section id="line-plot-one-week-load-profile">
+<h3><code class="docutils literal notranslate"><span class="pre">line_plot</span></code>: one-week load profile<a class="headerlink" href="#line-plot-one-week-load-profile" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">line_plot</span></code> accepts a plain Python list or 1-D NumPy array - no DataFrame required.
+It is the fastest way to sanity-check a raw signal, inspect seasonality, or verify
+that a transformation (differencing, scaling) behaved as expected.</p>
 <blockquote>
 <div><p><strong>When to use it:</strong> quick visual check on any univariate sequence before or after feature engineering.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># line_plot takes a plain 1-D sequence — no DataFrame needed</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># line_plot takes a plain 1-D sequence — no DataFrame needed</span>
 <span class="n">sample_week</span> <span class="o">=</span> <span class="n">data_with_temporal</span><span class="p">[</span>
     <span class="p">(</span><span class="n">data_with_temporal</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2019-06-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data_with_temporal</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2019-06-08&quot;</span><span class="p">)</span>
 <span class="p">][</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
@@ -1595,19 +1666,22 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
-</section>
-<section id="scatter_plot:-GHI-vs-Net-Load-by-day/night">
-<h3><code class="docutils literal notranslate"><span class="pre">scatter_plot</span></code>: GHI vs Net Load by day/night<a class="headerlink" href="#scatter_plot:-GHI-vs-Net-Load-by-day/night" title="Link to this heading">#</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">scatter_plot</span></code> renders a 2-D scatter with optional colour grouping and a LOESS smoothing curve. It is ideal for assessing whether a covariate has a meaningful (possibly non-linear) relationship with the target before committing to feature selection.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">hue_col</span></code> parameter expects a <strong>string</strong> column. Numeric flags like <code class="docutils literal notranslate"><span class="pre">day_night</span></code> should be mapped first - see the <code class="docutils literal notranslate"><span class="pre">.assign(group=…)</span></code> call below.</p>
-<blockquote>
-<div><p><strong>When to use it:</strong> check covariate - target correlations and detect regime differences (e.g. day vs night, weekday vs weekend) that a model should learn.</p>
-</div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">scatter_df</span> <span class="o">=</span> <span class="p">(</span>
+</section>
+<section id="scatter-plot-ghi-vs-net-load-by-day-night">
+<h3><code class="docutils literal notranslate"><span class="pre">scatter_plot</span></code>: GHI vs Net Load by day/night<a class="headerlink" href="#scatter-plot-ghi-vs-net-load-by-day-night" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">scatter_plot</span></code> renders a 2-D scatter with optional colour grouping and a LOESS
+smoothing curve. It is ideal for assessing whether a covariate has a meaningful
+(possibly non-linear) relationship with the target before committing to feature selection.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">hue_col</span></code> parameter expects a <strong>string</strong> column. Numeric flags like <code class="docutils literal notranslate"><span class="pre">day_night</span></code>
+should be mapped first - see the <code class="docutils literal notranslate"><span class="pre">.assign(group=…)</span></code> call below.</p>
+<blockquote>
+<div><p><strong>When to use it:</strong> check covariate - target correlations and detect regime differences
+(e.g. day vs night, weekday vs weekend) that a model should learn.</p>
+</div></blockquote>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">scatter_df</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">data_with_temporal</span><span class="p">[[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">]]</span>
     <span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
     <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Ghi&quot;</span><span class="p">:</span> <span class="s2">&quot;cycle&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">:</span> <span class="s2">&quot;group&quot;</span><span class="p">})</span>
@@ -1625,19 +1699,22 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
-</section>
-<section id="scatter_matrix:-lag-features-vs-target">
-<h3><code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code>: lag features vs target<a class="headerlink" href="#scatter_matrix:-lag-features-vs-target" title="Link to this heading">#</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code> renders a pair-plot grid across the selected feature columns and the target. Each off-diagonal cell is a scatter; the diagonal shows the marginal distribution. Colour groups (e.g. day / night) make regime-specific patterns immediately visible.</p>
-<p>Use this after <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> to confirm that lag features carry signal and to spot multicollinearity between lags before training.</p>
-<blockquote>
-<div><p><strong>When to use it:</strong> validate that autoregressive features are jointly informative and identify any redundant lags you might want to drop.</p>
-</div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">matrix_df</span> <span class="o">=</span> <span class="p">(</span>
+</section>
+<section id="scatter-matrix-lag-features-vs-target">
+<h3><code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code>: lag features vs target<a class="headerlink" href="#scatter-matrix-lag-features-vs-target" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code> renders a pair-plot grid across the selected feature columns and the
+target. Each off-diagonal cell is a scatter; the diagonal shows the marginal distribution.
+Colour groups (e.g. day / night) make regime-specific patterns immediately visible.</p>
+<p>Use this after <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code> to confirm that lag features carry signal and
+to spot multicollinearity between lags before training.</p>
+<blockquote>
+<div><p><strong>When to use it:</strong> validate that autoregressive features are jointly informative and
+identify any redundant lags you might want to drop.</p>
+</div></blockquote>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">matrix_df</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">data_with_ar</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_with_temporal</span><span class="p">[[</span><span class="s2">&quot;day_night&quot;</span><span class="p">]],</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
     <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;day_night&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;Night&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;Day&quot;</span><span class="p">}))</span>
@@ -1660,18 +1737,19 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
 <hr class="docutils" />
-<section id="Wrapping-up">
-<h2>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<section id="wrapping-up">
+<h2>Wrapping up<a class="headerlink" href="#wrapping-up" title="Link to this heading">#</a></h2>
 <p><strong>What you did</strong></p>
-<ul class="simple">
-<li><p>☒ Added cyclic calendar signals (hour, weekday, month, day/night) using <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code></p></li>
-<li><p>☒ Built lag features and rolling-window statistics using <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code></p></li>
-<li><p>☒ Ranked and selected the most informative features using <code class="docutils literal notranslate"><span class="pre">select_top_features</span></code></p></li>
-<li><p>☒ Encoded cyclic variables with Fourier (sin/cos) terms to eliminate boundary discontinuities</p></li>
-<li><p>☒ Wired all feature choices into a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> and verified the pipeline output shape</p></li>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Added cyclic calendar signals (hour, weekday, month, day/night) using <code class="docutils literal notranslate"><span class="pre">TemporalFeatureTransformer</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Built lag features and rolling-window statistics using <code class="docutils literal notranslate"><span class="pre">AutoregressTransformer</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Ranked and selected the most informative features using <code class="docutils literal notranslate"><span class="pre">select_top_features</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Encoded cyclic variables with Fourier (sin/cos) terms to eliminate boundary discontinuities</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Wired all feature choices into a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> and verified the pipeline output shape</p></li>
 </ul>
 <p><strong>Key takeaways for beginners</strong></p>
 <ol class="arabic simple">
@@ -1679,18 +1757,16 @@ cos_value = cos(2π × value / period)
 <li><p><strong>Lag = yesterday at this time</strong> - a lag-1 feature on 30-min data is 48 steps back (24 hours). Always multiply your “intuitive” lag by <code class="docutils literal notranslate"><span class="pre">n_samples</span></code>.</p></li>
 <li><p><strong>Rolling means smooth out noise</strong> - individual lag values can be noisy; rolling means give the model a stable picture of recent average demand.</p></li>
 <li><p><strong>Feature selection prevents overfitting</strong> - more features is not always better. <code class="docutils literal notranslate"><span class="pre">select_top_features</span></code> uses four complementary metrics to keep only columns that genuinely predict the target.</p></li>
-<li><p><strong>``DataPipelineConfig`` is the single source of truth</strong> - all feature choices live in one Pydantic config object, making experiments reproducible and easy to share.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> is the single source of truth</strong> - all feature choices live in one Pydantic config object, making experiments reproducible and easy to share.</p></li>
 </ol>
 </section>
 <hr class="docutils" />
-<section id="What's-next?">
-<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<section id="what-s-next">
+<h2>What’s next?<a class="headerlink" href="#what-s-next" title="Link to this heading">#</a></h2>
 <p><strong>NB04 - ML Point Forecasting</strong> shows how to pass <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> into <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code>, select an ML model (LightGBM, XGBoost, CatBoost, or Linear Regression), and evaluate point predictions using the built-in metrics module.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
 
 <span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
@@ -1773,6 +1849,7 @@ cos_value = cos(2π × value / period)
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
 
@@ -1823,28 +1900,28 @@ cos_value = cos(2π × value / period)
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Setup">1. Setup</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Temporal-Features">2. Temporal Features</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-Autoregressive-Features">3. Autoregressive Features</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Understanding-the-n_samples-multiplier">Understanding the <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> multiplier</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup">1. Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#temporal-features">2. Temporal Features</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#autoregressive-features">3. Autoregressive Features</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-the-n-samples-multiplier">Understanding the <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> multiplier</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Feature-Selection">4. Feature Selection</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Fourier-Features">5. Fourier Features</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Connecting-to-DataPipelineConfig">6. Connecting to <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Validation-at-construction-time">Validation at construction time</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#feature-selection">4. Feature Selection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fourier-features">5. Fourier Features</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#connecting-to-datapipelineconfig">6. Connecting to <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#validation-at-construction-time">Validation at construction time</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-How-DataPipeline-transforms-internally">7. How <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> transforms internally</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-Summary">8. Summary</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9.-EDA:-Visual-Feature-Inspection">9. EDA: Visual Feature Inspection</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#line_plot:-one-week-load-profile"><code class="docutils literal notranslate"><span class="pre">line_plot</span></code>: one-week load profile</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scatter_plot:-GHI-vs-Net-Load-by-day/night"><code class="docutils literal notranslate"><span class="pre">scatter_plot</span></code>: GHI vs Net Load by day/night</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scatter_matrix:-lag-features-vs-target"><code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code>: lag features vs target</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-datapipeline-transforms-internally">7. How <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> transforms internally</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">8. Summary</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#eda-visual-feature-inspection">9. EDA: Visual Feature Inspection</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#line-plot-one-week-load-profile"><code class="docutils literal notranslate"><span class="pre">line_plot</span></code>: one-week load profile</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scatter-plot-ghi-vs-net-load-by-day-night"><code class="docutils literal notranslate"><span class="pre">scatter_plot</span></code>: GHI vs Net Load by day/night</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scatter-matrix-lag-features-vs-target"><code class="docutils literal notranslate"><span class="pre">scatter_matrix</span></code>: lag features vs target</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">Wrapping up</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">What’s next?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#wrapping-up">Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-s-next">What’s next?</a></li>
 </ul>
   </nav></div>
 

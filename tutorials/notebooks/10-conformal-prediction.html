@@ -32,9 +32,9 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=79a279a3" />
     <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   
@@ -55,9 +55,7 @@
     <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/10-conformal-prediction';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
@@ -622,16 +620,16 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="Conformal-Prediction-&amp;-Guaranteed-Coverage">
-<h1>Conformal Prediction &amp; Guaranteed Coverage<a class="headerlink" href="#Conformal-Prediction-&-Guaranteed-Coverage" title="Link to this heading">#</a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="conformal-prediction-guaranteed-coverage">
+<h1>Conformal Prediction &amp; Guaranteed Coverage<a class="headerlink" href="#conformal-prediction-guaranteed-coverage" title="Link to this heading">#</a></h1>
 <p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
 <hr class="docutils" />
 <p><strong>What you’ll build</strong></p>
 <p>Coverage-guaranteed prediction intervals using Conformalised Quantile Regression (CQR) and Conformal Risk Control (CRC) applied as post-training wrappers on any trained Twiga model.</p>
 <p><strong>Prerequisites</strong></p>
 <ul class="simple">
-<li><p><a class="reference internal" href="08-quantile-regression.html"><span class="doc">08 - Quantile Regression</span></a> (QR models and interval metrics)</p></li>
-<li><p><a class="reference internal" href="09-parametric-distributions.html"><span class="doc">09 - Parametric Distributions</span></a> (parametric probabilistic heads)</p></li>
+<li><p><span class="xref myst">08 - Quantile Regression</span> (QR models and interval metrics)</p></li>
+<li><p><span class="xref myst">09 - Parametric Distributions</span> (parametric probabilistic heads)</p></li>
 <li><p>Python: basic probability, coverage concepts</p></li>
 </ul>
 <p><strong>Learning objectives</strong></p>
@@ -643,8 +641,8 @@
 <li><p>Evaluate coverage and sharpness trade-offs using PICP, NMPI, and Winkler score</p></li>
 <li><p>Select the right conformal method based on your base model type</p></li>
 </ol>
-<section id="1.-Motivation:-Why-Conformal-Prediction?">
-<h2>1. Motivation: Why Conformal Prediction?<a class="headerlink" href="#1.-Motivation:-Why-Conformal-Prediction?" title="Link to this heading">#</a></h2>
+<section id="motivation-why-conformal-prediction">
+<h2>1. Motivation: Why Conformal Prediction?<a class="headerlink" href="#motivation-why-conformal-prediction" title="Link to this heading">#</a></h2>
 <p>The two probabilistic approaches covered in earlier notebooks each have a fundamental limitation:</p>
 <ul class="simple">
 <li><p><strong>Parametric (NB08)</strong>: assumes data follows a known distribution family. Wrong family → miscalibrated coverage.</p></li>
@@ -653,10 +651,12 @@
 <blockquote>
 <div><p><strong>Key concept - conformal prediction</strong></p>
 <p>Conformal prediction produces prediction intervals with a <strong>finite-sample, distribution-free coverage guarantee</strong>. Formally, for a significance level α ∈ (0, 1), it constructs intervals [l̂, û] such that:</p>
-<p>P(y_{n+1} ∈ [l̂<em>{n+1}, û</em>{n+1}]) ≥ 1 − α</p>
+<p>P(y_{n+1} ∈ [l̂_{n+1}, û_{n+1}]) ≥ 1 − α</p>
 <p>This is a <strong>marginal coverage guarantee</strong> - it holds over the randomness of the calibration and test draw, with no distributional assumption required. It works with <em>any</em> underlying model: tree ensembles, neural networks, or linear models.</p>
 <p>The key ingredient is a <strong>calibration set</strong> - a held-out set of labeled examples (separate from training) used to compute <strong>nonconformity scores</strong>, which measure how surprised the model is by each observation. The coverage guarantee follows directly from the exchangeability of calibration and test data.</p>
-<p><strong>Key concept - CQR vs. CRC</strong></p>
+</div></blockquote>
+<blockquote>
+<div><p><strong>Key concept - CQR vs. CRC</strong></p>
 <p>Twiga provides three conformal methods, differing in how they compute and adjust nonconformity scores:</p>
 <ul class="simple">
 <li><p><strong>Split Conformal</strong> (<code class="docutils literal notranslate"><span class="pre">method=&quot;residual&quot;</span></code>): the simplest approach. Nonconformity score = |y − ŷ|. Interval = ŷ ± q_{1−α}(scores). Produces constant-width intervals - cannot adapt to local uncertainty.</p></li>
@@ -666,14 +666,11 @@
 </div></blockquote>
 <blockquote>
 <div><p><strong>Key concept - coverage vs. sharpness trade-off</strong></p>
-<p>All three methods satisfy the marginal coverage guarantee, but they differ in <strong>sharpness</strong> - how narrow the intervals are on average. Wider intervals are trivially easy to achieve (just make them very wide), so a good method is one that achieves the nominal coverage with the <em>smallest</em> possible interval width. This is measured by metrics like NMPI (Normalised Mean Prediction Interval width) and the Winkler score, which penalises both excess width and coverage violations jointly. The
-reliability diagram reveals whether a method is over- or under-covering systematically, while the sharpness comparison reveals which method produces the tightest intervals at the same nominal level.</p>
+<p>All three methods satisfy the marginal coverage guarantee, but they differ in <strong>sharpness</strong> - how narrow the intervals are on average. Wider intervals are trivially easy to achieve (just make them very wide), so a good method is one that achieves the nominal coverage with the <em>smallest</em> possible interval width. This is measured by metrics like NMPI (Normalised Mean Prediction Interval width) and the Winkler score, which penalises both excess width and coverage violations jointly. The reliability diagram reveals whether a method is over- or under-covering systematically, while the sharpness comparison reveals which method produces the tightest intervals at the same nominal level.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span><span class="p">,</span> <span class="n">twiga_report</span>
@@ -704,14 +701,113 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
-</section>
-<section id="2.-Setup">
-<h2>2. Setup<a class="headerlink" href="#2.-Setup" title="Link to this heading">#</a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div id="wsbrompabg" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:100%;height:auto;">
+<style>
+#wsbrompabg table {
+          font-family: Inter, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+#wsbrompabg thead, tbody, tfoot, tr, td, th { border-style: none; }
+ tr { background-color: transparent; }
+#wsbrompabg p { margin: 0; padding: 0; }
+ #wsbrompabg .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #2d3748; font-size: 13px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: 100%; border-top-style: solid; border-top-width: 2px; border-top-color: #107591; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #107591; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
+ #wsbrompabg .gt_caption { padding-top: 4px; padding-bottom: 4px; }
+ #wsbrompabg .gt_title { color: #2d3748; font-size: 16px; font-weight: bold; padding-top: 10px; padding-bottom: 10px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
+ #wsbrompabg .gt_subtitle { color: #2d3748; font-size: 13px; font-weight: initial; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
+ #wsbrompabg .gt_heading { background-color: #ffffff; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #wsbrompabg .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #wsbrompabg .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #wsbrompabg .gt_col_heading { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
+ #wsbrompabg .gt_column_spanner_outer { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
+ #wsbrompabg .gt_column_spanner_outer:first-child { padding-left: 0; }
+ #wsbrompabg .gt_column_spanner_outer:last-child { padding-right: 0; }
+ #wsbrompabg .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; vertical-align: bottom; padding-top: 9px; padding-bottom: 9px; overflow-x: hidden; display: inline-block; width: 100%; }
+ #wsbrompabg .gt_spanner_row { border-bottom-style: hidden; }
+ #wsbrompabg .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }
+ #wsbrompabg .gt_empty_group_heading { padding: 0.5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }
+ #wsbrompabg .gt_from_md> :first-child { margin-top: 0; }
+ #wsbrompabg .gt_from_md> :last-child { margin-bottom: 0; }
+ #wsbrompabg .gt_row { padding-top: 7px; padding-bottom: 7px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }
+ #wsbrompabg .gt_stub { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
+ #wsbrompabg .gt_stub_row_group { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
+ #wsbrompabg .gt_row_group_first td { border-top-width: 2px; }
+ #wsbrompabg .gt_row_group_first th { border-top-width: 2px; }
+ #wsbrompabg .gt_striped { color: #2d3748; background-color: #F4F4F4; }
+ #wsbrompabg .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #e8e8e8; }
+ #wsbrompabg .gt_grand_summary_row { color: #2d3748; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }
+ #wsbrompabg .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }
+ #wsbrompabg .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }
+ #wsbrompabg .gt_sourcenotes { color: #2d3748; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
+ #wsbrompabg .gt_sourcenote { font-size: 11px; padding-top: 6px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; text-align: left; }
+ #wsbrompabg .gt_left { text-align: left; }
+ #wsbrompabg .gt_center { text-align: center; }
+ #wsbrompabg .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
+ #wsbrompabg .gt_font_normal { font-weight: normal; }
+ #wsbrompabg .gt_font_bold { font-weight: bold; }
+ #wsbrompabg .gt_font_italic { font-style: italic; }
+ #wsbrompabg .gt_super { font-size: 65%; }
+ #wsbrompabg .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
+ #wsbrompabg .gt_asterisk { font-size: 100%; vertical-align: 0; }
+ 
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+
+  <tr class="gt_heading">
+    <td colspan="4" class="gt_heading gt_title gt_font_normal" style="color: #333333;font-weight: bold;"><strong>Conformal methods in Twiga</strong></td>
+  </tr>
+  <tr class="gt_heading">
+    <td colspan="4" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style="color: #718096;">All three methods satisfy the marginal coverage guarantee</td>
+  </tr>
+<tr class="gt_col_headings">
+  <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="Method"><strong>Method</strong></th>
+  <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="Config-method="><strong>Config method=</strong></th>
+  <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="Key-idea"><strong>Key idea</strong></th>
+  <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="Interval-width"><strong>Interval width</strong></th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+  <tr>
+    <td class="gt_row gt_left">Split Conformal</td>
+    <td class="gt_row gt_left">"residual"</td>
+    <td class="gt_row gt_left">Quantile of absolute residuals on the calibration set</td>
+    <td class="gt_row gt_left">Constant</td>
+  </tr>
+  <tr>
+    <td style="background-color: #f7fbfc;" class="gt_row gt_left">CQR</td>
+    <td style="background-color: #f7fbfc;" class="gt_row gt_left">"quantile"</td>
+    <td style="background-color: #f7fbfc;" class="gt_row gt_left">Adjust the QR interval using calibration residuals</td>
+    <td style="background-color: #f7fbfc;" class="gt_row gt_left">Adaptive (from QR)</td>
+  </tr>
+  <tr>
+    <td class="gt_row gt_left">CRC</td>
+    <td class="gt_row gt_left">"residual-fitting"</td>
+    <td class="gt_row gt_left">Fit a secondary model to predict residual magnitude adaptively</td>
+    <td class="gt_row gt_left">Adaptive (from residual model)</td>
+  </tr>
+</tbody>
+  <tfoot class="gt_sourcenotes">
+  
+  <tr>
+    <td class="gt_sourcenote" colspan="4" style="color: #718096;font-style: italic;">Twiga Forecast</td>
+  </tr>
+
+</tfoot>
+
+</table>
+
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+        </div></div>
+</div>
+</section>
+<section id="setup">
+<h2>2. Setup<a class="headerlink" href="#setup" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
@@ -737,14 +833,47 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
-<section id="Load-data">
-<h3>Load data<a class="headerlink" href="#Load-data" title="Link to this heading">#</a></h3>
-<p>The dataset covers Madeira, Portugal (32.37°N, 16.27°W) at 30-minute resolution. We load only the columns needed: timestamp, net load (target), and two exogenous variables.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+        <div id="FABAOK"></div>
+        <script type="text/javascript" data-lets-plot-script="library">
+            if(!window.letsPlotCallQueue) {
+                window.letsPlotCallQueue = [];
+            };
+            window.letsPlotCall = function(f) {
+                window.letsPlotCallQueue.push(f);
+            };
+            (function() {
+                var script = document.createElement("script");
+                script.type = "text/javascript";
+                script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.9.0/js-package/distr/lets-plot.min.js";
+                script.onload = function() {
+                    window.letsPlotCall = function(f) {f();};
+                    window.letsPlotCallQueue.forEach(function(f) {f();});
+                    window.letsPlotCallQueue = [];
+                    
+                };
+                script.onerror = function(event) {
+                    window.letsPlotCall = function(f) {};    // noop
+                    window.letsPlotCallQueue = [];
+                    var div = document.createElement("div");
+                    div.style.color = 'darkred';
+                    div.textContent = 'Error loading Lets-Plot JS';
+                    document.getElementById("FABAOK").appendChild(div);
+                };
+                var e = document.getElementById("FABAOK");
+                e.appendChild(script);
+            })()
+        </script>
+        </div></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
+<section id="load-data">
+<h3>Load data<a class="headerlink" href="#load-data" title="Link to this heading">#</a></h3>
+<p>The dataset covers Madeira, Portugal (32.37°N, 16.27°W) at 30-minute resolution.
+We load only the columns needed: timestamp, net load (target), and two exogenous variables.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]]</span>
 <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -756,15 +885,82 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Train-/-val-/-test-splits">
-<h3>Train / val / test splits<a class="headerlink" href="#Train-/-val-/-test-splits" title="Link to this heading">#</a></h3>
-<p>We use the same fixed temporal split as all other tutorials. The <strong>validation set doubles as the calibration set</strong> - it is held out of training and used to compute nonconformity scores.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">FileNotFoundError</span><span class="g g-Whitespace">                         </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">line</span> <span class="mi">1</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]]</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:669,</span> in <span class="ni">read_parquet</span><span class="nt">(path, engine, columns, storage_options, use_nullable_dtypes, dtype_backend, filesystem, filters, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">666</span>     <span class="n">use_nullable_dtypes</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="g g-Whitespace">    </span><span class="mi">667</span> <span class="n">check_dtype_backend</span><span class="p">(</span><span class="n">dtype_backend</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">669</span> <span class="k">return</span> <span class="n">impl</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">670</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">671</span>     <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">672</span>     <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">673</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">674</span>     <span class="n">use_nullable_dtypes</span><span class="o">=</span><span class="n">use_nullable_dtypes</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">675</span>     <span class="n">dtype_backend</span><span class="o">=</span><span class="n">dtype_backend</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">676</span>     <span class="n">filesystem</span><span class="o">=</span><span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">677</span>     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">678</span> <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:258,</span> in <span class="ni">PyArrowImpl.read</span><span class="nt">(self, path, columns, filters, use_nullable_dtypes, dtype_backend, storage_options, filesystem, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">256</span> <span class="k">if</span> <span class="n">manager</span> <span class="o">==</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">257</span>     <span class="n">to_pandas_kwargs</span><span class="p">[</span><span class="s2">&quot;split_blocks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="ne">--&gt; </span><span class="mi">258</span> <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">handles</span><span class="p">,</span> <span class="n">filesystem</span> <span class="o">=</span> <span class="n">_get_path_or_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">259</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">260</span>     <span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">261</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">262</span>     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">263</span> <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">264</span> <span class="k">try</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">265</span>     <span class="n">pa_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">parquet</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">266</span>         <span class="n">path_or_handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">267</span>         <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">270</span>         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">271</span>     <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:141,</span> in <span class="ni">_get_path_or_handle</span><span class="nt">(path, fs, storage_options, mode, is_dir)</span>
+<span class="g g-Whitespace">    </span><span class="mi">131</span> <span class="n">handles</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">132</span> <span class="k">if</span> <span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">133</span>     <span class="ow">not</span> <span class="n">fs</span>
+<span class="g g-Whitespace">    </span><span class="mi">134</span>     <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_dir</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">139</span>     <span class="c1"># fsspec resources can also point to directories</span>
+<span class="g g-Whitespace">    </span><span class="mi">140</span>     <span class="c1"># this branch is used for example when reading from non-fsspec URLs</span>
+<span class="ne">--&gt; </span><span class="mi">141</span>     <span class="n">handles</span> <span class="o">=</span> <span class="n">get_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">142</span>         <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">is_text</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span>
+<span class="g g-Whitespace">    </span><span class="mi">143</span>     <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">144</span>     <span class="n">fs</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">145</span>     <span class="n">path_or_handle</span> <span class="o">=</span> <span class="n">handles</span><span class="o">.</span><span class="n">handle</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/common.py:882,</span> in <span class="ni">get_handle</span><span class="nt">(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)</span>
+<span class="g g-Whitespace">    </span><span class="mi">873</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">874</span>             <span class="n">handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">875</span>             <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">878</span>             <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">879</span>         <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">880</span>     <span class="k">else</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">881</span>         <span class="c1"># Binary mode</span>
+<span class="ne">--&gt; </span><span class="mi">882</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">883</span>     <span class="n">handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">885</span> <span class="c1"># Convert BytesIO or file objects passed with an encoding</span>
+
+<span class="ne">FileNotFoundError</span>: [Errno 2] No such file or directory: &#39;../data/MLVS-PT.parquet&#39;
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_splits</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+</div>
+</div>
+</section>
+<section id="train-val-test-splits">
+<h3>Train / val / test splits<a class="headerlink" href="#train-val-test-splits" title="Link to this heading">#</a></h3>
+<p>We use the same fixed temporal split as all other tutorials. The <strong>validation set doubles as the calibration set</strong> - it is held out of training and used to compute nonconformity scores.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_splits</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;Split&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;val / calibration&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">],</span>
         <span class="s2">&quot;Period&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;before 2020-01-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2020-01-01 – 2020-06-30&quot;</span><span class="p">,</span> <span class="s2">&quot;2020-07-01 onwards&quot;</span><span class="p">],</span>
@@ -789,11 +985,10 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-01-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-01-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">val_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2020-01-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-07-01&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">test_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2020-07-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -815,15 +1010,15 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Shared-data-and-training-configs">
-<h3>Shared data and training configs<a class="headerlink" href="#Shared-data-and-training-configs" title="Link to this heading">#</a></h3>
-<p>All three conformal methods share the same <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> and <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>. We define them once and reuse them throughout the notebook.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+</section>
+<section id="shared-data-and-training-configs">
+<h3>Shared data and training configs<a class="headerlink" href="#shared-data-and-training-configs" title="Link to this heading">#</a></h3>
+<p>All three conformal methods share the same <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> and <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>.
+We define them once and reuse them throughout the notebook.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
     <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
     <span class="n">period</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">,</span>
     <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
@@ -845,35 +1040,31 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
-<section id="3.-Method-1:-Split-Conformal-(method=%22residual%22)">
-<h2>3. Method 1: Split Conformal (<code class="docutils literal notranslate"><span class="pre">method=&quot;residual&quot;</span></code>)<a class="headerlink" href="#3.-Method-1:-Split-Conformal-(method=%22residual%22)" title="Link to this heading">#</a></h2>
+<section id="method-1-split-conformal-method-residual">
+<h2>3. Method 1: Split Conformal (<code class="docutils literal notranslate"><span class="pre">method=&quot;residual&quot;</span></code>)<a class="headerlink" href="#method-1-split-conformal-method-residual" title="Link to this heading">#</a></h2>
 <p>Split conformal (also called inductive conformal prediction) is the simplest approach:</p>
 <ol class="arabic simple">
 <li><p>Train any point forecasting model on <code class="docutils literal notranslate"><span class="pre">train_df</span></code>.</p></li>
 <li><p>Compute nonconformity scores <span class="math notranslate nohighlight">\(s_i = |y_i - \hat{y}_i|\)</span> on the calibration set.</p></li>
 <li><p>At test time, construct the interval as <span class="math notranslate nohighlight">\(\hat{y} \pm q_{1-\alpha}(s)\)</span> where <span class="math notranslate nohighlight">\(q_{1-\alpha}\)</span> is the <span class="math notranslate nohighlight">\((1-\alpha)(1 + 1/n)\)</span>-quantile of the calibration scores.</p></li>
 </ol>
-<div class="line-block">
-<div class="line"><strong>Pros</strong>: works with any base model, fast calibration, finite-sample coverage guarantee.</div>
-<div class="line"><strong>Cons</strong>: produces constant-width intervals - cannot adapt to regions of higher or lower uncertainty.</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+<p><strong>Pros</strong>: works with any base model, fast calibration, finite-sample coverage guarantee.<br />
+<strong>Cons</strong>: produces constant-width intervals - cannot adapt to regions of higher or lower uncertainty.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformalConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># method=&quot;residual&quot; corresponds to Split Conformal Prediction</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># method=&quot;residual&quot; corresponds to Split Conformal Prediction</span>
 <span class="n">conformal_config_split</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;residual&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
 
 <span class="n">forecaster_split</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
@@ -888,25 +1079,23 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Calibration step: computes nonconformity scores on the calibration set</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Calibration step: computes nonconformity scores on the calibration set</span>
 <span class="n">forecaster_split</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calibrate_df</span><span class="o">=</span><span class="n">calibrate_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Calibration complete.&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-</section>
-<section id=".-Interval-Metrics">
-<h2>. Interval Metrics<a class="headerlink" href="#.-Interval-Metrics" title="Link to this heading">#</a></h2>
-<p>Three standard metrics assess prediction interval quality. Raw QR intervals do not carry a formal coverage guarantee - empirical PICP may differ from the nominal level. For guaranteed coverage, apply conformal calibration (NB09).</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interval_metrics_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+</section>
+<section id="interval-metrics">
+<h2>. Interval Metrics<a class="headerlink" href="#interval-metrics" title="Link to this heading">#</a></h2>
+<p>Three standard metrics assess prediction interval quality. Raw QR intervals do not carry a formal coverage guarantee - empirical PICP may differ from the nominal level. For guaranteed coverage, apply conformal calibration (NB09).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interval_metrics_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;Metric&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;PICP&quot;</span><span class="p">,</span> <span class="s2">&quot;NMPI&quot;</span><span class="p">,</span> <span class="s2">&quot;Winkler score&quot;</span><span class="p">],</span>
         <span class="s2">&quot;Full name&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -932,6 +1121,7 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
+</div>
 <p><strong>Reading the interval metric comparison</strong></p>
 <ul class="simple">
 <li><p>A model with <strong>PICP &lt; 1 − alpha</strong> is under-covering - its intervals are too narrow and will miss more events than claimed. For a 90 % interval (alpha = 0.10), PICP below 0.90 indicates miscalibration.</p></li>
@@ -939,11 +1129,9 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 <li><p>If all models under-cover, the raw quantile bounds need conformal calibration (NB09) to meet the nominal guarantee.</p></li>
 <li><p>FPQR may show different PICP than fixed-grid QR because its quantile grid adapts per sample - check both coverage and sharpness before choosing.</p></li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_metric_table</span><span class="p">(</span><span class="n">metric_df</span><span class="p">):</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_metric_table</span><span class="p">(</span><span class="n">metric_df</span><span class="p">):</span>
     <span class="n">res</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">metric_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[</span>
             <span class="p">[</span>
@@ -982,28 +1170,25 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># predict_interval returns: dict[model_name -&gt; (lower, forecast, upper)]</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># predict_interval returns: dict[model_name -&gt; (lower, forecast, upper)]</span>
 <span class="n">intervals_split</span><span class="p">,</span> <span class="n">metric_split</span> <span class="o">=</span> <span class="n">forecaster_split</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_split</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_split</span><span class="p">)</span>
-</pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast</span><span class="p">(</span>
     <span class="n">intervals_split</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span><span class="p">],</span>
     <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
     <span class="n">forecast_col</span><span class="o">=</span><span class="s2">&quot;forecast&quot;</span><span class="p">,</span>
@@ -1017,9 +1202,10 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="4.-Method-2:-CQR:-Conformal-Quantile-Regression-(method=%22quantile%22)">
-<h2>4. Method 2: CQR: Conformal Quantile Regression (<code class="docutils literal notranslate"><span class="pre">method=&quot;quantile&quot;</span></code>)<a class="headerlink" href="#4.-Method-2:-CQR:-Conformal-Quantile-Regression-(method=%22quantile%22)" title="Link to this heading">#</a></h2>
+<section id="method-2-cqr-conformal-quantile-regression-method-quantile">
+<h2>4. Method 2: CQR: Conformal Quantile Regression (<code class="docutils literal notranslate"><span class="pre">method=&quot;quantile&quot;</span></code>)<a class="headerlink" href="#method-2-cqr-conformal-quantile-regression-method-quantile" title="Link to this heading">#</a></h2>
 <p>CQR (Angelopoulos &amp; Bates, 2021) extends split conformal to models that already output quantile estimates:</p>
 <ol class="arabic simple">
 <li><p>Train a quantile regression model to output lower (<span class="math notranslate nohighlight">\(\hat{q}_{\alpha/2}\)</span>) and upper (<span class="math notranslate nohighlight">\(\hat{q}_{1-\alpha/2}\)</span>) quantiles.</p></li>
@@ -1027,19 +1213,16 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 <li><p>Adjust the QR interval by adding the calibration quantile of these scores.</p></li>
 </ol>
 <p><strong>Result</strong>: CQR adapts the interval width to the local uncertainty estimated by the QR model, while still maintaining the marginal coverage guarantee. Intervals are typically <strong>sharper</strong> than split conformal.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">QRLIGHTGBMConfig</span>
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">QRLIGHTGBMConfig</span>
-</pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># method=&quot;quantile&quot; corresponds to Conformal Quantile Regression (CQR)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># method=&quot;quantile&quot; corresponds to Conformal Quantile Regression (CQR)</span>
 <span class="n">conformal_config_cqr</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="n">score_type</span><span class="o">=</span><span class="s2">&quot;unscaled&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
 
 <span class="n">forecaster_cqr</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
@@ -1054,36 +1237,32 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_cqr</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calibrate_df</span><span class="o">=</span><span class="n">calibrate_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_cqr</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calibrate_df</span><span class="o">=</span><span class="n">calibrate_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CQR calibration complete.&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">intervals_cqr</span><span class="p">,</span> <span class="n">metric_cqr</span> <span class="o">=</span> <span class="n">forecaster_cqr</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_cqr</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">intervals_cqr</span><span class="p">,</span> <span class="n">metric_cqr</span> <span class="o">=</span> <span class="n">forecaster_cqr</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_cqr</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast</span><span class="p">(</span>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast</span><span class="p">(</span>
     <span class="n">intervals_cqr</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span><span class="p">],</span>
     <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
     <span class="n">forecast_col</span><span class="o">=</span><span class="s2">&quot;forecast&quot;</span><span class="p">,</span>
@@ -1097,27 +1276,25 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="5.-Method-3:-CRC:-Conformal-Residual-Calibration-(method=%22residual-fitting%22)">
-<h2>5. Method 3: CRC: Conformal Residual Calibration (<code class="docutils literal notranslate"><span class="pre">method=&quot;residual-fitting&quot;</span></code>)<a class="headerlink" href="#5.-Method-3:-CRC:-Conformal-Residual-Calibration-(method=%22residual-fitting%22)" title="Link to this heading">#</a></h2>
+<section id="method-3-crc-conformal-residual-calibration-method-residual-fitting">
+<h2>5. Method 3: CRC: Conformal Residual Calibration (<code class="docutils literal notranslate"><span class="pre">method=&quot;residual-fitting&quot;</span></code>)<a class="headerlink" href="#method-3-crc-conformal-residual-calibration-method-residual-fitting" title="Link to this heading">#</a></h2>
 <p>CRC takes a different approach: instead of a fixed correction term, it <strong>fits a secondary model</strong> that predicts the magnitude of the residuals. This gives the interval an adaptive width - wider where the model is uncertain, narrower where it is confident.</p>
 <p>CRC requires a base model that outputs both a <strong>location</strong> (point forecast) and a <strong>scale</strong> (predicted uncertainty). The <code class="docutils literal notranslate"><span class="pre">MLPGAMCRCConfig</span></code> model is purpose-built for this: it is a Group Additive Model with a conformal residual calibration head.</p>
 <blockquote>
 <div><p><strong>Note</strong>: CRC is the most expressive of the three methods but also the most computationally demanding, since it involves training a neural network. We set <code class="docutils literal notranslate"><span class="pre">max_epochs=5</span></code> here for a quick demo.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPGAMCRCConfig</span>
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPGAMCRCConfig</span>
-</pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># method=&quot;residual-fitting&quot; corresponds to Conformal Residual Calibration (CRC)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># method=&quot;residual-fitting&quot; corresponds to Conformal Residual Calibration (CRC)</span>
 <span class="n">conformal_config_crc</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;residual-fitting&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
 
 <span class="n">crc_config</span> <span class="o">=</span> <span class="n">MLPGAMCRCConfig</span><span class="o">.</span><span class="n">from_data_config</span><span class="p">(</span><span class="n">data_config</span><span class="p">)</span>
@@ -1128,11 +1305,10 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_crc</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_crc</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">crc_config</span><span class="p">],</span>
     <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
@@ -1144,29 +1320,26 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_crc</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calibrate_df</span><span class="o">=</span><span class="n">calibrate_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster_crc</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calibrate_df</span><span class="o">=</span><span class="n">calibrate_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CRC calibration complete.&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">intervals_crc</span><span class="p">,</span> <span class="n">metric_cqr</span> <span class="o">=</span> <span class="n">forecaster_crc</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">intervals_crc</span><span class="p">,</span> <span class="n">metric_cqr</span> <span class="o">=</span> <span class="n">forecaster_crc</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
 <span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_cqr</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast</span><span class="p">(</span>
     <span class="n">intervals_crc</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span><span class="p">],</span>
     <span class="n">actual_col</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
     <span class="n">forecast_col</span><span class="o">=</span><span class="s2">&quot;forecast&quot;</span><span class="p">,</span>
@@ -1180,9 +1353,10 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="9.-When-to-Use-Which-Method">
-<h2>9. When to Use Which Method<a class="headerlink" href="#9.-When-to-Use-Which-Method" title="Link to this heading">#</a></h2>
+<section id="when-to-use-which-method">
+<h2>9. When to Use Which Method<a class="headerlink" href="#when-to-use-which-method" title="Link to this heading">#</a></h2>
 <p><strong>General guidance:</strong></p>
 <ul class="simple">
 <li><p>Start with <strong>Split Conformal</strong>: it requires zero additional modelling effort and provides the coverage guarantee immediately with any point forecasting model.</p></li>
@@ -1190,11 +1364,9 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 <li><p>Use <strong>CRC</strong> when you have reason to believe uncertainty varies significantly across time (e.g. solar-driven net load, day/night cycles) and are willing to pay the cost of training a neural network backbone.</p></li>
 </ul>
 <p>All three methods satisfy the marginal coverage guarantee under exchangeability. None requires specifying a parametric distribution family.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -1229,16 +1401,17 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="Wrapping-up">
-<h2>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<section id="wrapping-up">
+<h2>Wrapping up<a class="headerlink" href="#wrapping-up" title="Link to this heading">#</a></h2>
 <p><strong>What you did</strong></p>
-<ul class="simple">
-<li><p>☒ Understood the conformal prediction finite-sample coverage guarantee and the exchangeability assumption</p></li>
-<li><p>☒ Calibrated a LightGBM model with Split Conformal using <code class="docutils literal notranslate"><span class="pre">calibrate()</span></code></p></li>
-<li><p>☒ Applied CQR on top of a QR-LightGBM model for locally adaptive intervals</p></li>
-<li><p>☒ Applied CRC with an MLPGAMCRCConfig model for heteroscedastic adaptive intervals</p></li>
-<li><p>☒ Compared all three methods on coverage (reliability diagram) and sharpness (mean interval width)</p></li>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Understood the conformal prediction finite-sample coverage guarantee and the exchangeability assumption</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Calibrated a LightGBM model with Split Conformal using <code class="docutils literal notranslate"><span class="pre">calibrate()</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Applied CQR on top of a QR-LightGBM model for locally adaptive intervals</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Applied CRC with an MLPGAMCRCConfig model for heteroscedastic adaptive intervals</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Compared all three methods on coverage (reliability diagram) and sharpness (mean interval width)</p></li>
 </ul>
 <p><strong>Key takeaways</strong></p>
 <ol class="arabic simple">
@@ -1250,15 +1423,13 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </ol>
 </section>
 <hr class="docutils" />
-<section id="What's-next?">
-<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
+<section id="what-s-next">
+<h2>What’s next?<a class="headerlink" href="#what-s-next" title="Link to this heading">#</a></h2>
 <p><strong>NB10 - Hyperparameter Optimisation</strong> (<code class="docutils literal notranslate"><span class="pre">10-hyperparameter-tuning.ipynb</span></code>)</p>
 <p>Learn how to use Optuna-powered HPO via <code class="docutils literal notranslate"><span class="pre">forecaster.tune()</span></code> to automatically search for optimal model hyperparameters across any model type, with resumable SQLite-backed studies.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
 
 <span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
@@ -1341,6 +1512,7 @@ reliability diagram reveals whether a method is over- or under-covering systemat
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
 
@@ -1391,20 +1563,20 @@ reliability diagram reveals whether a method is over- or under-covering systemat
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Motivation:-Why-Conformal-Prediction?">1. Motivation: Why Conformal Prediction?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Setup">2. Setup</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Load-data">Load data</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Train-/-val-/-test-splits">Train / val / test splits</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Shared-data-and-training-configs">Shared data and training configs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#motivation-why-conformal-prediction">1. Motivation: Why Conformal Prediction?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup">2. Setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#load-data">Load data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#train-val-test-splits">Train / val / test splits</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shared-data-and-training-configs">Shared data and training configs</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-Method-1:-Split-Conformal-(method=%22residual%22)">3. Method 1: Split Conformal (<code class="docutils literal notranslate"><span class="pre">method="residual"</span></code>)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#.-Interval-Metrics">. Interval Metrics</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Method-2:-CQR:-Conformal-Quantile-Regression-(method=%22quantile%22)">4. Method 2: CQR: Conformal Quantile Regression (<code class="docutils literal notranslate"><span class="pre">method="quantile"</span></code>)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Method-3:-CRC:-Conformal-Residual-Calibration-(method=%22residual-fitting%22)">5. Method 3: CRC: Conformal Residual Calibration (<code class="docutils literal notranslate"><span class="pre">method="residual-fitting"</span></code>)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9.-When-to-Use-Which-Method">9. When to Use Which Method</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">Wrapping up</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">What’s next?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#method-1-split-conformal-method-residual">3. Method 1: Split Conformal (<code class="docutils literal notranslate"><span class="pre">method="residual"</span></code>)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interval-metrics">. Interval Metrics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#method-2-cqr-conformal-quantile-regression-method-quantile">4. Method 2: CQR: Conformal Quantile Regression (<code class="docutils literal notranslate"><span class="pre">method="quantile"</span></code>)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#method-3-crc-conformal-residual-calibration-method-residual-fitting">5. Method 3: CRC: Conformal Residual Calibration (<code class="docutils literal notranslate"><span class="pre">method="residual-fitting"</span></code>)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#when-to-use-which-method">9. When to Use Which Method</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#wrapping-up">Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-s-next">What’s next?</a></li>
 </ul>
   </nav></div>
 

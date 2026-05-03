@@ -32,9 +32,9 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=79a279a3" />
     <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   
@@ -55,10 +55,6 @@
     <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/12-ensemble-strategies';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../../_static/twiga-icon.svg"/>
@@ -622,17 +618,20 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="Ensemble-Strategies">
-<h1>Ensemble Strategies<a class="headerlink" href="#Ensemble-Strategies" title="Link to this heading">#</a></h1>
-<p><img alt="Level" src="https://img.shields.io/badge/level-advanced-red" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
+  <section class="tex2jax_ignore mathjax_ignore" id="ensemble-strategies">
+<h1>Ensemble Strategies<a class="headerlink" href="#ensemble-strategies" title="Link to this heading">#</a></h1>
+<p><img alt="Level" src="https://img.shields.io/badge/level-advanced-red" />
+<img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" />
+<img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" />
+<img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
 <hr class="docutils" />
 <p><strong>What you’ll build</strong></p>
 <p>A 6-model ensemble (LinearReg, LightGBM, XGBoost, CatBoost, MLPF, N-HiTS) evaluated with mean, median, and inverse-error weighted-mean strategies, compared on MAE and RMSE to identify when ensembling beats individual models.</p>
 <p><strong>Prerequisites</strong></p>
 <ul class="simple">
-<li><p><a class="reference internal" href="05-ml-point-forecasting.html"><span class="doc">05 - ML Point Forecasting</span></a> (multi-model setup)</p></li>
-<li><p><a class="reference internal" href="07-neural-networks.html"><span class="doc">07 - Neural Networks</span></a> (MLPF, NHiTS)</p></li>
-<li><p><a class="reference internal" href="11-hyperparameter-tuning.html"><span class="doc">11 - Hyperparameter Tuning</span></a> (optional, for tuned component models)</p></li>
+<li><p><span class="xref myst">05 - ML Point Forecasting</span> (multi-model setup)</p></li>
+<li><p><span class="xref myst">07 - Neural Networks</span> (MLPF, NHiTS)</p></li>
+<li><p><span class="xref myst">11 - Hyperparameter Tuning</span> (optional, for tuned component models)</p></li>
 <li><p>Python: basic statistics</p></li>
 </ul>
 <p><strong>Learning objectives</strong></p>
@@ -644,8 +643,8 @@
 <li><p>Derive the inverse-error weighting formula and implement it manually</p></li>
 <li><p>Identify when an ensemble adds value and when it is not worth the inference cost</p></li>
 </ol>
-<section id="1.-Motivation">
-<h2>1. Motivation<a class="headerlink" href="#1.-Motivation" title="Link to this heading">#</a></h2>
+<section id="motivation">
+<h2>1. Motivation<a class="headerlink" href="#motivation" title="Link to this heading">#</a></h2>
 <p>A single model can fail for many reasons: a poorly tuned learning rate, a bad random seed, a blind spot in its inductive bias. When several models make <strong>uncorrelated errors</strong>, averaging them cancels noise and reduces variance - a classic result from the bias-variance decomposition.</p>
 <p>The key condition is <strong>diversity</strong>: if two models fail on exactly the same days, averaging does nothing. When a tree-based model and a neural network fail on different days, their average is better than either alone.</p>
 <blockquote>
@@ -653,22 +652,30 @@
 </div></blockquote>
 <blockquote>
 <div><p><strong>Key concept - ensemble learning</strong></p>
-<p>The <strong>bias-variance decomposition</strong> tells us that total prediction error = bias² + variance + irreducible noise. A single high-capacity model often has low bias but high variance (it overfits specific training patterns). Averaging multiple models keeps bias low while reducing variance - provided the models make <em>different</em> errors.</p>
-<p>This is the “wisdom of crowds” effect: a crowd of diverse, independently reasoning individuals is collectively more accurate than any single expert, even if that expert is slightly better on average. In machine learning terms:</p>
+<p>The <strong>bias-variance decomposition</strong> tells us that total prediction error =
+bias² + variance + irreducible noise. A single high-capacity model often has
+low bias but high variance (it overfits specific training patterns). Averaging
+multiple models keeps bias low while reducing variance - provided the models
+make <em>different</em> errors.</p>
+<p>This is the “wisdom of crowds” effect: a crowd of diverse, independently
+reasoning individuals is collectively more accurate than any single expert,
+even if that expert is slightly better on average. In machine learning terms:</p>
 <ul class="simple">
-<li><p><strong>Similar models</strong> (same family, same features) share correlated errors → averaging them reduces variance only marginally.</p></li>
-<li><p><strong>Diverse models</strong> (different families, different inductive biases) have lower error correlation → averaging them achieves larger variance reduction.</p></li>
+<li><p><strong>Similar models</strong> (same family, same features) share correlated errors →
+averaging them reduces variance only marginally.</p></li>
+<li><p><strong>Diverse models</strong> (different families, different inductive biases) have
+lower error correlation → averaging them achieves larger variance reduction.</p></li>
 </ul>
-<p>Mixing tree-based models (which partition feature space with axis-aligned splits) with neural networks (which learn smooth, distributed representations) is one of the most reliable diversity strategies available.</p>
+<p>Mixing tree-based models (which partition feature space with axis-aligned
+splits) with neural networks (which learn smooth, distributed representations)
+is one of the most reliable diversity strategies available.</p>
 </div></blockquote>
 </section>
-<section id="2.-Setup">
-<h2>2. Setup<a class="headerlink" href="#2.-Setup" title="Link to this heading">#</a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<section id="setup">
+<h2>2. Setup<a class="headerlink" href="#setup" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
@@ -689,14 +696,47 @@
 </pre></div>
 </div>
 </div>
-<section id="Load-data">
-<h3>Load data<a class="headerlink" href="#Load-data" title="Link to this heading">#</a></h3>
-<p>The dataset covers Madeira, Portugal (32.37°N, 16.27°W) at 30-minute resolution. We load only the columns we need.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+        <div id="kfl5WW"></div>
+        <script type="text/javascript" data-lets-plot-script="library">
+            if(!window.letsPlotCallQueue) {
+                window.letsPlotCallQueue = [];
+            };
+            window.letsPlotCall = function(f) {
+                window.letsPlotCallQueue.push(f);
+            };
+            (function() {
+                var script = document.createElement("script");
+                script.type = "text/javascript";
+                script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.9.0/js-package/distr/lets-plot.min.js";
+                script.onload = function() {
+                    window.letsPlotCall = function(f) {f();};
+                    window.letsPlotCallQueue.forEach(function(f) {f();});
+                    window.letsPlotCallQueue = [];
+                    
+                };
+                script.onerror = function(event) {
+                    window.letsPlotCall = function(f) {};    // noop
+                    window.letsPlotCallQueue = [];
+                    var div = document.createElement("div");
+                    div.style.color = 'darkred';
+                    div.textContent = 'Error loading Lets-Plot JS';
+                    document.getElementById("kfl5WW").appendChild(div);
+                };
+                var e = document.getElementById("kfl5WW");
+                e.appendChild(script);
+            })()
+        </script>
+        </div></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
+<section id="load-data">
+<h3>Load data<a class="headerlink" href="#load-data" title="Link to this heading">#</a></h3>
+<p>The dataset covers Madeira, Portugal (32.37°N, 16.27°W) at 30-minute resolution.
+We load only the columns we need.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]]</span>
 <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -708,14 +748,81 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Train-/-val-/-test-splits">
-<h3>Train / val / test splits<a class="headerlink" href="#Train-/-val-/-test-splits" title="Link to this heading">#</a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">FileNotFoundError</span><span class="g g-Whitespace">                         </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">line</span> <span class="mi">1</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">]]</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:669,</span> in <span class="ni">read_parquet</span><span class="nt">(path, engine, columns, storage_options, use_nullable_dtypes, dtype_backend, filesystem, filters, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">666</span>     <span class="n">use_nullable_dtypes</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="g g-Whitespace">    </span><span class="mi">667</span> <span class="n">check_dtype_backend</span><span class="p">(</span><span class="n">dtype_backend</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">669</span> <span class="k">return</span> <span class="n">impl</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">670</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">671</span>     <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">672</span>     <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">673</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">674</span>     <span class="n">use_nullable_dtypes</span><span class="o">=</span><span class="n">use_nullable_dtypes</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">675</span>     <span class="n">dtype_backend</span><span class="o">=</span><span class="n">dtype_backend</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">676</span>     <span class="n">filesystem</span><span class="o">=</span><span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">677</span>     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">678</span> <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:258,</span> in <span class="ni">PyArrowImpl.read</span><span class="nt">(self, path, columns, filters, use_nullable_dtypes, dtype_backend, storage_options, filesystem, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">256</span> <span class="k">if</span> <span class="n">manager</span> <span class="o">==</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">257</span>     <span class="n">to_pandas_kwargs</span><span class="p">[</span><span class="s2">&quot;split_blocks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="ne">--&gt; </span><span class="mi">258</span> <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">handles</span><span class="p">,</span> <span class="n">filesystem</span> <span class="o">=</span> <span class="n">_get_path_or_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">259</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">260</span>     <span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">261</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">262</span>     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">263</span> <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">264</span> <span class="k">try</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">265</span>     <span class="n">pa_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">parquet</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">266</span>         <span class="n">path_or_handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">267</span>         <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">270</span>         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">271</span>     <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:141,</span> in <span class="ni">_get_path_or_handle</span><span class="nt">(path, fs, storage_options, mode, is_dir)</span>
+<span class="g g-Whitespace">    </span><span class="mi">131</span> <span class="n">handles</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">132</span> <span class="k">if</span> <span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">133</span>     <span class="ow">not</span> <span class="n">fs</span>
+<span class="g g-Whitespace">    </span><span class="mi">134</span>     <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_dir</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">139</span>     <span class="c1"># fsspec resources can also point to directories</span>
+<span class="g g-Whitespace">    </span><span class="mi">140</span>     <span class="c1"># this branch is used for example when reading from non-fsspec URLs</span>
+<span class="ne">--&gt; </span><span class="mi">141</span>     <span class="n">handles</span> <span class="o">=</span> <span class="n">get_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">142</span>         <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">is_text</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span>
+<span class="g g-Whitespace">    </span><span class="mi">143</span>     <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">144</span>     <span class="n">fs</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">145</span>     <span class="n">path_or_handle</span> <span class="o">=</span> <span class="n">handles</span><span class="o">.</span><span class="n">handle</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/common.py:882,</span> in <span class="ni">get_handle</span><span class="nt">(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)</span>
+<span class="g g-Whitespace">    </span><span class="mi">873</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">874</span>             <span class="n">handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">875</span>             <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">878</span>             <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">879</span>         <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">880</span>     <span class="k">else</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">881</span>         <span class="c1"># Binary mode</span>
+<span class="ne">--&gt; </span><span class="mi">882</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">883</span>     <span class="n">handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">885</span> <span class="c1"># Convert BytesIO or file objects passed with an encoding</span>
+
+<span class="ne">FileNotFoundError</span>: [Errno 2] No such file or directory: &#39;../data/MLVS-PT.parquet&#39;
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+</div>
+</div>
+</section>
+<section id="train-val-test-splits">
+<h3>Train / val / test splits<a class="headerlink" href="#train-val-test-splits" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -745,11 +852,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-01-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-01-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">val_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2020-01-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-07-01&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">test_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2020-07-01&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -763,15 +869,14 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Shared-data-config">
-<h3>Shared data config<a class="headerlink" href="#Shared-data-config" title="Link to this heading">#</a></h3>
-<p>All models share the same <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> - identical target, resolution, location, features, and horizon - ensuring a fair comparison.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
+</section>
+<section id="shared-data-config">
+<h3>Shared data config<a class="headerlink" href="#shared-data-config" title="Link to this heading">#</a></h3>
+<p>All models share the same <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> - identical target, resolution, location, features, and horizon - ensuring a fair comparison.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
 
@@ -793,19 +898,18 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
-<section id="3.-Building-a-multi-model-forecaster">
-<h2>3. Building a multi-model forecaster<a class="headerlink" href="#3.-Building-a-multi-model-forecaster" title="Link to this heading">#</a></h2>
+<section id="building-a-multi-model-forecaster">
+<h2>3. Building a multi-model forecaster<a class="headerlink" href="#building-a-multi-model-forecaster" title="Link to this heading">#</a></h2>
 <p>Passing multiple model configs to <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> trains all of them in a single <code class="docutils literal notranslate"><span class="pre">fit()</span></code> call. Here we combine four ML tree models with two NN models.</p>
 <blockquote>
 <div><p><strong>Why mix ML and NN?</strong> Tree models (LightGBM, XGBoost, CatBoost) are strong on tabular feature interactions; NN models (MLPF, MLPGAM) learn sequential patterns and temporal structure. Their error patterns tend to be complementary - ideal for ensembling.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">CATBOOSTConfig</span><span class="p">,</span> <span class="n">LIGHTGBMConfig</span><span class="p">,</span> <span class="n">LINEAREGConfig</span><span class="p">,</span> <span class="n">XGBOOSTConfig</span>
@@ -837,15 +941,14 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="4.-Strategy-1:-Mean">
-<h2>4. Strategy 1: Mean<a class="headerlink" href="#4.-Strategy-1:-Mean" title="Link to this heading">#</a></h2>
-<p>The simplest strategy: average predictions from all models equally. Works well when models are roughly equally accurate and errors are independent.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pred_mean</span><span class="p">,</span> <span class="n">metric_mean</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+</section>
+<section id="strategy-1-mean">
+<h2>4. Strategy 1: Mean<a class="headerlink" href="#strategy-1-mean" title="Link to this heading">#</a></h2>
+<p>The simplest strategy: average predictions from all models equally. Works well when models are roughly equally accurate and errors are independent.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_mean</span><span class="p">,</span> <span class="n">metric_mean</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
 <span class="n">clear_output</span><span class="p">()</span>
 
 <span class="n">agg_mean</span> <span class="o">=</span> <span class="n">metric_mean</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
@@ -854,18 +957,17 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="5.-Strategy-2:-Median">
-<h2>5. Strategy 2: Median<a class="headerlink" href="#5.-Strategy-2:-Median" title="Link to this heading">#</a></h2>
+<section id="strategy-2-median">
+<h2>5. Strategy 2: Median<a class="headerlink" href="#strategy-2-median" title="Link to this heading">#</a></h2>
 <p>The median is robust to outlier models. If one model produces a wildly inaccurate forecast on a given day, the median ignores it - unlike the mean, which is pulled toward extreme values.</p>
 <blockquote>
 <div><p>Use <code class="docutils literal notranslate"><span class="pre">median</span></code> when you suspect that one or more models may occasionally produce large errors. Use <code class="docutils literal notranslate"><span class="pre">mean</span></code> when all models are well-calibrated and you want to exploit all available information.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pred_median</span><span class="p">,</span> <span class="n">metric_median</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_median</span><span class="p">,</span> <span class="n">metric_median</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">)</span>
 <span class="n">clear_output</span><span class="p">()</span>
 
 <span class="n">agg_median</span> <span class="o">=</span> <span class="n">metric_median</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
@@ -874,15 +976,18 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="6.-Strategy-3:-Weighted">
-<h2>6. Strategy 3: Weighted<a class="headerlink" href="#6.-Strategy-3:-Weighted" title="Link to this heading">#</a></h2>
+<section id="strategy-3-weighted">
+<h2>6. Strategy 3: Weighted<a class="headerlink" href="#strategy-3-weighted" title="Link to this heading">#</a></h2>
 <p>In the weighted ensemble, each model’s contribution is scaled by its validation performance. Models that achieved lower validation error receive a higher weight - in effect, the ensemble automatically up-weights the best models.</p>
 <p>Weights are computed internally from the validation data passed to <code class="docutils literal notranslate"><span class="pre">fit()</span></code> and are inversely proportional to each model’s validation MAE. You do not need to specify weights manually.</p>
 <blockquote>
 <div><p><strong>Key concept - weighted ensemble</strong></p>
-<p>In the weighted strategy, each model’s contribution is scaled inversely to its validation MAE: a model with half the MAE of another gets twice the weight. Concretely, if model <em>i</em> has validation MAE = <em>eᵢ</em>, its weight is:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>wᵢ = (1 / eᵢ) / Σⱼ (1 / eⱼ)
+<p>In the weighted strategy, each model’s contribution is scaled inversely to its
+validation MAE: a model with half the MAE of another gets twice the weight.
+Concretely, if model <em>i</em> has validation MAE = <em>eᵢ</em>, its weight is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">wᵢ</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">eᵢ</span><span class="p">)</span> <span class="o">/</span> <span class="n">Σⱼ</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">eⱼ</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><strong>When to prefer weighted over simple mean:</strong></p>
@@ -895,13 +1000,14 @@
 <li><p>When all models have similar validation errors - weighting adds noise without benefit</p></li>
 <li><p>When the validation set is small and MAE estimates are noisy (weighting amplifies noise)</p></li>
 </ul>
-<p><strong>Important caveat:</strong> the weights are derived from the validation set passed to <code class="docutils literal notranslate"><span class="pre">fit()</span></code>. If the validation period is not representative of the test period, the weights may be miscalibrated. Always verify that the weighted ensemble outperforms the mean on a hold-out test set before committing to it in production.</p>
+<p><strong>Important caveat:</strong> the weights are derived from the validation set passed to
+<code class="docutils literal notranslate"><span class="pre">fit()</span></code>. If the validation period is not representative of the test period, the
+weights may be miscalibrated. Always verify that the weighted ensemble outperforms
+the mean on a hold-out test set before committing to it in production.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pred_weighted</span><span class="p">,</span> <span class="n">metric_weighted</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;weighted&quot;</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_weighted</span><span class="p">,</span> <span class="n">metric_weighted</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">,</span> <span class="n">ensemble_strategy</span><span class="o">=</span><span class="s2">&quot;weighted&quot;</span><span class="p">)</span>
 <span class="n">clear_output</span><span class="p">()</span>
 
 <span class="n">agg_weighted</span> <span class="o">=</span> <span class="n">metric_weighted</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
@@ -910,24 +1016,22 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="7.-Per-model-breakdown">
-<h2>7. Per-model breakdown<a class="headerlink" href="#7.-Per-model-breakdown" title="Link to this heading">#</a></h2>
-<p>The metrics DataFrame contains a row for every model - including the <code class="docutils literal notranslate"><span class="pre">ENSEMBLE</span></code> row. Let’s isolate individual model performance and compare it directly to the ensemble.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find the ensemble label (it is stored as the uppercased string &quot;ENSEMBLE&quot;)</span>
+</section>
+<section id="per-model-breakdown">
+<h2>7. Per-model breakdown<a class="headerlink" href="#per-model-breakdown" title="Link to this heading">#</a></h2>
+<p>The metrics DataFrame contains a row for every model - including the <code class="docutils literal notranslate"><span class="pre">ENSEMBLE</span></code> row. Let’s isolate individual model performance and compare it directly to the ensemble.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find the ensemble label (it is stored as the uppercased string &quot;ENSEMBLE&quot;)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Unique Model labels in metric_mean: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metric_mean</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ensemble_label</span> <span class="o">=</span> <span class="s2">&quot;ENSEMBLE&quot;</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ensemble_label</span> <span class="o">=</span> <span class="s2">&quot;ENSEMBLE&quot;</span>
 
 <span class="n">individual</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">metric_mean</span><span class="p">[</span><span class="n">metric_mean</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ensemble_label</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;corr&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
@@ -941,13 +1045,12 @@
 </pre></div>
 </div>
 </div>
-<section id="Bar-chart:-individual-models-vs-ensemble">
-<h3>Bar chart: individual models vs ensemble<a class="headerlink" href="#Bar-chart:-individual-models-vs-ensemble" title="Link to this heading">#</a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bar_data</span> <span class="o">=</span> <span class="n">individual</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<section id="bar-chart-individual-models-vs-ensemble">
+<h3>Bar chart: individual models vs ensemble<a class="headerlink" href="#bar-chart-individual-models-vs-ensemble" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bar_data</span> <span class="o">=</span> <span class="n">individual</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <span class="n">bar_data</span><span class="p">[</span><span class="n">ensemble_label</span><span class="p">]</span> <span class="o">=</span> <span class="n">ensemble_row</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">]</span>
 <span class="n">bar_df</span> <span class="o">=</span> <span class="n">bar_data</span><span class="o">.</span><span class="n">sort_values</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
 <span class="n">bar_df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="s2">&quot;MAE&quot;</span><span class="p">]</span>
@@ -965,16 +1068,15 @@
 </pre></div>
 </div>
 </div>
-</section>
-</section>
-<section id="8.-Strategy-comparison-table">
-<h2>8. Strategy comparison table<a class="headerlink" href="#8.-Strategy-comparison-table" title="Link to this heading">#</a></h2>
-<p>Aggregate the ensemble row from each strategy into a single comparison table.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_report</span>
+</section>
+</section>
+<section id="strategy-comparison-table">
+<h2>8. Strategy comparison table<a class="headerlink" href="#strategy-comparison-table" title="Link to this heading">#</a></h2>
+<p>Aggregate the ensemble row from each strategy into a single comparison table.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_report</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">ensemble_summary</span><span class="p">(</span><span class="n">metric_df</span><span class="p">,</span> <span class="n">strategy_label</span><span class="p">):</span>
@@ -1002,11 +1104,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">twiga_report</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">twiga_report</span><span class="p">(</span>
     <span class="n">comparison</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;Model&quot;</span><span class="p">}),</span>
     <span class="p">[</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">,</span> <span class="s2">&quot;Corr&quot;</span><span class="p">,</span> <span class="s2">&quot;SMAPE&quot;</span><span class="p">],</span>
     <span class="n">minimize_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">,</span> <span class="s2">&quot;SMAPE&quot;</span><span class="p">],</span>
@@ -1015,15 +1116,14 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="9.-Forecast-plot:-ensemble-vs-best-individual-model">
-<h2>9. Forecast plot: ensemble vs best individual model<a class="headerlink" href="#9.-Forecast-plot:-ensemble-vs-best-individual-model" title="Link to this heading">#</a></h2>
-<p>Visual comparison over the first 7 days of the test set.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">n_steps</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span>  <span class="c1"># 7 days at 30-min resolution</span>
+</section>
+<section id="forecast-plot-ensemble-vs-best-individual-model">
+<h2>9. Forecast plot: ensemble vs best individual model<a class="headerlink" href="#forecast-plot-ensemble-vs-best-individual-model" title="Link to this heading">#</a></h2>
+<p>Visual comparison over the first 7 days of the test set.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_steps</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span>  <span class="c1"># 7 days at 30-min resolution</span>
 
 <span class="c1"># Best individual model by MAE</span>
 <span class="n">best_model</span> <span class="o">=</span> <span class="n">individual</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">idxmin</span><span class="p">()</span>
@@ -1048,9 +1148,10 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="10.-When-ensembles-help-vs-don't">
-<h2>10. When ensembles help vs don’t<a class="headerlink" href="#10.-When-ensembles-help-vs-don't" title="Link to this heading">#</a></h2>
+<section id="when-ensembles-help-vs-don-t">
+<h2>10. When ensembles help vs don’t<a class="headerlink" href="#when-ensembles-help-vs-don-t" title="Link to this heading">#</a></h2>
 <p><strong>Ensembles help when:</strong></p>
 <ul class="simple">
 <li><p>Models have diverse error patterns (e.g. ML + NN combined)</p></li>
@@ -1063,14 +1164,12 @@
 <li><p>All models are underfitting - averaging underfits does not help</p></li>
 <li><p>Models make identical errors (pairwise error correlation &gt; 0.9)</p></li>
 </ul>
-<section id="Quick-error-correlation-check">
-<h3>Quick error correlation check<a class="headerlink" href="#Quick-error-correlation-check" title="Link to this heading">#</a></h3>
+<section id="quick-error-correlation-check">
+<h3>Quick error correlation check<a class="headerlink" href="#quick-error-correlation-check" title="Link to this heading">#</a></h3>
 <p>Pivot per-model errors and compute pairwise correlation. High correlation (&gt; 0.9) between two models means combining them adds little.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute per-model absolute errors relative to actuals</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute per-model absolute errors relative to actuals</span>
 <span class="n">indiv_preds</span> <span class="o">=</span> <span class="n">pred_mean</span><span class="p">[</span><span class="n">pred_mean</span><span class="p">[</span><span class="s2">&quot;Model&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ensemble_label</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <span class="n">indiv_preds</span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">indiv_preds</span><span class="p">[</span><span class="s2">&quot;forecast&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">indiv_preds</span><span class="p">[</span><span class="s2">&quot;Actual&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span>
 
@@ -1084,14 +1183,13 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="Error-correlation-heatmap">
-<h3>Error correlation heatmap<a class="headerlink" href="#Error-correlation-heatmap" title="Link to this heading">#</a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">correlation_heatmap</span>
+</section>
+<section id="error-correlation-heatmap">
+<h3>Error correlation heatmap<a class="headerlink" href="#error-correlation-heatmap" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">correlation_heatmap</span>
 
 <span class="n">corr_matrix</span> <span class="o">=</span> <span class="n">pivot</span><span class="o">.</span><span class="n">corr</span><span class="p">()</span>
 
@@ -1103,16 +1201,16 @@
 </pre></div>
 </div>
 </div>
-</section>
-</section>
-<section id="11.-Mixing-ML-and-NN">
-<h2>11. Mixing ML and NN<a class="headerlink" href="#11.-Mixing-ML-and-NN" title="Link to this heading">#</a></h2>
-<p>Tree-based ML models and NN models have complementary inductive biases - a key reason this combination produces lower-correlated errors than within-family ensembles.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+</section>
+</section>
+<section id="mixing-ml-and-nn">
+<h2>11. Mixing ML and NN<a class="headerlink" href="#mixing-ml-and-nn" title="Link to this heading">#</a></h2>
+<p>Tree-based ML models and NN models have complementary inductive biases - a key reason
+this combination produces lower-correlated errors than within-family ensembles.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -1147,14 +1245,13 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="12.-Strategy-comparison:-twiga_gt-summary">
-<h2>12. Strategy comparison: twiga_gt summary<a class="headerlink" href="#12.-Strategy-comparison:-twiga_gt-summary" title="Link to this heading">#</a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+</section>
+<section id="strategy-comparison-twiga-gt-summary">
+<h2>12. Strategy comparison: twiga_gt summary<a class="headerlink" href="#strategy-comparison-twiga-gt-summary" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -1193,17 +1290,18 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="Wrapping-up">
-<h2>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<section id="wrapping-up">
+<h2>Wrapping up<a class="headerlink" href="#wrapping-up" title="Link to this heading">#</a></h2>
 <p><strong>What you did</strong></p>
-<ul class="simple">
-<li><p>☒ Registered 6 models (LinearReg, LightGBM, XGBoost, CatBoost, MLPF, MLPGAM) in one <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code></p></li>
-<li><p>☒ Applied mean, median, and weighted ensemble strategies in a single <code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast()</span></code> call</p></li>
-<li><p>☒ Compared ensemble vs. best individual model with a styled metric table and bar chart</p></li>
-<li><p>☒ Visualised forecast plots to see where the ensemble outperforms individual models</p></li>
-<li><p>☒ Diagnosed ensemble benefit by computing pairwise error correlations and a heatmap</p></li>
-<li><p>☒ Reviewed inductive-bias differences between ML and NN model families</p></li>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Registered 6 models (LinearReg, LightGBM, XGBoost, CatBoost, MLPF, MLPGAM) in one <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Applied mean, median, and weighted ensemble strategies in a single <code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast()</span></code> call</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Compared ensemble vs. best individual model with a styled metric table and bar chart</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Visualised forecast plots to see where the ensemble outperforms individual models</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Diagnosed ensemble benefit by computing pairwise error correlations and a heatmap</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Reviewed inductive-bias differences between ML and NN model families</p></li>
 </ul>
 <p><strong>Key takeaways</strong></p>
 <ol class="arabic simple">
@@ -1215,14 +1313,14 @@
 </ol>
 </section>
 <hr class="docutils" />
-<section id="What's-next?">
-<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
-<p>Notebook 12 shows how to register a completely custom model class - including any sklearn-compatible estimator - in the Twiga model registry, giving you full control over the model architecture while keeping the rest of the pipeline unchanged.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<section id="what-s-next">
+<h2>What’s next?<a class="headerlink" href="#what-s-next" title="Link to this heading">#</a></h2>
+<p>Notebook 12 shows how to register a completely custom model class - including any
+sklearn-compatible estimator - in the Twiga model registry, giving you full control
+over the model architecture while keeping the rest of the pipeline unchanged.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
 
 <span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
@@ -1305,6 +1403,7 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
 
@@ -1355,32 +1454,32 @@
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Motivation">1. Motivation</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Setup">2. Setup</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Load-data">Load data</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Train-/-val-/-test-splits">Train / val / test splits</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Shared-data-config">Shared data config</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#motivation">1. Motivation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup">2. Setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#load-data">Load data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#train-val-test-splits">Train / val / test splits</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shared-data-config">Shared data config</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-Building-a-multi-model-forecaster">3. Building a multi-model forecaster</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Strategy-1:-Mean">4. Strategy 1: Mean</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Strategy-2:-Median">5. Strategy 2: Median</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Strategy-3:-Weighted">6. Strategy 3: Weighted</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-Per-model-breakdown">7. Per-model breakdown</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Bar-chart:-individual-models-vs-ensemble">Bar chart: individual models vs ensemble</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#building-a-multi-model-forecaster">3. Building a multi-model forecaster</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#strategy-1-mean">4. Strategy 1: Mean</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#strategy-2-median">5. Strategy 2: Median</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#strategy-3-weighted">6. Strategy 3: Weighted</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#per-model-breakdown">7. Per-model breakdown</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bar-chart-individual-models-vs-ensemble">Bar chart: individual models vs ensemble</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-Strategy-comparison-table">8. Strategy comparison table</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9.-Forecast-plot:-ensemble-vs-best-individual-model">9. Forecast plot: ensemble vs best individual model</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#10.-When-ensembles-help-vs-don't">10. When ensembles help vs don’t</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Quick-error-correlation-check">Quick error correlation check</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Error-correlation-heatmap">Error correlation heatmap</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#strategy-comparison-table">8. Strategy comparison table</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#forecast-plot-ensemble-vs-best-individual-model">9. Forecast plot: ensemble vs best individual model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#when-ensembles-help-vs-don-t">10. When ensembles help vs don’t</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-error-correlation-check">Quick error correlation check</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#error-correlation-heatmap">Error correlation heatmap</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#11.-Mixing-ML-and-NN">11. Mixing ML and NN</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#12.-Strategy-comparison:-twiga_gt-summary">12. Strategy comparison: twiga_gt summary</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">Wrapping up</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">What’s next?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mixing-ml-and-nn">11. Mixing ML and NN</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#strategy-comparison-twiga-gt-summary">12. Strategy comparison: twiga_gt summary</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#wrapping-up">Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-s-next">What’s next?</a></li>
 </ul>
   </nav></div>
 

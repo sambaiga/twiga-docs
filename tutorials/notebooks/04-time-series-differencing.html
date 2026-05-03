@@ -32,9 +32,9 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/twiga.css?v=79a279a3" />
     <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   
@@ -55,10 +55,6 @@
     <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/notebooks/04-time-series-differencing';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../../_static/twiga-icon.svg"/>
@@ -622,17 +618,20 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="Time-Series-Differencing">
-<h1>Time Series Differencing<a class="headerlink" href="#Time-Series-Differencing" title="Link to this heading">#</a></h1>
-<p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
+  <section class="tex2jax_ignore mathjax_ignore" id="time-series-differencing">
+<h1>Time Series Differencing<a class="headerlink" href="#time-series-differencing" title="Link to this heading">#</a></h1>
+<p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" />
+<img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" />
+<img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" />
+<img alt="Time" src="https://img.shields.io/badge/time-~20%20min-lightgrey" /></p>
 <hr class="docutils" />
 <p><strong>What you’ll build</strong></p>
 <p>A stationarity-aware preprocessing pipeline for net-load data: detect non-stationarity with ADF and KPSS tests, apply first-order and seasonal differencing with <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code>, train a LightGBM model on the transformed target, and invert the transformation to recover physical-unit forecasts.</p>
 <p><strong>Prerequisites</strong></p>
 <ul class="simple">
-<li><p><a class="reference internal" href="01-getting-started.html"><span class="doc">01 - Getting Started</span></a> (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)</p></li>
-<li><p><a class="reference internal" href="02-forecastability-analysis.html"><span class="doc">02 - Forecastability Analysis</span></a> (ADF/KPSS stationarity tests)</p></li>
-<li><p><a class="reference internal" href="03-feature-engineering.html"><span class="doc">03 - Feature Engineering</span></a> (lag features and the feature matrix)</p></li>
+<li><p><span class="xref myst">01 - Getting Started</span> (DataPipelineConfig, ForecasterConfig, TwigaForecaster.fit)</p></li>
+<li><p><span class="xref myst">02 - Forecastability Analysis</span> (ADF/KPSS stationarity tests)</p></li>
+<li><p><span class="xref myst">03 - Feature Engineering</span> (lag features and the feature matrix)</p></li>
 <li><p>Python: basic statistics, numpy familiarity</p></li>
 </ul>
 <p><strong>Learning objectives</strong></p>
@@ -644,13 +643,11 @@
 <li><p>Train a LightGBM model on a differenced target and correctly invert the transformation at inference time</p></li>
 <li><p>Identify common mistakes (leaking the inversion step, double-differencing) and how to avoid them</p></li>
 </ol>
-<section id="1.-Setup">
-<h2>1. Setup<a class="headerlink" href="#1.-Setup" title="Link to this heading">#</a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<section id="setup">
+<h2>1. Setup<a class="headerlink" href="#setup" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
 
@@ -675,11 +672,43 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+        <div id="2uDAQP"></div>
+        <script type="text/javascript" data-lets-plot-script="library">
+            if(!window.letsPlotCallQueue) {
+                window.letsPlotCallQueue = [];
+            };
+            window.letsPlotCall = function(f) {
+                window.letsPlotCallQueue.push(f);
+            };
+            (function() {
+                var script = document.createElement("script");
+                script.type = "text/javascript";
+                script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.9.0/js-package/distr/lets-plot.min.js";
+                script.onload = function() {
+                    window.letsPlotCall = function(f) {f();};
+                    window.letsPlotCallQueue.forEach(function(f) {f();});
+                    window.letsPlotCallQueue = [];
+                    
+                };
+                script.onerror = function(event) {
+                    window.letsPlotCall = function(f) {};    // noop
+                    window.letsPlotCallQueue = [];
+                    var div = document.createElement("div");
+                    div.style.color = 'darkred';
+                    div.textContent = 'Error loading Lets-Plot JS';
+                    document.getElementById("2uDAQP").appendChild(div);
+                };
+                var e = document.getElementById("2uDAQP");
+                e.appendChild(script);
+            })()
+        </script>
+        </div></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">])</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">])</span>
 <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2019-01-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-07-01&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -690,23 +719,90 @@
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">FileNotFoundError</span><span class="g g-Whitespace">                         </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">line</span> <span class="mi">1</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;../data/MLVS-PT.parquet&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">])</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;2019-01-01&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="s2">&quot;2020-07-01&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:669,</span> in <span class="ni">read_parquet</span><span class="nt">(path, engine, columns, storage_options, use_nullable_dtypes, dtype_backend, filesystem, filters, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">666</span>     <span class="n">use_nullable_dtypes</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="g g-Whitespace">    </span><span class="mi">667</span> <span class="n">check_dtype_backend</span><span class="p">(</span><span class="n">dtype_backend</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">669</span> <span class="k">return</span> <span class="n">impl</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">670</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">671</span>     <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">672</span>     <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">673</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">674</span>     <span class="n">use_nullable_dtypes</span><span class="o">=</span><span class="n">use_nullable_dtypes</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">675</span>     <span class="n">dtype_backend</span><span class="o">=</span><span class="n">dtype_backend</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">676</span>     <span class="n">filesystem</span><span class="o">=</span><span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">677</span>     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">678</span> <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:258,</span> in <span class="ni">PyArrowImpl.read</span><span class="nt">(self, path, columns, filters, use_nullable_dtypes, dtype_backend, storage_options, filesystem, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">256</span> <span class="k">if</span> <span class="n">manager</span> <span class="o">==</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">257</span>     <span class="n">to_pandas_kwargs</span><span class="p">[</span><span class="s2">&quot;split_blocks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="ne">--&gt; </span><span class="mi">258</span> <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">handles</span><span class="p">,</span> <span class="n">filesystem</span> <span class="o">=</span> <span class="n">_get_path_or_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">259</span>     <span class="n">path</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">260</span>     <span class="n">filesystem</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">261</span>     <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">262</span>     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">263</span> <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">264</span> <span class="k">try</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">265</span>     <span class="n">pa_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">parquet</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">266</span>         <span class="n">path_or_handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">267</span>         <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">270</span>         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">271</span>     <span class="p">)</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/parquet.py:141,</span> in <span class="ni">_get_path_or_handle</span><span class="nt">(path, fs, storage_options, mode, is_dir)</span>
+<span class="g g-Whitespace">    </span><span class="mi">131</span> <span class="n">handles</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">132</span> <span class="k">if</span> <span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">133</span>     <span class="ow">not</span> <span class="n">fs</span>
+<span class="g g-Whitespace">    </span><span class="mi">134</span>     <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_dir</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">139</span>     <span class="c1"># fsspec resources can also point to directories</span>
+<span class="g g-Whitespace">    </span><span class="mi">140</span>     <span class="c1"># this branch is used for example when reading from non-fsspec URLs</span>
+<span class="ne">--&gt; </span><span class="mi">141</span>     <span class="n">handles</span> <span class="o">=</span> <span class="n">get_handle</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">142</span>         <span class="n">path_or_handle</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">is_text</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span>
+<span class="g g-Whitespace">    </span><span class="mi">143</span>     <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">144</span>     <span class="n">fs</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="g g-Whitespace">    </span><span class="mi">145</span>     <span class="n">path_or_handle</span> <span class="o">=</span> <span class="n">handles</span><span class="o">.</span><span class="n">handle</span>
+
+<span class="nn">File ~/work/twiga-forecast/twiga-forecast/.venv/lib/python3.12/site-packages/pandas/io/common.py:882,</span> in <span class="ni">get_handle</span><span class="nt">(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)</span>
+<span class="g g-Whitespace">    </span><span class="mi">873</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">874</span>             <span class="n">handle</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">875</span>             <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>    <span class="mi">878</span>             <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="g g-Whitespace">    </span><span class="mi">879</span>         <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">880</span>     <span class="k">else</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">881</span>         <span class="c1"># Binary mode</span>
+<span class="ne">--&gt; </span><span class="mi">882</span>         <span class="n">handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">ioargs</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">883</span>     <span class="n">handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">885</span> <span class="c1"># Convert BytesIO or file objects passed with an encoding</span>
+
+<span class="ne">FileNotFoundError</span>: [Errno 2] No such file or directory: &#39;../data/MLVS-PT.parquet&#39;
+</pre></div>
+</div>
+</div>
+</div>
 </section>
-<section id="2.-Stationarity:-Diagnosis">
-<h2>2. Stationarity: Diagnosis<a class="headerlink" href="#2.-Stationarity:-Diagnosis" title="Link to this heading">#</a></h2>
-<div class="line-block">
-<div class="line">A <strong>stationary</strong> time series has constant mean and variance over time.</div>
-<div class="line">Many regression-based forecasters (including tree models) implicitly assume the target distribution is roughly constant across the training window.</div>
-<div class="line">Strong trends or slowly drifting means violate this and can degrade generalisation.</div>
-</div>
-<section id="Augmented-Dickey-Fuller-test">
-<h3>Augmented Dickey-Fuller test<a class="headerlink" href="#Augmented-Dickey-Fuller-test" title="Link to this heading">#</a></h3>
-<div class="line-block">
-<div class="line">The <strong>ADF test</strong> examines the null hypothesis that a unit root is present (i.e., the series is <em>non-stationary</em>).</div>
-<div class="line">A <strong>p-value &gt; 0.05</strong> means we cannot reject the null - the series is likely non-stationary.</div>
-</div>
+<section id="stationarity-diagnosis">
+<h2>2. Stationarity: Diagnosis<a class="headerlink" href="#stationarity-diagnosis" title="Link to this heading">#</a></h2>
+<p>A <strong>stationary</strong> time series has constant mean and variance over time.<br />
+Many regression-based forecasters (including tree models) implicitly assume the target distribution is roughly constant across the training window.<br />
+Strong trends or slowly drifting means violate this and can degrade generalisation.</p>
+<section id="augmented-dickey-fuller-test">
+<h3>Augmented Dickey-Fuller test<a class="headerlink" href="#augmented-dickey-fuller-test" title="Link to this heading">#</a></h3>
+<p>The <strong>ADF test</strong> examines the null hypothesis that a unit root is present (i.e., the series is <em>non-stationary</em>).<br />
+A <strong>p-value &gt; 0.05</strong> means we cannot reject the null - the series is likely non-stationary.</p>
 <blockquote>
 <div><p><strong>Key concept - stationarity</strong></p>
-<p>A <strong>stationary</strong> time series has a constant mean, constant variance, and autocorrelation structure that does not change over time. Many regression-based forecasters (tree models, linear models) implicitly assume the target distribution is roughly stable across the training window. When the mean drifts or variance grows, the model sees a different distribution at test time than it saw during training - and generalisation degrades.</p>
+<p>A <strong>stationary</strong> time series has a constant mean, constant variance, and autocorrelation structure that does not change over time.
+Many regression-based forecasters (tree models, linear models) implicitly assume the target distribution is roughly stable across the training window.
+When the mean drifts or variance grows, the model sees a different distribution at test time than it saw during training - and generalisation degrades.</p>
 <p>Two common tests:</p>
 <ul class="simple">
 <li><p><strong>ADF (Augmented Dickey-Fuller)</strong> - null hypothesis: the series has a unit root (non-stationary). A p-value &gt; 0.05 means we cannot reject non-stationarity.</p></li>
@@ -714,11 +810,9 @@
 </ul>
 <p>Rolling statistics are a fast visual check: if the rolling mean or standard deviation drifts significantly, the series is likely non-stationary.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">series</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">series</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
 
 <span class="n">adf_result</span> <span class="o">=</span> <span class="n">adfuller</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">autolag</span><span class="o">=</span><span class="s2">&quot;AIC&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== ADF Test — raw NetLoad(kW) ===&quot;</span><span class="p">)</span>
@@ -730,11 +824,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Rolling mean / std — visual check</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Rolling mean / std — visual check</span>
 <span class="n">s</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)[</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">]</span>
 <span class="n">roll</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">48</span> <span class="o">*</span> <span class="mi">7</span><span class="p">)</span>  <span class="c1"># 7-day window</span>
 
@@ -758,11 +851,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ACF of raw series — slow decay signals non-stationarity</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ACF of raw series — slow decay signals non-stationarity</span>
 <span class="n">p</span> <span class="o">=</span> <span class="n">plot_acf</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">),</span>
     <span class="n">max_lag</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
@@ -772,16 +864,15 @@
 </pre></div>
 </div>
 </div>
-</section>
-</section>
-<section id="3.-TimeSeriesDifferentiator-API">
-<h2>3. <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> API<a class="headerlink" href="#3.-TimeSeriesDifferentiator-API" title="Link to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> is a scikit-learn <code class="docutils literal notranslate"><span class="pre">TransformerMixin</span></code> that applies <strong>N-th order differencing</strong> and stores the boundary values needed for <strong>perfect reconstruction</strong>. Because it inherits from <code class="docutils literal notranslate"><span class="pre">sklearn.base.TransformerMixin</span></code>, you also get <code class="docutils literal notranslate"><span class="pre">fit_transform</span></code> for free.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+</section>
+</section>
+<section id="timeseriesdifferentiator-api">
+<h2>3. <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> API<a class="headerlink" href="#timeseriesdifferentiator-api" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> is a scikit-learn <code class="docutils literal notranslate"><span class="pre">TransformerMixin</span></code> that applies <strong>N-th order differencing</strong> and stores the boundary values needed for <strong>perfect reconstruction</strong>. Because it inherits from <code class="docutils literal notranslate"><span class="pre">sklearn.base.TransformerMixin</span></code>, you also get <code class="docutils literal notranslate"><span class="pre">fit_transform</span></code> for free.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -818,17 +909,17 @@
 </pre></div>
 </div>
 </div>
+</div>
 <blockquote>
 <div><p><strong>Key concept - first-order differencing</strong></p>
-<p>First-order differencing transforms a series by subtracting each value from its predecessor: <code class="docutils literal notranslate"><span class="pre">Δy_t</span> <span class="pre">=</span> <span class="pre">y_t</span> <span class="pre">−</span> <span class="pre">y_{t−1}</span></code>. This removes linear trends - if the original series drifts upward at a roughly constant rate, the differenced series will oscillate around zero.</p>
+<p>First-order differencing transforms a series by subtracting each value from its predecessor:
+<code class="docutils literal notranslate"><span class="pre">Δy_t</span> <span class="pre">=</span> <span class="pre">y_t</span> <span class="pre">−</span> <span class="pre">y_{t−1}</span></code>. This removes linear trends - if the original series drifts upward at a roughly constant rate, the differenced series will oscillate around zero.</p>
 <p><strong>Seasonal differencing</strong> subtracts a lag equal to the seasonal period (e.g., lag-48 for a 30-min series with a 24-hour cycle): <code class="docutils literal notranslate"><span class="pre">Δy_t</span> <span class="pre">=</span> <span class="pre">y_t</span> <span class="pre">−</span> <span class="pre">y_{t−48}</span></code>. This removes repeating patterns without destroying the trend information.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> stores boundary values (the initial and final observations at each order) so the transformation can be perfectly inverted. No information is lost - the original series can be reconstructed exactly from the differenced series plus the stored anchors.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.diff</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeriesDifferentiator</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data.diff</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeriesDifferentiator</span>
 
 <span class="n">diff1</span> <span class="o">=</span> <span class="n">TimeSeriesDifferentiator</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">diff1</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
@@ -840,11 +931,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diffed</span> <span class="o">=</span> <span class="n">diff1</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diffed</span> <span class="o">=</span> <span class="n">diff1</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Original length : </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">))</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Diffed length   : </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">diffed</span><span class="p">))</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Leading NaNs    : </span><span class="si">%d</span><span class="s2">  (equal to order=1)&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">diffed</span><span class="p">)))</span>
@@ -852,11 +942,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verify perfect round-trip reconstruction</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verify perfect round-trip reconstruction</span>
 <span class="n">reconstructed</span> <span class="o">=</span> <span class="n">diff1</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">diffed</span><span class="p">)</span>
 <span class="n">max_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">reconstructed</span> <span class="o">-</span> <span class="n">series</span><span class="p">))</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Max reconstruction error: </span><span class="si">%.2e</span><span class="s2">  (should be ~0)&quot;</span><span class="p">,</span> <span class="n">max_error</span><span class="p">)</span>
@@ -865,11 +954,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Side-by-side: raw vs differenced</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Side-by-side: raw vs differenced</span>
 <span class="n">raw_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">],</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">:</span> <span class="n">series</span><span class="p">})</span>
 <span class="n">diff_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">],</span> <span class="s2">&quot;Differenced&quot;</span><span class="p">:</span> <span class="n">diffed</span><span class="p">})</span>
 
@@ -884,11 +972,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p2</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p2</span> <span class="o">=</span> <span class="n">plot_timeseries</span><span class="p">(</span>
     <span class="n">diff_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span>
     <span class="n">y_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Differenced&quot;</span><span class="p">],</span>
     <span class="n">date_col</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span>
@@ -899,14 +986,13 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="4.-Stationarity-After-Differencing">
-<h2>4. Stationarity After Differencing<a class="headerlink" href="#4.-Stationarity-After-Differencing" title="Link to this heading">#</a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diffed_clean</span> <span class="o">=</span> <span class="n">diffed</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">diffed</span><span class="p">)]</span>
+</section>
+<section id="stationarity-after-differencing">
+<h2>4. Stationarity After Differencing<a class="headerlink" href="#stationarity-after-differencing" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diffed_clean</span> <span class="o">=</span> <span class="n">diffed</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">diffed</span><span class="p">)]</span>
 
 <span class="n">adf_diff</span> <span class="o">=</span> <span class="n">adfuller</span><span class="p">(</span><span class="n">diffed_clean</span><span class="p">,</span> <span class="n">autolag</span><span class="o">=</span><span class="s2">&quot;AIC&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== ADF Test — 1st-order differenced ===&quot;</span><span class="p">)</span>
@@ -917,11 +1003,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ACF after differencing — should decay faster</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ACF after differencing — should decay faster</span>
 <span class="n">p</span> <span class="o">=</span> <span class="n">plot_acf</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">diffed_clean</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Differenced NetLoad(kW)&quot;</span><span class="p">),</span>
     <span class="n">max_lag</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
@@ -931,18 +1016,23 @@
 </pre></div>
 </div>
 </div>
+</div>
 <blockquote>
 <div><p><strong>Key concept - inversion</strong></p>
-<p>When you forecast on a differenced series, your model predicts <strong>changes</strong> (Δy), not levels (y). To get back to the original scale you must integrate the changes - that is, take a cumulative sum starting from a known anchor.</p>
-<p>For <strong>batch regression</strong> (where each step is predicted independently), the correct anchor is always the <em>actual</em> previous value, not a predicted one: <code class="docutils literal notranslate"><span class="pre">ŷ_t</span> <span class="pre">=</span> <span class="pre">y_{t−1}^{actual}</span> <span class="pre">+</span> <span class="pre">Δŷ_t</span></code>. This keeps errors from accumulating - each step’s error is independent.</p>
-<p>For <strong>AR horizon forecasting</strong> (where a model generates an entire horizon window in one shot, like a neural network), the deltas are chained intentionally within that window: <code class="docutils literal notranslate"><span class="pre">ŷ_1</span> <span class="pre">=</span> <span class="pre">y_last^{train}</span> <span class="pre">+</span> <span class="pre">Δŷ_1</span></code>, <code class="docutils literal notranslate"><span class="pre">ŷ_2</span> <span class="pre">=</span> <span class="pre">ŷ_1</span> <span class="pre">+</span> <span class="pre">Δŷ_2</span></code>, … <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator.forecast_inverse(horizon_deltas)</span></code> implements this correctly.</p>
+<p>When you forecast on a differenced series, your model predicts <strong>changes</strong> (Δy), not levels (y).
+To get back to the original scale you must integrate the changes - that is, take a cumulative sum starting from a known anchor.</p>
+<p>For <strong>batch regression</strong> (where each step is predicted independently), the correct anchor is always the <em>actual</em> previous value, not a predicted one:
+<code class="docutils literal notranslate"><span class="pre">ŷ_t</span> <span class="pre">=</span> <span class="pre">y_{t−1}^{actual}</span> <span class="pre">+</span> <span class="pre">Δŷ_t</span></code>. This keeps errors from accumulating - each step’s error is independent.</p>
+<p>For <strong>AR horizon forecasting</strong> (where a model generates an entire horizon window in one shot, like a neural network), the deltas are chained intentionally within that window:
+<code class="docutils literal notranslate"><span class="pre">ŷ_1</span> <span class="pre">=</span> <span class="pre">y_last^{train}</span> <span class="pre">+</span> <span class="pre">Δŷ_1</span></code>, <code class="docutils literal notranslate"><span class="pre">ŷ_2</span> <span class="pre">=</span> <span class="pre">ŷ_1</span> <span class="pre">+</span> <span class="pre">Δŷ_2</span></code>, …
+<code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator.forecast_inverse(horizon_deltas)</span></code> implements this correctly.</p>
 <p>Twiga handles both patterns - you choose the right one based on your model architecture.</p>
 </div></blockquote>
 </section>
-<section id="5.-Forecasting-on-the-Differenced-Target">
-<h2>5. Forecasting on the Differenced Target<a class="headerlink" href="#5.-Forecasting-on-the-Differenced-Target" title="Link to this heading">#</a></h2>
+<section id="forecasting-on-the-differenced-target">
+<h2>5. Forecasting on the Differenced Target<a class="headerlink" href="#forecasting-on-the-differenced-target" title="Link to this heading">#</a></h2>
 <p>The correct workflow for <strong>batch regression</strong> (a model that predicts each timestep independently, like CatBoost) is:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Raw series
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Raw series
   │
   ├─ fit(train)        → store anchors
   ├─ transform(train)  → Δ_train  (train the model on Δy)
@@ -954,11 +1044,9 @@
 <blockquote>
 <div><p><code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> is designed for <strong>sequential AR forecasting</strong> - a model that generates a single horizon window all at once (e.g. 48-step-ahead), where chaining the deltas within that window is intentional. For independent step-by-step batch regression, use <code class="docutils literal notranslate"><span class="pre">actual_prev</span> <span class="pre">+</span> <span class="pre">Δy_pred</span></code>.</p>
 </div></blockquote>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -993,11 +1081,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build a simple feature matrix with lag-48 (same time yesterday)</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build a simple feature matrix with lag-48 (same time yesterday)</span>
 <span class="n">TARGET</span> <span class="o">=</span> <span class="s2">&quot;NetLoad(kW)&quot;</span>
 <span class="n">N_LAGS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">48</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">336</span><span class="p">]</span>  <span class="c1"># 1 day, 2 days, 7 days</span>
 
@@ -1017,11 +1104,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">catboost</span><span class="w"> </span><span class="kn">import</span> <span class="n">CatBoostRegressor</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">catboost</span><span class="w"> </span><span class="kn">import</span> <span class="n">CatBoostRegressor</span>
 
 <span class="c1"># ── Baseline: train on RAW target ──────────────────────────────────────────</span>
 <span class="n">cb_raw</span> <span class="o">=</span> <span class="n">CatBoostRegressor</span><span class="p">(</span><span class="n">iterations</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
@@ -1032,11 +1118,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── Differenced model ──────────────────────────────────────────────────────</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── Differenced model ──────────────────────────────────────────────────────</span>
 <span class="c1"># Fit differentiator on TRAIN only (prevent leakage)</span>
 <span class="n">diff_model</span> <span class="o">=</span> <span class="n">TimeSeriesDifferentiator</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">diff_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
@@ -1069,14 +1154,13 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="6.-Evaluation-&amp;-Impact">
-<h2>6. Evaluation &amp; Impact<a class="headerlink" href="#6.-Evaluation-&-Impact" title="Link to this heading">#</a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">y_true</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+</section>
+<section id="evaluation-impact">
+<h2>6. Evaluation &amp; Impact<a class="headerlink" href="#evaluation-impact" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">y_true</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="n">TARGET</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">mae</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">yhat</span><span class="p">):</span>
@@ -1105,11 +1189,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise predictions — first 7 days of the test window</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise predictions — first 7 days of the test window</span>
 <span class="n">n_show</span> <span class="o">=</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">7</span>
 <span class="n">ts</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:</span><span class="n">n_show</span><span class="p">]</span>
 
@@ -1132,11 +1215,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Residual comparison</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Residual comparison</span>
 <span class="n">res_raw</span> <span class="o">=</span> <span class="n">y_true</span> <span class="o">-</span> <span class="n">pred_raw</span>
 <span class="n">res_diff</span> <span class="o">=</span> <span class="n">y_true</span> <span class="o">-</span> <span class="n">pred_diff</span>
 
@@ -1160,18 +1242,15 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="7.-Second-Order-Differencing">
-<h2>7. Second-Order Differencing<a class="headerlink" href="#7.-Second-Order-Differencing" title="Link to this heading">#</a></h2>
-<div class="line-block">
-<div class="line">Some series require <strong>two rounds of differencing</strong> to reach stationarity (e.g., series with both a trend and seasonal drift).</div>
-<div class="line"><code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator(order=2)</span></code> applies <code class="docutils literal notranslate"><span class="pre">np.diff</span></code> twice and stores two sets of anchor values.</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diff2</span> <span class="o">=</span> <span class="n">TimeSeriesDifferentiator</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<section id="second-order-differencing">
+<h2>7. Second-Order Differencing<a class="headerlink" href="#second-order-differencing" title="Link to this heading">#</a></h2>
+<p>Some series require <strong>two rounds of differencing</strong> to reach stationarity (e.g., series with both a trend and seasonal drift).<br />
+<code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator(order=2)</span></code> applies <code class="docutils literal notranslate"><span class="pre">np.diff</span></code> twice and stores two sets of anchor values.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diff2</span> <span class="o">=</span> <span class="n">TimeSeriesDifferentiator</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">diff2</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
 
 <span class="n">diffed2</span> <span class="o">=</span> <span class="n">diff2</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
@@ -1186,11 +1265,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ADF on 2nd-order differenced series</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ADF on 2nd-order differenced series</span>
 <span class="n">diffed2_clean</span> <span class="o">=</span> <span class="n">diffed2</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">diffed2</span><span class="p">)]</span>
 <span class="n">adf2</span> <span class="o">=</span> <span class="n">adfuller</span><span class="p">(</span><span class="n">diffed2_clean</span><span class="p">,</span> <span class="n">autolag</span><span class="o">=</span><span class="s2">&quot;AIC&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ADF p-value (raw):         </span><span class="si">%.6f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">adf_result</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
@@ -1224,23 +1302,22 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="8.-forecast_inverse:-When-to-Use-It">
-<h2>8. <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code>: When to Use It<a class="headerlink" href="#8.-forecast_inverse:-When-to-Use-It" title="Link to this heading">#</a></h2>
+<section id="forecast-inverse-when-to-use-it">
+<h2>8. <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code>: When to Use It<a class="headerlink" href="#forecast-inverse-when-to-use-it" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> is correct when a model produces an entire <strong>forecast horizon in one shot</strong> (e.g. a neural network that outputs 48 future deltas at once). It chains all deltas together starting from the last observed training value.</p>
 <p><strong>This is intentional chaining</strong>, not an error - within a single forward pass the deltas are sequentially dependent.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>last_train_value
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>last_train_value
    └─→ + Δ_pred[0] = ŷ_1
           └─→ + Δ_pred[1] = ŷ_2
                  └─→ + Δ_pred[2] = ŷ_3  ...
 </pre></div>
 </div>
 <p>Use <code class="docutils literal notranslate"><span class="pre">actual_prev</span> <span class="pre">+</span> <span class="pre">Δy_pred</span></code> for batch regression; use <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> for single-horizon AR rollouts.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simulate a short future forecast scenario</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simulate a short future forecast scenario</span>
 <span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">48</span>  <span class="c1"># one day ahead</span>
 
 <span class="c1"># Toy: suppose our model predicted a constant delta of +0.5 kW per step</span>
@@ -1267,9 +1344,10 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="9.-When-to-Use-Differencing">
-<h2>9. When to Use Differencing<a class="headerlink" href="#9.-When-to-Use-Differencing" title="Link to this heading">#</a></h2>
+<section id="when-to-use-differencing">
+<h2>9. When to Use Differencing<a class="headerlink" href="#when-to-use-differencing" title="Link to this heading">#</a></h2>
 <p>Key caveats:</p>
 <ul class="simple">
 <li><p>Always fit the differentiator on <strong>training data only</strong> to prevent leakage.</p></li>
@@ -1277,11 +1355,9 @@
 <li><p>Keep the fitted differentiator at inference time for reconstruction.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">inverse_transform</span></code> reconstructs the <strong>full history</strong> (needs leading NaNs); <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> is for future horizons only.</p></li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -1330,11 +1406,10 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -1365,14 +1440,13 @@
 </pre></div>
 </div>
 </div>
-</section>
-<section id="10.-Workflow-Summary">
-<h2>10. Workflow Summary<a class="headerlink" href="#10.-Workflow-Summary" title="Link to this heading">#</a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+</section>
+<section id="workflow-summary">
+<h2>10. Workflow Summary<a class="headerlink" href="#workflow-summary" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -1413,18 +1487,19 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
-<section id="Wrapping-up">
-<h2>Wrapping up<a class="headerlink" href="#Wrapping-up" title="Link to this heading">#</a></h2>
+<section id="wrapping-up">
+<h2>Wrapping up<a class="headerlink" href="#wrapping-up" title="Link to this heading">#</a></h2>
 <p><strong>What you did</strong></p>
-<ul class="simple">
-<li><p>☒ Diagnosed non-stationarity in a net-load series using the ADF test, rolling statistics, and ACF</p></li>
-<li><p>☒ Applied first-order differencing with <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> and verified perfect round-trip reconstruction</p></li>
-<li><p>☒ Confirmed that the differenced series is stationary using the ADF test</p></li>
-<li><p>☒ Built a correct diff → train → predict → invert pipeline using batch-regression reconstruction</p></li>
-<li><p>☒ Demonstrated second-order differencing for series that require two rounds of transformation</p></li>
-<li><p>☒ Used <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> for the AR horizon use case and explained when to choose each inversion strategy</p></li>
-<li><p>☒ Compared MAE/RMSE/WMAPE of raw vs. differenced CatBoost models on the same test window</p></li>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Diagnosed non-stationarity in a net-load series using the ADF test, rolling statistics, and ACF</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Applied first-order differencing with <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> and verified perfect round-trip reconstruction</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Confirmed that the differenced series is stationary using the ADF test</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Built a correct diff → train → predict → invert pipeline using batch-regression reconstruction</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Demonstrated second-order differencing for series that require two rounds of transformation</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Used <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code> for the AR horizon use case and explained when to choose each inversion strategy</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Compared MAE/RMSE/WMAPE of raw vs. differenced CatBoost models on the same test window</p></li>
 </ul>
 <p><strong>Key takeaways</strong></p>
 <ol class="arabic simple">
@@ -1436,14 +1511,12 @@
 </ol>
 </section>
 <hr class="docutils" />
-<section id="What's-next?">
-<h2>What’s next?<a class="headerlink" href="#What's-next?" title="Link to this heading">#</a></h2>
-<p>Combine differencing with the full Twiga pipeline in <a class="reference external" href="04-ml-point-forecasting.ipynb">NB04 - ML Point Forecasting</a> by pre-processing your DataFrame with <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> before passing it to <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code>, or explore <a class="reference internal" href="14-typed-forecast-results.html"><span class="doc">NB14 - Typed Forecast Results</span></a> for structured output handling.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
+<section id="what-s-next">
+<h2>What’s next?<a class="headerlink" href="#what-s-next" title="Link to this heading">#</a></h2>
+<p>Combine differencing with the full Twiga pipeline in <a class="reference internal" href="#04-ml-point-forecasting.ipynb"><span class="xref myst">NB04 - ML Point Forecasting</span></a> by pre-processing your DataFrame with <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> before passing it to <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code>, or explore <span class="xref myst">NB14 - Typed Forecast Results</span> for structured output handling.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ruff: noqa: E501, E701, E702</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
 
 <span class="n">_TEAL</span> <span class="o">=</span> <span class="s2">&quot;#107591&quot;</span>
@@ -1526,6 +1599,7 @@
 </pre></div>
 </div>
 </div>
+</div>
 </section>
 </section>
 
@@ -1576,21 +1650,21 @@
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-Setup">1. Setup</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Stationarity:-Diagnosis">2. Stationarity: Diagnosis</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Augmented-Dickey-Fuller-test">Augmented Dickey-Fuller test</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup">1. Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stationarity-diagnosis">2. Stationarity: Diagnosis</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#augmented-dickey-fuller-test">Augmented Dickey-Fuller test</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-TimeSeriesDifferentiator-API">3. <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> API</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Stationarity-After-Differencing">4. Stationarity After Differencing</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Forecasting-on-the-Differenced-Target">5. Forecasting on the Differenced Target</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#6.-Evaluation-&amp;-Impact">6. Evaluation &amp; Impact</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#7.-Second-Order-Differencing">7. Second-Order Differencing</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#8.-forecast_inverse:-When-to-Use-It">8. <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code>: When to Use It</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#9.-When-to-Use-Differencing">9. When to Use Differencing</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#10.-Workflow-Summary">10. Workflow Summary</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Wrapping-up">Wrapping up</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#What's-next?">What’s next?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#timeseriesdifferentiator-api">3. <code class="docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code> API</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stationarity-after-differencing">4. Stationarity After Differencing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#forecasting-on-the-differenced-target">5. Forecasting on the Differenced Target</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluation-impact">6. Evaluation &amp; Impact</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#second-order-differencing">7. Second-Order Differencing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#forecast-inverse-when-to-use-it">8. <code class="docutils literal notranslate"><span class="pre">forecast_inverse</span></code>: When to Use It</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#when-to-use-differencing">9. When to Use Differencing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow-summary">10. Workflow Summary</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#wrapping-up">Wrapping up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-s-next">What’s next?</a></li>
 </ul>
   </nav></div>
 
