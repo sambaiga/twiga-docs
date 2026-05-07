@@ -12,10 +12,10 @@
 | **Forecast horizon** | Number of future time steps to predict | `DataPipelineConfig.forecast_horizon` |
 | **Period** | Sampling frequency (pandas offset alias, e.g. `"1H"`, `"30min"`) | `DataPipelineConfig.period` |
 | **Target feature** | The variable(s) to forecast | `DataPipelineConfig.target_feature` |
-| **Historical features** | Features whose future values are unknown (lookback only) | `DataPipelineConfig.historical_features` |
+| **Historical features** | Features whose future values are unknown (lookback only) | `DataPipelineConfig.past_features` |
 | **Calendar features** | Cyclical temporal features derived from the timestamp (e.g. hour, day of week) | `DataPipelineConfig.calendar_features` |
-| **Exogenous features** | External features known over the full lookback + forecast horizon | `DataPipelineConfig.exogenous_features` |
-| **Future covariates** | External features known only over the forecast horizon | `DataPipelineConfig.future_covariates` |
+| **Exogenous features** | External features known over the full lookback + forecast horizon | `DataPipelineConfig.known_future_features` |
+| **Future covariates** | External features known only over the forecast horizon | `DataPipelineConfig.forecast_period_features` |
 
 ### Feature availability across the time axis
 
@@ -26,15 +26,15 @@ The four feature types differ in which portion of the time axis they cover.
 graph LR
     subgraph PAST["Lookback Window  ( t-L … t )"]
         TP["target_feature\nas lagged input"]
-        HF["historical_features\npast only"]
+        HF["past_features\npast only"]
         CP["calendar_features\nderived from timestamp"]
-        EP["exogenous_features\nfull window known"]
+        EP["known_future_features\nfull window known"]
     end
     subgraph FUTURE["Forecast Horizon  ( t+1 … t+H )"]
         TF["target_feature\npredicted output"]
         CF["calendar_features\nderived from timestamp"]
-        EF["exogenous_features\nfull horizon known"]
-        FC["future_covariates\nhorizon only"]
+        EF["known_future_features\nfull horizon known"]
+        FC["forecast_period_features\nhorizon only"]
     end
     PAST -->|"t → t+1"| FUTURE
 
@@ -54,15 +54,15 @@ graph LR
 | Feature type | Lookback | Forecast horizon | Typical examples |
 | --- | --- | --- | --- |
 | `target_feature` | Used as lagged input | Predicted output | Electricity load, solar generation |
-| `historical_features` | Available | Not available | Sensor readings without NWP forecast |
+| `past_features` | Available | Not available | Sensor readings without NWP forecast |
 | `calendar_features` | Derived from timestamp | Derived from timestamp | Hour of day, day of week, month |
-| `exogenous_features` | Available | Available (full horizon) | NWP weather forecast, scheduled output |
-| `future_covariates` | Not used | Available (horizon only) | Day-ahead price signal, planned events |
+| `known_future_features` | Available | Available (full horizon) | NWP weather forecast, scheduled output |
+| `forecast_period_features` | Not used | Available (horizon only) | Day-ahead price signal, planned events |
 
 :::{admonition} Why the distinction matters
 :class: note
 
-`historical_features` can only contribute lag/rolling statistics — their future values are unknown. `exogenous_features` and `future_covariates` are passed directly into the forecast window so the model conditions on their future values. `calendar_features` are always derivable from the timestamp and computed automatically.
+`past_features` can only contribute lag/rolling statistics — their future values are unknown. `known_future_features` and `forecast_period_features` are passed directly into the forecast window so the model conditions on their future values. `calendar_features` are always derivable from the timestamp and computed automatically.
 :::
 
 ## Data Format Requirements
@@ -79,9 +79,9 @@ import pandas as pd
 df = pd.DataFrame({
     "timestamp":   pd.date_range("2024-01-01", periods=1000, freq="1h"),
     "load_mw":     [...],   # target_feature
-    "temperature": [...],   # exogenous_features  — NWP forecast known for full horizon
-    "wind_speed":  [...],   # future_covariates   — known only over forecast horizon
-    "irradiance":  [...],   # historical_features — no future forecast available
+    "temperature": [...],   # known_future_features  — NWP forecast known for full horizon
+    "wind_speed":  [...],   # forecast_period_features   — known only over forecast horizon
+    "irradiance":  [...],   # past_features — no future forecast available
     # calendar features (hour, dayofweek, etc.) are derived automatically from timestamp
 })
 ```
@@ -96,10 +96,10 @@ data_config = DataPipelineConfig(
     period="1h",
     lookback_window_size=168,
     forecast_horizon=48,
-    historical_features=["irradiance"],
+    past_features=["irradiance"],
     calendar_features=["hour", "dayofweek"],
-    exogenous_features=["temperature"],
-    future_covariates=["wind_speed"],
+    known_future_features=["temperature"],
+    forecast_period_features=["wind_speed"],
 )
 ```
 
@@ -125,10 +125,10 @@ data_config = DataPipelineConfig(
     period="1h",
     lookback_window_size=168,           # 7 days of hourly data
     forecast_horizon=48,                # predict 2 days ahead
-    historical_features=["irradiance"], # past-only, no future forecast
+    past_features=["irradiance"], # past-only, no future forecast
     calendar_features=["hour", "dayofweek"],
-    exogenous_features=["temperature"], # known over full horizon
-    future_covariates=["wind_speed"],   # known only for forecast window
+    known_future_features=["temperature"], # known over full horizon
+    forecast_period_features=["wind_speed"],   # known only for forecast window
     lags=[1, 24, 48, 168],
     windows=[24, 48],
     window_funcs=["mean", "std"],
@@ -137,14 +137,14 @@ data_config = DataPipelineConfig(
 
 See [Configuration System](../core/config.md) for the full field reference.
 
-### ForecasterConfig
+### ExperimentConfig
 
 Controls training orchestration — backtesting splits, project naming, and output directories.
 
 ```python
-from twiga.core.config import ForecasterConfig
+from twiga.core.config import ExperimentConfig
 
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="months",
     train_size=6,
     test_size=1,

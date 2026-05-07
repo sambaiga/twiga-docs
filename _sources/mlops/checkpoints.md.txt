@@ -4,7 +4,7 @@
 <summary>Source file</summary>
 
 - `twiga/forecaster/base.py` - `on_save_checkpoint`, `on_load_checkpoint`
-- `twiga/core/config/forecaster.py` - `ForecasterConfig.checkpoints_path`
+- `twiga/core/config/forecaster.py` - `ExperimentConfig.checkpoints_path`
 
 </details>
 
@@ -38,12 +38,12 @@ The manifest increments `version` monotonically on every save:
 }
 ```
 
-Configure the checkpoint directory via `ForecasterConfig`:
+Configure the checkpoint directory via `ExperimentConfig`:
 
 ```python
-from twiga.core.config import ForecasterConfig
+from twiga.core.config import ExperimentConfig
 
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     checkpoints_path="checkpoints/",
     split_freq="months",
     train_size=3,
@@ -66,7 +66,7 @@ On each call, `on_save_checkpoint` writes (or overwrites) two files:
 new_forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[model_config],
-    train_params=train_config,
+    cv_params=train_config,
 )
 new_forecaster.on_load_checkpoint()  # reads manifest, restores model + pipeline
 

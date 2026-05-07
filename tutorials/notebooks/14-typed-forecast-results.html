@@ -668,50 +668,16 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
 
 <span class="n">LetsPlot</span><span class="o">.</span><span class="n">setup_html</span><span class="p">()</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span><span class="p">,</span> <span class="n">TwigaForecaster</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span><span class="p">,</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;Tutorial&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html">
-        <div id="bbZCt6"></div>
-        <script type="text/javascript" data-lets-plot-script="library">
-            if(!window.letsPlotCallQueue) {
-                window.letsPlotCallQueue = [];
-            };
-            window.letsPlotCall = function(f) {
-                window.letsPlotCallQueue.push(f);
-            };
-            (function() {
-                var script = document.createElement("script");
-                script.type = "text/javascript";
-                script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.9.0/js-package/distr/lets-plot.min.js";
-                script.onload = function() {
-                    window.letsPlotCall = function(f) {f();};
-                    window.letsPlotCallQueue.forEach(function(f) {f();});
-                    window.letsPlotCallQueue = [];
-                    
-                };
-                script.onerror = function(event) {
-                    window.letsPlotCall = function(f) {};    // noop
-                    window.letsPlotCallQueue = [];
-                    var div = document.createElement("div");
-                    div.style.color = 'darkred';
-                    div.textContent = 'Error loading Lets-Plot JS';
-                    document.getElementById("bbZCt6").appendChild(div);
-                };
-                var e = document.getElementById("bbZCt6");
-                e.appendChild(script);
-            })()
-        </script>
-        </div></div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -760,15 +726,15 @@ You only need to set training hyperparameters:</p>
     <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
     <span class="n">longitude</span><span class="o">=-</span><span class="mf">16.274998</span><span class="p">,</span>
     <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">],</span>
-    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">],</span>
+    <span class="n">known_future_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">],</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
     <span class="n">stride</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
-    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
-    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="s2">&quot;robust&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span><span class="n">project_name</span><span class="o">=</span><span class="s2">&quot;tutorial-14&quot;</span><span class="p">)</span>
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span><span class="n">project_name</span><span class="o">=</span><span class="s2">&quot;tutorial-14&quot;</span><span class="p">)</span>
 
 
 <span class="c1"># Dims are 0 here — they will be filled when passed to TwigaForecaster</span>
@@ -779,7 +745,7 @@ You only need to set training hyperparameters:</p>
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">mlpf_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># The config stored in the forecaster has dims populated</span>
@@ -801,7 +767,7 @@ You only need to set training hyperparameters:</p>
 <span class="n">forecaster_prob</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">LIGHTGBMConfig</span><span class="p">()],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
     <span class="n">conformal_params</span><span class="o">=</span><span class="n">conformal_config</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -848,11 +814,11 @@ You only need to set training hyperparameters:</p>
 <section id="putting-it-all-together">
 <h2>4. Putting it all together<a class="headerlink" href="#putting-it-all-together" title="Link to this heading">#</a></h2>
 <p>Here is the minimal end-to-end pattern with the new API:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span><span class="p">,</span> <span class="n">TwigaForecaster</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span><span class="p">,</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span><span class="p">,</span> <span class="n">MLPGAMConfig</span>
 
 <span class="n">data_config</span>  <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span><span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;load_kw&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
-<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span><span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;days&quot;</span><span class="p">,</span> <span class="n">train_size</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span><span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;days&quot;</span><span class="p">,</span> <span class="n">train_size</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
@@ -861,7 +827,7 @@ You only need to set training hyperparameters:</p>
         <span class="n">MLPGAMConfig</span><span class="p">(</span><span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;qr&quot;</span><span class="p">,</span>   <span class="n">max_epochs</span><span class="o">=</span><span class="mi">20</span><span class="p">),</span>   <span class="c1"># quantile regression</span>
         <span class="n">MLPFConfig</span><span class="p">(</span><span class="n">max_epochs</span><span class="o">=</span><span class="mi">20</span><span class="p">),</span>                          <span class="c1"># point forecast</span>
     <span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="p">)</span>
@@ -907,107 +873,6 @@ You only need to set training hyperparameters:</p>
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html"><div id="dmyowyiesj" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:100%;height:auto;">
-<style>
-#dmyowyiesj table {
-          font-family: Inter, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-        }
-
-#dmyowyiesj thead, tbody, tfoot, tr, td, th { border-style: none; }
- tr { background-color: transparent; }
-#dmyowyiesj p { margin: 0; padding: 0; }
- #dmyowyiesj .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #2d3748; font-size: 13px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: 100%; border-top-style: solid; border-top-width: 2px; border-top-color: #107591; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #107591; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
- #dmyowyiesj .gt_caption { padding-top: 4px; padding-bottom: 4px; }
- #dmyowyiesj .gt_title { color: #2d3748; font-size: 16px; font-weight: bold; padding-top: 10px; padding-bottom: 10px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
- #dmyowyiesj .gt_subtitle { color: #2d3748; font-size: 13px; font-weight: initial; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
- #dmyowyiesj .gt_heading { background-color: #ffffff; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #dmyowyiesj .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
- #dmyowyiesj .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #dmyowyiesj .gt_col_heading { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
- #dmyowyiesj .gt_column_spanner_outer { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
- #dmyowyiesj .gt_column_spanner_outer:first-child { padding-left: 0; }
- #dmyowyiesj .gt_column_spanner_outer:last-child { padding-right: 0; }
- #dmyowyiesj .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; vertical-align: bottom; padding-top: 9px; padding-bottom: 9px; overflow-x: hidden; display: inline-block; width: 100%; }
- #dmyowyiesj .gt_spanner_row { border-bottom-style: hidden; }
- #dmyowyiesj .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }
- #dmyowyiesj .gt_empty_group_heading { padding: 0.5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }
- #dmyowyiesj .gt_from_md> :first-child { margin-top: 0; }
- #dmyowyiesj .gt_from_md> :last-child { margin-bottom: 0; }
- #dmyowyiesj .gt_row { padding-top: 7px; padding-bottom: 7px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }
- #dmyowyiesj .gt_stub { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
- #dmyowyiesj .gt_stub_row_group { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
- #dmyowyiesj .gt_row_group_first td { border-top-width: 2px; }
- #dmyowyiesj .gt_row_group_first th { border-top-width: 2px; }
- #dmyowyiesj .gt_striped { color: #2d3748; background-color: #F4F4F4; }
- #dmyowyiesj .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #e8e8e8; }
- #dmyowyiesj .gt_grand_summary_row { color: #2d3748; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }
- #dmyowyiesj .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }
- #dmyowyiesj .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }
- #dmyowyiesj .gt_sourcenotes { color: #2d3748; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
- #dmyowyiesj .gt_sourcenote { font-size: 11px; padding-top: 6px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; text-align: left; }
- #dmyowyiesj .gt_left { text-align: left; }
- #dmyowyiesj .gt_center { text-align: center; }
- #dmyowyiesj .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
- #dmyowyiesj .gt_font_normal { font-weight: normal; }
- #dmyowyiesj .gt_font_bold { font-weight: bold; }
- #dmyowyiesj .gt_font_italic { font-style: italic; }
- #dmyowyiesj .gt_super { font-size: 65%; }
- #dmyowyiesj .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
- #dmyowyiesj .gt_asterisk { font-size: 100%; vertical-align: 0; }
- 
-</style>
-<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
-<thead>
-
-  <tr class="gt_heading">
-    <td colspan="3" class="gt_heading gt_title gt_font_normal" style="color: #333333;font-weight: bold;"><strong>API Evolution Summary</strong></td>
-  </tr>
-  <tr class="gt_heading">
-    <td colspan="3" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style="color: #718096;">Old verbose API vs. new concise API</td>
-  </tr>
-<tr class="gt_col_headings">
-  <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="Feature"><strong>Feature</strong></th>
-  <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="Old-API"><strong>Old API</strong></th>
-  <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="New-API"><strong>New API</strong></th>
-</tr>
-</thead>
-<tbody class="gt_table_body">
-  <tr>
-    <td class="gt_row gt_left">NN dims</td>
-    <td class="gt_row gt_left">MLPFConfig.from_data_config(data_config)</td>
-    <td class="gt_row gt_left">MLPFConfig() — auto-filled by TwigaForecaster</td>
-  </tr>
-  <tr>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">Probabilistic variant</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">MLPFNormalConfig.from_data_config(...)</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">MLPFConfig(distribution="normal")</td>
-  </tr>
-  <tr>
-    <td class="gt_row gt_left">Quantile variant</td>
-    <td class="gt_row gt_left">MLPFQRConfig.from_data_config(...)</td>
-    <td class="gt_row gt_left">MLPFConfig(distribution="qr")</td>
-  </tr>
-  <tr>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">Typed results</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">raw pd.DataFrame</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">forecaster.forecast(test_df) → ForecastCollection</td>
-  </tr>
-</tbody>
-  <tfoot class="gt_sourcenotes">
-  
-  <tr>
-    <td class="gt_sourcenote" colspan="3" style="color: #718096;font-style: italic;">from_data_config() still available for standalone config inspection</td>
-  </tr>
-
-</tfoot>
-
-</table>
-
-</div>
-        </div></div>
 </div>
 </section>
 <section id="wrapping-up">
@@ -1117,8 +982,6 @@ You only need to set training hyperparameters:</p>
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html"><div style="font-family:Inter,'Segoe UI',sans-serif;max-width:640px;margin:8px 0;"><div style="background:linear-gradient(135deg,#107591 0%,#069fac 100%);border-radius:12px 12px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span style="color:#ffffff;font-size:14px;font-weight:700;">Twiga Learning Path — Intermediate Track</span></div><div style="border:2px solid #e8f5f8;border-top:none;border-radius:0 0 12px 12px;padding:20px 20px 16px;background:#f9fdfe;display:flex;flex-direction:column;"><div style="background:#ffffff;border:2px solid #d1ecf1;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div style="min-width:44px;height:44px;background:#e8f5f8;color:#107591;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">05</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:#2d3748;margin-bottom:4px;">ML Point Forecasting</div><div style="font-size:12.5px;color:#718096;margin-bottom:8px;line-height:1.5;">CatBoost · XGBoost · LightGBM — point forecasts</div><div><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">catboost</span><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">xgboost</span></div></div></div><div style="display:flex;justify-content:center;height:32px;"><svg width="24" height="32" viewBox="0 0 24 32" fill="none"><line x1="12" y1="0" x2="12" y2="24" stroke="#069fac" stroke-width="2" stroke-dasharray="4 3"/><polygon points="6,20 18,20 12,30" fill="#069fac"/></svg></div><div style="background:#ffffff;border:2px solid #d1ecf1;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div style="min-width:44px;height:44px;background:#e8f5f8;color:#107591;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">08</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:#2d3748;margin-bottom:4px;">Quantile Regression</div><div style="font-size:12.5px;color:#718096;margin-bottom:8px;line-height:1.5;">QR-LightGBM · FPQR — prediction intervals</div><div><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">quantile</span><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">intervals</span></div></div></div><div style="display:flex;justify-content:center;height:32px;"><svg width="24" height="32" viewBox="0 0 24 32" fill="none"><line x1="12" y1="0" x2="12" y2="24" stroke="#069fac" stroke-width="2" stroke-dasharray="4 3"/><polygon points="6,20 18,20 12,30" fill="#069fac"/></svg></div><div style="background:#ffffff;border:2px solid #d1ecf1;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div style="min-width:44px;height:44px;background:#e8f5f8;color:#107591;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">12</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:#2d3748;margin-bottom:4px;">Ensemble Strategies</div><div style="font-size:12.5px;color:#718096;margin-bottom:8px;line-height:1.5;">Mean · median · weighted-mean ensembles</div><div><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">ensemble</span><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">weighted</span></div></div></div><div style="display:flex;justify-content:center;height:32px;"><svg width="24" height="32" viewBox="0 0 24 32" fill="none"><line x1="12" y1="0" x2="12" y2="24" stroke="#069fac" stroke-width="2" stroke-dasharray="4 3"/><polygon points="6,20 18,20 12,30" fill="#069fac"/></svg></div><div style="background:#107591;border:2px solid #107591;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 4px 14px rgba(16,117,145,.25);"><div style="min-width:44px;height:44px;background:#069fac;color:#ffffff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">14</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:#ffffff;margin-bottom:4px;">Typed Forecast Results<span style="float:right;background:#069fac;color:#ffffff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:12px;">★ you are here</span></div><div style="font-size:12.5px;color:#cce8ef;margin-bottom:8px;line-height:1.5;">ForecastResult · ForecastCollection · typed dispatch</div><div><span style="display:inline-block;background:#0d5f75;color:#b8e4ed;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">typed</span><span style="display:inline-block;background:#0d5f75;color:#b8e4ed;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">ForecastResult</span><span style="display:inline-block;background:#0d5f75;color:#b8e4ed;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">collection</span></div></div></div><div style="display:flex;justify-content:center;height:32px;"><svg width="24" height="32" viewBox="0 0 24 32" fill="none"><line x1="12" y1="0" x2="12" y2="24" stroke="#069fac" stroke-width="2" stroke-dasharray="4 3"/><polygon points="6,20 18,20 12,30" fill="#069fac"/></svg></div><div style="background:#ffffff;border:2px solid #d1ecf1;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div style="min-width:44px;height:44px;background:#e8f5f8;color:#107591;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">16</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:#2d3748;margin-bottom:4px;">SHAP Feature Attribution</div><div style="font-size:12.5px;color:#718096;margin-bottom:8px;line-height:1.5;">TreeExplainer · feature ranking · timestep attribution</div><div><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">SHAP</span><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">explainability</span></div></div></div><div style="margin-top:16px;font-size:11.5px;color:#718096;text-align:center;border-top:1px solid #e8f5f8;padding-top:12px;">Next: understand your model's decisions with <span style="color:#107591;font-weight:600;">SHAP Feature Attribution</span> (16).</div></div></div></div></div>
 </div>
 </section>
 </section>

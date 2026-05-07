@@ -537,9 +537,8 @@ graph TD
 
 ```python
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
-from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.core.config import DataPipelineConfig, ExperimentConfig
 from twiga.forecaster.core import TwigaForecaster
 from twiga.models.ml.gausscatboost_model import GAUSSCATBOOSTConfig
 from twiga.models.ml.ngboostnormal_model import NGBOOSTNORMALConfig
@@ -550,10 +549,10 @@ data_config = DataPipelineConfig(
     lookback_window_size=168,
     forecast_horizon=24,
     lags=[1, 24, 168],
-    input_scaler=StandardScaler(),
+    input_scaler="standard",
 )
 
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="months",
     train_size=6,
     test_size=1,
@@ -570,7 +569,7 @@ ngboost_config = NGBOOSTNORMALConfig(n_estimators=300, learning_rate=0.05)
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[gauss_config],
-    train_params=train_config,
+    cv_params=train_config,
 )
 
 forecaster.fit(train_df=train_df)

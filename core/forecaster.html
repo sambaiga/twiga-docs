@@ -1043,7 +1043,7 @@ window.runMermaid = runMermaid;</script>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/registry.py</span></code> - Dynamic model loading</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/ensemble.py</span></code> - Ensemble prediction strategies</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/utils.py</span></code> - Shape validation, DataFrame construction helpers</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/config/base.py</span></code> - <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/config/base.py</span></code> - <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ExperimentConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span></code></p></li>
 </ul>
 </details>
 <section id="overview">
@@ -1121,7 +1121,7 @@ window.runMermaid = runMermaid;</script>
         +models: list
         +conformal: dict
         +domain: str
-        +__init__(data_params, model_params, train_params, conformal_params)
+        +__init__(data_params, model_params, cv_params, conformal_params)
         +calibrate(calibrate_df, ...)
     }
 
@@ -1139,7 +1139,7 @@ window.runMermaid = runMermaid;</script>
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>        <span class="c1"># DataPipelineConfig</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">xgb_config</span><span class="p">],</span>      <span class="c1"># BaseModelConfig | list | dict | list[dict]</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>      <span class="c1"># ForecasterConfig</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>      <span class="c1"># ExperimentConfig</span>
     <span class="n">conformal_params</span><span class="o">=</span><span class="n">conf_config</span><span class="p">,</span>   <span class="c1"># ConformalConfig | None</span>
 <span class="p">)</span>
 </pre></div>
@@ -1160,8 +1160,8 @@ window.runMermaid = runMermaid;</script>
 <td><p><code class="docutils literal notranslate"><span class="pre">BaseModelConfig</span> <span class="pre">|</span> <span class="pre">list[BaseModelConfig]</span> <span class="pre">|</span> <span class="pre">dict</span> <span class="pre">|</span> <span class="pre">list[dict]</span></code></p></td>
 <td><p>One or more model configurations. Each configuration is validated against the model’s registered config class. Accepts Pydantic models or plain dictionaries.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">train_params</span></code></p></td>
-<td><p><a class="reference internal" href="config.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code></span></a></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cv_params</span></code></p></td>
+<td><p><a class="reference internal" href="config.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">ExperimentConfig</span></code></span></a></p></td>
 <td><p>Cross-validation split parameters (<code class="docutils literal notranslate"><span class="pre">split_freq</span></code>, <code class="docutils literal notranslate"><span class="pre">train_size</span></code>, <code class="docutils literal notranslate"><span class="pre">test_size</span></code>, <code class="docutils literal notranslate"><span class="pre">gap</span></code>, <code class="docutils literal notranslate"><span class="pre">window</span></code>), project naming, paths, and evaluation metrics.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">conformal_params</span></code></p></td>
@@ -1195,7 +1195,7 @@ window.runMermaid = runMermaid;</script>
     participant Model as Model(s)
     participant Conf as Conformal
 
-    User-&gt;&gt;TF: __init__(data_params, model_params, train_params, conformal_params)
+    User-&gt;&gt;TF: __init__(data_params, model_params, cv_params, conformal_params)
     TF-&gt;&gt;DP: DataPipeline(**data_params)
     TF-&gt;&gt;Reg: get_model_from_registry(model_params)
     Reg--&gt;&gt;TF: [model_1, model_2, ...]
@@ -1436,7 +1436,7 @@ window.runMermaid = runMermaid;</script>
 <li><p>Calls <code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast(test_df)</span></code> on the held-out test window.</p></li>
 <li><p>Tags results with a <code class="docutils literal notranslate"><span class="pre">Folds</span></code> column.</p></li>
 </ol>
-<p>The split behaviour is controlled by <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code> parameters:</p>
+<p>The split behaviour is controlled by <code class="docutils literal notranslate"><span class="pre">ExperimentConfig</span></code> parameters:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Parameter</p></th>
@@ -1536,7 +1536,7 @@ window.runMermaid = runMermaid;</script>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;lightgbm&quot;</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;ml&quot;</span><span class="p">},</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1636,7 +1636,7 @@ window.runMermaid = runMermaid;</script>
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="twiga.forecaster.core.TwigaForecaster">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.forecaster.core.</span></span><span class="sig-name descname"><span class="pre">TwigaForecaster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.core.TwigaForecaster" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.forecaster.core.</span></span><span class="sig-name descname"><span class="pre">TwigaForecaster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.core.TwigaForecaster" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#twiga.forecaster.base.BaseForecaster" title="twiga.forecaster.base.BaseForecaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseForecaster</span></code></a></p>
 <p>Machine Learning Forecaster for time series predictions.</p>
 <p>This forecaster initializes a data pipeline and dynamically loads machine learning
@@ -1644,11 +1644,11 @@ models based on provided configurations. The configurations can be specified as 
 models or dictionaries. Once the models are loaded, they can be trained, evaluated,
 and backtested.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModelConfig</span><span class="p">,</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModelConfig</span><span class="p">,</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data_params</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span><span class="n">date_column</span><span class="o">=</span><span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model_config</span> <span class="o">=</span> <span class="n">BaseModelConfig</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">train_params</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span><span class="n">data_params</span><span class="p">,</span> <span class="n">model_config</span><span class="p">,</span> <span class="n">train_params</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cv_params</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span><span class="n">data_params</span><span class="p">,</span> <span class="n">model_config</span><span class="p">,</span> <span class="n">cv_params</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
 </pre></div>
@@ -1657,7 +1657,7 @@ and backtested.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.forecaster.core.TwigaForecaster.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.core.TwigaForecaster.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.core.TwigaForecaster.__init__" title="Link to this definition">#</a></dt>
 <dd><p>Initialize TwigaForecaster.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1670,8 +1670,12 @@ to 0) are auto-populated from <em>data_params</em>. Base arch configs with a
 <code class="docutils literal notranslate"><span class="pre">distribution</span></code> field set are automatically resolved to the corresponding
 probabilistic variant (e.g. <code class="docutils literal notranslate"><span class="pre">MLPFConfig(distribution='normal')</span></code> becomes
 an <code class="docutils literal notranslate"><span class="pre">MLPFNormalConfig</span></code>).</p></li>
-<li><p><strong>train_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.ForecasterConfig" title="twiga.core.config.forecaster.ForecasterConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecasterConfig</span></code></a></span>) – Training configuration parameters.</p></li>
+<li><p><strong>cv_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.ExperimentConfig" title="twiga.core.config.forecaster.ExperimentConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExperimentConfig</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Cross-validation and experiment configuration. Defaults to
+<code class="docutils literal notranslate"><span class="pre">ExperimentConfig()</span></code> when not provided.</p></li>
 <li><p><strong>conformal_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.ConformalConfig" title="twiga.core.config.conformal.ConformalConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConformalConfig</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Optional conformal prediction configuration.</p></li>
+<li><p><strong>training_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.NeuralTrainingConfig" title="twiga.core.config.training.NeuralTrainingConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">NeuralTrainingConfig</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Training infrastructure overrides applied to all NN model
+configs (e.g. <code class="docutils literal notranslate"><span class="pre">NeuralTrainingConfig(early_stop_patience=None,</span>
+<span class="pre">max_epochs=50)</span></code>). Only non-<code class="docutils literal notranslate"><span class="pre">None</span></code> fields are applied.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1745,6 +1749,57 @@ and <code class="docutils literal notranslate"><span class="pre">KernelExplainer
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">plot_importance</span><span class="p">(</span><span class="n">top_n</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">importance</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">mean_importance</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.forecaster.core.TwigaForecaster.quick">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">quick</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'catboost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distribution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calendar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'standard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.core.TwigaForecaster.quick" title="Link to this definition">#</a></dt>
+<dd><p>Minimal factory for getting started quickly.</p>
+<p>Builds <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> and a model config from a handful of
+plain-Python arguments, then returns a ready-to-use
+<a class="reference internal" href="#twiga.forecaster.core.TwigaForecaster" title="twiga.forecaster.core.TwigaForecaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">TwigaForecaster</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span>) – Target column name(s) to forecast.</p></li>
+<li><p><strong>period</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Sampling frequency (pandas offset alias, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;1h&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;30min&quot;</span></code>).</p></li>
+<li><p><strong>horizon</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Number of future steps to predict.</p></li>
+<li><p><strong>model</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Model name registered in the model registry
+(e.g. <code class="docutils literal notranslate"><span class="pre">&quot;catboost&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;lightgbm&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mlpf&quot;</span></code>).
+Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;catboost&quot;</span></code>.</p></li>
+<li><p><strong>distribution</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Probabilistic distribution variant for base NN
+architectures (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;normal&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;laplace&quot;</span></code>).  Pass this
+together with a base arch name like <code class="docutils literal notranslate"><span class="pre">&quot;mlpf&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;nhits&quot;</span></code>
+to select the matching probabilistic variant automatically.
+Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code> (point forecast).</p></li>
+<li><p><strong>lookback</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Lookback window size.  Defaults to
+<code class="docutils literal notranslate"><span class="pre">max(2</span> <span class="pre">*</span> <span class="pre">horizon,</span> <span class="pre">24)</span></code>.</p></li>
+<li><p><strong>calendar</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Calendar feature names (e.g. <code class="docutils literal notranslate"><span class="pre">[&quot;hour&quot;,</span> <span class="pre">&quot;day_of_week&quot;]</span></code>).
+Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>scaler</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Target scaler identifier (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;minmax&quot;</span></code>).  Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>.</p></li>
+<li><p><strong>seed</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Global random seed.  Defaults to <code class="docutils literal notranslate"><span class="pre">42</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#twiga.forecaster.core.TwigaForecaster" title="twiga.forecaster.core.TwigaForecaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">TwigaForecaster</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Configured <a class="reference internal" href="#twiga.forecaster.core.TwigaForecaster" title="twiga.forecaster.core.TwigaForecaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">TwigaForecaster</span></code></a> ready for <code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code>.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="o">.</span><span class="n">quick</span><span class="p">(</span>
+    <span class="n">target</span><span class="o">=</span><span class="s2">&quot;load_kw&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;1h&quot;</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;lightgbm&quot;</span><span class="p">,</span>
+    <span class="n">calendar</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_of_week&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2602,7 +2657,7 @@ EnsembleStrategy.WEIGHTED. Defaults to None.</p></li>
 <h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="../getting-started/quickstart.html"><span class="std std-doc">Quick Start Guide</span></a> - end-to-end walkthrough</p></li>
-<li><p><a class="reference internal" href="config.html"><span class="std std-doc">Configuration System</span></a> - <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code></p></li>
+<li><p><a class="reference internal" href="config.html"><span class="std std-doc">Configuration System</span></a> - <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ExperimentConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code></p></li>
 <li><p><a class="reference internal" href="data-pipeline.html"><span class="std std-doc">Data Pipeline</span></a> - feature engineering and scaling</p></li>
 <li><p><a class="reference internal" href="metrics.html"><span class="std std-doc">Metrics</span></a> - point and interval evaluation functions</p></li>
 <li><p><a class="reference internal" href="backtesting.html"><span class="std std-doc">Backtesting</span></a> - cross-validation strategy</p></li>
@@ -2685,6 +2740,7 @@ EnsembleStrategy.WEIGHTED. Defaults to None.</p></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.core.TwigaForecaster.__init__"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.__init__()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.core.TwigaForecaster.calibrate"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.calibrate()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.core.TwigaForecaster.explain"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.explain()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.core.TwigaForecaster.quick"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.quick()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#base-classes">Base Classes</a><ul class="nav section-nav flex-column">

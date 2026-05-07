@@ -1061,7 +1061,7 @@ window.runMermaid = runMermaid;</script>
 </tr>
 <tr class="row-even"><td><p><strong>Historical features</strong></p></td>
 <td><p>Features whose future values are unknown (lookback only)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig.historical_features</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig.past_features</span></code></p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>Calendar features</strong></p></td>
 <td><p>Cyclical temporal features derived from the timestamp (e.g. hour, day of week)</p></td>
@@ -1069,11 +1069,11 @@ window.runMermaid = runMermaid;</script>
 </tr>
 <tr class="row-even"><td><p><strong>Exogenous features</strong></p></td>
 <td><p>External features known over the full lookback + forecast horizon</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig.exogenous_features</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig.known_future_features</span></code></p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>Future covariates</strong></p></td>
 <td><p>External features known only over the forecast horizon</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig.future_covariates</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig.forecast_period_features</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -1086,15 +1086,15 @@ window.runMermaid = runMermaid;</script>
 graph LR
     subgraph PAST[&quot;Lookback Window  ( t-L … t )&quot;]
         TP[&quot;target_feature\nas lagged input&quot;]
-        HF[&quot;historical_features\npast only&quot;]
+        HF[&quot;past_features\npast only&quot;]
         CP[&quot;calendar_features\nderived from timestamp&quot;]
-        EP[&quot;exogenous_features\nfull window known&quot;]
+        EP[&quot;known_future_features\nfull window known&quot;]
     end
     subgraph FUTURE[&quot;Forecast Horizon  ( t+1 … t+H )&quot;]
         TF[&quot;target_feature\npredicted output&quot;]
         CF[&quot;calendar_features\nderived from timestamp&quot;]
-        EF[&quot;exogenous_features\nfull horizon known&quot;]
-        FC[&quot;future_covariates\nhorizon only&quot;]
+        EF[&quot;known_future_features\nfull horizon known&quot;]
+        FC[&quot;forecast_period_features\nhorizon only&quot;]
     end
     PAST --&gt;|&quot;t → t+1&quot;| FUTURE
 
@@ -1123,7 +1123,7 @@ graph LR
 <td><p>Predicted output</p></td>
 <td><p>Electricity load, solar generation</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">historical_features</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">past_features</span></code></p></td>
 <td><p>Available</p></td>
 <td><p>Not available</p></td>
 <td><p>Sensor readings without NWP forecast</p></td>
@@ -1133,12 +1133,12 @@ graph LR
 <td><p>Derived from timestamp</p></td>
 <td><p>Hour of day, day of week, month</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">exogenous_features</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">known_future_features</span></code></p></td>
 <td><p>Available</p></td>
 <td><p>Available (full horizon)</p></td>
 <td><p>NWP weather forecast, scheduled output</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">future_covariates</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">forecast_period_features</span></code></p></td>
 <td><p>Not used</p></td>
 <td><p>Available (horizon only)</p></td>
 <td><p>Day-ahead price signal, planned events</p></td>
@@ -1148,7 +1148,7 @@ graph LR
 </div>
 <div class="note admonition">
 <p class="admonition-title">Why the distinction matters</p>
-<p><code class="docutils literal notranslate"><span class="pre">historical_features</span></code> can only contribute lag/rolling statistics — their future values are unknown. <code class="docutils literal notranslate"><span class="pre">exogenous_features</span></code> and <code class="docutils literal notranslate"><span class="pre">future_covariates</span></code> are passed directly into the forecast window so the model conditions on their future values. <code class="docutils literal notranslate"><span class="pre">calendar_features</span></code> are always derivable from the timestamp and computed automatically.</p>
+<p><code class="docutils literal notranslate"><span class="pre">past_features</span></code> can only contribute lag/rolling statistics — their future values are unknown. <code class="docutils literal notranslate"><span class="pre">known_future_features</span></code> and <code class="docutils literal notranslate"><span class="pre">forecast_period_features</span></code> are passed directly into the forecast window so the model conditions on their future values. <code class="docutils literal notranslate"><span class="pre">calendar_features</span></code> are always derivable from the timestamp and computed automatically.</p>
 </div>
 </section>
 </section>
@@ -1165,9 +1165,9 @@ graph LR
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
     <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>   <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="s2">&quot;2024-01-01&quot;</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s2">&quot;1h&quot;</span><span class="p">),</span>
     <span class="s2">&quot;load_mw&quot;</span><span class="p">:</span>     <span class="p">[</span><span class="o">...</span><span class="p">],</span>   <span class="c1"># target_feature</span>
-    <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span>   <span class="c1"># exogenous_features  — NWP forecast known for full horizon</span>
-    <span class="s2">&quot;wind_speed&quot;</span><span class="p">:</span>  <span class="p">[</span><span class="o">...</span><span class="p">],</span>   <span class="c1"># future_covariates   — known only over forecast horizon</span>
-    <span class="s2">&quot;irradiance&quot;</span><span class="p">:</span>  <span class="p">[</span><span class="o">...</span><span class="p">],</span>   <span class="c1"># historical_features — no future forecast available</span>
+    <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span>   <span class="c1"># known_future_features  — NWP forecast known for full horizon</span>
+    <span class="s2">&quot;wind_speed&quot;</span><span class="p">:</span>  <span class="p">[</span><span class="o">...</span><span class="p">],</span>   <span class="c1"># forecast_period_features   — known only over forecast horizon</span>
+    <span class="s2">&quot;irradiance&quot;</span><span class="p">:</span>  <span class="p">[</span><span class="o">...</span><span class="p">],</span>   <span class="c1"># past_features — no future forecast available</span>
     <span class="c1"># calendar features (hour, dayofweek, etc.) are derived automatically from timestamp</span>
 <span class="p">})</span>
 </pre></div>
@@ -1180,10 +1180,10 @@ graph LR
     <span class="n">period</span><span class="o">=</span><span class="s2">&quot;1h&quot;</span><span class="p">,</span>
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">168</span><span class="p">,</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
-    <span class="n">historical_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;irradiance&quot;</span><span class="p">],</span>
+    <span class="n">past_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;irradiance&quot;</span><span class="p">],</span>
     <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;dayofweek&quot;</span><span class="p">],</span>
-    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
-    <span class="n">future_covariates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;wind_speed&quot;</span><span class="p">],</span>
+    <span class="n">known_future_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
+    <span class="n">forecast_period_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;wind_speed&quot;</span><span class="p">],</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1205,10 +1205,10 @@ graph LR
     <span class="n">period</span><span class="o">=</span><span class="s2">&quot;1h&quot;</span><span class="p">,</span>
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">168</span><span class="p">,</span>           <span class="c1"># 7 days of hourly data</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>                <span class="c1"># predict 2 days ahead</span>
-    <span class="n">historical_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;irradiance&quot;</span><span class="p">],</span> <span class="c1"># past-only, no future forecast</span>
+    <span class="n">past_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;irradiance&quot;</span><span class="p">],</span> <span class="c1"># past-only, no future forecast</span>
     <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;dayofweek&quot;</span><span class="p">],</span>
-    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">],</span> <span class="c1"># known over full horizon</span>
-    <span class="n">future_covariates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;wind_speed&quot;</span><span class="p">],</span>   <span class="c1"># known only for forecast window</span>
+    <span class="n">known_future_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">],</span> <span class="c1"># known over full horizon</span>
+    <span class="n">forecast_period_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;wind_speed&quot;</span><span class="p">],</span>   <span class="c1"># known only for forecast window</span>
     <span class="n">lags</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">168</span><span class="p">],</span>
     <span class="n">windows</span><span class="o">=</span><span class="p">[</span><span class="mi">24</span><span class="p">,</span> <span class="mi">48</span><span class="p">],</span>
     <span class="n">window_funcs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">],</span>
@@ -1217,12 +1217,12 @@ graph LR
 </div>
 <p>See <a class="reference internal" href="../core/config.html"><span class="std std-doc">Configuration System</span></a> for the full field reference.</p>
 </section>
-<section id="forecasterconfig">
-<h3>ForecasterConfig<a class="headerlink" href="#forecasterconfig" title="Link to this heading">#</a></h3>
+<section id="experimentconfig">
+<h3>ExperimentConfig<a class="headerlink" href="#experimentconfig" title="Link to this heading">#</a></h3>
 <p>Controls training orchestration — backtesting splits, project naming, and output directories.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecasterConfig</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExperimentConfig</span>
 
-<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
     <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
     <span class="n">train_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
     <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -1417,7 +1417,7 @@ graph LR
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-format-requirements">Data Format Requirements</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-driven-design">Configuration-Driven Design</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#datapipelineconfig">DataPipelineConfig</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#forecasterconfig">ForecasterConfig</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#experimentconfig">ExperimentConfig</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-configs">Model Configs</a></li>
 </ul>
 </li>

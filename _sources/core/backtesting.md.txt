@@ -73,7 +73,7 @@ classDiagram
 
 ## Configuration
 
-Backtesting behavior is controlled by [`ForecasterConfig`](config.md) parameters:
+Backtesting behavior is controlled by [`ExperimentConfig`](config.md) parameters:
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
@@ -88,10 +88,10 @@ Backtesting behavior is controlled by [`ForecasterConfig`](config.md) parameters
 ### Example Configuration
 
 ```python
-from twiga.core.config import ForecasterConfig
+from twiga.core.config import ExperimentConfig
 
 # Monthly backtesting: 6 months train, 1 month test, expanding window
-config = ForecasterConfig(
+config = ExperimentConfig(
     split_freq="months",
     train_size=6,
     test_size=1,
@@ -100,7 +100,7 @@ config = ForecasterConfig(
 )
 
 # Daily backtesting: 14 days train, 7 days test, rolling window
-config = ForecasterConfig(
+config = ExperimentConfig(
     split_freq="days",
     train_size=14,
     test_size=7,
@@ -126,29 +126,100 @@ cv = TimeBasedCV(
     date_column="timestamp",
 )
 
-for train_df, test_df, scheme, fold_idx in cv.split(data):
-    print(f"Fold {fold_idx + 1}:")
-    print(f"  Train: {scheme['train_period'][0]} to {scheme['train_period'][1]}")
-    print(f"  Test:  {scheme['test_period'][0]} to {scheme['test_period'][1]}")
+for bundle in cv.split(data):
+    print(f"Fold {bundle.split_key + 1}:")
+    print(f"  Train: {bundle.scheme['train_period'][0]} to {bundle.scheme['train_period'][1]}")
+    print(f"  Test:  {bundle.scheme['test_period'][0]} to {bundle.scheme['test_period'][1]}")
 ```
 
-The `split()` method yields tuples of `(train_df, test_df, scheme_dict, fold_index)` where `scheme_dict` contains:
+The `split()` method yields [`SplitBundle`](#splitbundle) named tuples where `scheme` contains:
 
 ```python
 {
-    "train_idx": np.ndarray,        # indices into original DataFrame
-    "test_idx": np.ndarray,
+    "train_idx":   np.ndarray,              # fit-window indices into original DataFrame
+    "val_idx":     np.ndarray | None,       # None when val_size=0
+    "calib_idx":   np.ndarray | None,       # None when calib_size=0
+    "test_idx":    np.ndarray,
     "train_period": (start_dt, end_dt),
-    "test_period": (start_dt, end_dt),
+    "val_period":   (start_dt, end_dt) | None,
+    "calib_period": (start_dt, end_dt) | None,
+    "test_period":  (start_dt, end_dt),
 }
 ```
+
+## Conformal Prediction Splits
+
+Conformal prediction requires a dedicated calibration set that the model has never seen during training. `TimeBasedCV` supports this natively via three new parameters:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `val_size` | `int` | `0` | Validation window carved from the end of the fit window (early stopping). |
+| `calib_size` | `int` | `0` | Calibration window for conformal score computation. |
+| `calib_source` | `str` | `"train_tail"` | Where to draw the calibration set. |
+
+### `calib_source` Options
+
+**`"train_tail"` (default)** — calib is carved from the end of the training window:
+```
+[────── fit ──────][── val ──][── calib ──][── gap ──][── test ──]
+```
+
+**`"gap"`** — calib occupies the gap between training and test (requires `calib_size ≤ gap`):
+```
+[──────── fit ────────][── calib ──][── gap remainder ──][── test ──]
+```
+
+**`"test_prefix"`** — calib is the first slice of the test window; evaluation uses the remainder:
+```
+[──────── fit ────────][── gap ──][── calib ──][── eval ──]
+```
+
+### Example: Conformal CV with `train_tail`
+
+```python
+cv = TimeBasedCV(
+    split_freq="months",
+    train_size=8,
+    test_size=1,
+    val_size=1,    # 1 month for early stopping
+    calib_size=2,  # 2 months for conformal calibration
+    calib_source="train_tail",
+    date_column="timestamp",
+)
+
+for bundle in cv.split(data):
+    forecaster.fit(bundle.fit_df, val_df=bundle.val_df)
+    forecaster.calibrate(bundle.calib_df)
+    predictions, metrics = forecaster.evaluate_interval_forecast(bundle.test_df)
+```
+
+### `conformal_split()` — Single-Fold Helper
+
+For experiments that use a single pre-defined train/test split rather than full CV:
+
+```python
+from twiga.core.backtester import conformal_split
+
+fit_df, val_df, calib_df, eval_df = conformal_split(
+    train_df,
+    test_df,
+    calib_source="train_tail",  # or "test_prefix"
+    calib_ratio=0.2,            # 20% of train → calibration
+    val_ratio=0.0,              # no early-stopping split
+)
+forecaster.fit(fit_df)
+forecaster.calibrate(calib_df)
+predictions, metrics = forecaster.evaluate_interval_forecast(eval_df)
+```
+
+`calib_source="gap"` is not supported by `conformal_split`; use `TimeBasedCV` with `calib_source="gap"` instead.
 
 ## Backtesting with TwigaForecaster
 
 The [`TwigaForecaster.backtesting()`](forecaster.md) method runs the full train → evaluate cycle over each fold:
 
 ```python
-from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.core.config import DataPipelineConfig, ExperimentConfig
 from twiga.forecaster.core import TwigaForecaster
 from twiga.models.ml.xgboost_model import XGBOOSTConfig
 
@@ -159,7 +230,7 @@ data_config = DataPipelineConfig(
     forecast_horizon=48,
 )
 
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="months",
     train_size=3,
     test_size=1,
@@ -169,7 +240,7 @@ train_config = ForecasterConfig(
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[XGBOOSTConfig()],
-    train_params=train_config,
+    cv_params=train_config,
 )
 
 predictions_df, metrics_df = forecaster.backtesting(

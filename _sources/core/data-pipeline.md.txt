@@ -51,12 +51,12 @@ The `DataPipeline` class wires these stages together into a single `sklearn.pipe
 | `forecast_horizon` | `int` | *required* | Number of future time steps to predict. |
 | `latitude` | `float \| None` | `None` | Latitude for day/night feature calculation (required when `"day_night"` is in `calendar_features`). |
 | `longitude` | `float \| None` | `None` | Longitude for day/night feature calculation. |
-| `historical_features` | `list[str] \| None` | `None` | Columns with unknown future values (past-only context). |
+| `past_features` | `list[str] \| None` | `None` | Columns with unknown future values (past-only context). |
 | `calendar_features` | `list[str] \| None` | `None` | Temporal features to extract (see table below). |
-| `exogenous_features` | `list[str] \| None` | `None` | External columns available for both past and future windows. |
-| `future_covariates` | `list[str] \| None` | `None` | External columns available only for the future horizon window. |
-| `input_scaler` | `object \| None` | `None` | Scaler applied to numerical input features. Defaults to `FunctionTransformer()` (identity) when `None`. |
-| `target_scaler` | `object \| None` | `None` | Scaler applied to target column(s). Defaults to `FunctionTransformer()` (identity) when `None`. |
+| `known_future_features` | `list[str] \| None` | `None` | External columns available for both past and future windows. |
+| `forecast_period_features` | `list[str] \| None` | `None` | External columns available only for the future horizon window. |
+| `input_scaler` | `str \| None` | `None` | Scaler applied to numerical input features. One of `"standard"`, `"robust"`, `"minmax"`, `"maxabs"`. Defaults to identity (no scaling) when `None`. |
+| `target_scaler` | `str \| None` | `None` | Scaler applied to target column(s). Same choices as `input_scaler`. Defaults to identity when `None`. |
 | `lags` | `list[int] \| None` | `None` | Lag intervals for autoregressive features (in periods). |
 | `windows` | `list[int] \| int \| None` | `None` | Rolling-window sizes for statistics (in periods). |
 | `window_funcs` | `list[str] \| str \| None` | `None` | Aggregation functions for rolling windows (e.g. `"mean"`, `"std"`). |
@@ -182,24 +182,26 @@ The pipeline uses scikit-learn's `ColumnTransformer` to apply **separate scalers
 
 | Column Group | Scaler Parameter | Default |
 |---|---|---|
-| Target column(s) | `target_scaler` | `FunctionTransformer()` (identity) |
-| Numerical inputs (historical + exogenous) | `input_scaler` | `FunctionTransformer()` (identity) |
+| Target column(s) | `target_scaler` | identity (no scaling) |
+| Numerical inputs (past + known-future) | `input_scaler` | identity (no scaling) |
 | Everything else (calendar, lags, rolling) | `remainder="passthrough"` | No transformation |
 
-Common scaler choices:
+Scalers are specified as string identifiers:
 
 ```python
-from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
+from twiga.core.config import DataPipelineConfig
 
-# Z-score normalization
-input_scaler = StandardScaler()
-
-# Robust to outliers
-target_scaler = RobustScaler()
-
-# Scale to [0, 1]
-input_scaler = MinMaxScaler()
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="30min",
+    forecast_horizon=48,
+    lookback_window_size=96,
+    input_scaler="standard",   # z-score normalization
+    target_scaler="robust",    # robust to outliers
+)
 ```
+
+Supported values: `"standard"` (z-score), `"robust"` (IQR-based), `"minmax"` ([0,1]), `"maxabs"` ([-1,1]), or `None` (identity).
 
 :::{admonition} Warning
 :class: warning
@@ -369,7 +371,6 @@ dm = TimeseriesDataModule(
 
 ```python
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, RobustScaler
 
 from twiga.core.data.pipeline import DataPipeline
 
@@ -385,11 +386,11 @@ pipeline = DataPipeline(
     forecast_horizon=48,           # predict 1 day ahead
     latitude=-6.8,
     longitude=39.3,
-    historical_features=["temperature"],
+    past_features=["temperature"],
     calendar_features=["hour", "dayofweek", "day_night"],
-    exogenous_features=["ghi"],
-    input_scaler=StandardScaler(),
-    target_scaler=RobustScaler(),
+    known_future_features=["ghi"],
+    input_scaler="standard",
+    target_scaler="robust",
     lags=[1, 24, 48],
     windows=[24],
     window_funcs=["mean", "std"],
@@ -429,11 +430,11 @@ The example above shows the low-level API. In most cases you will use [`DataPipe
         lookback_window_size=96,
         forecast_horizon=48,
         calendar_features=["hour", "dayofweek", "day_night"],
-        exogenous_features=["ghi"],
+        known_future_features=["ghi"],
         latitude=-6.8,
         longitude=39.3,
-        input_scaler=StandardScaler(),
-        target_scaler=RobustScaler(),
+        input_scaler="standard",
+        target_scaler="robust",
     )
     ```
 

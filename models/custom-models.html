@@ -858,7 +858,7 @@
 <section id="step-5-use-your-custom-model">
 <h3>Step 5: Use Your Custom Model<a class="headerlink" href="#step-5-use-your-custom-model" title="Link to this heading">#</a></h3>
 <p>Once the file is in place, the registry discovers it automatically. No additional registration step is needed.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 
 <span class="c1"># Option A: Use the config class directly</span>
@@ -872,7 +872,7 @@
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">rf_config</span><span class="p">],</span>      <span class="c1"># or rf_config_dict</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">)</span>
 <span class="n">predictions</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
@@ -921,10 +921,10 @@
 
     <span class="c1"># Architecture parameters</span>
     <span class="n">num_target_feature</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of target features.&quot;</span><span class="p">)</span>
-    <span class="n">num_historical_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of historical features.&quot;</span><span class="p">)</span>
+    <span class="n">num_past_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of historical features.&quot;</span><span class="p">)</span>
     <span class="n">num_calendar_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of calendar features.&quot;</span><span class="p">)</span>
-    <span class="n">num_exogenous_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of exogenous features.&quot;</span><span class="p">)</span>
-    <span class="n">num_future_covariates</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of future covariate features.&quot;</span><span class="p">)</span>
+    <span class="n">num_known_future_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of known-future features.&quot;</span><span class="p">)</span>
+    <span class="n">num_forecast_period_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of forecast-period-only features.&quot;</span><span class="p">)</span>
     <span class="n">forecast_horizon</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Forecast horizon in time steps.&quot;</span><span class="p">)</span>
     <span class="n">lookback_window_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Input window size in time steps.&quot;</span><span class="p">)</span>
 
@@ -952,14 +952,14 @@
 </div>
 <div class="tip admonition">
 <p class="admonition-title">Use <code class="docutils literal notranslate"><span class="pre">from_data_config</span></code> for convenience</p>
-<p><code class="docutils literal notranslate"><span class="pre">NeuralModelConfig.from_data_config(data_config,</span> <span class="pre">**kwargs)</span></code> automatically computes <code class="docutils literal notranslate"><span class="pre">num_target_feature</span></code>, <code class="docutils literal notranslate"><span class="pre">num_historical_features</span></code>, <code class="docutils literal notranslate"><span class="pre">num_calendar_features</span></code>, <code class="docutils literal notranslate"><span class="pre">num_exogenous_features</span></code>, <code class="docutils literal notranslate"><span class="pre">num_future_covariates</span></code>, <code class="docutils literal notranslate"><span class="pre">forecast_horizon</span></code>, and <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code> from a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>. Always prefer this over setting dimensional parameters manually. See <a class="reference internal" href="../core/config.html#key-method-from-data-config-data-config-kwargs"><span class="std std-ref">Configuration System</span></a> for details.</p>
+<p><code class="docutils literal notranslate"><span class="pre">NeuralModelConfig.from_data_config(data_config,</span> <span class="pre">**kwargs)</span></code> automatically computes <code class="docutils literal notranslate"><span class="pre">num_target_feature</span></code>, <code class="docutils literal notranslate"><span class="pre">num_past_features</span></code>, <code class="docutils literal notranslate"><span class="pre">num_calendar_features</span></code>, <code class="docutils literal notranslate"><span class="pre">num_known_future_features</span></code>, <code class="docutils literal notranslate"><span class="pre">num_forecast_period_features</span></code>, <code class="docutils literal notranslate"><span class="pre">forecast_horizon</span></code>, and <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code> from a <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code>. Always prefer this over setting dimensional parameters manually. See <a class="reference internal" href="../core/config.html#key-method-from-data-config-data-config-kwargs"><span class="std std-ref">Configuration System</span></a> for details.</p>
 </div>
 </section>
 <section id="step-3-define-the-architecture">
 <h3>Step 3: Define the Architecture<a class="headerlink" href="#step-3-define-the-architecture" title="Link to this heading">#</a></h3>
 <p>The architecture is an <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code> that extends <code class="docutils literal notranslate"><span class="pre">BaseArchitecture</span></code>. You must implement the <code class="docutils literal notranslate"><span class="pre">forward()</span></code> method. The base class provides:</p>
 <ul class="simple">
-<li><p>Feature dimension attributes (<code class="docutils literal notranslate"><span class="pre">num_target_feature</span></code>, <code class="docutils literal notranslate"><span class="pre">num_historical_features</span></code>, etc.)</p></li>
+<li><p>Feature dimension attributes (<code class="docutils literal notranslate"><span class="pre">num_target_feature</span></code>, <code class="docutils literal notranslate"><span class="pre">num_past_features</span></code>, etc.)</p></li>
 <li><p>The <code class="docutils literal notranslate"><span class="pre">step(batch,</span> <span class="pre">metric_fn)</span></code> method that computes the combined loss: <code class="docutils literal notranslate"><span class="pre">alpha</span> <span class="pre">*</span> <span class="pre">MSE</span> <span class="pre">+</span> <span class="pre">(1</span> <span class="pre">-</span> <span class="pre">alpha)</span> <span class="pre">*</span> <span class="pre">MAE</span></code></p></li>
 <li><p>A <code class="docutils literal notranslate"><span class="pre">forecast(x)</span></code> method that calls <code class="docutils literal notranslate"><span class="pre">forward</span></code> in <code class="docutils literal notranslate"><span class="pre">torch.no_grad()</span></code> mode</p></li>
 <li><p>Dropout layer and output activation</p></li>
@@ -979,10 +979,10 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">num_target_feature</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">num_historical_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_past_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">num_calendar_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">num_exogenous_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">num_future_covariates</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_known_future_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_forecast_period_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">forecast_horizon</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">lookback_window_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">hidden_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
@@ -995,10 +995,10 @@
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">num_target_feature</span><span class="o">=</span><span class="n">num_target_feature</span><span class="p">,</span>
-            <span class="n">num_historical_features</span><span class="o">=</span><span class="n">num_historical_features</span><span class="p">,</span>
+            <span class="n">num_past_features</span><span class="o">=</span><span class="n">num_past_features</span><span class="p">,</span>
             <span class="n">num_calendar_features</span><span class="o">=</span><span class="n">num_calendar_features</span><span class="p">,</span>
-            <span class="n">num_exogenous_features</span><span class="o">=</span><span class="n">num_exogenous_features</span><span class="p">,</span>
-            <span class="n">num_future_covariates</span><span class="o">=</span><span class="n">num_future_covariates</span><span class="p">,</span>
+            <span class="n">num_known_future_features</span><span class="o">=</span><span class="n">num_known_future_features</span><span class="p">,</span>
+            <span class="n">num_forecast_period_features</span><span class="o">=</span><span class="n">num_forecast_period_features</span><span class="p">,</span>
             <span class="n">forecast_horizon</span><span class="o">=</span><span class="n">forecast_horizon</span><span class="p">,</span>
             <span class="n">lookback_window_size</span><span class="o">=</span><span class="n">lookback_window_size</span><span class="p">,</span>
             <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
@@ -1096,10 +1096,10 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the neural network from the current config.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">SimpleNNForecastModel</span><span class="p">(</span>
             <span class="n">num_target_feature</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_target_feature</span><span class="p">,</span>
-            <span class="n">num_historical_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_historical_features</span><span class="p">,</span>
+            <span class="n">num_past_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_past_features</span><span class="p">,</span>
             <span class="n">num_calendar_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_calendar_features</span><span class="p">,</span>
-            <span class="n">num_exogenous_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_exogenous_features</span><span class="p">,</span>
-            <span class="n">num_future_covariates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_future_covariates</span><span class="p">,</span>
+            <span class="n">num_known_future_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_known_future_features</span><span class="p">,</span>
+            <span class="n">num_forecast_period_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_forecast_period_features</span><span class="p">,</span>
             <span class="n">forecast_horizon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">forecast_horizon</span><span class="p">,</span>
             <span class="n">lookback_window_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">lookback_window_size</span><span class="p">,</span>
             <span class="n">hidden_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
@@ -1130,7 +1130,7 @@
 </section>
 <section id="step-6-use-your-custom-nn-model">
 <h3>Step 6: Use Your Custom NN Model<a class="headerlink" href="#step-6-use-your-custom-nn-model" title="Link to this heading">#</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.simplenn_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">SIMPLENNConfig</span>
 
@@ -1140,7 +1140,7 @@
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">168</span><span class="p">,</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
     <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;dayofweek&quot;</span><span class="p">,</span> <span class="s2">&quot;month&quot;</span><span class="p">],</span>
-    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
+    <span class="n">known_future_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
 <span class="p">)</span>
 
 <span class="c1"># Use from_data_config for automatic dimensionality setup</span>
@@ -1153,7 +1153,7 @@
     <span class="n">patience</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
     <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
     <span class="n">train_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
     <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -1164,7 +1164,7 @@
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">nn_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>

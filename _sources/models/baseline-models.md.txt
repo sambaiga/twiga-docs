@@ -312,9 +312,8 @@ The following example shows the complete baseline workflow: train multiple basel
 
 ```python
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
-from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.core.config import DataPipelineConfig, ExperimentConfig
 from twiga.forecaster.core import TwigaForecaster
 from twiga.models.baseline.naive_model import NAIVEConfig
 from twiga.models.baseline.seasonal_naive_model import SEASONALNAIVEConfig
@@ -329,7 +328,7 @@ data_config = DataPipelineConfig(
     lookback_window_size=168,   # 7 days at hourly resolution
     forecast_horizon=24,
     calendar_features=["hour", "dayofweek", "month"],
-    input_scaler=StandardScaler(),
+    input_scaler="standard",
 )
 
 # --- Baseline configs ---
@@ -343,7 +342,7 @@ drift_config = DRIFTConfig()
 lgbm_config = LIGHTGBMConfig(boosting_type="gbdt")
 
 # --- Training orchestration ---
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="months",
     train_size=6,
     test_size=1,
@@ -363,7 +362,7 @@ forecaster = TwigaForecaster(
         drift_config,
         lgbm_config,
     ],
-    train_params=train_config,
+    cv_params=train_config,
 )
 
 data = pd.read_parquet("data/load.parquet")
@@ -385,7 +384,7 @@ Baselines with search spaces (`NAIVEModel`, `SEASONALNAIVEModel`, `WINDOWAVERAGE
 window_forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[WINDOWAVERAGEConfig()],
-    train_params=train_config,
+    cv_params=train_config,
 )
 window_forecaster.fit(train_df=train_df)
 window_forecaster.tune(train_df=train_df, val_df=test_df, num_trials=7)

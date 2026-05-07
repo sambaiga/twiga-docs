@@ -214,10 +214,10 @@ Registered name: `"mlpf"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](../c
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `num_target_feature` | `int` | *required* | Number of target variables to forecast |
-| `num_historical_features` | `int` | `0` | Historical (unknown-future) feature count |
+| `num_past_features` | `int` | `0` | Past (unknown-future) feature count |
 | `num_calendar_features` | `int` | `0` | Calendar feature count |
-| `num_exogenous_features` | `int` | `0` | Exogenous (known-future) feature count |
-| `num_future_covariates` | `int` | `0` | Future-only covariate count |
+| `num_known_future_features` | `int` | `0` | Known-future feature count |
+| `num_forecast_period_features` | `int` | `0` | Forecast-period feature count |
 | `forecast_horizon` | `int` | *required* | Steps ahead to predict |
 | `lookback_window_size` | `int` | *required* | Input window length |
 | `embedding_size` | `int` | `28` | Dimensionality of the embedding space |
@@ -342,10 +342,10 @@ Registered name: `"rnn"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](../co
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `num_target_feature` | `int` | `0` | Number of target variables to forecast |
-| `num_historical_features` | `int` | `0` | Historical (unknown-future) feature count |
+| `num_past_features` | `int` | `0` | Past (unknown-future) feature count |
 | `num_calendar_features` | `int` | `0` | Calendar feature count |
-| `num_exogenous_features` | `int` | `0` | Exogenous (known-future) feature count |
-| `num_future_covariates` | `int` | `0` | Future-only covariate count |
+| `num_known_future_features` | `int` | `0` | Known-future feature count |
+| `num_forecast_period_features` | `int` | `0` | Forecast-period feature count |
 | `forecast_horizon` | `int` | `0` | Steps ahead to predict |
 | `lookback_window_size` | `int` | `0` | Input window length |
 | `hidden_size` | `int` | `128` | Width of the RNN hidden state |
@@ -488,9 +488,8 @@ Use **Normal/Laplace** for general energy targets. **Gamma/LogNormal** for stric
 The recommended way to instantiate a neural network model is through the `from_data_config` classmethod on the config class. This automatically computes the input and output dimensions from your [`DataPipelineConfig`](../core/config.md#datapipelineconfig).
 
 ```python
-from sklearn.preprocessing import StandardScaler, RobustScaler
 
-from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.core.config import DataPipelineConfig, ExperimentConfig
 from twiga.forecaster.core import TwigaForecaster
 from twiga.models.nn.mlpf_model import MLPFConfig
 from twiga.models.nn.nhits_model import NHITSConfig
@@ -503,9 +502,9 @@ data_config = DataPipelineConfig(
     lookback_window_size=168,
     forecast_horizon=48,
     calendar_features=["hour", "dayofweek", "month"],
-    exogenous_features=["ghi", "temperature"],
-    input_scaler=StandardScaler(),
-    target_scaler=RobustScaler(),
+    known_future_features=["ghi", "temperature"],
+    input_scaler="standard",
+    target_scaler="robust",
 )
 
 # 2. Create model configs - dimensions are inferred automatically
@@ -539,7 +538,7 @@ rnn_config = RNNConfig.from_data_config(
 )
 
 # 3. Train via TwigaForecaster
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="months",
     train_size=6,
     test_size=1,
@@ -550,7 +549,7 @@ train_config = ForecasterConfig(
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[mlpf_config, nhits_config, rnn_config],
-    train_params=train_config,
+    cv_params=train_config,
 )
 
 forecaster.fit(train_df=train_df, val_df=val_df)

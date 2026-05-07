@@ -9,7 +9,7 @@
 - `twiga/forecaster/registry.py` - Dynamic model loading
 - `twiga/forecaster/ensemble.py` - Ensemble prediction strategies
 - `twiga/forecaster/utils.py` - Shape validation, DataFrame construction helpers
-- `twiga/core/config/base.py` - `DataPipelineConfig`, `ForecasterConfig`, `ConformalConfig`, `BaseModelConfig`
+- `twiga/core/config/base.py` - `DataPipelineConfig`, `ExperimentConfig`, `ConformalConfig`, `BaseModelConfig`
 
 </details>
 
@@ -90,7 +90,7 @@ classDiagram
         +models: list
         +conformal: dict
         +domain: str
-        +__init__(data_params, model_params, train_params, conformal_params)
+        +__init__(data_params, model_params, cv_params, conformal_params)
         +calibrate(calibrate_df, ...)
     }
 
@@ -112,7 +112,7 @@ from twiga.forecaster.core import TwigaForecaster
 forecaster = TwigaForecaster(
     data_params=data_config,        # DataPipelineConfig
     model_params=[xgb_config],      # BaseModelConfig | list | dict | list[dict]
-    train_params=train_config,      # ForecasterConfig
+    cv_params=train_config,      # ExperimentConfig
     conformal_params=conf_config,   # ConformalConfig | None
 )
 ```
@@ -121,7 +121,7 @@ forecaster = TwigaForecaster(
 |---|---|---|
 | `data_params` | [`DataPipelineConfig`](config.md) | Defines target features, feature engineering, scaling, and temporal settings for the [`DataPipeline`](data-pipeline.md). |
 | `model_params` | `BaseModelConfig \| list[BaseModelConfig] \| dict \| list[dict]` | One or more model configurations. Each configuration is validated against the model's registered config class. Accepts Pydantic models or plain dictionaries. |
-| `train_params` | [`ForecasterConfig`](config.md) | Cross-validation split parameters (`split_freq`, `train_size`, `test_size`, `gap`, `window`), project naming, paths, and evaluation metrics. |
+| `cv_params` | [`ExperimentConfig`](config.md) | Cross-validation split parameters (`split_freq`, `train_size`, `test_size`, `gap`, `window`), project naming, paths, and evaluation metrics. |
 | `conformal_params` | [`ConformalConfig`](../probabilistic/conformal-prediction.md) `\| None` | Optional. Enables conformal prediction intervals when provided. Requires a subsequent `calibrate()` call before `predict_interval`. |
 
 During construction the forecaster:
@@ -150,7 +150,7 @@ sequenceDiagram
     participant Model as Model(s)
     participant Conf as Conformal
 
-    User->>TF: __init__(data_params, model_params, train_params, conformal_params)
+    User->>TF: __init__(data_params, model_params, cv_params, conformal_params)
     TF->>DP: DataPipeline(**data_params)
     TF->>Reg: get_model_from_registry(model_params)
     Reg-->>TF: [model_1, model_2, ...]
@@ -293,7 +293,7 @@ Backtesting performs walk-forward cross-validation by iterating over temporal sp
 2. Calls `evaluate_point_forecast(test_df)` on the held-out test window.
 3. Tags results with a `Folds` column.
 
-The split behaviour is controlled by `ForecasterConfig` parameters:
+The split behaviour is controlled by `ExperimentConfig` parameters:
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
@@ -364,7 +364,7 @@ When configs are supplied as dictionaries, `get_model_from_dict` extracts the `"
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params={"name": "lightgbm", "domain": "ml"},
-    train_params=train_config,
+    cv_params=train_config,
 )
 ```
 
@@ -477,7 +477,7 @@ Checkpoint persistence differs by domain:
 ## See Also
 
 - [Quick Start Guide](../getting-started/quickstart.md) - end-to-end walkthrough
-- [Configuration System](config.md) - `DataPipelineConfig`, `ForecasterConfig`, `ConformalConfig`
+- [Configuration System](config.md) - `DataPipelineConfig`, `ExperimentConfig`, `ConformalConfig`
 - [Data Pipeline](data-pipeline.md) - feature engineering and scaling
 - [Metrics](metrics.md) - point and interval evaluation functions
 - [Backtesting](backtesting.md) - cross-validation strategy

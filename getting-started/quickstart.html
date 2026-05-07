@@ -604,12 +604,94 @@
 </ul>
 </div>
 </details><p>This guide walks through a complete forecasting workflow: loading data, configuring models, training, predicting, and evaluating.</p>
-<section id="minimal-example-with-ml-models">
-<h2>Minimal Example with ML Models<a class="headerlink" href="#minimal-example-with-ml-models" title="Link to this heading">#</a></h2>
+<section id="fastest-path-twigaforecaster-quick">
+<h2>Fastest Path: <code class="docutils literal notranslate"><span class="pre">TwigaForecaster.quick()</span></code><a class="headerlink" href="#fastest-path-twigaforecaster-quick" title="Link to this heading">#</a></h2>
+<p>The quickest way to get a forecast running is the <code class="docutils literal notranslate"><span class="pre">quick()</span></code> factory classmethod. It builds a fully configured forecaster from a handful of essential parameters, picking sensible defaults for everything else.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;data/timeseries.parquet&quot;</span><span class="p">)</span>
+<span class="n">train_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&lt;=</span> <span class="s2">&quot;2024-06-01&quot;</span><span class="p">]</span>
+<span class="n">test_df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&gt;</span> <span class="s2">&quot;2024-07-01&quot;</span><span class="p">]</span>
+
+<span class="c1"># One-liner setup</span>
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="o">.</span><span class="n">quick</span><span class="p">(</span>
+    <span class="n">target</span><span class="o">=</span><span class="s2">&quot;load_mw&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;catboost&quot;</span><span class="p">,</span>       <span class="c1"># default</span>
+    <span class="n">scaler</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">)</span>
+<span class="n">predictions_df</span><span class="p">,</span> <span class="n">metrics_df</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_point_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">target</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">list[str]</span></code></p></td>
+<td><p><em>required</em></p></td>
+<td><p>Target column name(s).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">period</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p></td>
+<td><p><em>required</em></p></td>
+<td><p>Sampling frequency as a pandas offset alias (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;30min&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;1h&quot;</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">horizon</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><em>required</em></p></td>
+<td><p>Forecast horizon in time steps.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;catboost&quot;</span></code></p></td>
+<td><p>Model key from the registry (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;catboost&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;lightgbm&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;nhits&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mlpf&quot;</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">distribution</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>Distribution variant for probabilistic output (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;normal&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;laplace&quot;</span></code>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lookback</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>Lookback window size. Defaults to <code class="docutils literal notranslate"><span class="pre">max(2</span> <span class="pre">*</span> <span class="pre">horizon,</span> <span class="pre">24)</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">calendar</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">list[str]</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>Calendar features to add (e.g. <code class="docutils literal notranslate"><span class="pre">[&quot;hour&quot;,</span> <span class="pre">&quot;day_night&quot;]</span></code>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scaler</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code></p></td>
+<td><p>Scaler for input features (<code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;robust&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;minmax&quot;</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">seed</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">42</span></code></p></td>
+<td><p>Random seed for reproducibility.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">quick()</span></code> for exploration and prototyping. For production, the full <code class="docutils literal notranslate"><span class="pre">TwigaForecaster(...)</span></code> constructor gives you complete control over every parameter.</p>
+</section>
+<hr class="docutils" />
+<section id="full-example-with-ml-models">
+<h2>Full Example with ML Models<a class="headerlink" href="#full-example-with-ml-models" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml.xgboost_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">XGBOOSTConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml.lightgbm_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
@@ -625,11 +707,11 @@
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
     <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">],</span>
-    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ghi&quot;</span><span class="p">],</span>
+    <span class="n">known_future_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ghi&quot;</span><span class="p">],</span>
     <span class="n">latitude</span><span class="o">=-</span><span class="mf">6.8</span><span class="p">,</span>
     <span class="n">longitude</span><span class="o">=</span><span class="mf">39.3</span><span class="p">,</span>
-    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
-    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="s2">&quot;robust&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># 3. Configure models</span>
@@ -637,7 +719,7 @@
 <span class="n">lgb_config</span> <span class="o">=</span> <span class="n">LIGHTGBMConfig</span><span class="p">()</span>
 
 <span class="c1"># 4. Configure training parameters</span>
-<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
     <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;days&quot;</span><span class="p">,</span>
     <span class="n">train_size</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
     <span class="n">test_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
@@ -648,7 +730,7 @@
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">xgb_config</span><span class="p">,</span> <span class="n">lgb_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># 6. Split data</span>
@@ -687,7 +769,7 @@
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">xgb_config</span><span class="p">,</span> <span class="n">lgb_config</span><span class="p">,</span> <span class="n">mlpf_config</span><span class="p">,</span> <span class="n">nhits_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
@@ -733,7 +815,7 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">metrics_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="s2">&quot;Folds&quot;</span><span class="p">])[[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>The backtesting parameters are controlled by <code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code>:</p>
+<p>The backtesting parameters are controlled by <code class="docutils literal notranslate"><span class="pre">ExperimentConfig</span></code>:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Parameter</p></th>
@@ -783,7 +865,7 @@
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">xgb_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
     <span class="n">conformal_params</span><span class="o">=</span><span class="n">conformal_config</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -888,7 +970,8 @@
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#minimal-example-with-ml-models">Minimal Example with ML Models</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fastest-path-twigaforecaster-quick">Fastest Path: <code class="docutils literal notranslate"><span class="pre">TwigaForecaster.quick()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#full-example-with-ml-models">Full Example with ML Models</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-neural-network-models">Using Neural Network Models</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hyperparameter-tuning">Hyperparameter Tuning</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#backtesting">Backtesting</a></li>

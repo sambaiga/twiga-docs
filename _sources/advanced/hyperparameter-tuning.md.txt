@@ -4,6 +4,7 @@
 <summary>Source Files</summary>
 
 - `twiga/core/config/base.py`
+- `twiga/core/config/data.py`
 - `twiga/forecaster/base.py`
 
 </details>
@@ -22,10 +23,14 @@ graph TD
     F --> G[model.update trial]
     G --> H[BaseSearchSpace.get_optuna_params]
     H --> I[suggest_int / suggest_float / suggest_categorical]
+    F --> P[_update_pipeline_for_trial]
+    P --> Q[DataPipelineConfig.search_space.get_optuna_params]
+    Q --> R[Rebuild DataPipeline with sampled scalers]
     F --> J[_fit + _evaluate]
     J --> K[Return MAE cost]
     E --> L[study.best_trial.params]
     L --> M[Update model config]
+    L --> N[Apply best pipeline params to data_config]
 ```
 
 ## Search Spaces
@@ -118,6 +123,48 @@ BaseSearchSpace(
 )
 ```
 
+### Pipeline Search Space
+
+`DataPipelineConfig` also accepts a `search_space` field, letting Optuna co-optimise **data preprocessing** (scalers) alongside model hyperparameters in a single study. The sampled scaler values are prefixed with `"pipeline_"` in the Optuna trial to avoid clashing with model parameter names.
+
+```python
+from twiga.core.config import BaseSearchSpace, DataPipelineConfig
+
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,
+    forecast_horizon=48,
+    search_space=BaseSearchSpace(
+        input_scaler=["standard", "robust", "minmax"],
+        target_scaler=["standard", "robust"],
+    ),
+)
+```
+
+**How it works:**
+
+1. At the start of each Optuna trial, `_update_pipeline_for_trial` samples the pipeline search space with `prefix="pipeline"` — producing keys like `"pipeline_input_scaler"`.
+2. A new `DataPipeline` is constructed from the sampled config for that trial.
+3. After the study completes, the best pipeline parameters are stripped of the `"pipeline_"` prefix and applied permanently to `data_config`. Only model params (no `pipeline_` prefix) are returned from `tune()`.
+4. The original `data_config` is restored after every trial via a `try/finally` guard, so trial mutations never leak between trials.
+
+**Validation** — unknown field names in `search_space` raise a `ValidationError` at construction time, catching typos before tuning starts:
+
+```python
+# Raises ValidationError: "unknown fields: {'typo_scaler'}"
+DataPipelineConfig(
+    ...,
+    search_space=BaseSearchSpace(typo_scaler=["standard"]),
+)
+```
+
+:::{admonition} Supported pipeline search space fields
+:class: note
+
+Only `input_scaler` and `target_scaler` are currently tunable via the pipeline search space. Both accept lists of [`ScalerType`](../core/config.md#datapipelineconfig) string identifiers.
+:::
+
 ## The Tuning Process
 
 ### `TwigaForecaster.tune()`
@@ -169,11 +216,12 @@ forecaster.tune(
 
 The `_objective_fn` per trial:
 
-1. Calls `model.update(trial)`  -  uses `BaseSearchSpace.get_optuna_params()` to suggest values
-2. Calls `_fit(train_df, val_df, trial)`  -  trains the model
-3. Calls `_evaluate(val_df)`  -  computes validation metrics
-4. Returns `mean(MAE)` as the cost to minimize
-5. Sets user attributes: `rmse` and `std_dev` for dashboard visualization
+1. Calls `model.update(trial)` — uses `BaseSearchSpace.get_optuna_params()` to suggest model values
+2. Calls `_update_pipeline_for_trial(trial)` — if `data_config.search_space` is set, samples scaler choices and rebuilds `DataPipeline` for this trial
+3. Calls `_fit(train_df, val_df, trial)` — trains the model
+4. Calls `_evaluate(val_df)` — computes validation metrics
+5. Returns `mean(MAE)` as the cost to minimize
+6. Sets user attributes: `rmse` and `std_dev` for dashboard visualization
 
 ### After Tuning
 
@@ -185,26 +233,30 @@ Best parameters are:
 ## Full Example
 
 ```python
-from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.core.config import BaseSearchSpace, DataPipelineConfig, ExperimentConfig
 from twiga.forecaster.core import TwigaForecaster
 from twiga.models.ml.xgboost_model import XGBOOSTConfig
 from twiga.models.nn.mlpf_model import MLPFConfig
 
-# Configure
+# Data pipeline config with pipeline search space — scalers are tuned alongside model params
 data_config = DataPipelineConfig(
     target_feature="load_mw",
     period="1h",
     lookback_window_size=168,
     forecast_horizon=48,
+    search_space=BaseSearchSpace(
+        input_scaler=["standard", "robust", "minmax"],
+        target_scaler=["standard", "robust"],
+    ),
 )
 
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="days",
     train_size=14,
     test_size=7,
 )
 
-# Custom search space
+# Model search space (tuned in the same study as the pipeline)
 xgb_config = XGBOOSTConfig(
     search_space=BaseSearchSpace(
         learning_rate=(0.01, 0.3),
@@ -218,10 +270,10 @@ mlpf_config = MLPFConfig.from_data_config(data_config)
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[xgb_config, mlpf_config],
-    train_params=train_config,
+    cv_params=train_config,
 )
 
-# Tune all models
+# tune() co-optimises model hyperparameters + pipeline scalers in a single study
 forecaster.tune(
     train_df=train_df,
     val_df=val_df,
@@ -229,6 +281,7 @@ forecaster.tune(
     patience=5,
 )
 
+# After tune(), data_config is updated with the best scaler combination
 # Fit with tuned parameters
 forecaster.fit(train_df=train_df, val_df=val_df)
 

@@ -662,13 +662,12 @@ hot-model-reload in a FastAPI server.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
 
 <span class="n">LetsPlot</span><span class="o">.</span><span class="n">setup_html</span><span class="p">()</span>
 <span class="c1"># warnings.filterwarnings(&quot;ignore&quot;)</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_timeseries</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span><span class="p">,</span> <span class="n">twiga_report</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span><span class="p">,</span> <span class="n">get_logger</span>
@@ -756,7 +755,7 @@ Using a familiar dataset lets you focus on the MLOps concepts without new data c
 </section>
 <section id="configure-and-fit-the-forecaster">
 <h2>3. Configure and fit the forecaster<a class="headerlink" href="#configure-and-fit-the-forecaster" title="Link to this heading">#</a></h2>
-<p>The configuration mirrors Tutorial 01.  <code class="docutils literal notranslate"><span class="pre">ForecasterConfig.checkpoints_path</span></code> tells
+<p>The configuration mirrors Tutorial 01.  <code class="docutils literal notranslate"><span class="pre">ExperimentConfig.checkpoints_path</span></code> tells
 the forecaster where to write the model artefact - this is the directory that
 <code class="docutils literal notranslate"><span class="pre">ForecastMonitor</span></code>, <code class="docutils literal notranslate"><span class="pre">ModelLoader</span></code>, and <code class="docutils literal notranslate"><span class="pre">retraining_flow</span></code> all read from.</p>
 <div class="cell docutils container">
@@ -767,15 +766,15 @@ the forecaster where to write the model artefact - this is the directory that
     <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
     <span class="n">longitude</span><span class="o">=-</span><span class="mf">16.274998</span><span class="p">,</span>
     <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">],</span>
-    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">],</span>
+    <span class="n">known_future_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">],</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>  <span class="c1"># 24 h at 30-min resolution</span>
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">48</span> <span class="o">*</span> <span class="mi">7</span><span class="p">,</span>  <span class="c1"># 48 h of history</span>
-    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
-    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="s2">&quot;robust&quot;</span><span class="p">,</span>
     <span class="n">stride</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>  <span class="c1"># non-overlapping windows (48 steps = 24 h at 30-min resolution</span>
 <span class="p">)</span>
 
-<span class="n">forecaster_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+<span class="n">forecaster_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
     <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
     <span class="n">train_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
     <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -787,7 +786,7 @@ the forecaster where to write the model artefact - this is the directory that
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">seasonal_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">forecaster_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">forecaster_config</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Forecaster assembled — checkpoint dir: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">checkpoints_path</span><span class="p">)</span>
@@ -949,7 +948,7 @@ makes rollbacks auditable and removes the fragility of mtime-sorting.</p>
 <span class="n">loaded_forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">model_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">forecaster_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">forecaster_config</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">loaded_forecaster</span><span class="o">.</span><span class="n">on_load_checkpoint</span><span class="p">()</span>
@@ -1216,9 +1215,8 @@ so the async event loop stays responsive under load</p></li>
 <p>To serve real traffic, write the app to a module and start uvicorn:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># serve.py</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.serve</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_app</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
 
 <span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
     <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
@@ -1226,20 +1224,20 @@ so the async event loop stays responsive under load</p></li>
     <span class="n">latitude</span><span class="o">=</span><span class="mf">32.371666</span><span class="p">,</span>
     <span class="n">longitude</span><span class="o">=-</span><span class="mf">16.274998</span><span class="p">,</span>
     <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;day_night&quot;</span><span class="p">],</span>
-    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">],</span>
+    <span class="n">known_future_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">],</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
-    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
-    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="s2">&quot;robust&quot;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">train_params</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+<span class="n">cv_params</span><span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
     <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span> <span class="n">train_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="n">checkpoints_path</span><span class="o">=</span><span class="s2">&quot;mlops_demo/checkpoints&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
-    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span> <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">LIGHTGBMConfig</span><span class="p">()],</span> <span class="n">train_params</span><span class="o">=</span><span class="n">train_params</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span> <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">LIGHTGBMConfig</span><span class="p">()],</span> <span class="n">cv_params</span><span class="o">=</span><span class="n">train_params</span>
 <span class="p">)</span>
 <span class="n">app</span> <span class="o">=</span> <span class="n">create_app</span><span class="p">(</span><span class="n">forecaster</span><span class="p">,</span> <span class="n">report_dir</span><span class="o">=</span><span class="s2">&quot;mlops_demo/reports&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Net Load Forecast API&quot;</span><span class="p">)</span>
 </pre></div>
@@ -1291,7 +1289,7 @@ state tracking - it is the raw Python function.</p>
     <span class="n">fresh_forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
         <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
         <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">model_config</span><span class="p">],</span>
-        <span class="n">train_params</span><span class="o">=</span><span class="n">forecaster_config</span><span class="p">,</span>
+        <span class="n">cv_params</span><span class="o">=</span><span class="n">forecaster_config</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">fitted</span> <span class="o">=</span> <span class="n">fit_forecaster</span><span class="o">.</span><span class="n">fn</span><span class="p">(</span><span class="n">forecaster</span><span class="o">=</span><span class="n">fresh_forecaster</span><span class="p">,</span> <span class="n">train_df</span><span class="o">=</span><span class="n">tr</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">clear_output</span><span class="p">()</span>
@@ -1458,7 +1456,7 @@ hardcoded values - 12-factor app style.</p>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TWIGA_MODEL_CHECKPOINT_DIR</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">checkpoints</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ForecasterConfig</span></code> default</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ExperimentConfig</span></code> default</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TWIGA_SERVE_REPORT_DIR</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">reports</span></code></p></td>

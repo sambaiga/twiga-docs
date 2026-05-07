@@ -1553,9 +1553,8 @@ and reinitialise the underlying estimator.  The base implementation is a no-op.<
 <h2>Usage Example<a class="headerlink" href="#usage-example" title="Link to this heading">#</a></h2>
 <p>The following example shows how to configure, train, and evaluate an ML model using the <a class="reference internal" href="../core/forecaster.html"><span class="std std-doc">TwigaForecaster</span></a>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span><span class="p">,</span> <span class="n">RobustScaler</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml.catboost_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">CATBOOSTConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml.xgboost_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">XGBOOSTConfig</span>
@@ -1569,12 +1568,12 @@ and reinitialise the underlying estimator.  The base implementation is a no-op.<
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">168</span><span class="p">,</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
     <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;dayofweek&quot;</span><span class="p">,</span> <span class="s2">&quot;month&quot;</span><span class="p">],</span>
-    <span class="n">exogenous_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
+    <span class="n">known_future_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
     <span class="n">lags</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">168</span><span class="p">],</span>
     <span class="n">windows</span><span class="o">=</span><span class="p">[</span><span class="mi">24</span><span class="p">,</span> <span class="mi">48</span><span class="p">],</span>
     <span class="n">window_funcs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">],</span>
-    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
-    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="s2">&quot;robust&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># --- Model configs ---</span>
@@ -1583,7 +1582,7 @@ and reinitialise the underlying estimator.  The base implementation is a no-op.<
 <span class="n">lightgbm_config</span> <span class="o">=</span> <span class="n">LIGHTGBMConfig</span><span class="p">(</span><span class="n">boosting_type</span><span class="o">=</span><span class="s2">&quot;gbdt&quot;</span><span class="p">)</span>
 
 <span class="c1"># --- Training orchestration ---</span>
-<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
     <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
     <span class="n">train_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
     <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -1596,7 +1595,7 @@ and reinitialise the underlying estimator.  The base implementation is a no-op.<
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">catboost_config</span><span class="p">,</span> <span class="n">xgboost_config</span><span class="p">,</span> <span class="n">lightgbm_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;data/timeseries.parquet&quot;</span><span class="p">)</span>
@@ -1624,7 +1623,7 @@ and reinitialise the underlying estimator.  The base implementation is a no-op.<
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">catboost_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Tune hyperparameters with Optuna</span>
@@ -2277,7 +2276,7 @@ search space.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> – Identifier for the model type, fixed to “catboost”.</p></li>
 <li><p><strong>task_type</strong> – Hardware acceleration type (“GPU” or “CPU”).</p></li>
-<li><p><strong>random_state</strong> – Seed for random number generation.</p></li>
+<li><p><strong>seed</strong> – Seed for random number generation.</p></li>
 <li><p><strong>verbose</strong> – Verbosity level (0 silent, 1 minimal, 2 detailed).</p></li>
 <li><p><strong>allow_writing_files</strong> – Whether the model may write files to disk.</p></li>
 <li><p><strong>l2_leaf_reg</strong> – L2 regularisation coefficient on leaf values.</p></li>
@@ -2324,13 +2323,13 @@ search space.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.catboost_model.CATBOOSTConfig.random_state">
-<span class="sig-name descname"><span class="pre">random_state</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.random_state" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="twiga.models.ml.catboost_model.CATBOOSTConfig.search_space">
+<span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.search_space" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.catboost_model.CATBOOSTConfig.search_space">
-<span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.search_space" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="twiga.models.ml.catboost_model.CATBOOSTConfig.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.seed" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2503,7 +2502,7 @@ parameters and not others.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> – Model identifier fixed to <code class="docutils literal notranslate"><span class="pre">&quot;lightgbm&quot;</span></code>.</p></li>
 <li><p><strong>domain</strong> – Domain fixed to <code class="docutils literal notranslate"><span class="pre">&quot;ml&quot;</span></code>. Excluded from tuning.</p></li>
-<li><p><strong>random_state</strong> – Seed for reproducibility.</p></li>
+<li><p><strong>seed</strong> – Seed for reproducibility.</p></li>
 <li><p><strong>verbose</strong> – LightGBM verbosity (-1 silent, 0 warnings, 1 info).</p></li>
 <li><p><strong>boosting_type</strong> – Gradient boosting method.</p></li>
 <li><p><strong>objective</strong> – LightGBM regression objective.</p></li>
@@ -2560,13 +2559,13 @@ Excluded from model params (passed via LightGBM callbacks).</p></li>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.lightgbm_model.LIGHTGBMConfig.random_state">
-<span class="sig-name descname"><span class="pre">random_state</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.random_state" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="twiga.models.ml.lightgbm_model.LIGHTGBMConfig.search_space">
+<span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.search_space" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.lightgbm_model.LIGHTGBMConfig.search_space">
-<span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.search_space" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="twiga.models.ml.lightgbm_model.LIGHTGBMConfig.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.seed" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2790,7 +2789,7 @@ parameters and not others.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> – Model identifier fixed to <code class="docutils literal notranslate"><span class="pre">&quot;xgboost&quot;</span></code>.</p></li>
 <li><p><strong>domain</strong> – Domain fixed to <code class="docutils literal notranslate"><span class="pre">&quot;ml&quot;</span></code>. Excluded from tuning.</p></li>
-<li><p><strong>random_state</strong> – Seed for reproducibility.</p></li>
+<li><p><strong>seed</strong> – Seed for reproducibility.</p></li>
 <li><p><strong>verbose</strong> – Verbosity level (0 silent, 1 minimal, 2 detailed).</p></li>
 <li><p><strong>device</strong> – Hardware target (<code class="docutils literal notranslate"><span class="pre">&quot;cpu&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;gpu&quot;</span></code>).</p></li>
 <li><p><strong>tree_method</strong> – Tree construction algorithm. <code class="docutils literal notranslate"><span class="pre">&quot;hist&quot;</span></code> is required for
@@ -2835,13 +2834,13 @@ an <code class="docutils literal notranslate"><span class="pre">eval_set</span><
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.xgboost_model.XGBOOSTConfig.random_state">
-<span class="sig-name descname"><span class="pre">random_state</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.random_state" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="twiga.models.ml.xgboost_model.XGBOOSTConfig.search_space">
+<span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.search_space" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.xgboost_model.XGBOOSTConfig.search_space">
-<span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.search_space" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="twiga.models.ml.xgboost_model.XGBOOSTConfig.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.seed" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -3038,7 +3037,7 @@ parameters and not others.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> – Model identifier fixed to <code class="docutils literal notranslate"><span class="pre">&quot;randomforest&quot;</span></code>.</p></li>
 <li><p><strong>domain</strong> – Domain fixed to <code class="docutils literal notranslate"><span class="pre">&quot;ml&quot;</span></code>. Excluded from tuning.</p></li>
-<li><p><strong>random_state</strong> – Seed for reproducibility.</p></li>
+<li><p><strong>seed</strong> – Seed for reproducibility.</p></li>
 <li><p><strong>n_jobs</strong> – Number of parallel jobs during fit and predict.
 <code class="docutils literal notranslate"><span class="pre">-1</span></code> uses all available CPUs.</p></li>
 <li><p><strong>search_space</strong> – Optuna hyperparameter search space.</p></li>
@@ -3067,13 +3066,13 @@ parameters and not others.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.randomforest_model.RANDOMFORESTConfig.random_state">
-<span class="sig-name descname"><span class="pre">random_state</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.randomforest_model.RANDOMFORESTConfig.random_state" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="twiga.models.ml.randomforest_model.RANDOMFORESTConfig.search_space">
+<span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.randomforest_model.RANDOMFORESTConfig.search_space" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.randomforest_model.RANDOMFORESTConfig.search_space">
-<span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.randomforest_model.RANDOMFORESTConfig.search_space" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="twiga.models.ml.randomforest_model.RANDOMFORESTConfig.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.randomforest_model.RANDOMFORESTConfig.seed" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -3582,8 +3581,8 @@ search space.</p>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.loss_function"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.loss_function</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.model_config"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.name"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.name</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.random_state"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.random_state</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.search_space"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.seed"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.seed</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.task_type"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.task_type</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.verbose"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.verbose</span></code></a></li>
 </ul>
@@ -3604,8 +3603,8 @@ search space.</p>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.model_config"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.name"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.objective"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.objective</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.random_state"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.random_state</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.search_space"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.seed"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.seed</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.verbose"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.verbose</span></code></a></li>
 </ul>
 </li>
@@ -3627,8 +3626,8 @@ search space.</p>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.model_config"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.name"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.objective"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.objective</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.random_state"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.random_state</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.search_space"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.seed"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.seed</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.tree_method"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.tree_method</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.verbose"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.verbose</span></code></a></li>
 </ul>
@@ -3646,8 +3645,8 @@ search space.</p>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.randomforest_model.RANDOMFORESTConfig.model_config"><code class="docutils literal notranslate"><span class="pre">RANDOMFORESTConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.randomforest_model.RANDOMFORESTConfig.n_jobs"><code class="docutils literal notranslate"><span class="pre">RANDOMFORESTConfig.n_jobs</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.randomforest_model.RANDOMFORESTConfig.name"><code class="docutils literal notranslate"><span class="pre">RANDOMFORESTConfig.name</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.randomforest_model.RANDOMFORESTConfig.random_state"><code class="docutils literal notranslate"><span class="pre">RANDOMFORESTConfig.random_state</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.randomforest_model.RANDOMFORESTConfig.search_space"><code class="docutils literal notranslate"><span class="pre">RANDOMFORESTConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.randomforest_model.RANDOMFORESTConfig.seed"><code class="docutils literal notranslate"><span class="pre">RANDOMFORESTConfig.seed</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.randomforest_model.RANDOMFORESTModel"><code class="docutils literal notranslate"><span class="pre">RANDOMFORESTModel</span></code></a><ul class="nav section-nav flex-column">

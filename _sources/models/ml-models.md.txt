@@ -252,9 +252,8 @@ The following example shows how to configure, train, and evaluate an ML model us
 
 ```python
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, RobustScaler
 
-from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.core.config import DataPipelineConfig, ExperimentConfig
 from twiga.forecaster.core import TwigaForecaster
 from twiga.models.ml.catboost_model import CATBOOSTConfig
 from twiga.models.ml.xgboost_model import XGBOOSTConfig
@@ -268,12 +267,12 @@ data_config = DataPipelineConfig(
     lookback_window_size=168,
     forecast_horizon=48,
     calendar_features=["hour", "dayofweek", "month"],
-    exogenous_features=["ghi", "temperature"],
+    known_future_features=["ghi", "temperature"],
     lags=[1, 24, 48, 168],
     windows=[24, 48],
     window_funcs=["mean", "std"],
-    input_scaler=StandardScaler(),
-    target_scaler=RobustScaler(),
+    input_scaler="standard",
+    target_scaler="robust",
 )
 
 # --- Model configs ---
@@ -282,7 +281,7 @@ xgboost_config = XGBOOSTConfig(device="cpu")
 lightgbm_config = LIGHTGBMConfig(boosting_type="gbdt")
 
 # --- Training orchestration ---
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="months",
     train_size=6,
     test_size=1,
@@ -295,7 +294,7 @@ train_config = ForecasterConfig(
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[catboost_config, xgboost_config, lightgbm_config],
-    train_params=train_config,
+    cv_params=train_config,
 )
 
 data = pd.read_parquet("data/timeseries.parquet")
@@ -324,7 +323,7 @@ catboost_config = CATBOOSTConfig(search_space=custom_search)
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[catboost_config],
-    train_params=train_config,
+    cv_params=train_config,
 )
 
 # Tune hyperparameters with Optuna

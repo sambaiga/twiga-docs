@@ -11,7 +11,7 @@ Twiga follows a **configuration-as-code** pattern: every component - data prepro
 
 ## Class Hierarchy
 
-The diagram below shows how the configuration classes relate to one another. `BaseModelConfig` is the root for all model configs; `NeuralModelConfig` extends it with PyTorch Lightning training parameters. `DataPipelineConfig`, `ForecasterConfig`, and `ConformalConfig` are standalone configuration objects that the [TwigaForecaster](forecaster.md) accepts at construction time.
+The diagram below shows how the configuration classes relate to one another. `BaseModelConfig` is the root for all model configs; `NeuralModelConfig` extends it with PyTorch Lightning training parameters. `DataPipelineConfig`, `ExperimentConfig`, and `ConformalConfig` are standalone configuration objects that the [TwigaForecaster](forecaster.md) accepts at construction time.
 
 ```{mermaid}
 classDiagram
@@ -49,7 +49,7 @@ classDiagram
         +lags: list | None
     }
 
-    class ForecasterConfig {
+    class ExperimentConfig {
         +split_freq: Literal
         +train_size: int
         +test_size: int
@@ -75,7 +75,7 @@ Each configuration object targets a specific subsystem of the [TwigaForecaster](
 ```{mermaid}
 flowchart LR
     DC[DataPipelineConfig] --> DP[DataPipeline]
-    FC[ForecasterConfig] --> TF[TwigaForecaster]
+    FC[ExperimentConfig] --> TF[TwigaForecaster]
     MC[Model Configs] --> M[Models]
     CC[ConformalConfig] --> CP[Conformal Predictor]
 
@@ -88,7 +88,7 @@ flowchart LR
     MC -. "NN configs" .-> NN[MLPF / MLPGAM / MLPGAF / NHITS / GANF]
 ```
 
-- **`ForecasterConfig`** controls the [TwigaForecaster](forecaster.md) itself - project naming, cross-validation splits, and output directories.
+- **`ExperimentConfig`** controls the [TwigaForecaster](forecaster.md) itself - project naming, cross-validation splits, and output directories.
 - **`DataPipelineConfig`** controls the [DataPipeline](data-pipeline.md) - feature engineering, scaling, and sequence creation.
 - **Model configs** (`BaseModelConfig` subclasses for [ML models](../models/ml-models.md), `NeuralModelConfig` subclasses for [NN models](../models/nn-models.md)) define model architecture and training behavior.
 - **`ConformalConfig`** controls [conformal prediction](../probabilistic/conformal-prediction.md) - the method, score type, and significance level used for prediction intervals.
@@ -106,22 +106,22 @@ flowchart LR
 | `forecast_horizon` | `int` | *required* | Number of future time steps the model predicts. |
 | `latitude` | `float \| None` | `None` | Latitude for computing day/night features via solar position. Required when using `"day_night"` in `calendar_features`. |
 | `longitude` | `float \| None` | `None` | Longitude for computing day/night features via solar position. |
-| `historical_features` | `list[str] \| None` | `None` | Column names for features with unknown future values (available only during the lookback window). |
+| `past_features` | `list[str] \| None` | `None` | Column names for features with unknown future values (available only during the lookback window). |
 | `calendar_features` | `list[str] \| None` | `None` | Cyclical temporal features derived from the timestamp column (e.g., `"hour"`, `"dayofweek"`, `"month"`, `"day_night"`). |
-| `exogenous_features` | `list[str] \| None` | `None` | Known future features available over the full lookback + forecast horizon (e.g., weather forecasts). |
-| `future_covariates` | `list[str] \| None` | `None` | Known future features available over the forecast horizon only. |
-| `input_scaler` | `object \| None` | `None` | A scikit-learn-compatible scaler applied to input features (e.g., `StandardScaler()`, `RobustScaler()`). |
-| `target_scaler` | `object \| None` | `None` | A scikit-learn-compatible scaler applied to the target variable. |
+| `known_future_features` | `list[str] \| None` | `None` | Known future features available over the full lookback + forecast horizon (e.g., weather forecasts). |
+| `forecast_period_features` | `list[str] \| None` | `None` | Known future features available over the forecast horizon only. |
+| `input_scaler` | `str` | `"passthrough"` | Scaler for input features. One of `"standard"`, `"robust"`, `"minmax"`, `"maxabs"`, `"normalizer"`, `"quantile_uniform"`, `"quantile_normal"`, `"power_yeo_johnson"`, `"power_box_cox"`, `"passthrough"`. |
+| `target_scaler` | `str` | `"standard"` | Scaler for target variable(s). Same choices as `input_scaler`. |
 | `lags` | `list[int] \| None` | `None` | Lag intervals (in periods) for autoregressive feature engineering (e.g., `[1, 24, 48, 168]`). |
 | `windows` | `list[int] \| int \| None` | `None` | Window sizes for rolling statistics (e.g., `[24, 48]` or `24`). |
 | `window_funcs` | `list[str] \| str \| None` | `None` | Aggregation functions applied to rolling windows (e.g., `["mean", "std"]` or `"mean"`). |
 | `date_column` | `str` | `"timestamp"` | Name of the datetime column in the input DataFrame. |
-| `stride` | `int` | `1` | Step between consecutive sliding windows. Default `1` produces fully overlapping windows (maximum data augmentation). Set to `forecast_horizon` for non-overlapping windows — recommended for baseline evaluation to avoid pseudo-replication. |
+| `window_stride` | `int` | `1` | Step between consecutive sliding windows. Default `1` produces fully overlapping windows (maximum data augmentation). Set to `forecast_horizon` for non-overlapping windows — recommended for baseline evaluation to avoid pseudo-replication. |
+| `search_space` | `BaseSearchSpace \| None` | `None` | Optional HPO search space for pipeline parameters. Supports categorical choices for `input_scaler` and `target_scaler`. When set, each Optuna trial co-optimises scalers alongside model hyperparameters. Excluded from `model_dump()`. See [Hyperparameter Optimization](../advanced/hyperparameter-tuning.md). |
 
 ### Example
 
 ```python
-from sklearn.preprocessing import RobustScaler, StandardScaler
 from twiga.core.config import DataPipelineConfig
 
 data_config = DataPipelineConfig(
@@ -130,14 +130,14 @@ data_config = DataPipelineConfig(
     lookback_window_size=168,      # 7 days of hourly data
     forecast_horizon=48,           # predict 2 days ahead
     calendar_features=["hour", "dayofweek", "month"],
-    exogenous_features=["ghi", "temperature"],
+    known_future_features=["ghi", "temperature"],
     latitude=-6.8,
     longitude=39.3,
     lags=[1, 24, 48, 168],
     windows=[24, 48],
     window_funcs=["mean", "std"],
-    input_scaler=StandardScaler(),
-    target_scaler=RobustScaler(),
+    input_scaler="standard",
+    target_scaler="robust",
 )
 ```
 
@@ -158,9 +158,9 @@ Pick lags that correspond to meaningful seasonal periods in your data. For hourl
 ```
 
 
-## ForecasterConfig
+## ExperimentConfig
 
-`ForecasterConfig` controls the training orchestration layer: how the data is split for [backtesting](backtesting.md), where outputs are saved, and which evaluation metrics to compute. It is passed as `train_params` to `TwigaForecaster`.
+`ExperimentConfig` controls the training orchestration layer: how the data is split for [backtesting](backtesting.md), where outputs are saved, and which evaluation metrics to compute. It is passed as `cv_params` to `TwigaForecaster`.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
@@ -182,9 +182,9 @@ Pick lags that correspond to meaningful seasonal periods in your data. For hourl
 ### Example
 
 ```python
-from twiga.core.config import ForecasterConfig
+from twiga.core.config import ExperimentConfig
 
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="days",
     train_size=14,
     test_size=7,
@@ -208,7 +208,7 @@ With `window="expanding"`, each successive fold includes all prior training data
 
 
 ```{eval-rst}
-.. autoclass:: twiga.core.config.ForecasterConfig
+.. autoclass:: twiga.core.config.ExperimentConfig
    :members:
    :show-inheritance:
 ```
@@ -285,7 +285,7 @@ data_config = DataPipelineConfig(
     lookback_window_size=168,
     forecast_horizon=48,
     calendar_features=["hour", "dayofweek"],
-    exogenous_features=["ghi"],
+    known_future_features=["ghi"],
 )
 
 # Automatically sets num_target_feature, num_calendar_features, etc.
@@ -295,10 +295,10 @@ mlpf_config = MLPFConfig.from_data_config(data_config, max_epochs=50, batch_size
 The classmethod extracts the following from the `DataPipelineConfig`:
 
 - `num_target_feature` - count of target variables
-- `num_historical_features` - count of historical feature columns
+- `num_past_features` - count of past-only feature columns
 - `num_calendar_features` - count of calendar feature columns
-- `num_exogenous_features` - count of exogenous feature columns
-- `num_future_covariates` - count of future covariate columns
+- `num_known_future_features` - count of known-future feature columns
+- `num_forecast_period_features` - count of forecast-period-only feature columns
 - `forecast_horizon` and `lookback_window_size` - passed through directly
 
 Any additional keyword arguments are forwarded to the config constructor, allowing you to override defaults like `max_epochs` or `batch_size`.
@@ -411,11 +411,18 @@ A field validator warns (but does not reject) when `alpha < 0.01` (overly wide i
 ```python
 from twiga.core.config import ConformalConfig
 
-# 90% prediction intervals using absolute residuals
+# 90% prediction intervals using absolute residuals (via alpha)
 conformal_config = ConformalConfig(
     method="residual",
     score_type="res",
     alpha=0.1,
+)
+
+# 90% intervals via coverage probability (convenience factory)
+conformal_config = ConformalConfig.from_coverage(
+    coverage=0.9,
+    method="residual",
+    score_type="res",
 )
 
 # 95% intervals using quantile regression with scaled scores
@@ -436,17 +443,74 @@ conformal_qr = ConformalConfig(
 ```
 
 
+## NeuralTrainingConfig
+
+`NeuralTrainingConfig` provides a **single place to override training-infrastructure parameters** across every neural network model in `model_params`. All fields default to `None` (meaning "do not override"). Only set the fields you want to change globally.
+
+It is passed as `training_params` to `TwigaForecaster`.
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `batch_size` | `int \| None` | `None` | Training batch size. |
+| `max_epochs` | `int \| None` | `None` | Maximum training epochs. |
+| `early_stop_patience` | `int \| None` | `None` | Early-stopping patience. `None` disables early stopping. |
+| `seed` | `int \| None` | `None` | Random seed for reproducibility. |
+| `num_workers` | `int \| None` | `None` | DataLoader worker count. |
+| `pin_memory` | `bool \| None` | `None` | Pin memory for faster CPU→GPU transfer. |
+| `drop_last` | `bool \| None` | `None` | Drop the last incomplete batch. |
+| `wandb_logging` | `bool \| None` | `None` | Enable Weights & Biases logging. |
+| `rich_progress_bar` | `bool \| None` | `None` | Enable rich progress bars. |
+| `gradient_clip_val` | `float \| None` | `None` | Max gradient norm for clipping. |
+| `optimizer_type` | `Literal[...] \| None` | `None` | Optimizer name (e.g. `"adamw"`, `"muon"`). |
+| `lr_scheduler_type` | `Literal[...] \| None` | `None` | Scheduler name (e.g. `"warmup_cosine"`, `"cosine_restart"`). |
+| `optimizer_params` | `dict \| None` | `None` | Partial override for optimizer defaults. |
+| `scheduler_params` | `dict \| None` | `None` | Partial override for scheduler defaults. |
+
+### Usage Example
+
+```python
+from twiga.core.config import NeuralTrainingConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.nn.mlpf_model import MLPFConfig
+from twiga.models.nn.nhits_model import NHITSConfig
+
+# Override training settings for all NN models at once
+training_params = NeuralTrainingConfig(
+    max_epochs=100,
+    early_stop_patience=10,
+    batch_size=256,
+    optimizer_type="adamw",
+    lr_scheduler_type="warmup_cosine",
+    gradient_clip_val=1.0,
+)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[MLPFConfig(), NHITSConfig()],
+    training_params=training_params,
+)
+```
+
+### API Reference
+
+
+```{eval-rst}
+.. autoclass:: twiga.core.config.NeuralTrainingConfig
+   :members:
+   :show-inheritance:
+```
+
+
 ## Putting It All Together
 
-The following example demonstrates how all four configuration objects work together in a complete forecasting workflow.
+The following example demonstrates how all configuration objects work together in a complete forecasting workflow.
 
 ```python
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, RobustScaler
 
 from twiga.core.config import (
     DataPipelineConfig,
-    ForecasterConfig,
+    ExperimentConfig,
     ConformalConfig,
 )
 from twiga.forecaster.core import TwigaForecaster
@@ -460,12 +524,12 @@ data_config = DataPipelineConfig(
     lookback_window_size=168,
     forecast_horizon=48,
     calendar_features=["hour", "dayofweek", "month"],
-    exogenous_features=["ghi", "temperature"],
+    known_future_features=["ghi", "temperature"],
     lags=[1, 24, 48, 168],
     windows=[24, 48],
     window_funcs=["mean", "std"],
-    input_scaler=StandardScaler(),
-    target_scaler=RobustScaler(),
+    input_scaler="standard",
+    target_scaler="robust",
 )
 
 # --- Model configurations ---
@@ -473,7 +537,7 @@ xgb_config = XGBOOSTConfig(device="cpu")
 mlpf_config = MLPFConfig.from_data_config(data_config, max_epochs=30, batch_size=128)
 
 # --- Training orchestration ---
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="months",
     train_size=6,
     test_size=1,
@@ -493,7 +557,7 @@ conformal_config = ConformalConfig(
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[xgb_config, mlpf_config],
-    train_params=train_config,
+    cv_params=train_config,
     conformal_params=conformal_config,
 )
 

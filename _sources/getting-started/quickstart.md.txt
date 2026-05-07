@@ -11,13 +11,53 @@
 
 This guide walks through a complete forecasting workflow: loading data, configuring models, training, predicting, and evaluating.
 
-## Minimal Example with ML Models
+## Fastest Path: `TwigaForecaster.quick()`
+
+The quickest way to get a forecast running is the `quick()` factory classmethod. It builds a fully configured forecaster from a handful of essential parameters, picking sensible defaults for everything else.
 
 ```python
 import pandas as pd
-from sklearn.preprocessing import RobustScaler, StandardScaler
+from twiga.forecaster.core import TwigaForecaster
 
-from twiga.core.config import DataPipelineConfig, ForecasterConfig
+data = pd.read_parquet("data/timeseries.parquet")
+train_df = data[data.timestamp <= "2024-06-01"]
+test_df = data[data.timestamp > "2024-07-01"]
+
+# One-liner setup
+forecaster = TwigaForecaster.quick(
+    target="load_mw",
+    period="30min",
+    horizon=48,
+    model="catboost",       # default
+    scaler="standard",
+)
+
+forecaster.fit(train_df=train_df)
+predictions_df, metrics_df = forecaster.evaluate_point_forecast(test_df=test_df)
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `target` | `str \| list[str]` | *required* | Target column name(s). |
+| `period` | `str` | *required* | Sampling frequency as a pandas offset alias (e.g. `"30min"`, `"1h"`). |
+| `horizon` | `int` | *required* | Forecast horizon in time steps. |
+| `model` | `str` | `"catboost"` | Model key from the registry (e.g. `"catboost"`, `"lightgbm"`, `"nhits"`, `"mlpf"`). |
+| `distribution` | `str \| None` | `None` | Distribution variant for probabilistic output (e.g. `"normal"`, `"laplace"`). |
+| `lookback` | `int \| None` | `None` | Lookback window size. Defaults to `max(2 * horizon, 24)`. |
+| `calendar` | `list[str] \| None` | `None` | Calendar features to add (e.g. `["hour", "day_night"]`). |
+| `scaler` | `str` | `"standard"` | Scaler for input features (`"standard"`, `"robust"`, `"minmax"`). |
+| `seed` | `int` | `42` | Random seed for reproducibility. |
+
+Use `quick()` for exploration and prototyping. For production, the full `TwigaForecaster(...)` constructor gives you complete control over every parameter.
+
+---
+
+## Full Example with ML Models
+
+```python
+import pandas as pd
+
+from twiga.core.config import DataPipelineConfig, ExperimentConfig
 from twiga.forecaster.core import TwigaForecaster
 from twiga.models.ml.xgboost_model import XGBOOSTConfig
 from twiga.models.ml.lightgbm_model import LIGHTGBMConfig
@@ -33,11 +73,11 @@ data_config = DataPipelineConfig(
     lookback_window_size=48,
     forecast_horizon=48,
     calendar_features=["hour", "day_night"],
-    exogenous_features=["ghi"],
+    known_future_features=["ghi"],
     latitude=-6.8,
     longitude=39.3,
-    input_scaler=StandardScaler(),
-    target_scaler=RobustScaler(),
+    input_scaler="standard",
+    target_scaler="robust",
 )
 
 # 3. Configure models
@@ -45,7 +85,7 @@ xgb_config = XGBOOSTConfig(device="cpu")
 lgb_config = LIGHTGBMConfig()
 
 # 4. Configure training parameters
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="days",
     train_size=14,
     test_size=7,
@@ -56,7 +96,7 @@ train_config = ForecasterConfig(
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[xgb_config, lgb_config],
-    train_params=train_config,
+    cv_params=train_config,
 )
 
 # 6. Split data
@@ -96,7 +136,7 @@ nhits_config.max_epochs = 20
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[xgb_config, lgb_config, mlpf_config, nhits_config],
-    train_params=train_config,
+    cv_params=train_config,
 )
 
 forecaster.fit(train_df=train_df, val_df=val_df)
@@ -147,7 +187,7 @@ predictions_df, metrics_df = forecaster.backtesting(
 print(metrics_df.groupby(["Model", "Folds"])[["mae", "rmse"]].mean().round(2))
 ```
 
-The backtesting parameters are controlled by `ForecasterConfig`:
+The backtesting parameters are controlled by `ExperimentConfig`:
 
 | Parameter | Description | Example |
 | --- | --- | --- |
@@ -177,7 +217,7 @@ conformal_config = ConformalConfig(
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[xgb_config],
-    train_params=train_config,
+    cv_params=train_config,
     conformal_params=conformal_config,
 )
 

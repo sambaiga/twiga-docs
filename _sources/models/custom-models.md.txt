@@ -261,7 +261,7 @@ class RANDOMFORESTModel(BaseRegressor):
 Once the file is in place, the registry discovers it automatically. No additional registration step is needed.
 
 ```python
-from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.core.config import DataPipelineConfig, ExperimentConfig
 from twiga.forecaster.core import TwigaForecaster
 
 # Option A: Use the config class directly
@@ -275,7 +275,7 @@ rf_config_dict = {"name": "randomforest", "n_estimators": 200, "max_depth": 15}
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[rf_config],      # or rf_config_dict
-    train_params=train_config,
+    cv_params=train_config,
 )
 forecaster.fit(train_df=train_df)
 predictions, metrics = forecaster.evaluate_point_forecast(test_df=test_df)
@@ -328,10 +328,10 @@ class SIMPLENNConfig(NeuralModelConfig):
 
     # Architecture parameters
     num_target_feature: int = Field(..., description="Number of target features.")
-    num_historical_features: int = Field(0, description="Number of historical features.")
+    num_past_features: int = Field(0, description="Number of historical features.")
     num_calendar_features: int = Field(0, description="Number of calendar features.")
-    num_exogenous_features: int = Field(0, description="Number of exogenous features.")
-    num_future_covariates: int = Field(0, description="Number of future covariate features.")
+    num_known_future_features: int = Field(0, description="Number of known-future features.")
+    num_forecast_period_features: int = Field(0, description="Number of forecast-period-only features.")
     forecast_horizon: int = Field(..., description="Forecast horizon in time steps.")
     lookback_window_size: int = Field(..., description="Input window size in time steps.")
 
@@ -360,7 +360,7 @@ class SIMPLENNConfig(NeuralModelConfig):
 :::{admonition} Use `from_data_config` for convenience
 :class: tip
 
-`NeuralModelConfig.from_data_config(data_config, **kwargs)` automatically computes `num_target_feature`, `num_historical_features`, `num_calendar_features`, `num_exogenous_features`, `num_future_covariates`, `forecast_horizon`, and `lookback_window_size` from a `DataPipelineConfig`. Always prefer this over setting dimensional parameters manually. See [Configuration System](../core/config.md#key-method-from_data_configdata_config-kwargs) for details.
+`NeuralModelConfig.from_data_config(data_config, **kwargs)` automatically computes `num_target_feature`, `num_past_features`, `num_calendar_features`, `num_known_future_features`, `num_forecast_period_features`, `forecast_horizon`, and `lookback_window_size` from a `DataPipelineConfig`. Always prefer this over setting dimensional parameters manually. See [Configuration System](../core/config.md#key-method-from_data_configdata_config-kwargs) for details.
 :::
 
 
@@ -368,7 +368,7 @@ class SIMPLENNConfig(NeuralModelConfig):
 
 The architecture is an `nn.Module` that extends `BaseArchitecture`. You must implement the `forward()` method. The base class provides:
 
-- Feature dimension attributes (`num_target_feature`, `num_historical_features`, etc.)
+- Feature dimension attributes (`num_target_feature`, `num_past_features`, etc.)
 - The `step(batch, metric_fn)` method that computes the combined loss: `alpha * MSE + (1 - alpha) * MAE`
 - A `forecast(x)` method that calls `forward` in `torch.no_grad()` mode
 - Dropout layer and output activation
@@ -389,10 +389,10 @@ class SimpleNNArchitecture(BaseArchitecture):
     def __init__(
         self,
         num_target_feature: int,
-        num_historical_features: int,
+        num_past_features: int,
         num_calendar_features: int,
-        num_exogenous_features: int,
-        num_future_covariates: int,
+        num_known_future_features: int,
+        num_forecast_period_features: int,
         forecast_horizon: int,
         lookback_window_size: int,
         hidden_size: int = 128,
@@ -405,10 +405,10 @@ class SimpleNNArchitecture(BaseArchitecture):
     ):
         super().__init__(
             num_target_feature=num_target_feature,
-            num_historical_features=num_historical_features,
+            num_past_features=num_past_features,
             num_calendar_features=num_calendar_features,
-            num_exogenous_features=num_exogenous_features,
-            num_future_covariates=num_future_covariates,
+            num_known_future_features=num_known_future_features,
+            num_forecast_period_features=num_forecast_period_features,
             forecast_horizon=forecast_horizon,
             lookback_window_size=lookback_window_size,
             dropout=dropout,
@@ -511,10 +511,10 @@ class SIMPLENNModel(BaseNeuralForecast):
         """Initialize the neural network from the current config."""
         self.model = SimpleNNForecastModel(
             num_target_feature=self.model_config.num_target_feature,
-            num_historical_features=self.model_config.num_historical_features,
+            num_past_features=self.model_config.num_past_features,
             num_calendar_features=self.model_config.num_calendar_features,
-            num_exogenous_features=self.model_config.num_exogenous_features,
-            num_future_covariates=self.model_config.num_future_covariates,
+            num_known_future_features=self.model_config.num_known_future_features,
+            num_forecast_period_features=self.model_config.num_forecast_period_features,
             forecast_horizon=self.model_config.forecast_horizon,
             lookback_window_size=self.model_config.lookback_window_size,
             hidden_size=self.model_config.hidden_size,
@@ -545,7 +545,7 @@ class SIMPLENNModel(BaseNeuralForecast):
 ### Step 6: Use Your Custom NN Model
 
 ```python
-from twiga.core.config import DataPipelineConfig, ForecasterConfig
+from twiga.core.config import DataPipelineConfig, ExperimentConfig
 from twiga.forecaster.core import TwigaForecaster
 from twiga.models.nn.simplenn_model import SIMPLENNConfig
 
@@ -555,7 +555,7 @@ data_config = DataPipelineConfig(
     lookback_window_size=168,
     forecast_horizon=48,
     calendar_features=["hour", "dayofweek", "month"],
-    exogenous_features=["ghi", "temperature"],
+    known_future_features=["ghi", "temperature"],
 )
 
 # Use from_data_config for automatic dimensionality setup
@@ -568,7 +568,7 @@ nn_config = SIMPLENNConfig.from_data_config(
     patience=10,
 )
 
-train_config = ForecasterConfig(
+train_config = ExperimentConfig(
     split_freq="months",
     train_size=6,
     test_size=1,
@@ -579,7 +579,7 @@ train_config = ForecasterConfig(
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[nn_config],
-    train_params=train_config,
+    cv_params=train_config,
 )
 
 forecaster.fit(train_df=train_df, val_df=val_df)

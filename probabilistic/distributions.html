@@ -1813,9 +1813,8 @@ window.runMermaid = runMermaid;</script>
 <section id="ml-usage-example">
 <h2>ML Usage Example<a class="headerlink" href="#ml-usage-example" title="Link to this heading">#</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml.gausscatboost_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">GAUSSCATBOOSTConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml.ngboostnormal_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">NGBOOSTNORMALConfig</span>
@@ -1826,10 +1825,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">168</span><span class="p">,</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span>
     <span class="n">lags</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">168</span><span class="p">],</span>
-    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
     <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
     <span class="n">train_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
     <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -1846,7 +1845,7 @@ window.runMermaid = runMermaid;</script>
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">gauss_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">)</span>
@@ -3621,7 +3620,7 @@ to produce better-calibrated uncertainty estimates.</p>
 <li><p><strong>learning_rate</strong> – Shrinkage applied to each tree.</p></li>
 <li><p><strong>minibatch_frac</strong> – Row-subsample fraction per iteration.</p></li>
 <li><p><strong>col_sample</strong> – Column-subsample fraction per iteration.</p></li>
-<li><p><strong>random_state</strong> – Seed for reproducibility.</p></li>
+<li><p><strong>seed</strong> – Seed for reproducibility.</p></li>
 <li><p><strong>score</strong> – Scoring rule - <code class="docutils literal notranslate"><span class="pre">&quot;LogScore&quot;</span></code> (MLE) or <code class="docutils literal notranslate"><span class="pre">&quot;CRPScore&quot;</span></code>.</p></li>
 <li><p><strong>search_space</strong> – Hyperparameter search space for Optuna tuning.</p></li>
 </ul>
@@ -3669,11 +3668,6 @@ to produce better-calibrated uncertainty estimates.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.random_state">
-<span class="sig-name descname"><span class="pre">random_state</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.random_state" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.score">
 <span class="sig-name descname"><span class="pre">score</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'LogScore'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'CRPScore'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.score" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
@@ -3681,6 +3675,11 @@ to produce better-calibrated uncertainty estimates.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.search_space">
 <span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.search_space" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.seed" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -3865,7 +3864,7 @@ speed, electricity price, or non-negative load.</p>
 <li><p><strong>learning_rate</strong> – Shrinkage applied to each tree.</p></li>
 <li><p><strong>minibatch_frac</strong> – Row-subsample fraction per iteration.</p></li>
 <li><p><strong>col_sample</strong> – Column-subsample fraction per iteration.</p></li>
-<li><p><strong>random_state</strong> – Seed for reproducibility.</p></li>
+<li><p><strong>seed</strong> – Seed for reproducibility.</p></li>
 <li><p><strong>score</strong> – Scoring rule - <code class="docutils literal notranslate"><span class="pre">&quot;LogScore&quot;</span></code> (MLE) or <code class="docutils literal notranslate"><span class="pre">&quot;CRPScore&quot;</span></code>.</p></li>
 <li><p><strong>search_space</strong> – Hyperparameter search space for Optuna tuning.</p></li>
 </ul>
@@ -3913,11 +3912,6 @@ speed, electricity price, or non-negative load.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.random_state">
-<span class="sig-name descname"><span class="pre">random_state</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.random_state" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.score">
 <span class="sig-name descname"><span class="pre">score</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'LogScore'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'CRPScore'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.score" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
@@ -3925,6 +3919,11 @@ speed, electricity price, or non-negative load.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.search_space">
 <span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.search_space" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.seed" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -4118,7 +4117,7 @@ durations in energy systems.</p>
 <li><p><strong>learning_rate</strong> – Shrinkage applied to each tree.</p></li>
 <li><p><strong>minibatch_frac</strong> – Row-subsample fraction per iteration.</p></li>
 <li><p><strong>col_sample</strong> – Column-subsample fraction per iteration.</p></li>
-<li><p><strong>random_state</strong> – Seed for reproducibility.</p></li>
+<li><p><strong>seed</strong> – Seed for reproducibility.</p></li>
 <li><p><strong>score</strong> – Scoring rule - <code class="docutils literal notranslate"><span class="pre">&quot;LogScore&quot;</span></code> (MLE) or <code class="docutils literal notranslate"><span class="pre">&quot;CRPScore&quot;</span></code>.</p></li>
 <li><p><strong>search_space</strong> – Hyperparameter search space for Optuna tuning.</p></li>
 </ul>
@@ -4166,11 +4165,6 @@ durations in energy systems.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.random_state">
-<span class="sig-name descname"><span class="pre">random_state</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.random_state" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.score">
 <span class="sig-name descname"><span class="pre">score</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'LogScore'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'CRPScore'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.score" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
@@ -4178,6 +4172,11 @@ durations in energy systems.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.search_space">
 <span class="sig-name descname"><span class="pre">search_space</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.BaseSearchSpace" title="twiga.core.config.search_space.BaseSearchSpace"><span class="pre">BaseSearchSpace</span></a></span><a class="headerlink" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.search_space" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.seed" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -4681,9 +4680,9 @@ Q is number of quantiles, and C is number of channels.</p></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.model_config"><code class="docutils literal notranslate"><span class="pre">NGBOOSTNORMALConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.n_estimators"><code class="docutils literal notranslate"><span class="pre">NGBOOSTNORMALConfig.n_estimators</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.name"><code class="docutils literal notranslate"><span class="pre">NGBOOSTNORMALConfig.name</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.random_state"><code class="docutils literal notranslate"><span class="pre">NGBOOSTNORMALConfig.random_state</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.score"><code class="docutils literal notranslate"><span class="pre">NGBOOSTNORMALConfig.score</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.search_space"><code class="docutils literal notranslate"><span class="pre">NGBOOSTNORMALConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALConfig.seed"><code class="docutils literal notranslate"><span class="pre">NGBOOSTNORMALConfig.seed</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostnormal_model.NGBOOSTNORMALModel"><code class="docutils literal notranslate"><span class="pre">NGBOOSTNORMALModel</span></code></a><ul class="nav section-nav flex-column">
@@ -4701,9 +4700,9 @@ Q is number of quantiles, and C is number of channels.</p></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.model_config"><code class="docutils literal notranslate"><span class="pre">NGBOOSTLOGNORMALConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.n_estimators"><code class="docutils literal notranslate"><span class="pre">NGBOOSTLOGNORMALConfig.n_estimators</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.name"><code class="docutils literal notranslate"><span class="pre">NGBOOSTLOGNORMALConfig.name</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.random_state"><code class="docutils literal notranslate"><span class="pre">NGBOOSTLOGNORMALConfig.random_state</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.score"><code class="docutils literal notranslate"><span class="pre">NGBOOSTLOGNORMALConfig.score</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.search_space"><code class="docutils literal notranslate"><span class="pre">NGBOOSTLOGNORMALConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALConfig.seed"><code class="docutils literal notranslate"><span class="pre">NGBOOSTLOGNORMALConfig.seed</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostlognormal_model.NGBOOSTLOGNORMALModel"><code class="docutils literal notranslate"><span class="pre">NGBOOSTLOGNORMALModel</span></code></a><ul class="nav section-nav flex-column">
@@ -4721,9 +4720,9 @@ Q is number of quantiles, and C is number of channels.</p></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.model_config"><code class="docutils literal notranslate"><span class="pre">NGBOOSTEXPONENTIALConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.n_estimators"><code class="docutils literal notranslate"><span class="pre">NGBOOSTEXPONENTIALConfig.n_estimators</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.name"><code class="docutils literal notranslate"><span class="pre">NGBOOSTEXPONENTIALConfig.name</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.random_state"><code class="docutils literal notranslate"><span class="pre">NGBOOSTEXPONENTIALConfig.random_state</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.score"><code class="docutils literal notranslate"><span class="pre">NGBOOSTEXPONENTIALConfig.score</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.search_space"><code class="docutils literal notranslate"><span class="pre">NGBOOSTEXPONENTIALConfig.search_space</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALConfig.seed"><code class="docutils literal notranslate"><span class="pre">NGBOOSTEXPONENTIALConfig.seed</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.ngboostexponential_model.NGBOOSTEXPONENTIALModel"><code class="docutils literal notranslate"><span class="pre">NGBOOSTEXPONENTIALModel</span></code></a><ul class="nav section-nav flex-column">

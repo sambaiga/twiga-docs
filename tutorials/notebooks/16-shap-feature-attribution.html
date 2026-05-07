@@ -655,7 +655,7 @@ attribution per sample, per lookback step, per feature. This means you can ask:<
 <li><p>Which <strong>timesteps</strong> matter most? → average |SHAP| over B and F</p></li>
 <li><p>Which <strong>feature at which lag</strong> matters most? → the full (L, F) heatmap</p></li>
 </ul>
-<p><code class="docutils literal notranslate"><span class="pre">historical_features</span></code> (like <code class="docutils literal notranslate"><span class="pre">Ghi</span></code> and <code class="docutils literal notranslate"><span class="pre">Temperature</span></code>) are treated as features with unknown
+<p><code class="docutils literal notranslate"><span class="pre">past_features</span></code> (like <code class="docutils literal notranslate"><span class="pre">Ghi</span></code> and <code class="docutils literal notranslate"><span class="pre">Temperature</span></code>) are treated as features with unknown
 future values - only their past <code class="docutils literal notranslate"><span class="pre">L</span></code> timesteps are fed to the model, keeping the input
 shape a clean <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code> with no future-covariate inflation.</p>
 </div></blockquote>
@@ -693,12 +693,11 @@ them would cause cancellation and understate importance.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span><span class="p">,</span> <span class="n">aes</span><span class="p">,</span> <span class="n">geom_bar</span><span class="p">,</span> <span class="n">geom_line</span><span class="p">,</span> <span class="n">geom_tile</span><span class="p">,</span> <span class="n">ggplot</span><span class="p">,</span> <span class="n">ggsize</span><span class="p">,</span> <span class="n">labs</span><span class="p">,</span> <span class="n">scale_fill_gradient2</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobustScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
 
 <span class="n">LetsPlot</span><span class="o">.</span><span class="n">setup_html</span><span class="p">()</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.explain</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShapExplainer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_metrics_bar</span><span class="p">,</span> <span class="n">plot_timeseries</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span>
@@ -709,42 +708,6 @@ them would cause cancellation and understate importance.</p>
 <span class="n">configure</span><span class="p">()</span>
 <span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;tutorials&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Imports OK&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output text_html">
-        <div id="ReAbnM"></div>
-        <script type="text/javascript" data-lets-plot-script="library">
-            if(!window.letsPlotCallQueue) {
-                window.letsPlotCallQueue = [];
-            };
-            window.letsPlotCall = function(f) {
-                window.letsPlotCallQueue.push(f);
-            };
-            (function() {
-                var script = document.createElement("script");
-                script.type = "text/javascript";
-                script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.9.0/js-package/distr/lets-plot.min.js";
-                script.onload = function() {
-                    window.letsPlotCall = function(f) {f();};
-                    window.letsPlotCallQueue.forEach(function(f) {f();});
-                    window.letsPlotCallQueue = [];
-                    
-                };
-                script.onerror = function(event) {
-                    window.letsPlotCall = function(f) {};    // noop
-                    window.letsPlotCallQueue = [];
-                    var div = document.createElement("div");
-                    div.style.color = 'darkred';
-                    div.textContent = 'Error loading Lets-Plot JS';
-                    document.getElementById("ReAbnM").appendChild(div);
-                };
-                var e = document.getElementById("ReAbnM");
-                e.appendChild(script);
-            })()
-        </script>
-        </div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:40:28 | INFO     | twiga.tutorials | Imports OK
 </pre></div>
 </div>
 </div>
@@ -780,121 +743,6 @@ them would cause cancellation and understate importance.</p>
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:40:28 | INFO     | twiga.tutorials | Shape: (33553, 4)
-</pre></div>
-</div>
-<div class="output text_html"><div id="vpyzyqyvmn" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:100%;height:auto;">
-<style>
-#vpyzyqyvmn table {
-          font-family: Inter, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-        }
-
-#vpyzyqyvmn thead, tbody, tfoot, tr, td, th { border-style: none; }
- tr { background-color: transparent; }
-#vpyzyqyvmn p { margin: 0; padding: 0; }
- #vpyzyqyvmn .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #2d3748; font-size: 13px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: 100%; border-top-style: solid; border-top-width: 2px; border-top-color: #107591; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #107591; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
- #vpyzyqyvmn .gt_caption { padding-top: 4px; padding-bottom: 4px; }
- #vpyzyqyvmn .gt_title { color: #2d3748; font-size: 16px; font-weight: bold; padding-top: 10px; padding-bottom: 10px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
- #vpyzyqyvmn .gt_subtitle { color: #2d3748; font-size: 13px; font-weight: initial; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
- #vpyzyqyvmn .gt_heading { background-color: #ffffff; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #vpyzyqyvmn .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
- #vpyzyqyvmn .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #vpyzyqyvmn .gt_col_heading { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
- #vpyzyqyvmn .gt_column_spanner_outer { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
- #vpyzyqyvmn .gt_column_spanner_outer:first-child { padding-left: 0; }
- #vpyzyqyvmn .gt_column_spanner_outer:last-child { padding-right: 0; }
- #vpyzyqyvmn .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; vertical-align: bottom; padding-top: 9px; padding-bottom: 9px; overflow-x: hidden; display: inline-block; width: 100%; }
- #vpyzyqyvmn .gt_spanner_row { border-bottom-style: hidden; }
- #vpyzyqyvmn .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }
- #vpyzyqyvmn .gt_empty_group_heading { padding: 0.5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }
- #vpyzyqyvmn .gt_from_md> :first-child { margin-top: 0; }
- #vpyzyqyvmn .gt_from_md> :last-child { margin-bottom: 0; }
- #vpyzyqyvmn .gt_row { padding-top: 7px; padding-bottom: 7px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }
- #vpyzyqyvmn .gt_stub { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
- #vpyzyqyvmn .gt_stub_row_group { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
- #vpyzyqyvmn .gt_row_group_first td { border-top-width: 2px; }
- #vpyzyqyvmn .gt_row_group_first th { border-top-width: 2px; }
- #vpyzyqyvmn .gt_striped { color: #2d3748; background-color: #F4F4F4; }
- #vpyzyqyvmn .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #e8e8e8; }
- #vpyzyqyvmn .gt_grand_summary_row { color: #2d3748; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }
- #vpyzyqyvmn .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }
- #vpyzyqyvmn .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }
- #vpyzyqyvmn .gt_sourcenotes { color: #2d3748; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
- #vpyzyqyvmn .gt_sourcenote { font-size: 11px; padding-top: 6px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; text-align: left; }
- #vpyzyqyvmn .gt_left { text-align: left; }
- #vpyzyqyvmn .gt_center { text-align: center; }
- #vpyzyqyvmn .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
- #vpyzyqyvmn .gt_font_normal { font-weight: normal; }
- #vpyzyqyvmn .gt_font_bold { font-weight: bold; }
- #vpyzyqyvmn .gt_font_italic { font-style: italic; }
- #vpyzyqyvmn .gt_super { font-size: 65%; }
- #vpyzyqyvmn .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
- #vpyzyqyvmn .gt_asterisk { font-size: 100%; vertical-align: 0; }
- 
-</style>
-<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
-<thead>
-
-  <tr class="gt_heading">
-    <td colspan="4" class="gt_heading gt_title gt_font_normal" style="color: #333333;font-weight: bold;"><strong>Raw Data Sample</strong></td>
-  </tr>
-  <tr class="gt_heading">
-    <td colspan="4" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style="color: #718096;">First 5 rows of MLVS-PT</td>
-  </tr>
-<tr class="gt_col_headings">
-  <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="timestamp"><strong>Timestamp</strong></th>
-  <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="NetLoad(kW)"><strong>NetLoad (kW)</strong></th>
-  <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="Ghi"><strong>Ghi (W/m^2)</strong></th>
-  <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="Temperature"><strong>Temperature (C)</strong></th>
-</tr>
-</thead>
-<tbody class="gt_table_body">
-  <tr>
-    <td class="gt_row gt_right">2019-02-01 00:00:00+00:00</td>
-    <td class="gt_row gt_right">38.37412615882276</td>
-    <td class="gt_row gt_right">0.0</td>
-    <td class="gt_row gt_right">17.2</td>
-  </tr>
-  <tr>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_right">2019-02-01 00:30:00+00:00</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_right">39.058097469929656</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_right">0.0</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_right">17.2</td>
-  </tr>
-  <tr>
-    <td class="gt_row gt_right">2019-02-01 01:00:00+00:00</td>
-    <td class="gt_row gt_right">38.37412615882276</td>
-    <td class="gt_row gt_right">0.0</td>
-    <td class="gt_row gt_right">17.2</td>
-  </tr>
-  <tr>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_right">2019-02-01 01:30:00+00:00</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_right">36.593270477039624</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_right">0.0</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_right">17.4</td>
-  </tr>
-  <tr>
-    <td class="gt_row gt_right">2019-02-01 02:00:00+00:00</td>
-    <td class="gt_row gt_right">36.23178104474715</td>
-    <td class="gt_row gt_right">0.0</td>
-    <td class="gt_row gt_right">17.5</td>
-  </tr>
-</tbody>
-  <tfoot class="gt_sourcenotes">
-  
-  <tr>
-    <td class="gt_sourcenote" colspan="4" style="color: #718096;font-style: italic;">MLVS-PT dataset · Madeira, Portugal · 30-min resolution</td>
-  </tr>
-
-</tfoot>
-
-</table>
-
-</div>
-        </div></div>
 </div>
 </section>
 <section id="chronological-splits">
@@ -916,22 +764,11 @@ them would cause cancellation and understate importance.</p>
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:40:28 | INFO     | twiga.tutorials | train : 16032 rows  (2019-02-01 to 2019-12-31)
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:40:28 | INFO     | twiga.tutorials | val   : 8734 rows  (2020-01-01 to 2020-06-30)
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:40:28 | INFO     | twiga.tutorials | test  : 8787 rows  (2020-07-01 to 2020-12-31)
-</pre></div>
-</div>
-</div>
 </div>
 </section>
 <section id="configure-the-forecaster">
 <h2>4. Configure the Forecaster<a class="headerlink" href="#configure-the-forecaster" title="Link to this heading">#</a></h2>
-<p>We use <code class="docutils literal notranslate"><span class="pre">historical_features</span></code> for Ghi and Temperature rather than <code class="docutils literal notranslate"><span class="pre">exogenous_features</span></code>.
+<p>We use <code class="docutils literal notranslate"><span class="pre">past_features</span></code> for Ghi and Temperature rather than <code class="docutils literal notranslate"><span class="pre">known_future_features</span></code>.
 The distinction matters for SHAP:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
@@ -942,12 +779,12 @@ The distinction matters for SHAP:</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">historical_features</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">past_features</span></code></p></td>
 <td><p>Yes</p></td>
 <td><p>No</p></td>
 <td><p>No - only past L steps</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">exogenous_features</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">known_future_features</span></code></p></td>
 <td><p>Yes</p></td>
 <td><p>Yes</p></td>
 <td><p>Yes - past + future H steps</p></td>
@@ -955,7 +792,7 @@ The distinction matters for SHAP:</p>
 </tbody>
 </table>
 </div>
-<p>Using <code class="docutils literal notranslate"><span class="pre">historical_features</span></code> keeps the model input a clean <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code> array that
+<p>Using <code class="docutils literal notranslate"><span class="pre">past_features</span></code> keeps the model input a clean <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code> array that
 <code class="docutils literal notranslate"><span class="pre">ShapExplainer</span></code> can reshape correctly. Adding future covariate steps would inflate
 the time dimension to <code class="docutils literal notranslate"><span class="pre">L+H</span></code> and break the attribution reshape.</p>
 <div class="cell docutils container">
@@ -965,12 +802,12 @@ the time dimension to <code class="docutils literal notranslate"><span class="pr
     <span class="n">period</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">,</span>
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>  <span class="c1"># 48 h of history at 30-min resolution</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>  <span class="c1"># predict next 24 h</span>
-    <span class="n">historical_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">],</span>  <span class="c1"># past values only — no future leakage</span>
-    <span class="n">input_scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
-    <span class="n">target_scaler</span><span class="o">=</span><span class="n">RobustScaler</span><span class="p">(),</span>
+    <span class="n">past_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ghi&quot;</span><span class="p">,</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">],</span>  <span class="c1"># past values only — no future leakage</span>
+    <span class="n">input_scaler</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="s2">&quot;robust&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
     <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
     <span class="n">train_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
     <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -979,27 +816,10 @@ the time dimension to <code class="docutils literal notranslate"><span class="pr
 <span class="n">lgb_config</span> <span class="o">=</span> <span class="n">LIGHTGBMConfig</span><span class="p">()</span>
 
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;target_feature      : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data_config</span><span class="o">.</span><span class="n">target_feature</span><span class="p">)</span>
-<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;historical_features : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data_config</span><span class="o">.</span><span class="n">historical_features</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;past_features : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data_config</span><span class="o">.</span><span class="n">past_features</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;F (num features)    : 3  (NetLoad(kW), Ghi, Temperature)&quot;</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;L (lookback steps)  : </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data_config</span><span class="o">.</span><span class="n">lookback_window_size</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;H (horizon steps)   : </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data_config</span><span class="o">.</span><span class="n">forecast_horizon</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:40:28 | INFO     | twiga.tutorials | target_feature      : NetLoad(kW)
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:40:28 | INFO     | twiga.tutorials | historical_features : [&#39;Ghi&#39;, &#39;Temperature&#39;]
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:40:28 | INFO     | twiga.tutorials | F (num features)    : 3  (NetLoad(kW), Ghi, Temperature)
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:40:28 | INFO     | twiga.tutorials | L (lookback steps)  : 96
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:40:28 | INFO     | twiga.tutorials | H (horizon steps)   : 48
 </pre></div>
 </div>
 </div>
@@ -1012,16 +832,11 @@ the time dimension to <code class="docutils literal notranslate"><span class="pr
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">lgb_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
 <span class="n">clear_output</span><span class="p">()</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Model fitted.&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:18 | INFO     | twiga.tutorials | Model fitted.
 </pre></div>
 </div>
 </div>
@@ -1036,21 +851,13 @@ sees at predict time:</p>
 <li><p><strong>L</strong>: <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code> (96 steps = 48 h)</p></li>
 <li><p><strong>F</strong>: number of features: <code class="docutils literal notranslate"><span class="pre">NetLoad(kW)</span></code>, <code class="docutils literal notranslate"><span class="pre">Ghi</span></code>, <code class="docutils literal notranslate"><span class="pre">Temperature</span></code></p></li>
 </ul>
-<p>Because <code class="docutils literal notranslate"><span class="pre">historical_features</span></code> are past-only (not in <code class="docutils literal notranslate"><span class="pre">covariate_columns</span></code>), no future
+<p>Because <code class="docutils literal notranslate"><span class="pre">past_features</span></code> are past-only (not in <code class="docutils literal notranslate"><span class="pre">covariate_columns</span></code>), no future
 covariate steps are appended - the shape stays a clean <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X_test</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">transform_features</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;X_test shape : </span><span class="si">%s</span><span class="s2">  (B=</span><span class="si">%d</span><span class="s2">, L=</span><span class="si">%d</span><span class="s2">, F=</span><span class="si">%d</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">X_test</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">X_test</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">X_test</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">X_test</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;feature_columns : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">data_pipeline</span><span class="o">.</span><span class="n">feature_columns</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:18 | INFO     | twiga.tutorials | X_test shape : (8644, 96, 3)  (B=8644, L=96, F=3)
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:18 | INFO     | twiga.tutorials | feature_columns : [&#39;NetLoad(kW)&#39;, &#39;Ghi&#39;, &#39;Temperature&#39;]
 </pre></div>
 </div>
 </div>
@@ -1075,17 +882,6 @@ for LightGBM (fast, exact), and returns a <code class="docutils literal notransl
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:22 | INFO     | twiga.tutorials | SHAP values shape    : (300, 96, 3)  (B, L, F)
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:22 | INFO     | twiga.tutorials | Base value           : -0.1571
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:22 | INFO     | twiga.tutorials | Feature names        : [&#39;NetLoad(kW)&#39;, &#39;Ghi&#39;, &#39;Temperature&#39;]
-</pre></div>
-</div>
-</div>
 </div>
 </section>
 <section id="feature-importance-bar-chart">
@@ -1101,17 +897,6 @@ minus solar output.</p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">importance</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">mean_importance</span><span class="p">()</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">feat</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">importance</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="mi">1</span><span class="p">):</span>
     <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">. </span><span class="si">%-25s</span><span class="s2">  </span><span class="si">%.5f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">feat</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:22 | INFO     | twiga.tutorials | 1. Ghi                        0.00532
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:22 | INFO     | twiga.tutorials | 2. NetLoad(kW)                0.00282
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:22 | INFO     | twiga.tutorials | 3. Temperature                0.00053
 </pre></div>
 </div>
 </div>
@@ -1133,251 +918,6 @@ minus solar output.</p>
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html">   <div id="Ofhrlh" ></div>
-   <script type="text/javascript" data-lets-plot-script="plot">
-   
-   (function() {
-   // ----------
-   
-   const forceImmediateRender = false;
-   const responsive = false;
-   
-   let sizing = {
-       width_mode: "MIN",
-       height_mode: "SCALED",
-       width: null, 
-       height: null 
-   };
-   
-   const preferredWidth = document.body.dataset.letsPlotPreferredWidth;
-   if (preferredWidth !== undefined) {
-       sizing = {
-           width_mode: 'FIXED',
-           height_mode: 'SCALED',
-           width: parseFloat(preferredWidth)
-       };
-   }
-   
-   const containerDiv = document.getElementById("Ofhrlh");
-   let fig = null;
-   
-   function renderPlot() {
-       if (fig === null) {
-           const plotSpec = {
-"data":{
-"Feature":["Temperature","NetLoad(kW)","Ghi"],
-"Mean |SHAP|":[5.257675458660358E-4,0.002819036117794205,0.005316317590410081],
-"_highlight":[false,false,true]
-},
-"mapping":{
-"x":"Mean |SHAP|",
-"y":"Feature",
-"fill":"_highlight"
-},
-"data_meta":{
-"series_annotations":[{
-"type":"str",
-"column":"Feature"
-},{
-"type":"float",
-"column":"Mean |SHAP|"
-},{
-"type":"bool",
-"column":"_highlight"
-}]
-},
-"ggtitle":{
-"text":"LightGBM — SHAP Feature Importance (MLVS-PT)"
-},
-"caption":{
-"text":"Twiga Forecast"
-},
-"guides":{
-"x":{
-"title":"Mean |SHAP|"
-},
-"y":{
-"title":""
-}
-},
-"theme":{
-"text":{
-"color":"#2d2d2d",
-"family":"Inter, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-"size":10.0,
-"blank":false
-},
-"axis_title_x":{
-"face":"bold",
-"size":11.0,
-"margin":[10.0,0.0,0.0,0.0],
-"blank":false
-},
-"axis_title_y":{
-"face":"bold",
-"size":11.0,
-"margin":[0.0,10.0,0.0,0.0],
-"blank":false
-},
-"axis_text_x":{
-"color":"#666666",
-"angle":0.0,
-"hjust":0.5,
-"margin":[8.0,0.0,0.0,0.0],
-"blank":false
-},
-"axis_text_y":{
-"color":"#666666",
-"margin":[0.0,0.0,0.0,8.0],
-"blank":false
-},
-"axis_ticks":{
-"color":"#bbbbbb",
-"size":0.6000000000000001,
-"blank":false
-},
-"axis_line":{
-"color":"#bbbbbb",
-"size":0.8,
-"blank":false
-},
-"legend_background":{
-"blank":true
-},
-"legend_text":{
-"size":10.0,
-"blank":false
-},
-"legend_title":{
-"face":"bold",
-"size":11.0,
-"blank":false
-},
-"legend_position":"top",
-"legend_spacing":10.0,
-"legend_key":{
-"blank":true
-},
-"panel_background":{
-"blank":true
-},
-"panel_border":{
-"blank":true
-},
-"panel_grid_minor":{
-"blank":true
-},
-"panel_grid_major_x":{
-"blank":true
-},
-"panel_grid_major_y":{
-"blank":true
-},
-"plot_background":{
-"blank":true
-},
-"plot_title":{
-"color":"#333333",
-"face":"bold",
-"size":15.0,
-"hjust":0.0,
-"margin":[0.0,0.0,6.0,0.0],
-"blank":false
-},
-"plot_subtitle":{
-"color":"#6b6b6b",
-"size":12.0,
-"hjust":0.0,
-"margin":[0.0,0.0,18.0,0.0],
-"blank":false
-},
-"plot_caption":{
-"color":"#999999",
-"face":"italic",
-"size":8.0,
-"hjust":1.0,
-"margin":[12.0,0.0,0.0,0.0],
-"blank":false
-},
-"plot_margin":[16.0,16.0,10.0,10.0],
-"strip_background":{
-"blank":true
-},
-"strip_text":{
-"face":"bold",
-"size":10.0,
-"hjust":0.0,
-"blank":false
-}
-},
-"ggsize":{
-"width":600.0,
-"height":280.0
-},
-"kind":"plot",
-"scales":[{
-"aesthetic":"fill",
-"breaks":[true,false],
-"values":["#00BFA5","#cfd8dc"]
-}],
-"layers":[{
-"geom":"bar",
-"stat":"identity",
-"mapping":{
-},
-"show_legend":false,
-"data_meta":{
-},
-"width":0.6,
-"orientation":"y",
-"data":{
-}
-}],
-"metainfo_list":[],
-"spec_id":"1"
-};
-           window.letsPlotCall(function() { fig = LetsPlot.buildPlotFromProcessedSpecs(plotSpec, containerDiv, sizing); });
-       } else {
-           fig.updateView({});
-       }
-   }
-   
-   const renderImmediately = 
-       forceImmediateRender || (
-           sizing.width_mode === 'FIXED' && 
-           (sizing.height_mode === 'FIXED' || sizing.height_mode === 'SCALED')
-       );
-   
-   if (renderImmediately) {
-       renderPlot();
-   }
-   
-   if (!renderImmediately || responsive) {
-       // Set up observer for initial sizing or continuous monitoring
-       var observer = new ResizeObserver(function(entries) {
-           for (let entry of entries) {
-               if (entry.contentBoxSize && 
-                   entry.contentBoxSize[0].inlineSize > 0) {
-                   if (!responsive && observer) {
-                       observer.disconnect();
-                       observer = null;
-                   }
-                   renderPlot();
-                   if (!responsive) {
-                       break;
-                   }
-               }
-           }
-       });
-       
-       observer.observe(containerDiv);
-   }
-   
-   // ----------
-   })();
-   
-   </script></div></div>
 </div>
 </section>
 <section id="timestep-attribution-profile">
@@ -1414,242 +954,6 @@ steps at 30-min resolution).</p>
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html">   <div id="ZVnQkQ" ></div>
-   <script type="text/javascript" data-lets-plot-script="plot">
-   
-   (function() {
-   // ----------
-   
-   const forceImmediateRender = false;
-   const responsive = false;
-   
-   let sizing = {
-       width_mode: "MIN",
-       height_mode: "SCALED",
-       width: null, 
-       height: null 
-   };
-   
-   const preferredWidth = document.body.dataset.letsPlotPreferredWidth;
-   if (preferredWidth !== undefined) {
-       sizing = {
-           width_mode: 'FIXED',
-           height_mode: 'SCALED',
-           width: parseFloat(preferredWidth)
-       };
-   }
-   
-   const containerDiv = document.getElementById("ZVnQkQ");
-   let fig = null;
-   
-   function renderPlot() {
-       if (fig === null) {
-           const plotSpec = {
-"data":{
-"step":[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0,50.0,51.0,52.0,53.0,54.0,55.0,56.0,57.0,58.0,59.0,60.0,61.0,62.0,63.0,64.0,65.0,66.0,67.0,68.0,69.0,70.0,71.0,72.0,73.0,74.0,75.0,76.0,77.0,78.0,79.0,80.0,81.0,82.0,83.0,84.0,85.0,86.0,87.0,88.0,89.0,90.0,91.0,92.0,93.0,94.0,95.0],
-"Mean |SHAP|":[0.0037880659136179246,0.0011132107412574286,0.0014254930555241843,0.0017172560217279982,0.00176946488053743,0.0020513406986509605,0.002127007882537734,0.0019433671042165767,0.002001461676364151,0.0020611699569465123,0.0020605756447210225,0.0021015733228485693,0.0021072057101615004,0.001919880752919133,0.001909199918587027,0.0020349546920556227,0.0021036807320566385,0.002008803943140032,0.0020916489771375638,0.00204398734464738,0.002121700691696559,0.0020017994996117472,0.002175555824028588,0.0019504430485824385,0.002020771116979162,0.0020815020286273234,0.00197275607833178,0.0019412048445126707,0.0019282774635251403,0.0019825674916207447,0.00184566970733548,0.0018177974871281463,0.0016417871966037092,0.001641355844264202,0.001848056471816197,0.001813755246569847,0.0016045539715169525,0.0017388093776092278,0.001752989602492643,0.0015947261174199363,0.001718756865135786,0.0014895311072130857,0.0014408018461683585,0.0013918042348174287,0.0012498091775467845,0.0011404538054262086,0.0010764220295195169,9.23600861494274E-4,6.407396056029071E-4,9.838893057613558E-4,0.0016308213856681812,0.002548510081012931,0.0033218991204204,0.0037076375474443322,0.003918627078885933,0.003597475312283643,0.0040920141804985915,0.003932972842958611,0.0037437456749475546,0.00332090688529202,0.0037227659755218476,0.0033955560872139835,0.0037501972405604178,0.003865180696086556,0.0037597357518274637,0.003476309589220742,0.003723582032236051,0.003700947710557673,0.0036929525086318083,0.003319975037234434,0.003628686888681365,0.003664882633234083,0.003794323123770474,0.0035878739520782935,0.0036804736831609858,0.003921379589032932,0.003788436312729806,0.003909588599258002,0.0036894668243131774,0.0038013382832926363,0.0037298706636977918,0.0039568987598874355,0.003743190894568809,0.0038812906464515905,0.003840902873577931,0.0038409001319969225,0.0037545491813623716,0.0036782082571559763,0.0037918639811782093,0.0037134612691409013,0.003723912372384262,0.0037928846058537646,0.0039046240627134826,0.00411858513978936,0.004390588729614295,0.021694649014208388]
-},
-"mapping":{
-"x":"step",
-"y":"Mean |SHAP|"
-},
-"data_meta":{
-"series_annotations":[{
-"type":"int",
-"column":"step"
-},{
-"type":"float",
-"column":"Mean |SHAP|"
-}]
-},
-"ggtitle":{
-"text":"LightGBM — SHAP Importance by Lookback Position (MLVS-PT)"
-},
-"caption":{
-"text":"Twiga Forecast"
-},
-"guides":{
-"x":{
-"title":"Lookback step (0 = oldest, 95 = most recent)"
-},
-"y":{
-"title":"Mean |SHAP|"
-}
-},
-"theme":{
-"text":{
-"color":"#2d2d2d",
-"family":"Inter, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-"size":10.0,
-"blank":false
-},
-"axis_title_x":{
-"face":"bold",
-"size":11.0,
-"margin":[10.0,0.0,0.0,0.0],
-"blank":false
-},
-"axis_title_y":{
-"face":"bold",
-"size":11.0,
-"margin":[0.0,10.0,0.0,0.0],
-"blank":false
-},
-"axis_text_x":{
-"color":"#666666",
-"angle":0.0,
-"hjust":0.5,
-"margin":[8.0,0.0,0.0,0.0],
-"blank":false
-},
-"axis_text_y":{
-"color":"#666666",
-"margin":[0.0,0.0,0.0,8.0],
-"blank":false
-},
-"axis_ticks":{
-"color":"#bbbbbb",
-"size":0.6000000000000001,
-"blank":false
-},
-"axis_line":{
-"color":"#bbbbbb",
-"size":0.8,
-"blank":false
-},
-"legend_background":{
-"blank":true
-},
-"legend_text":{
-"size":10.0,
-"blank":false
-},
-"legend_title":{
-"face":"bold",
-"size":11.0,
-"blank":false
-},
-"legend_position":"top",
-"legend_spacing":10.0,
-"legend_key":{
-"blank":true
-},
-"panel_background":{
-"blank":true
-},
-"panel_border":{
-"blank":true
-},
-"panel_grid_minor":{
-"blank":true
-},
-"panel_grid_major_x":{
-"blank":true
-},
-"panel_grid_major_y":{
-"color":"#e8e8e8",
-"size":0.4,
-"blank":false
-},
-"plot_background":{
-"blank":true
-},
-"plot_title":{
-"color":"#333333",
-"face":"bold",
-"size":15.0,
-"hjust":0.0,
-"margin":[0.0,0.0,6.0,0.0],
-"blank":false
-},
-"plot_subtitle":{
-"color":"#6b6b6b",
-"size":12.0,
-"hjust":0.0,
-"margin":[0.0,0.0,18.0,0.0],
-"blank":false
-},
-"plot_caption":{
-"color":"#999999",
-"face":"italic",
-"size":8.0,
-"hjust":1.0,
-"margin":[12.0,0.0,0.0,0.0],
-"blank":false
-},
-"plot_margin":[16.0,16.0,10.0,10.0],
-"strip_background":{
-"blank":true
-},
-"strip_text":{
-"face":"bold",
-"size":10.0,
-"hjust":0.0,
-"blank":false
-}
-},
-"ggsize":{
-"width":820.0,
-"height":300.0
-},
-"kind":"plot",
-"scales":[],
-"layers":[{
-"geom":"line",
-"mapping":{
-},
-"data_meta":{
-},
-"color":"#00BFA5",
-"size":1.3,
-"data":{
-}
-}],
-"metainfo_list":[],
-"spec_id":"2"
-};
-           window.letsPlotCall(function() { fig = LetsPlot.buildPlotFromProcessedSpecs(plotSpec, containerDiv, sizing); });
-       } else {
-           fig.updateView({});
-       }
-   }
-   
-   const renderImmediately = 
-       forceImmediateRender || (
-           sizing.width_mode === 'FIXED' && 
-           (sizing.height_mode === 'FIXED' || sizing.height_mode === 'SCALED')
-       );
-   
-   if (renderImmediately) {
-       renderPlot();
-   }
-   
-   if (!renderImmediately || responsive) {
-       // Set up observer for initial sizing or continuous monitoring
-       var observer = new ResizeObserver(function(entries) {
-           for (let entry of entries) {
-               if (entry.contentBoxSize && 
-                   entry.contentBoxSize[0].inlineSize > 0) {
-                   if (!responsive && observer) {
-                       observer.disconnect();
-                       observer = null;
-                   }
-                   renderPlot();
-                   if (!responsive) {
-                       break;
-                   }
-               }
-           }
-       });
-       
-       observer.observe(containerDiv);
-   }
-   
-   // ----------
-   })();
-   
-   </script></div></div>
 </div>
 </section>
 <section id="per-feature-per-timestep-heatmap">
@@ -1689,253 +993,6 @@ Dark columns indicate features the model largely ignores at those timesteps.</p>
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html">   <div id="6bil6W" ></div>
-   <script type="text/javascript" data-lets-plot-script="plot">
-   
-   (function() {
-   // ----------
-   
-   const forceImmediateRender = false;
-   const responsive = false;
-   
-   let sizing = {
-       width_mode: "MIN",
-       height_mode: "SCALED",
-       width: null, 
-       height: null 
-   };
-   
-   const preferredWidth = document.body.dataset.letsPlotPreferredWidth;
-   if (preferredWidth !== undefined) {
-       sizing = {
-           width_mode: 'FIXED',
-           height_mode: 'SCALED',
-           width: parseFloat(preferredWidth)
-       };
-   }
-   
-   const containerDiv = document.getElementById("6bil6W");
-   let fig = null;
-   
-   function renderPlot() {
-       if (fig === null) {
-           const plotSpec = {
-"data":{
-"step":[0.0,0.0,0.0,1.0,1.0,1.0,2.0,2.0,2.0,3.0,3.0,3.0,4.0,4.0,4.0,5.0,5.0,5.0,6.0,6.0,6.0,7.0,7.0,7.0,8.0,8.0,8.0,9.0,9.0,9.0,10.0,10.0,10.0,11.0,11.0,11.0,12.0,12.0,12.0,13.0,13.0,13.0,14.0,14.0,14.0,15.0,15.0,15.0,16.0,16.0,16.0,17.0,17.0,17.0,18.0,18.0,18.0,19.0,19.0,19.0,20.0,20.0,20.0,21.0,21.0,21.0,22.0,22.0,22.0,23.0,23.0,23.0,24.0,24.0,24.0,25.0,25.0,25.0,26.0,26.0,26.0,27.0,27.0,27.0,28.0,28.0,28.0,29.0,29.0,29.0,30.0,30.0,30.0,31.0,31.0,31.0,32.0,32.0,32.0,33.0,33.0,33.0,34.0,34.0,34.0,35.0,35.0,35.0,36.0,36.0,36.0,37.0,37.0,37.0,38.0,38.0,38.0,39.0,39.0,39.0,40.0,40.0,40.0,41.0,41.0,41.0,42.0,42.0,42.0,43.0,43.0,43.0,44.0,44.0,44.0,45.0,45.0,45.0,46.0,46.0,46.0,47.0,47.0,47.0,48.0,48.0,48.0,49.0,49.0,49.0,50.0,50.0,50.0,51.0,51.0,51.0,52.0,52.0,52.0,53.0,53.0,53.0,54.0,54.0,54.0,55.0,55.0,55.0,56.0,56.0,56.0,57.0,57.0,57.0,58.0,58.0,58.0,59.0,59.0,59.0,60.0,60.0,60.0,61.0,61.0,61.0,62.0,62.0,62.0,63.0,63.0,63.0,64.0,64.0,64.0,65.0,65.0,65.0,66.0,66.0,66.0,67.0,67.0,67.0,68.0,68.0,68.0,69.0,69.0,69.0,70.0,70.0,70.0,71.0,71.0,71.0,72.0,72.0,72.0,73.0,73.0,73.0,74.0,74.0,74.0,75.0,75.0,75.0,76.0,76.0,76.0,77.0,77.0,77.0,78.0,78.0,78.0,79.0,79.0,79.0,80.0,80.0,80.0,81.0,81.0,81.0,82.0,82.0,82.0,83.0,83.0,83.0,84.0,84.0,84.0,85.0,85.0,85.0,86.0,86.0,86.0,87.0,87.0,87.0,88.0,88.0,88.0,89.0,89.0,89.0,90.0,90.0,90.0,91.0,91.0,91.0,92.0,92.0,92.0,93.0,93.0,93.0,94.0,94.0,94.0,95.0,95.0,95.0],
-"feature":["NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature","NetLoad(kW)","Ghi","Temperature"],
-"shap":[0.002210362001393754,0.0059004764621790814,0.0032533592772809447,0.0014445425350959038,9.608392905276912E-4,9.342503981486887E-4,0.0022468044261768393,0.0014220345438763196,6.076401965193952E-4,0.0025085965890106585,0.0018713057910795627,7.718656850937778E-4,0.0023738919668423323,0.0021359930144663817,7.985096603035711E-4,0.0023388296863050538,0.0032107882944200096,6.044041152278115E-4,0.002298320426716281,0.0033542142789797155,7.28488941917208E-4,0.0023608599647755605,0.0028548263313940324,6.144150164801316E-4,0.002362730129036116,0.003038962748900883,6.026921511554582E-4,0.0022887798998796264,0.0033054437761501215,5.892861948097937E-4,0.0019360012218898718,0.003562255552138106,6.834701601350908E-4,0.0023555850282083726,0.003353478217896444,5.956567224408898E-4,0.0024774405776677405,0.0033787960123254253,4.6538054049133685E-4,0.0022295468678402005,0.002913921571556716,6.16173819360478E-4,0.002215086699341798,0.002999892416515171,5.126206399041071E-4,0.0023064764211935787,0.0031325738816645886,6.658137733086973E-4,0.002668426689907748,0.002994026879640612,6.485886266215522E-4,0.002256623663605877,0.0030252266063929734,7.44561559421247E-4,0.0025158277155530708,0.0031510233811916605,6.080958346679617E-4,0.0023641723482375147,0.0030093695594398885,7.584201262647365E-4,0.002409154840291057,0.003293223496365165,6.627237384334573E-4,0.0022212233111402126,0.0030876087781854015,6.96566409509624E-4,0.0023599897959861796,0.0034588781702158964,7.077995058836913E-4,0.0022084344484952045,0.0029446236842421464,6.982710130099695E-4,0.0021128200805591146,0.0033086118550571175,6.408814153212575E-4,0.002058088002261,0.0034248763096313335,7.615417739896375E-4,0.002032115736316472,0.003096643758738711,7.895087399401578E-4,0.0021219720560045337,0.0032011319743021,5.005105032313777E-4,0.0019036146047952832,0.003223444939747499,6.577728460326424E-4,0.0019000742827755845,0.0035238058414849534,5.238223506016898E-4,0.001931616347395821,0.0032674509477437046,3.3794182686691437E-4,0.0018200218857474066,0.003202684735422165,4.3068584021486853E-4,0.0018546660675775658,0.002720440956532252,3.5025456570130745E-4,0.0018330026968219567,0.0027235387757802015,3.675260601904454E-4,0.0020294973304559837,0.0031287026031634694,3.8596948182913443E-4,0.0021019883834434714,0.003001431664565703,3.3784569170036347E-4,0.0018918838940206954,0.002403936505229647,5.178415153005172E-4,0.0017565929969793218,0.002967860110500354,4.919750253480074E-4,0.0017367275646889627,0.0030032271277939805,5.190141149949861E-4,0.0016908857186681177,0.002427669998935947,6.656226346557462E-4,0.0015933612499616778,0.0031893377072603375,3.735716381853425E-4,0.0017598812495376271,0.002404818202889402,3.0389386921222814E-4,0.0014430827532590888,0.0024690513334618283,4.102714517841619E-4,0.001692569731966763,0.002224859910336819,2.579830621487044E-4,0.0015787335791973827,0.0018674923355357087,3.0320161790726194E-4,0.0015568913063925592,0.0015216971717482662,3.4277293813780185E-4,0.0014729629665899517,0.0014567841346249685,2.995189873436323E-4,0.0010546232367760104,0.001403015825815101,3.131635218917075E-4,6.198001149665211E-4,9.562329684280522E-4,3.4618573341414863E-4,0.0022891761132774998,2.415617949039356E-4,4.2093000910263235E-4,0.0025145445116581742,0.0019450129234680554,4.3290672187831363E-4,0.002637700351125813,0.004682951827479369,3.2487806443361606E-4,0.00261524430100833,0.007068024895857351,2.824281643955129E-4,0.002740558721716026,0.007988767127227347,3.935867933896214E-4,0.0022682785111849462,0.009127204505402121,3.60398220070733E-4,0.002248796737794988,0.008270754075012425,2.7287512404351304E-4,0.002511790695623596,0.009461407020719905,3.028448251522701E-4,0.0024633642192713073,0.00895555802053863,3.799962890659043E-4,0.002426479321150107,0.008497593257203487,3.0716444648906405E-4,0.002478937753991627,0.007190321836077233,2.934610658071922E-4,0.002370174888461892,0.008460680120222821,3.3744291788083316E-4,0.002493148820036476,0.007330583904987305,3.6293553661817887E-4,0.002692059246580495,0.008254560334179064,3.039721409216991E-4,0.0027225954529617943,0.008575596861999116,2.973497732987564E-4,0.002749586398527886,0.008264142208760322,2.6547864819417415E-4,0.0025803694328702487,0.007515519274214501,3.3304006057747803E-4,0.002727701666708381,0.008100654403410595,3.4239002658916103E-4,0.0025830087188346714,0.008114307478533303,4.0552693430504795E-4,0.0026647549563664466,0.00810496812227936,3.0913444724961806E-4,0.002422261083038269,0.007317140835205811,2.205231934592176E-4,0.002665987525590874,0.007911207937238011,3.0886520321520705E-4,0.002299353848707835,0.008431022679576614,2.642713714178039E-4,0.0024876472004272633,0.00859259548979851,3.0272668108564444E-4,0.0025909712576253096,0.00791975388554881,2.52896713060758E-4,0.0025625155881348425,0.008209504967540466,2.6940049380765464E-4,0.002616895275153193,0.008767299144118073,3.799443478275343E-4,0.0026485525772460125,0.008411090099650591,3.0566626129281454E-4,0.0029496316756641525,0.008440711118755767,3.3842300335409047E-4,0.0027929354177423536,0.008038564017754721,2.3690103744245582E-4,0.002891647985086638,0.008251558816990358,2.6080804780091726E-4,0.0029558868043865704,0.008012201312568535,2.2152387413826356E-4,0.003097627036503202,0.008514490294635193,2.5857894852391293E-4,0.002954953295858669,0.008034478392654872,2.4014099519288268E-4,0.0032451503382104102,0.008192436344108845,2.0628525703551107E-4,0.002949403982370415,0.008033622783686627,5.39681854676747E-4,0.0031636166326656,0.0079685953965219,3.9048836680327073E-4,0.0033161939879332663,0.007505858090290219,4.4159546586362733E-4,0.0030560240461244346,0.007637950252040227,3.4065047330326975E-4,0.003200048964515331,0.00770591819210451,4.6962478691478434E-4,0.0029863932910398658,0.007680550072450255,4.7344044393259234E-4,0.003035380026509578,0.007503844031942564,6.325130587006364E-4,0.0031244835136118635,0.007629678347487085,6.244919564623516E-4,0.0031435242430733574,0.008026134555593688,5.442133894734151E-4,0.0031951061196581233,0.00833734577379638,8.233035259135804E-4,0.0030634897125004644,0.008951908868852039,0.0011563676074903772,0.04592833396796727,0.01571232655150494,0.003443286523153036]
-},
-"mapping":{
-"x":"step",
-"y":"feature",
-"fill":"shap"
-},
-"data_meta":{
-"series_annotations":[{
-"type":"int",
-"column":"step"
-},{
-"type":"str",
-"column":"feature"
-},{
-"type":"float",
-"column":"shap"
-}]
-},
-"ggtitle":{
-"text":"Mean |SHAP| per Feature x Lookback Position"
-},
-"caption":{
-"text":"Twiga Forecast"
-},
-"guides":{
-"x":{
-"title":"Lookback step (0 = oldest, 95 = most recent)"
-},
-"y":{
-"title":"Feature"
-},
-"fill":{
-"title":"Mean |SHAP|"
-}
-},
-"theme":{
-"text":{
-"color":"#2d2d2d",
-"family":"Inter, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-"size":10.0,
-"blank":false
-},
-"axis_title_x":{
-"face":"bold",
-"size":11.0,
-"margin":[10.0,0.0,0.0,0.0],
-"blank":false
-},
-"axis_title_y":{
-"face":"bold",
-"size":11.0,
-"margin":[0.0,10.0,0.0,0.0],
-"blank":false
-},
-"axis_text_x":{
-"color":"#666666",
-"angle":0.0,
-"hjust":0.5,
-"margin":[8.0,0.0,0.0,0.0],
-"blank":false
-},
-"axis_text_y":{
-"color":"#666666",
-"margin":[0.0,0.0,0.0,8.0],
-"blank":false
-},
-"axis_ticks":{
-"color":"#bbbbbb",
-"size":0.6000000000000001,
-"blank":false
-},
-"axis_line":{
-"color":"#bbbbbb",
-"size":0.8,
-"blank":false
-},
-"legend_background":{
-"blank":true
-},
-"legend_text":{
-"size":10.0,
-"blank":false
-},
-"legend_title":{
-"face":"bold",
-"size":11.0,
-"blank":false
-},
-"legend_position":"top",
-"legend_spacing":10.0,
-"legend_key":{
-"blank":true
-},
-"panel_background":{
-"blank":true
-},
-"panel_border":{
-"blank":true
-},
-"panel_grid_minor":{
-"blank":true
-},
-"panel_grid_major_x":{
-"blank":true
-},
-"panel_grid_major_y":{
-"blank":true
-},
-"plot_background":{
-"blank":true
-},
-"plot_title":{
-"color":"#333333",
-"face":"bold",
-"size":15.0,
-"hjust":0.0,
-"margin":[0.0,0.0,6.0,0.0],
-"blank":false
-},
-"plot_subtitle":{
-"color":"#6b6b6b",
-"size":12.0,
-"hjust":0.0,
-"margin":[0.0,0.0,18.0,0.0],
-"blank":false
-},
-"plot_caption":{
-"color":"#999999",
-"face":"italic",
-"size":8.0,
-"hjust":1.0,
-"margin":[12.0,0.0,0.0,0.0],
-"blank":false
-},
-"plot_margin":[16.0,16.0,10.0,10.0],
-"strip_background":{
-"blank":true
-},
-"strip_text":{
-"face":"bold",
-"size":10.0,
-"hjust":0.0,
-"blank":false
-}
-},
-"ggsize":{
-"width":820.0,
-"height":260.0
-},
-"kind":"plot",
-"scales":[{
-"aesthetic":"fill",
-"low":"#e8f5f8",
-"mid":"#0072B2",
-"high":"#D55E00",
-"midpoint":0.0028870404180234375,
-"scale_mapper_kind":"color_gradient2"
-}],
-"layers":[{
-"geom":"tile",
-"mapping":{
-},
-"data_meta":{
-},
-"data":{
-}
-}],
-"metainfo_list":[],
-"spec_id":"3"
-};
-           window.letsPlotCall(function() { fig = LetsPlot.buildPlotFromProcessedSpecs(plotSpec, containerDiv, sizing); });
-       } else {
-           fig.updateView({});
-       }
-   }
-   
-   const renderImmediately = 
-       forceImmediateRender || (
-           sizing.width_mode === 'FIXED' && 
-           (sizing.height_mode === 'FIXED' || sizing.height_mode === 'SCALED')
-       );
-   
-   if (renderImmediately) {
-       renderPlot();
-   }
-   
-   if (!renderImmediately || responsive) {
-       // Set up observer for initial sizing or continuous monitoring
-       var observer = new ResizeObserver(function(entries) {
-           for (let entry of entries) {
-               if (entry.contentBoxSize && 
-                   entry.contentBoxSize[0].inlineSize > 0) {
-                   if (!responsive && observer) {
-                       observer.disconnect();
-                       observer = null;
-                   }
-                   renderPlot();
-                   if (!responsive) {
-                       break;
-                   }
-               }
-           }
-       });
-       
-       observer.observe(containerDiv);
-   }
-   
-   // ----------
-   })();
-   
-   </script></div></div>
 </div>
 </section>
 <section id="using-shapexplainer-directly">
@@ -1957,14 +1014,6 @@ instantiate it directly for more control over background samples and model dispa
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:26 | INFO     | twiga.tutorials | ShapResult values shape : (300, 96, 3)  (B, L, F)
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2026-05-07 07:43:30 | INFO     | twiga.tutorials | Top feature : Ghi
-</pre></div>
-</div>
-</div>
 </div>
 </section>
 <section id="api-summary">
@@ -1974,7 +1023,7 @@ instantiate it directly for more control over background samples and model dispa
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">api_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">&quot;Object / Method&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;DataPipelineConfig(historical_features=[...])&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;DataPipelineConfig(past_features=[...])&quot;</span><span class="p">,</span>
             <span class="s2">&quot;DataPipeline.transform_features(test_df)&quot;</span><span class="p">,</span>
             <span class="s2">&quot;forecaster.explain(X, model_idx=0)&quot;</span><span class="p">,</span>
             <span class="s2">&quot;ShapResult.mean_importance()&quot;</span><span class="p">,</span>
@@ -2007,121 +1056,13 @@ instantiate it directly for more control over background samples and model dispa
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html"><div id="rudsejgkpi" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:100%;height:auto;">
-<style>
-#rudsejgkpi table {
-          font-family: Inter, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-        }
-
-#rudsejgkpi thead, tbody, tfoot, tr, td, th { border-style: none; }
- tr { background-color: transparent; }
-#rudsejgkpi p { margin: 0; padding: 0; }
- #rudsejgkpi .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #2d3748; font-size: 13px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: 100%; border-top-style: solid; border-top-width: 2px; border-top-color: #107591; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #107591; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
- #rudsejgkpi .gt_caption { padding-top: 4px; padding-bottom: 4px; }
- #rudsejgkpi .gt_title { color: #2d3748; font-size: 16px; font-weight: bold; padding-top: 10px; padding-bottom: 10px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
- #rudsejgkpi .gt_subtitle { color: #2d3748; font-size: 13px; font-weight: initial; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
- #rudsejgkpi .gt_heading { background-color: #ffffff; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #rudsejgkpi .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
- #rudsejgkpi .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #rudsejgkpi .gt_col_heading { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
- #rudsejgkpi .gt_column_spanner_outer { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
- #rudsejgkpi .gt_column_spanner_outer:first-child { padding-left: 0; }
- #rudsejgkpi .gt_column_spanner_outer:last-child { padding-right: 0; }
- #rudsejgkpi .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; vertical-align: bottom; padding-top: 9px; padding-bottom: 9px; overflow-x: hidden; display: inline-block; width: 100%; }
- #rudsejgkpi .gt_spanner_row { border-bottom-style: hidden; }
- #rudsejgkpi .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }
- #rudsejgkpi .gt_empty_group_heading { padding: 0.5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }
- #rudsejgkpi .gt_from_md> :first-child { margin-top: 0; }
- #rudsejgkpi .gt_from_md> :last-child { margin-bottom: 0; }
- #rudsejgkpi .gt_row { padding-top: 7px; padding-bottom: 7px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }
- #rudsejgkpi .gt_stub { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
- #rudsejgkpi .gt_stub_row_group { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
- #rudsejgkpi .gt_row_group_first td { border-top-width: 2px; }
- #rudsejgkpi .gt_row_group_first th { border-top-width: 2px; }
- #rudsejgkpi .gt_striped { color: #2d3748; background-color: #F4F4F4; }
- #rudsejgkpi .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #e8e8e8; }
- #rudsejgkpi .gt_grand_summary_row { color: #2d3748; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }
- #rudsejgkpi .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }
- #rudsejgkpi .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }
- #rudsejgkpi .gt_sourcenotes { color: #2d3748; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
- #rudsejgkpi .gt_sourcenote { font-size: 11px; padding-top: 6px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; text-align: left; }
- #rudsejgkpi .gt_left { text-align: left; }
- #rudsejgkpi .gt_center { text-align: center; }
- #rudsejgkpi .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
- #rudsejgkpi .gt_font_normal { font-weight: normal; }
- #rudsejgkpi .gt_font_bold { font-weight: bold; }
- #rudsejgkpi .gt_font_italic { font-style: italic; }
- #rudsejgkpi .gt_super { font-size: 65%; }
- #rudsejgkpi .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
- #rudsejgkpi .gt_asterisk { font-size: 100%; vertical-align: 0; }
- 
-</style>
-<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
-<thead>
-
-  <tr class="gt_heading">
-    <td colspan="2" class="gt_heading gt_title gt_font_normal" style="color: #333333;font-weight: bold;"><strong>Tutorial 16 — API Quick Reference</strong></td>
-  </tr>
-  <tr class="gt_heading">
-    <td colspan="2" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style="color: #718096;">SHAP feature attribution objects and methods</td>
-  </tr>
-<tr class="gt_col_headings">
-  <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="Object-/-Method"><strong>Object / Method</strong></th>
-  <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="color: #ffffff;" scope="col" id="What-it-does"><strong>What it does</strong></th>
-</tr>
-</thead>
-<tbody class="gt_table_body">
-  <tr>
-    <td class="gt_row gt_left">DataPipelineConfig(historical_features=[...])</td>
-    <td class="gt_row gt_left">Declares features as past-only — keeps model input shape (B, L, F) with no future inflation</td>
-  </tr>
-  <tr>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">DataPipeline.transform_features(test_df)</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">Returns the (B, L, F) feature array the model sees at predict time</td>
-  </tr>
-  <tr>
-    <td class="gt_row gt_left">forecaster.explain(X, model_idx=0)</td>
-    <td class="gt_row gt_left">Builds ShapExplainer, runs TreeExplainer for LightGBM, returns ShapResult averaged over horizon</td>
-  </tr>
-  <tr>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">ShapResult.mean_importance()</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">Returns features ranked by mean |SHAP| averaged over B and L</td>
-  </tr>
-  <tr>
-    <td class="gt_row gt_left">ShapResult.timestep_importance()</td>
-    <td class="gt_row gt_left">Returns timestep labels ranked by mean |SHAP| averaged over B and F</td>
-  </tr>
-  <tr>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">ShapResult.values</td>
-    <td style="background-color: #f7fbfc;" class="gt_row gt_left">Raw SHAP array of shape (B, L, F) — use for custom heatmaps or aggregations</td>
-  </tr>
-  <tr>
-    <td class="gt_row gt_left">ShapExplainer(model, data_pipeline)</td>
-    <td class="gt_row gt_left">Low-level explainer with full control over n_background and model dispatch</td>
-  </tr>
-</tbody>
-  <tfoot class="gt_sourcenotes">
-  
-  <tr>
-    <td class="gt_sourcenote" colspan="2" style="color: #718096;font-style: italic;">Twiga Forecast · twiga.core.explain</td>
-  </tr>
-
-</tfoot>
-
-</table>
-
-</div>
-        </div></div>
 </div>
 </section>
 <section id="wrapping-up">
 <h2>Wrapping up<a class="headerlink" href="#wrapping-up" title="Link to this heading">#</a></h2>
 <p><strong>What you did</strong></p>
 <ul class="contains-task-list simple">
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Trained a LightGBM forecaster on MLVS-PT with <code class="docutils literal notranslate"><span class="pre">historical_features=[&quot;Ghi&quot;,</span> <span class="pre">&quot;Temperature&quot;]</span></code></p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Trained a LightGBM forecaster on MLVS-PT with <code class="docutils literal notranslate"><span class="pre">past_features=[&quot;Ghi&quot;,</span> <span class="pre">&quot;Temperature&quot;]</span></code></p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Extracted the 3-D test features <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code> from <code class="docutils literal notranslate"><span class="pre">DataPipeline.transform_features()</span></code></p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Computed SHAP values with <code class="docutils literal notranslate"><span class="pre">forecaster.explain()</span></code> using TreeExplainer (fast, exact)</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Ranked features by mean <code class="docutils literal notranslate"><span class="pre">|SHAP|</span></code> and plotted the importance bar chart with <code class="docutils literal notranslate"><span class="pre">plot_metrics_bar</span></code></p></li>
@@ -2131,7 +1072,7 @@ instantiate it directly for more control over background samples and model dispa
 </ul>
 <p><strong>Key takeaways</strong></p>
 <ol class="arabic simple">
-<li><p>Use <code class="docutils literal notranslate"><span class="pre">historical_features</span></code> (not <code class="docutils literal notranslate"><span class="pre">exogenous_features</span></code>) for SHAP - this keeps the model input a clean <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code> array without future covariate steps appended.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">past_features</span></code> (not <code class="docutils literal notranslate"><span class="pre">known_future_features</span></code>) for SHAP - this keeps the model input a clean <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code> array without future covariate steps appended.</p></li>
 <li><p>SHAP values live in <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">L,</span> <span class="pre">F)</span></code> space - one attribution per sample, lookback step, and feature.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">TreeExplainer</span></code> is exact and fast for tree models - always prefer it over <code class="docutils literal notranslate"><span class="pre">KernelExplainer</span></code> when available.</p></li>
 <li><p>Mean |SHAP| uses absolute values to prevent positive and negative attributions from cancelling out.</p></li>
@@ -2227,8 +1168,6 @@ instantiate it directly for more control over background samples and model dispa
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output text_html"><div style="font-family:Inter,'Segoe UI',sans-serif;max-width:640px;margin:8px 0;"><div style="background:linear-gradient(135deg,#107591 0%,#069fac 100%);border-radius:12px 12px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span style="color:#ffffff;font-size:14px;font-weight:700;">Twiga Learning Path — Advanced Track</span></div><div style="border:2px solid #e8f5f8;border-top:none;border-radius:0 0 12px 12px;padding:20px 20px 16px;background:#f9fdfe;display:flex;flex-direction:column;"><div style="background:#ffffff;border:2px solid #d1ecf1;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div style="min-width:44px;height:44px;background:#e8f5f8;color:#107591;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">05</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:#2d3748;margin-bottom:4px;">ML Point Forecasting</div><div style="font-size:12.5px;color:#718096;margin-bottom:8px;line-height:1.5;">CatBoost · XGBoost · LightGBM — point forecasts</div><div><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">catboost</span><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">xgboost</span></div></div></div><div style="display:flex;justify-content:center;height:32px;"><svg width="24" height="32" viewBox="0 0 24 32" fill="none"><line x1="12" y1="0" x2="12" y2="24" stroke="#069fac" stroke-width="2" stroke-dasharray="4 3"/><polygon points="6,20 18,20 12,30" fill="#069fac"/></svg></div><div style="background:#ffffff;border:2px solid #d1ecf1;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div style="min-width:44px;height:44px;background:#e8f5f8;color:#107591;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">11</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:#2d3748;margin-bottom:4px;">Hyperparameter Tuning</div><div style="font-size:12.5px;color:#718096;margin-bottom:8px;line-height:1.5;">Optuna TPE · search spaces · resumable SQLite</div><div><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">optuna</span><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">HPO</span></div></div></div><div style="display:flex;justify-content:center;height:32px;"><svg width="24" height="32" viewBox="0 0 24 32" fill="none"><line x1="12" y1="0" x2="12" y2="24" stroke="#069fac" stroke-width="2" stroke-dasharray="4 3"/><polygon points="6,20 18,20 12,30" fill="#069fac"/></svg></div><div style="background:#ffffff;border:2px solid #d1ecf1;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div style="min-width:44px;height:44px;background:#e8f5f8;color:#107591;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">12</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:#2d3748;margin-bottom:4px;">Ensemble Strategies</div><div style="font-size:12.5px;color:#718096;margin-bottom:8px;line-height:1.5;">Mean · median · weighted-mean ensembles</div><div><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">ensemble</span><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">weighted</span></div></div></div><div style="display:flex;justify-content:center;height:32px;"><svg width="24" height="32" viewBox="0 0 24 32" fill="none"><line x1="12" y1="0" x2="12" y2="24" stroke="#069fac" stroke-width="2" stroke-dasharray="4 3"/><polygon points="6,20 18,20 12,30" fill="#069fac"/></svg></div><div style="background:#ffffff;border:2px solid #d1ecf1;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);"><div style="min-width:44px;height:44px;background:#e8f5f8;color:#107591;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">14</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:#2d3748;margin-bottom:4px;">Typed Forecast Results</div><div style="font-size:12.5px;color:#718096;margin-bottom:8px;line-height:1.5;">ForecastResult · ForecastCollection · typed dispatch</div><div><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">typed</span><span style="display:inline-block;background:#d0ecf1;color:#107591;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">ForecastResult</span></div></div></div><div style="display:flex;justify-content:center;height:32px;"><svg width="24" height="32" viewBox="0 0 24 32" fill="none"><line x1="12" y1="0" x2="12" y2="24" stroke="#069fac" stroke-width="2" stroke-dasharray="4 3"/><polygon points="6,20 18,20 12,30" fill="#069fac"/></svg></div><div style="background:#107591;border:2px solid #107591;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 4px 14px rgba(16,117,145,.25);"><div style="min-width:44px;height:44px;background:#069fac;color:#ffffff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">16</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:#ffffff;margin-bottom:4px;">SHAP Feature Attribution<span style="float:right;background:#069fac;color:#ffffff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:12px;">★ you are here</span></div><div style="font-size:12.5px;color:#cce8ef;margin-bottom:8px;line-height:1.5;">TreeExplainer · feature ranking · timestep attribution heatmap</div><div><span style="display:inline-block;background:#0d5f75;color:#b8e4ed;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">SHAP</span><span style="display:inline-block;background:#0d5f75;color:#b8e4ed;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">explainability</span><span style="display:inline-block;background:#0d5f75;color:#b8e4ed;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin:2px 2px 0 0;">attribution</span></div></div></div><div style="margin-top:16px;font-size:11.5px;color:#718096;text-align:center;border-top:1px solid #e8f5f8;padding-top:12px;">You have reached the end of the Advanced Track. Consider contributing a custom model (13) or exploring the Twiga API reference.</div></div></div></div></div>
 </div>
 </section>
 </section>

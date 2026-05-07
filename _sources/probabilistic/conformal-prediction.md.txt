@@ -102,10 +102,18 @@ Conformal prediction is configured via [`ConformalConfig`](../core/config.md):
 ```python
 from twiga.core.config import ConformalConfig
 
+# Via alpha (significance level):
 config = ConformalConfig(
     method="residual",       # "residual", "quantile", "residual-fitting"
     score_type="res",        # method-dependent (see table below)
     alpha=0.1,               # significance level (0 < alpha < 1)
+)
+
+# Via coverage probability (convenience classmethod):
+config = ConformalConfig.from_coverage(
+    coverage=0.9,            # 90 % target coverage → alpha = 0.1
+    method="residual",
+    score_type="res",
 )
 ```
 
@@ -114,6 +122,8 @@ config = ConformalConfig(
 | `method` | `Literal["residual", "quantile", "residual-fitting"]` | Required | Conformal prediction method |
 | `score_type` | `Literal["scaled", "unscaled", "res", "sign-res"]` | Required | Non-conformity score type |
 | `alpha` | `float` | `0 < alpha < 1` | Significance level ($1-\alpha$ = target coverage) |
+
+`ConformalConfig.from_coverage(coverage, **kwargs)` is a convenience factory that converts a coverage probability to `alpha = 1 - coverage` and forwards any remaining keyword arguments to the constructor.
 
 ### Valid Score Types per Method
 
@@ -212,7 +222,7 @@ The [`TwigaForecaster`](../core/forecaster.md) manages conformal prediction end-
 
 ```python
 from twiga.core.config import (
-    ConformalConfig, DataPipelineConfig, ForecasterConfig,
+    ConformalConfig, DataPipelineConfig, ExperimentConfig,
 )
 from twiga.forecaster.core import TwigaForecaster
 from twiga.models.ml.xgboost_model import XGBOOSTConfig
@@ -227,7 +237,7 @@ conformal_config = ConformalConfig(
 forecaster = TwigaForecaster(
     data_params=data_config,
     model_params=[XGBOOSTConfig()],
-    train_params=train_config,
+    cv_params=train_config,
     conformal_params=conformal_config,
 )
 

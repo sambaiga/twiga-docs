@@ -72,7 +72,6 @@
     "from lets_plot import LetsPlot, gggrid, ggsize\n",
     "import numpy as np\n",
     "import pandas as pd\n",
-    "from sklearn.preprocessing import RobustScaler, StandardScaler\n",
     "\n",
     "LetsPlot.setup_html()\n",
     "\n",
@@ -646,7 +645,7 @@
     "## 6. Connecting to `DataPipelineConfig`\n",
     "\n",
     "`DataPipelineConfig` is a **Pydantic model** that acts as the single source of truth for everything the pipeline needs to know.  \n",
-    "The selected features from Section 4 plug directly into `historical_features`."
+    "The selected features from Section 4 plug directly into `past_features`."
    ]
   },
   {
@@ -680,7 +679,7 @@
     "#     → AutoregressTransformer runs internally; pass raw DataFrames to fit/predict\n",
     "#\n",
     "#   Option B — pre-compute externally and name the columns:\n",
-    "#     historical_features=[\"lag_48\", \"lag_336\", ...]\n",
+    "#     past_features=[\"lag_48\", \"lag_336\", ...]\n",
     "#     → you must pass the enriched DataFrame (with those columns) everywhere\n",
     "#\n",
     "# For TwigaForecaster (the standard path) always use Option A.\n",
@@ -690,14 +689,14 @@
     "    latitude=32.371666,\n",
     "    longitude=-16.274998,\n",
     "    calendar_features=[\"hour\", \"day_night\"],\n",
-    "    exogenous_features=[\"Ghi\"],\n",
+    "    known_future_features=[\"Ghi\"],\n",
     "    lags=[1, 7, 48],  # pipeline computes lag_48, lag_336, lag_2304\n",
     "    windows=[1, 7],  # rolling windows of 48 and 336 steps\n",
     "    window_funcs=[\"mean\"],\n",
     "    forecast_horizon=48,\n",
     "    lookback_window_size=96,\n",
-    "    input_scaler=RobustScaler(),\n",
-    "    target_scaler=RobustScaler(),\n",
+    "    input_scaler=\"robust\",\n",
+    "    target_scaler=\"robust\",\n",
     ")\n",
     "\n",
     "log.info(\"\\n%s\", data_config.model_dump(exclude={\"input_scaler\", \"target_scaler\"}))"
@@ -717,8 +716,8 @@
     "log.info(f\"  Horizon       : {data_config.forecast_horizon} steps\")\n",
     "log.info(f\"  Lookback      : {data_config.lookback_window_size} steps\")\n",
     "log.info(f\"  Calendar feats: {data_config.calendar_features}\")\n",
-    "log.info(f\"  Exogenous     : {data_config.exogenous_features}\")\n",
-    "log.info(f\"  Historical    : {data_config.historical_features}\")\n",
+    "log.info(f\"  Exogenous     : {data_config.known_future_features}\")\n",
+    "log.info(f\"  Historical    : {data_config.past_features}\")\n",
     "log.info(f\"  Input scaler  : {type(data_config.input_scaler).__name__}\")\n",
     "log.info(f\"  Target scaler : {type(data_config.target_scaler).__name__}\")"
    ]
@@ -789,7 +788,7 @@
     "    latitude=data_config.latitude,\n",
     "    longitude=data_config.longitude,\n",
     "    calendar_features=data_config.calendar_features,\n",
-    "    exogenous_features=data_config.exogenous_features,\n",
+    "    known_future_features=data_config.known_future_features,\n",
     "    lags=data_config.lags,\n",
     "    windows=data_config.windows,\n",
     "    window_funcs=data_config.window_funcs,\n",
@@ -966,7 +965,7 @@
     "        \"Config parameter\": [\n",
     "            \"`calendar_features`, `latitude`, `longitude`\",\n",
     "            \"`lags`, `windows`, `window_funcs`\",\n",
-    "            \"`historical_features`\",\n",
+    "            \"`past_features`\",\n",
     "            \"Apply before passing to pipeline\",\n",
     "            \"`DataPipelineConfig` fields\",\n",
     "        ],\n",

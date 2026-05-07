@@ -1035,6 +1035,7 @@ window.runMermaid = runMermaid;</script>
 <summary>Source Files</summary>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/config/base.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/config/data.py</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/base.py</span></code></p></li>
 </ul>
 </details>
@@ -1051,10 +1052,14 @@ window.runMermaid = runMermaid;</script>
     F --&gt; G[model.update trial]
     G --&gt; H[BaseSearchSpace.get_optuna_params]
     H --&gt; I[suggest_int / suggest_float / suggest_categorical]
+    F --&gt; P[_update_pipeline_for_trial]
+    P --&gt; Q[DataPipelineConfig.search_space.get_optuna_params]
+    Q --&gt; R[Rebuild DataPipeline with sampled scalers]
     F --&gt; J[_fit + _evaluate]
     J --&gt; K[Return MAE cost]
     E --&gt; L[study.best_trial.params]
     L --&gt; M[Update model config]
+    L --&gt; N[Apply best pipeline params to data_config]
     </pre></section>
 <section id="search-spaces">
 <h2>Search Spaces<a class="headerlink" href="#search-spaces" title="Link to this heading">#</a></h2>
@@ -1160,6 +1165,43 @@ window.runMermaid = runMermaid;</script>
 </pre></div>
 </div>
 </section>
+</section>
+<section id="pipeline-search-space">
+<h3>Pipeline Search Space<a class="headerlink" href="#pipeline-search-space" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> also accepts a <code class="docutils literal notranslate"><span class="pre">search_space</span></code> field, letting Optuna co-optimise <strong>data preprocessing</strong> (scalers) alongside model hyperparameters in a single study. The sampled scaler values are prefixed with <code class="docutils literal notranslate"><span class="pre">&quot;pipeline_&quot;</span></code> in the Optuna trial to avoid clashing with model parameter names.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSearchSpace</span><span class="p">,</span> <span class="n">DataPipelineConfig</span>
+
+<span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;load_mw&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;1h&quot;</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">168</span><span class="p">,</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="o">=</span><span class="n">BaseSearchSpace</span><span class="p">(</span>
+        <span class="n">input_scaler</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;robust&quot;</span><span class="p">,</span> <span class="s2">&quot;minmax&quot;</span><span class="p">],</span>
+        <span class="n">target_scaler</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;robust&quot;</span><span class="p">],</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>How it works:</strong></p>
+<ol class="arabic simple">
+<li><p>At the start of each Optuna trial, <code class="docutils literal notranslate"><span class="pre">_update_pipeline_for_trial</span></code> samples the pipeline search space with <code class="docutils literal notranslate"><span class="pre">prefix=&quot;pipeline&quot;</span></code> — producing keys like <code class="docutils literal notranslate"><span class="pre">&quot;pipeline_input_scaler&quot;</span></code>.</p></li>
+<li><p>A new <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> is constructed from the sampled config for that trial.</p></li>
+<li><p>After the study completes, the best pipeline parameters are stripped of the <code class="docutils literal notranslate"><span class="pre">&quot;pipeline_&quot;</span></code> prefix and applied permanently to <code class="docutils literal notranslate"><span class="pre">data_config</span></code>. Only model params (no <code class="docutils literal notranslate"><span class="pre">pipeline_</span></code> prefix) are returned from <code class="docutils literal notranslate"><span class="pre">tune()</span></code>.</p></li>
+<li><p>The original <code class="docutils literal notranslate"><span class="pre">data_config</span></code> is restored after every trial via a <code class="docutils literal notranslate"><span class="pre">try/finally</span></code> guard, so trial mutations never leak between trials.</p></li>
+</ol>
+<p><strong>Validation</strong> — unknown field names in <code class="docutils literal notranslate"><span class="pre">search_space</span></code> raise a <code class="docutils literal notranslate"><span class="pre">ValidationError</span></code> at construction time, catching typos before tuning starts:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Raises ValidationError: &quot;unknown fields: {&#39;typo_scaler&#39;}&quot;</span>
+<span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="o">=</span><span class="n">BaseSearchSpace</span><span class="p">(</span><span class="n">typo_scaler</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;standard&quot;</span><span class="p">]),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="note admonition">
+<p class="admonition-title">Supported pipeline search space fields</p>
+<p>Only <code class="docutils literal notranslate"><span class="pre">input_scaler</span></code> and <code class="docutils literal notranslate"><span class="pre">target_scaler</span></code> are currently tunable via the pipeline search space. Both accept lists of <a class="reference internal" href="../core/config.html#datapipelineconfig"><span class="std std-ref"><code class="docutils literal notranslate"><span class="pre">ScalerType</span></code></span></a> string identifiers.</p>
+</div>
 </section>
 </section>
 <section id="the-tuning-process">
@@ -1267,9 +1309,10 @@ window.runMermaid = runMermaid;</script>
 <h3>Objective Function<a class="headerlink" href="#objective-function" title="Link to this heading">#</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">_objective_fn</span></code> per trial:</p>
 <ol class="arabic simple">
-<li><p>Calls <code class="docutils literal notranslate"><span class="pre">model.update(trial)</span></code>  -  uses <code class="docutils literal notranslate"><span class="pre">BaseSearchSpace.get_optuna_params()</span></code> to suggest values</p></li>
-<li><p>Calls <code class="docutils literal notranslate"><span class="pre">_fit(train_df,</span> <span class="pre">val_df,</span> <span class="pre">trial)</span></code>  -  trains the model</p></li>
-<li><p>Calls <code class="docutils literal notranslate"><span class="pre">_evaluate(val_df)</span></code>  -  computes validation metrics</p></li>
+<li><p>Calls <code class="docutils literal notranslate"><span class="pre">model.update(trial)</span></code> — uses <code class="docutils literal notranslate"><span class="pre">BaseSearchSpace.get_optuna_params()</span></code> to suggest model values</p></li>
+<li><p>Calls <code class="docutils literal notranslate"><span class="pre">_update_pipeline_for_trial(trial)</span></code> — if <code class="docutils literal notranslate"><span class="pre">data_config.search_space</span></code> is set, samples scaler choices and rebuilds <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code> for this trial</p></li>
+<li><p>Calls <code class="docutils literal notranslate"><span class="pre">_fit(train_df,</span> <span class="pre">val_df,</span> <span class="pre">trial)</span></code> — trains the model</p></li>
+<li><p>Calls <code class="docutils literal notranslate"><span class="pre">_evaluate(val_df)</span></code> — computes validation metrics</p></li>
 <li><p>Returns <code class="docutils literal notranslate"><span class="pre">mean(MAE)</span></code> as the cost to minimize</p></li>
 <li><p>Sets user attributes: <code class="docutils literal notranslate"><span class="pre">rmse</span></code> and <code class="docutils literal notranslate"><span class="pre">std_dev</span></code> for dashboard visualization</p></li>
 </ol>
@@ -1286,26 +1329,30 @@ window.runMermaid = runMermaid;</script>
 </section>
 <section id="full-example">
 <h2>Full Example<a class="headerlink" href="#full-example" title="Link to this heading">#</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ForecasterConfig</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSearchSpace</span><span class="p">,</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml.xgboost_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">XGBOOSTConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.mlpf_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFConfig</span>
 
-<span class="c1"># Configure</span>
+<span class="c1"># Data pipeline config with pipeline search space — scalers are tuned alongside model params</span>
 <span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
     <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;load_mw&quot;</span><span class="p">,</span>
     <span class="n">period</span><span class="o">=</span><span class="s2">&quot;1h&quot;</span><span class="p">,</span>
     <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">168</span><span class="p">,</span>
     <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="o">=</span><span class="n">BaseSearchSpace</span><span class="p">(</span>
+        <span class="n">input_scaler</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;robust&quot;</span><span class="p">,</span> <span class="s2">&quot;minmax&quot;</span><span class="p">],</span>
+        <span class="n">target_scaler</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;robust&quot;</span><span class="p">],</span>
+    <span class="p">),</span>
 <span class="p">)</span>
 
-<span class="n">train_config</span> <span class="o">=</span> <span class="n">ForecasterConfig</span><span class="p">(</span>
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
     <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;days&quot;</span><span class="p">,</span>
     <span class="n">train_size</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
     <span class="n">test_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="c1"># Custom search space</span>
+<span class="c1"># Model search space (tuned in the same study as the pipeline)</span>
 <span class="n">xgb_config</span> <span class="o">=</span> <span class="n">XGBOOSTConfig</span><span class="p">(</span>
     <span class="n">search_space</span><span class="o">=</span><span class="n">BaseSearchSpace</span><span class="p">(</span>
         <span class="n">learning_rate</span><span class="o">=</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
@@ -1319,10 +1366,10 @@ window.runMermaid = runMermaid;</script>
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
     <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">xgb_config</span><span class="p">,</span> <span class="n">mlpf_config</span><span class="p">],</span>
-    <span class="n">train_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="c1"># Tune all models</span>
+<span class="c1"># tune() co-optimises model hyperparameters + pipeline scalers in a single study</span>
 <span class="n">forecaster</span><span class="o">.</span><span class="n">tune</span><span class="p">(</span>
     <span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span>
     <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">,</span>
@@ -1330,6 +1377,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">patience</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
 <span class="p">)</span>
 
+<span class="c1"># After tune(), data_config is updated with the best scaler combination</span>
 <span class="c1"># Fit with tuned parameters</span>
 <span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="o">=</span><span class="n">val_df</span><span class="p">)</span>
 
@@ -1515,6 +1563,7 @@ valid parameter names.</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#mlpf-mlpgam-neural-models">MLPF / MLPGAM / Neural Models</a></li>
 </ul>
 </li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-search-space">Pipeline Search Space</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-tuning-process">The Tuning Process</a><ul class="nav section-nav flex-column">

@@ -25,7 +25,7 @@
     "By the end of this notebook you will be able to:\n",
     "\n",
     "1. Load and inspect a time series dataset for Twiga\n",
-    "2. Explain the purpose of each of the three config objects (`DataPipelineConfig`, `ForecasterConfig`, model config)\n",
+    "2. Explain the purpose of each of the three config objects (`DataPipelineConfig`, `ExperimentConfig`, model config)\n",
     "3. Train a LightGBM forecaster with `TwigaForecaster.fit()`\n",
     "4. Evaluate and interpret point-forecast metrics (MAE, RMSE, Correlation)\n",
     "5. Visualise actuals vs. predictions with `plot_forecast_grid()`\n",
@@ -102,12 +102,11 @@
     "from IPython.display import clear_output\n",
     "from lets_plot import LetsPlot\n",
     "import pandas as pd\n",
-    "from sklearn.preprocessing import RobustScaler, StandardScaler\n",
     "\n",
     "LetsPlot.setup_html()\n",
     "\n",
     "from twiga import TwigaForecaster\n",
-    "from twiga.core.config import DataPipelineConfig, ForecasterConfig\n",
+    "from twiga.core.config import DataPipelineConfig, ExperimentConfig\n",
     "from twiga.core.plot import (\n",
     "    dual_line_plot,\n",
     "    plot_density,\n",
@@ -332,32 +331,10 @@
    "id": "13",
    "metadata": {},
    "source": [
-    "## 2. Configure the data pipeline\n",
+    "## 2. Fastest Path: `TwigaForecaster.quick()`\n",
     "\n",
-    "`DataPipelineConfig` describes **what** you want to forecast and **how** to build the\n",
-    "input features.  Think of it as a blueprint - no data is touched until you call `fit()`.\n",
-    "\n",
-    "It needs three groups of settings:\n",
-    "\n",
-    "**① Problem definition** - which column is the target, how often is data recorded,\n",
-    "and where is the sensor located (latitude/longitude are used to compute solar angles).\n",
-    "\n",
-    "**② Feature engineering** - what extra signals to create automatically:\n",
-    "- `calendar_features` - time-of-day (`\"hour\"`), day/night flag (`\"day_night\"`), etc.\n",
-    "- `exogenous_features` - columns already in your DataFrame that the model can use as inputs.\n",
-    "\n",
-    "**③ Sequence lengths** - how many past steps to feed the model (`lookback_window_size`)\n",
-    "and how many future steps to predict (`forecast_horizon`).\n",
-    "\n",
-    "> **Concrete time interpretation at 30-min resolution**\n",
-    ">\n",
-    "> | Parameter | Value | Real time |\n",
-    "> |-----------|-------|-----------|\n",
-    "> | `lookback_window_size` | 96 | 48 hours of history |\n",
-    "> | `forecast_horizon` | 48 | 24 hours ahead |\n",
-    "\n",
-    "Finally, `input_scaler` normalises the features (zero mean, unit variance) and\n",
-    "`target_scaler` normalises the target - both are inverted automatically at predict time."
+    "Before diving into the full configuration API, here is the fastest way to get a forecast:\n",
+    "`TwigaForecaster.quick()` accepts only the essential parameters and builds everything for you."
    ]
   },
   {
@@ -367,54 +344,43 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "data_config = DataPipelineConfig(\n",
-    "    # 1. Problem definition\n",
-    "    target_feature=\"NetLoad(kW)\",\n",
+    "# One-liner forecaster: specify only what matters\n",
+    "quick_forecaster = TwigaForecaster.quick(\n",
+    "    target=\"NetLoad(kW)\",\n",
     "    period=\"30min\",\n",
-    "    latitude=32.371666,\n",
-    "    longitude=-16.274998,\n",
-    "    # 2. Feature engineering\n",
-    "    calendar_features=[\"hour\", \"day_night\"],\n",
-    "    exogenous_features=[\"Ghi\"],\n",
-    "    # 3. Sequence lengths  (48 steps = 24 h at 30-min resolution)\n",
-    "    forecast_horizon=48,\n",
-    "    lookback_window_size=96,\n",
-    "    stride=48,\n",
-    "    # Scalers\n",
-    "    input_scaler=StandardScaler(),\n",
-    "    target_scaler=RobustScaler(),\n",
+    "    horizon=48,\n",
+    "    model=\"lightgbm\",\n",
+    "    calendar=[\"hour\"],  # day_night requires lat/lon; use DataPipelineConfig for that\n",
+    "    scaler=\"standard\",\n",
     ")\n",
     "\n",
-    "data_config.model_dump()"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "15",
-   "metadata": {},
-   "source": [
-    "## 3. Configure training\n",
-    "\n",
-    "The `ForecasterConfig` serves as the Project Manifest and Validation Orchestrator. It fulfills two critical roles:\n",
-    "\n",
-    "1. Global Project Identity: It establishes the `project_name`, which acts as a unique reference key. This is essential for:\n",
-    "\n",
-    "- Reproducibility: Ensuring that experiments are tracked under a consistent ID.\n",
-    "- Storage: Directing where checkpoints_path and logs are saved.\n",
-    "- Metadata: Mapping the date_column (e.g., 'timestamp') so the internal engine knows exactly which dimension represents time.\n",
-    "\n",
-    "2. Backtesting Strategy: As we will explore in Tutorial 06, the core of this configuration defines the Backtesting (Time-Based Cross-Validation) geometry. Parameters like `window`, `split_freq`, and `test_size` determine how the model \"walks forward\" through history to simulate real-world deployment.\n",
-    "\n"
+    "quick_forecaster.fit(train_df=train_df, val_df=val_df)"
    ]
   },
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "16",
+   "id": "15",
    "metadata": {},
    "outputs": [],
    "source": [
-    "forecaster_config = ForecasterConfig(proproject_name=\"Getting Started Tutorial\")"
+    "quick_pred, quick_metric = quick_forecaster.evaluate_point_forecast(\n",
+    "    test_df=test_df,\n",
+    "    ensemble_strategy=\"mean\",\n",
+    ")\n",
+    "quick_metric.groupby(\"Model\")[[\"mae\", \"rmse\", \"corr\"]].mean().round(3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "16",
+   "metadata": {},
+   "source": [
+    "## 3. Full Control: `TwigaForecaster(...)`\n",
+    "\n",
+    "The `quick()` factory is great for exploration.\n",
+    "When you need precise control over feature engineering, cross-validation, and model hyperparameters,\n",
+    "use the full constructor instead."
    ]
   },
   {
@@ -422,22 +388,16 @@
    "id": "17",
    "metadata": {},
    "source": [
-    "## 4. Choose a model\n",
+    "### 3.1 Configure the data pipeline\n",
     "\n",
-    "> **What is LightGBM?**\n",
-    ">\n",
-    "> LightGBM is a gradient-boosted decision tree library developed by Microsoft.\n",
-    "> It builds an ensemble of shallow trees where each new tree corrects the errors of\n",
-    "> the previous ones.  It is fast, memory-efficient, handles missing values natively,\n",
-    "> and typically outperforms deep learning on tabular / feature-engineered inputs - \n",
-    "> making it an excellent first choice for time series forecasting on small to\n",
-    "> medium datasets.\n",
+    "`DataPipelineConfig` describes **what** you want to forecast and **how** to engineer features.\n",
+    "Key parameters:\n",
     "\n",
-    "`LIGHTGBMConfig` holds all LightGBM hyperparameters.  The defaults (`n_estimators=1000`,\n",
-    "`num_leaves=64`, etc.) work well for a first run - no tuning required.\n",
-    "\n",
-    "> **Tip**: once you have a working baseline here, Tutorial 10 shows how to\n",
-    "> automatically search for better hyperparameters with Optuna."
+    "- **`target_feature`** — column(s) to predict\n",
+    "- **`period`** — sampling frequency\n",
+    "- **`lookback_window_size`** / **`forecast_horizon`** — input/output window lengths\n",
+    "- **`known_future_features`** — exogenous variables available for the full horizon\n",
+    "- **`input_scaler`** / **`target_scaler`** — scaler as a string identifier (`\"standard\"`, `\"robust\"`, `\"minmax\"`)"
    ]
   },
   {
@@ -447,8 +407,22 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "model_config = LIGHTGBMConfig()\n",
-    "model_config.model_dump()"
+    "data_config = DataPipelineConfig(\n",
+    "    # 1. Problem definition\n",
+    "    target_feature=\"NetLoad(kW)\",\n",
+    "    period=\"30min\",\n",
+    "    lookback_window_size=96,  # 2 days of history\n",
+    "    forecast_horizon=48,  # predict 24 h ahead\n",
+    "    window_stride=48,  # non-overlapping windows\n",
+    "    # 2. Feature engineering\n",
+    "    latitude=32.371666,\n",
+    "    longitude=-16.274998,\n",
+    "    calendar_features=[\"hour\", \"day_night\"],\n",
+    "    known_future_features=[\"Ghi\"],\n",
+    "    # 3. Scaling\n",
+    "    input_scaler=\"standard\",\n",
+    "    target_scaler=\"robust\",\n",
+    ")"
    ]
   },
   {
@@ -456,13 +430,10 @@
    "id": "19",
    "metadata": {},
    "source": [
-    "## 5. Assemble the forecaster\n",
+    "### 3.2 Configure the experiment\n",
     "\n",
-    "`TwigaForecaster` is the main entry point.  Pass the three configs and it wires everything\n",
-    "together: it initialises the data pipeline, loads the model from the registry, and\n",
-    "prepares the cross-validation schedule.\n",
-    "\n",
-    "Nothing is trained yet - assembly is cheap."
+    "`ExperimentConfig` is the *project manifest*: it controls how data is split for cross-validation\n",
+    "and where outputs are saved."
    ]
   },
   {
@@ -472,11 +443,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "forecaster = TwigaForecaster(\n",
-    "    data_params=data_config,\n",
-    "    model_params=[model_config],\n",
-    "    train_params=forecaster_config,\n",
-    ")"
+    "experiment_config = ExperimentConfig(project_name=\"Getting Started Tutorial\")"
    ]
   },
   {
@@ -484,15 +451,14 @@
    "id": "21",
    "metadata": {},
    "source": [
-    "## 6. Train\n",
+    "### 3.3 Choose a model\n",
     "\n",
-    "`fit()` does three things in sequence:\n",
-    "1. **Feature engineering** - builds calendar columns, lag features, rolling windows, etc. from `data_config`.\n",
-    "2. **Scaling** - normalises inputs and target using the configured scalers.\n",
-    "3. **Model training** - trains a LightGBM model for each horizon step; `val_df` is used for early-stopping to avoid overfitting.\n",
+    "> **What is LightGBM?**\n",
+    ">\n",
+    "> LightGBM is a gradient-boosted decision tree library.\n",
+    "> It handles tabular features natively and often outperforms deeper models on shorter time series.\n",
     "\n",
-    "Training with `clear_output()` suppresses the verbose LightGBM logs - remove it if you\n",
-    "want to watch training progress."
+    "`LIGHTGBMConfig()` exposes the full hyperparameter surface for tuning."
    ]
   },
   {
@@ -502,7 +468,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "forecaster.fit(train_df=train_df, val_df=val_df)"
+    "model_config = LIGHTGBMConfig()"
    ]
   },
   {
@@ -510,18 +476,10 @@
    "id": "23",
    "metadata": {},
    "source": [
-    "## 7. Evaluate\n",
+    "### 3.4 Assemble the forecaster\n",
     "\n",
-    "`evaluate_point_forecast()` runs the rolling-window CV on `test_df` using the schedule\n",
-    "from `ForecasterConfig` and returns two DataFrames:\n",
-    "\n",
-    "- **`pred`**: one row per timestep: `timestamp`, `Actual`, `forecast`, `Model`, `fold`.\n",
-    "  Use this for plotting or custom metric computation.\n",
-    "- **`metric`**: one row per fold: MAE, RMSE, Pearson correlation, WMAPE, SMAPE, NBIAS.\n",
-    "  Use this for summarising performance.\n",
-    "\n",
-    "`ensemble_strategy=\"mean\"` averages predictions across folds before computing metrics\n",
-    "(only relevant when you have multiple models registered)."
+    "Pass the three configs to `TwigaForecaster` and it wires the data pipeline, model registry,\n",
+    "and CV scheduler together."
    ]
   },
   {
@@ -531,15 +489,61 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "pred, metric = forecaster.evaluate_point_forecast(test_df=test_df, ensemble_strategy=\"mean\")\n",
-    "# clear_output()\n",
-    "log.info(\"Evaluation complete.\")\n",
-    "GT(pred.head())"
+    "forecaster = TwigaForecaster(\n",
+    "    data_params=data_config,\n",
+    "    model_params=[model_config],\n",
+    "    cv_params=experiment_config,\n",
+    ")"
    ]
   },
   {
    "cell_type": "markdown",
    "id": "25",
+   "metadata": {},
+   "source": [
+    "## 4. Train\n",
+    "\n",
+    "`fit()` runs three steps in sequence:\n",
+    "\n",
+    "1. **Feature engineering** — builds calendar columns, lag features, rolling statistics.\n",
+    "2. **Scaling** — fits scalers on training data only (no data leakage).\n",
+    "3. **Model training** — fits the model on the engineered feature matrix."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "26",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "forecaster.fit(train_df=train_df, val_df=val_df)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "27",
+   "metadata": {},
+   "source": [
+    "## 5. Evaluate\n",
+    "\n",
+    "`evaluate_point_forecast()` runs the rolling-window CV on `test_df` using the schedule from\n",
+    "`ExperimentConfig` (default: one-month expanding windows)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "28",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pred, metric = forecaster.evaluate_point_forecast(test_df=test_df, ensemble_strategy=\"mean\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "29",
    "metadata": {},
    "source": [
     "### Metric summary table\n",
@@ -560,7 +564,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "26",
+   "id": "30",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -578,10 +582,10 @@
   },
   {
    "cell_type": "markdown",
-   "id": "27",
+   "id": "31",
    "metadata": {},
    "source": [
-    "## 8. Quick plot: first 7 days of test\n",
+    "## 6. Quick plot: first 7 days of test\n",
     "\n",
     "`plot_forecast_grid` creates one panel per model and overlays the forecast on the actuals.\n",
     "\n",
@@ -599,7 +603,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "28",
+   "id": "32",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -609,7 +613,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "29",
+   "id": "33",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -628,16 +632,16 @@
   },
   {
    "cell_type": "markdown",
-   "id": "30",
+   "id": "34",
    "metadata": {},
    "source": [
-    "## 9. API summary"
+    "## 7. API summary"
    ]
   },
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "31",
+   "id": "35",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -649,7 +653,7 @@
     "    {\n",
     "        \"Object / Method\": [\n",
     "            \"DataPipelineConfig\",\n",
-    "            \"ForecasterConfig\",\n",
+    "            \"ExperimentConfig\",\n",
     "            \"LIGHTGBMConfig\",\n",
     "            \"TwigaForecaster(...)\",\n",
     "            \".fit(train_df, val_df)\",\n",
@@ -691,7 +695,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "32",
+   "id": "36",
    "metadata": {},
    "source": [
     "## Wrapping up\n",
@@ -700,8 +704,9 @@
     "\n",
     "- [x] Loaded and explored the MLVS-PT dataset (30-min resolution, 3 columns)\n",
     "- [x] Created chronological train / validation / test splits\n",
-    "- [x] Configured `DataPipelineConfig` with calendar + exogenous features and a 48-step horizon\n",
-    "- [x] Set up rolling-window cross-validation with `ForecasterConfig`\n",
+    "- [x] Used `TwigaForecaster.quick()` to get a forecast with minimal configuration\n",
+    "- [x] Configured `DataPipelineConfig` with calendar + known-future features and a 48-step horizon\n",
+    "- [x] Set up cross-validation with `ExperimentConfig`\n",
     "- [x] Trained a LightGBM model with `TwigaForecaster.fit()`\n",
     "- [x] Evaluated and interpreted MAE, RMSE, Correlation, and WMAPE\n",
     "- [x] Visualised actuals vs. forecast for the first 7 days of the test set\n",
@@ -721,7 +726,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "33",
+   "id": "37",
    "metadata": {},
    "outputs": [],
    "source": [
