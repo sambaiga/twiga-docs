@@ -48,6 +48,7 @@
    "source": [
     "import warnings\n",
     "\n",
+    "warnings.filterwarnings(\"ignore\")\n",
     "from great_tables import GT\n",
     "from IPython.display import clear_output\n",
     "from lets_plot import LetsPlot\n",
@@ -59,9 +60,8 @@
     "from twiga import TwigaForecaster\n",
     "from twiga.core.config import DataPipelineConfig, ForecasterConfig\n",
     "from twiga.core.plot import plot_metrics_bar\n",
+    "from twiga.core.plot.gt import twiga_gt, twiga_report\n",
     "from twiga.core.utils import configure, get_logger\n",
-    "\n",
-    "warnings.filterwarnings(\"ignore\")\n",
     "\n",
     "configure()\n",
     "log = get_logger(\"tutorials\")"
@@ -89,11 +89,12 @@
     "data = data[[\"timestamp\", \"NetLoad(kW)\", \"Ghi\", \"Temperature\"]]\n",
     "data[\"timestamp\"] = pd.to_datetime(data[\"timestamp\"])\n",
     "data = data.drop_duplicates(subset=\"timestamp\").reset_index(drop=True)\n",
-    "# Restrict to 2019-2020 to keep tutorial execution fast\n",
-    "data = data[(data[\"timestamp\"] >= \"2019-01-01\") & (data[\"timestamp\"] <= \"2020-12-31\")].reset_index(drop=True)\n",
+    "train_df = data[data[\"timestamp\"] < \"2019-12-01\"].reset_index(drop=True)\n",
+    "val_df = data[(data[\"timestamp\"] >= \"2020-01-01\") & (data[\"timestamp\"] < \"2020-07-01\")].reset_index(drop=True)\n",
+    "test_df = data[data[\"timestamp\"] >= \"2020-07-01\"].reset_index(drop=True)\n",
     "\n",
     "log.info(\"Shape: %s\", data.shape)\n",
-    "GT(data.head())"
+    "twiga_gt(GT(data.head().round(2)))"
    ]
   },
   {
@@ -111,31 +112,8 @@
    ]
   },
   {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "6",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "train_df = data[data[\"timestamp\"] < \"2020-01-01\"].reset_index(drop=True)\n",
-    "val_df = data[(data[\"timestamp\"] >= \"2020-01-01\") & (data[\"timestamp\"] < \"2020-07-01\")].reset_index(drop=True)\n",
-    "test_df = data[data[\"timestamp\"] >= \"2020-07-01\"].reset_index(drop=True)\n",
-    "\n",
-    "log.info(\n",
-    "    f\"train : {train_df.shape[0]:,} rows  \"\n",
-    "    f\"({train_df['timestamp'].min().date()} -> {train_df['timestamp'].max().date()})\"\n",
-    ")\n",
-    "log.info(\n",
-    "    f\"val   : {val_df.shape[0]:,} rows  ({val_df['timestamp'].min().date()} -> {val_df['timestamp'].max().date()})\"\n",
-    ")\n",
-    "log.info(\n",
-    "    f\"test  : {test_df.shape[0]:,} rows  ({test_df['timestamp'].min().date()} -> {test_df['timestamp'].max().date()})\"\n",
-    ")"
-   ]
-  },
-  {
    "cell_type": "markdown",
-   "id": "7",
+   "id": "6",
    "metadata": {},
    "source": [
     "### Shared `DataPipelineConfig`\n",
@@ -147,19 +125,18 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "8",
+   "id": "7",
    "metadata": {},
    "outputs": [],
    "source": [
     "data_config = DataPipelineConfig(\n",
     "    target_feature=\"NetLoad(kW)\",\n",
     "    period=\"30min\",\n",
-    "    latitude=32.371666,\n",
-    "    longitude=-16.274998,\n",
-    "    calendar_features=[\"hour\", \"day_night\"],\n",
+    "    calendar_features=[\"hour\"],\n",
     "    exogenous_features=[\"Ghi\"],\n",
     "    forecast_horizon=48,\n",
     "    lookback_window_size=96,\n",
+    "    stride=48,\n",
     "    input_scaler=StandardScaler(),\n",
     "    target_scaler=RobustScaler(),\n",
     ")\n",
@@ -169,7 +146,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9",
+   "id": "8",
    "metadata": {},
    "source": [
     "## 2. What gets tuned: the search space\n",
@@ -189,7 +166,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "10",
+   "id": "9",
    "metadata": {},
    "source": [
     "> **Key concept - Bayesian optimisation**\n",
@@ -212,7 +189,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "11",
+   "id": "10",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -231,7 +208,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "12",
+   "id": "11",
    "metadata": {},
    "source": [
     "**Key tunable fields for LightGBM** - displayed via the search space configured above."
@@ -240,7 +217,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "13",
+   "id": "12",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -299,7 +276,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "14",
+   "id": "13",
    "metadata": {},
    "source": [
     "> **Key concept - search space definition**\n",
@@ -322,7 +299,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "15",
+   "id": "14",
    "metadata": {},
    "source": [
     "## 3. ForecasterConfig with `project_name`\n",
@@ -345,7 +322,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "16",
+   "id": "15",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -362,7 +339,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "17",
+   "id": "16",
    "metadata": {},
    "source": [
     "> **Key concept - overfitting HPO**\n",
@@ -388,7 +365,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "18",
+   "id": "17",
    "metadata": {},
    "source": [
     "## 4. Running `tune()`\n",
@@ -408,7 +385,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "19",
+   "id": "18",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -429,7 +406,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "20",
+   "id": "19",
    "metadata": {},
    "source": [
     "## 5. Fitting with tuned parameters\n",
@@ -442,7 +419,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "21",
+   "id": "20",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -456,7 +433,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "22",
+   "id": "21",
    "metadata": {},
    "source": [
     "### Compare with default (no tuning)\n",
@@ -468,7 +445,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "23",
+   "id": "22",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -488,7 +465,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "24",
+   "id": "23",
    "metadata": {},
    "source": [
     "### Side-by-side comparison: Default vs. Tuned"
@@ -497,7 +474,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "25",
+   "id": "24",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -514,7 +491,7 @@
     "\n",
     "from great_tables import GT, md\n",
     "\n",
-    "from twiga.core.plot.gt import twiga_gt, twiga_report\n",
+    "from twiga.core.plot.gt import twiga_gt\n",
     "\n",
     "twiga_report(\n",
     "    summary_df.rename(columns={\"Configuration\": \"Model\"}),\n",
@@ -526,7 +503,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "26",
+   "id": "25",
    "metadata": {},
    "source": [
     "## 6. Tuning a neural-network model\n",
@@ -547,7 +524,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "27",
+   "id": "26",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -579,7 +556,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "28",
+   "id": "27",
    "metadata": {},
    "source": [
     "## 7. Study persistence: resuming a study\n",
@@ -601,7 +578,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "29",
+   "id": "28",
    "metadata": {},
    "source": [
     "## 8. Optuna Dashboard (optional)\n",
@@ -633,7 +610,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "30",
+   "id": "29",
    "metadata": {},
    "source": [
     "## 9. Interpreting results: when to tune and when not to\n",
@@ -668,7 +645,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "31",
+   "id": "30",
    "metadata": {},
    "source": [
     "## Wrapping up\n",
@@ -703,7 +680,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "32",
+   "id": "31",
    "metadata": {},
    "outputs": [],
    "source": [
