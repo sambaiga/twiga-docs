@@ -1194,6 +1194,63 @@ logs key metrics to MLflow when an active run exists.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="twiga.serve.monitor.ForecastMonitor.run_forecast_performance">
+<span class="sig-name descname"><span class="pre">run_forecast_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">evaluate_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.serve.monitor.ForecastMonitor.run_forecast_performance" title="Link to this definition">#</a></dt>
+<dd><p>Evaluate forecast quality using Twiga-native metrics for any forecast kind.</p>
+<p>Dispatches to the correct evaluation function based on <code class="docutils literal notranslate"><span class="pre">result.kind</span></code>,
+aggregates per-day / per-target metrics to scalars, and logs them to
+MLflow when an active run exists.</p>
+<p>Supported kinds and the metrics available for each:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;point&quot;</span></code>      — mae, rmse, mape, wmape, smape, corr, nbias, r2, …</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;interval&quot;</span></code>   — picp, mwi, winkler, msis, nmpi, cwe, mae, rmse, …</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;quantile&quot;</span></code>   — pinball, wql, crps, calibration_error, sharpness, …</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;parametric&quot;</span></code> / <code class="docutils literal notranslate"><span class="pre">&quot;samples&quot;</span></code> — nll, crps, dss, energy_score, …</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>result</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="../core/forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a></span>) – A <a class="reference internal" href="../core/forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a> with
+<code class="docutils literal notranslate"><span class="pre">ground_truth</span></code> set.  The <code class="docutils literal notranslate"><span class="pre">kind</span></code> attribute determines which
+metrics are computed.</p></li>
+<li><p><strong>metric_names</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Names of metrics to compute.  <code class="docutils literal notranslate"><span class="pre">None</span></code> uses all
+defaults for the forecast kind.  Pass <code class="docutils literal notranslate"><span class="pre">forecaster.metrics</span></code>
+here to use the forecaster’s configured metric list.</p></li>
+<li><p><strong>**evaluate_kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>) – Extra keyword arguments forwarded to the
+underlying evaluate function, e.g. <code class="docutils literal notranslate"><span class="pre">alpha=0.1</span></code> for
+interval/quantile forecasts, <code class="docutils literal notranslate"><span class="pre">spread=&quot;iqr&quot;</span></code> for interval.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p><em>Dict containing</em> –</p>
+<ul class="simple">
+<li><p>One scalar value per metric (mean across days and targets).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;kind&quot;</span></code> — forecast kind string.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;timestamp&quot;</span></code> — ISO-8601 UTC timestamp.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;per_target&quot;</span></code> — <code class="docutils literal notranslate"><span class="pre">{target_name:</span> <span class="pre">{metric:</span> <span class="pre">value}}</span></code> for
+multi-target inspection.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.14)"><strong>TypeError</strong></a> – If <em>result</em> is not a <a class="reference internal" href="../core/forecaster.html#twiga.forecaster.result.ForecastResult" title="twiga.forecaster.result.ForecastResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastResult</span></code></a>.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">result.ground_truth</span></code> is not set.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">summary</span> <span class="o">=</span> <span class="n">monitor</span><span class="o">.</span><span class="n">run_forecast_performance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">metric_names</span><span class="o">=</span><span class="n">forecaster</span><span class="o">.</span><span class="n">metrics</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">],</span> <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="twiga.serve.monitor.ForecastMonitor.run_full_monitoring">
 <span class="sig-name descname"><span class="pre">run_full_monitoring</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_predictions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_predictions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_cols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categorical_cols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prediction_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drift_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.serve.monitor.ForecastMonitor.run_full_monitoring" title="Link to this definition">#</a></dt>
 <dd><p>Run data drift, prediction drift, and performance monitoring in one call.</p>
@@ -1382,6 +1439,7 @@ Prefect task:</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.serve.monitor.ForecastMonitor"><code class="docutils literal notranslate"><span class="pre">ForecastMonitor</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.serve.monitor.ForecastMonitor.__init__"><code class="docutils literal notranslate"><span class="pre">ForecastMonitor.__init__()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.serve.monitor.ForecastMonitor.run_data_drift"><code class="docutils literal notranslate"><span class="pre">ForecastMonitor.run_data_drift()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.serve.monitor.ForecastMonitor.run_forecast_performance"><code class="docutils literal notranslate"><span class="pre">ForecastMonitor.run_forecast_performance()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.serve.monitor.ForecastMonitor.run_full_monitoring"><code class="docutils literal notranslate"><span class="pre">ForecastMonitor.run_full_monitoring()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.serve.monitor.ForecastMonitor.run_performance"><code class="docutils literal notranslate"><span class="pre">ForecastMonitor.run_performance()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.serve.monitor.ForecastMonitor.run_prediction_drift"><code class="docutils literal notranslate"><span class="pre">ForecastMonitor.run_prediction_drift()</span></code></a></li>
