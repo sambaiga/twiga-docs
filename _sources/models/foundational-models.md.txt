@@ -4,6 +4,10 @@
 
 - `twiga/models/foundational/base.py`  -  `BaseFoundationalModel`
 - `twiga/models/foundational/chronos2_model.py`  -  `Chronos2Model` / `Chronos2Config`
+- `twiga/models/foundational/tabicl_model.py`  -  `TabICLModel` / `TabICLConfig`
+- `twiga/models/foundational/moirai_model.py`  -  `MoiraiModel` / `MoiraiConfig`
+- `twiga/models/foundational/timesfm_model.py`  -  `TimesFMModel` / `TimesFMConfig`
+- `twiga/models/foundational/lag_llama_model.py`  -  `LagLlamaModel` / `LagLlamaConfig`
 
 :::
 
@@ -225,6 +229,80 @@ predictions, metrics = forecaster.evaluate_quantile_forecast(test_df)
 
 The ensemble median across Chronos2 and QR-XGBoost provides blended uncertainty.
 
+## Additional Zero-Shot Models
+
+Alongside Chronos2, Twiga wraps four more zero-shot foundation models. All share
+the same `TwigaForecaster` interface and emit **9 quantile levels**
+(`[0.1, 0.2, …, 0.9]`). Each requires an optional package that is **not** pulled
+in by `twiga[foundational]` (which ships only Chronos2 + torch); the install
+notes below are also surfaced in the model docstrings.
+
+All four configs follow the Chronos2 device convention: `device="auto"` (the
+default) selects CUDA → MPS → CPU automatically, or pin `"cuda"`, `"mps"`, or
+`"cpu"`.
+
+### TabICLModel
+
+A tabular foundation model that forecasts via **in-context learning** over
+engineered temporal features rather than autoregressive token decoding. Its
+pre-training mixes synthetic and real tabular datasets, so it generalises across
+domains without per-task fitting. Inference is ensembled across `n_estimators`
+members (4–8 is a good CPU speed/quality trade-off).
+
+:::{admonition} Installation
+:class: note
+`pip install "tabicl[forecast]>=2.1"`. **Not** included in `twiga[foundational]`:
+`tabicl` transitively pins `numpy < 2.2` via gluonts, which conflicts with the
+rest of the stack. Install it into a dedicated environment.
+:::
+
+### MoiraiModel
+
+Salesforce's **universal time-series transformer**, loaded through the `uni2ts`
+package and run via the GluonTS predictor pipeline. The `model_type` field
+selects the variant: `"moirai2"` (v2.0, native quantile output — the default),
+`"moirai"` (v1.x, sample-based), or `"moirai-moe"` (mixture-of-experts,
+sample-based). Sample-based variants draw `num_samples` paths and reduce them to
+the 9-quantile grid; Moirai 2.0 emits quantiles directly.
+
+:::{admonition} Installation
+:class: note
+`pip install "uni2ts>=1.2"`.
+:::
+
+### TimesFMModel
+
+Google Research's **TimesFM 2.5**, a 200M-parameter decoder-only transformer
+with a 16k-token context and a continuous quantile head. It forecasts
+autoregressively like Chronos2 but at a fraction of the parameter count, exposing
+its 9 native quantile levels.
+
+:::{admonition} Installation
+:class: note
+Not on PyPI — install from source:
+`pip install "git+https://github.com/google-research/timesfm.git#egg=timesfm[torch]"`.
+:::
+
+### LagLlamaModel
+
+The first open-source time-series foundation model: a decoder-only transformer
+that ingests **lag features** rather than raw sequences. It is sample-based —
+the wrapper draws `num_samples` paths per series and reduces them to the
+9-quantile grid. The wrapper resolves a relative `ckpt_path` against the CWD, the
+model-file directory, and ancestor directories up to the project root.
+
+:::{admonition} Installation
+:class: note
+Install the package, then download the checkpoint (a separate manual step):
+
+```bash
+pip install git+https://github.com/time-series-foundation-models/lag-llama.git
+pip install "gluonts[torch]<=0.14.4" pytorch-lightning
+huggingface-cli download time-series-foundation-models/Lag-Llama \
+    lag-llama.ckpt --local-dir lag-llama
+```
+:::
+
 ## BaseFoundationalModel
 
 Internal abstract base class for foundational models. Custom foundational models should inherit from this class and implement:
@@ -311,6 +389,70 @@ See [Custom Models](custom-models.md) for a complete walkthrough.
 
 ```{eval-rst}
 .. autoclass:: twiga.models.foundational.chronos2_model.Chronos2Config
+   :members:
+   :show-inheritance:
+```
+
+### TabICLModel
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.tabicl_model.TabICLModel
+   :members:
+   :show-inheritance:
+```
+
+### TabICLConfig
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.tabicl_model.TabICLConfig
+   :members:
+   :show-inheritance:
+```
+
+### MoiraiModel
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.moirai_model.MoiraiModel
+   :members:
+   :show-inheritance:
+```
+
+### MoiraiConfig
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.moirai_model.MoiraiConfig
+   :members:
+   :show-inheritance:
+```
+
+### TimesFMModel
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.timesfm_model.TimesFMModel
+   :members:
+   :show-inheritance:
+```
+
+### TimesFMConfig
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.timesfm_model.TimesFMConfig
+   :members:
+   :show-inheritance:
+```
+
+### LagLlamaModel
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.lag_llama_model.LagLlamaModel
+   :members:
+   :show-inheritance:
+```
+
+### LagLlamaConfig
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.lag_llama_model.LagLlamaConfig
    :members:
    :show-inheritance:
 ```

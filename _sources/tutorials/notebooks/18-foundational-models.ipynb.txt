@@ -4,30 +4,38 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "# Zero-Shot Foundation Models\n",
+    "# Zero-Shot Foundation Models — Chronos-2, TabICL, Moirai, TimesFM, and Lag-Llama\n",
     "\n",
-    "![Level](https://img.shields.io/badge/level-intermediate-yellow) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~15%20min-lightgrey)\n",
+    "![Level](https://img.shields.io/badge/level-intermediate-yellow) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~35%20min-lightgrey)\n",
     "\n",
     "---\n",
     "\n",
     "**What you'll build**\n",
     "\n",
-    "A zero-shot probabilistic forecast using Chronos-2, a 12B-parameter foundation model trained on 2M+ diverse time series. Unlike all learnable models (QR-LightGBM, Neural Networks, etc.), Chronos-2 requires **no training on your data** — it downloads pre-trained weights and generates 21 quantile predictions immediately.\n",
+    "Five zero-shot probabilistic forecasts on the same dataset, using five different foundation models:\n",
+    "\n",
+    "- **Chronos-2** — Amazon's 12B-parameter autoregressive transformer (21 quantiles).\n",
+    "- **TabICLv2** — A tabular foundation model that performs forecasting via in-context learning on engineered temporal features (9 quantiles).\n",
+    "- **Moirai 2.0** — Salesforce's universal time-series transformer; quantile output via the ``uni2ts`` package (9 quantiles).\n",
+    "- **TimesFM 2.5** — Google's 200M decoder-only transformer with a 16k context and a continuous quantile head (9 quantiles).\n",
+    "- **Lag-Llama** — A decoder-only transformer using lag features; the first open-source TSFM (sample-based → 9 quantiles).\n",
+    "\n",
+    "All five download pre-trained weights and produce quantile predictions **without training on your data**. We then benchmark them against a seasonal-naive baseline.\n",
     "\n",
     "**Prerequisites**\n",
     "- [01 - Getting Started](01-getting-started.ipynb) (DataPipelineConfig, TwigaForecaster)\n",
     "- [08 - Quantile Regression](08-quantile-regression.ipynb) (quantile concepts, prediction intervals)\n",
-    "- A GPU is helpful but not required (inference on CPU is slow but works)\n",
+    "- A GPU is helpful but not required (inference on CPU works, just slower)\n",
     "\n",
     "**Learning objectives**\n",
     "\n",
     "By the end of this notebook you will be able to:\n",
     "\n",
     "1. Explain the paradigm shift: pre-trained, task-agnostic models vs. data-specific learning\n",
-    "2. Load and evaluate Chronos-2 as a zero-shot quantile forecaster\n",
-    "3. Compare Chronos-2's quantile outputs (21 fixed levels) against learned QR models\n",
+    "2. Load and evaluate five zero-shot quantile forecasters side-by-side\n",
+    "3. Compare different foundation-model architectures (autoregressive, in-context tabular, universal transformer, lag-feature decoder)\n",
     "4. Interpret when foundation models excel vs. when domain-specific fine-tuning wins\n",
-    "5. Visualise quantile fan charts and coverage plots from foundation models"
+    "5. Visualise quantile fan charts and coverage plots from foundation models\n"
    ]
   },
   {
@@ -93,9 +101,11 @@
     "import warnings\n",
     "\n",
     "from great_tables import GT, md\n",
+    "from IPython.display import clear_output\n",
     "from lets_plot import LetsPlot\n",
     "import pandas as pd\n",
     "\n",
+    "from twiga import TwigaForecaster\n",
     "from twiga.core.config import DataPipelineConfig, ExperimentConfig\n",
     "from twiga.core.plot import plot_forecast_grid, plot_metrics_bar\n",
     "from twiga.core.plot.gt import twiga_gt, twiga_report\n",
@@ -211,7 +221,7 @@
     "2. Loads the pre-trained Chronos-2 weights from HuggingFace\n",
     "3. Returns immediately (no optimization loop)\n",
     "\n",
-    "All 24 CV folds run through the same pre-trained model — there is no per-fold retraining."
+    "All CV folds run through the same pre-trained model — there is no per-fold retraining.\n"
    ]
   },
   {
@@ -220,13 +230,10 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "from IPython.display import clear_output\n",
-    "\n",
-    "from twiga import TwigaForecaster\n",
     "from twiga.models.foundational.chronos2_model import Chronos2Config\n",
     "\n",
     "# device=\"cuda\" if you have a GPU; \"cpu\" works but is slower\n",
-    "chronos_config = Chronos2Config(device=\"mps\")\n",
+    "chronos_config = Chronos2Config(device=\"cpu\")\n",
     "\n",
     "forecaster_chronos = TwigaForecaster(\n",
     "    data_params=data_config,\n",
@@ -245,7 +252,7 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "## 4. Evaluate Quantile Forecast\n",
+    "### Evaluate Chronos-2's quantile forecast\n",
     "\n",
     "Chronos-2 outputs 21 quantiles. We evaluate it exactly like a trained QR model."
    ]
@@ -306,9 +313,289 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "## 5. Benchmark: Chronos-2 vs Simple baseline\n",
+    "## 4. Zero-Shot TabICL Foundation Model\n",
     "\n",
-    "Compare the zero-shot foundation model against "
+    "**TabICLv2** takes a different architectural route to zero-shot forecasting: rather than autoregressively decoding tokenised values, it engineers temporal features (lags, calendar context, etc.) and runs **in-context learning** with a tabular foundation model. The pre-training mixes synthetic and real tabular datasets, so it generalises across domains without per-task fitting.\n",
+    "\n",
+    "Same Twiga interface — only the model swap differs.\n",
+    "\n",
+    "- 9 quantiles by default: `[0.1, 0.2, ..., 0.9]`\n",
+    "- Inference is ensembled across `n_estimators` members (4–8 is a good speed/quality trade-off on CPU)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from twiga.models.foundational.tabicl_model import TabICLConfig\n",
+    "\n",
+    "# device=\"cuda\" if you have a GPU; \"cpu\" works but is slower\n",
+    "tabicl_config = TabICLConfig(device=\"cpu\", n_estimators=4, max_context_length=48 * 30)\n",
+    "\n",
+    "forecaster_tabicl = TwigaForecaster(\n",
+    "    data_params=data_config,\n",
+    "    model_params=[tabicl_config],\n",
+    "    cv_params=train_config,\n",
+    ")\n",
+    "\n",
+    "# fit() instantiates the forecaster; weights are loaded lazily on first predict\n",
+    "forecaster_tabicl.fit(train_df=train_df)\n",
+    "\n",
+    "log.info(\"TabICL zero-shot model ready for inference.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Evaluate TabICL's quantile forecast\n",
+    "\n",
+    "TabICL produces 9 quantiles. We evaluate it through the same Twiga quantile-forecast pathway as Chronos-2.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pred_tabicl, metric_tabicl = forecaster_tabicl.evaluate_quantile_forecast(test_df=test_df)\n",
+    "clear_output()\n",
+    "\n",
+    "log.info(\"TabICL evaluation complete.\")\n",
+    "log.info(\"Predictions shape: %s\", pred_tabicl.shape)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "get_metric_table(metric_tabicl)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 5. Zero-Shot Moirai Foundation Model\n",
+    "\n",
+    "**Moirai** (Salesforce Research) is a universal time-series transformer trained on a massive multi-domain corpus. We use **Moirai 2.0**, which produces native quantile output. The same wrapper also supports Moirai 1.x and Moirai-MoE via the ``model_type`` config field.\n",
+    "\n",
+    "Moirai is loaded through the ``uni2ts`` package and runs the GluonTS predictor pipeline under the hood; Twiga reshapes the output into the same ``(batch, n_quantiles, horizon)`` contract as the other foundation models.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from twiga.models.foundational.moirai_model import MoiraiConfig\n",
+    "\n",
+    "# device=\"cuda\" if you have a GPU; \"cpu\" works but is slower\n",
+    "moirai_config = MoiraiConfig(\n",
+    "    model_type=\"moirai2\",\n",
+    "    size=\"small\",\n",
+    "    device=\"cpu\",\n",
+    "    frequency=\"30min\",  # matches data_config.period\n",
+    ")\n",
+    "\n",
+    "forecaster_moirai = TwigaForecaster(\n",
+    "    data_params=data_config,\n",
+    "    model_params=[moirai_config],\n",
+    "    cv_params=train_config,\n",
+    ")\n",
+    "\n",
+    "# fit() downloads the model but does NOT train\n",
+    "forecaster_moirai.fit(train_df=train_df)\n",
+    "\n",
+    "log.info(\"Moirai zero-shot model ready for inference.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Evaluate Moirai's quantile forecast\n",
+    "\n",
+    "Moirai 2.0 emits quantile outputs natively. Twiga reduces these to its standard 9-quantile grid and evaluates via the same quantile-forecast path as Chronos-2 and TabICL.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pred_moirai, metric_moirai = forecaster_moirai.evaluate_quantile_forecast(test_df=test_df)\n",
+    "clear_output()\n",
+    "\n",
+    "log.info(\"Moirai evaluation complete.\")\n",
+    "log.info(\"Predictions shape: %s\", pred_moirai.shape)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "get_metric_table(metric_moirai)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 6. Zero-Shot TimesFM Foundation Model\n",
+    "\n",
+    "**TimesFM 2.5** (Google Research) is a 200M-parameter decoder-only transformer with a 16k-token context and a continuous quantile head. Like Chronos-2 it forecasts autoregressively, but at a fraction of the parameter count, and it emits 9 quantile levels (0.1 … 0.9) natively.\n",
+    "\n",
+    "> TimesFM 2.5 is not on PyPI — install it from source: `pip install \"git+https://github.com/google-research/timesfm.git#egg=timesfm[torch]\"`.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from twiga.models.foundational.timesfm_model import TimesFMConfig\n",
+    "\n",
+    "# device=\"cuda\" if you have a GPU; \"cpu\" works but is slower\n",
+    "timesfm_config = TimesFMConfig(device=\"cpu\")\n",
+    "\n",
+    "forecaster_timesfm = TwigaForecaster(\n",
+    "    data_params=data_config,\n",
+    "    model_params=[timesfm_config],\n",
+    "    cv_params=train_config,\n",
+    ")\n",
+    "\n",
+    "# fit() downloads + compiles the model but does NOT train\n",
+    "forecaster_timesfm.fit(train_df=train_df)\n",
+    "\n",
+    "log.info(\"TimesFM zero-shot model ready for inference.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Evaluate TimesFM's quantile forecast\n",
+    "\n",
+    "TimesFM 2.5's continuous quantile head yields 9 quantiles. We evaluate it through the same quantile-forecast path as the other foundation models.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pred_timesfm, metric_timesfm = forecaster_timesfm.evaluate_quantile_forecast(test_df=test_df)\n",
+    "clear_output()\n",
+    "\n",
+    "log.info(\"TimesFM evaluation complete.\")\n",
+    "log.info(\"Predictions shape: %s\", pred_timesfm.shape)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "get_metric_table(metric_timesfm)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 7. Zero-Shot Lag-Llama Foundation Model\n",
+    "\n",
+    "**Lag-Llama** was the first open-source time-series foundation model: a decoder-only transformer that ingests **lag features** rather than raw sequences. It is sample-based; we draw 100 samples per series and reduce them to the standard 9-quantile grid.\n",
+    "\n",
+    "> Lag-Llama is **not** on PyPI as a forecasting checkpoint — install the Python package, then download the weights into the Twiga model directory. Run these from the **project root** (`twiga-forecast/`):\n",
+    "> ```\n",
+    "> pip install git+https://github.com/time-series-foundation-models/lag-llama.git\n",
+    "> pip install \"gluonts[torch]<=0.14.4\" pytorch-lightning\n",
+    ">\n",
+    "> huggingface-cli download time-series-foundation-models/Lag-Llama \\\\\n",
+    ">     lag-llama.ckpt --local-dir twiga/models/foundational/lag-llama\n",
+    "> ```\n",
+    "> This places the checkpoint at `twiga/models/foundational/lag-llama/lag-llama.ckpt`. The wrapper's default `ckpt_path=\"lag-llama/lag-llama.ckpt\"` is resolved against the project root automatically, so it's found regardless of where the notebook runs from."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from twiga.models.foundational.lag_llama_model import LagLlamaConfig\n",
+    "\n",
+    "# device=\"cuda\" if you have a GPU; \"cpu\" works but is slower\n",
+    "lagllama_config = LagLlamaConfig(\n",
+    "    ckpt_path=\"lag-llama/lag-llama.ckpt\",\n",
+    "    device=\"cpu\",\n",
+    "    num_samples=100,\n",
+    ")\n",
+    "\n",
+    "forecaster_lagllama = TwigaForecaster(\n",
+    "    data_params=data_config,\n",
+    "    model_params=[lagllama_config],\n",
+    "    cv_params=train_config,\n",
+    ")\n",
+    "\n",
+    "# fit() loads the checkpoint and prepares the predictor (no training)\n",
+    "forecaster_lagllama.fit(train_df=train_df)\n",
+    "\n",
+    "log.info(\"Lag-Llama zero-shot model ready for inference.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Evaluate Lag-Llama's quantile forecast\n",
+    "\n",
+    "Lag-Llama emits probabilistic samples. Twiga reduces these to its standard 9-quantile grid and evaluates via the same quantile-forecast path as the other foundation models.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pred_lagllama, metric_lagllama = forecaster_lagllama.evaluate_quantile_forecast(test_df=test_df)\n",
+    "clear_output()\n",
+    "\n",
+    "log.info(\"Lag-Llama evaluation complete.\")\n",
+    "log.info(\"Predictions shape: %s\", pred_lagllama.shape)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "get_metric_table(metric_lagllama)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 8. Benchmark: Five foundation models vs a simple baseline\n",
+    "\n",
+    "Compare all five zero-shot foundation models against a seasonal-naive baseline on the same test set.\n"
    ]
   },
   {
@@ -349,7 +636,7 @@
    "outputs": [],
    "source": [
     "metrics_all = pd.concat(\n",
-    "    [metric_chronos, metric_seasonal],\n",
+    "    [metric_chronos, metric_tabicl, metric_moirai, metric_timesfm, metric_lagllama, metric_seasonal],\n",
     "    ignore_index=True,\n",
     ")\n",
     "\n",
@@ -382,40 +669,46 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "## 7. Key Insights\n",
+    "## 9. Key Insights\n",
     "\n",
-    "### Chronos-2 Strengths\n",
-    "- **No training time**: ready in seconds\n",
-    "- **Diverse pre-training**: benefits from 2M+ different time series\n",
-    "- **Probabilistic by default**: 21 quantiles without extra work\n",
-    "- **Stable predictions**: pre-trained weights don't drift per fold\n",
+    "### Shared strengths (all five foundation models)\n",
+    "- **No training time**: zero-shot — `fit()` only loads pre-trained weights\n",
+    "- **Diverse pre-training**: benefit from millions of cross-domain time series\n",
+    "- **Probabilistic by default**: every model emits quantile output without extra work\n",
+    "- **Stable predictions**: pre-trained weights don't drift per fold or per dataset\n",
     "\n",
-    "### Chronos-2 Limitations\n",
-    "- **Generic**: not optimized for YOUR specific domain\n",
-    "- **Slow inference**: ~seconds per prediction batch (GPU helps dramatically)\n",
-    "- **Fixed quantiles**: cannot request arbitrary τ values\n",
-    "- **Univariate only**: ignores exogenous features (v1 limitation)\n",
+    "### Shared limitations\n",
+    "- **Generic**: no model has seen your specific operating conditions\n",
+    "- **Inference cost**: all five are slow per window on CPU compared to a tuned QR-LightGBM; a GPU helps dramatically\n",
+    "- **Fixed (or near-fixed) quantile grids**: Chronos-2 is fully fixed at 21; TabICL / Moirai accept a quantile list; TimesFM emits a fixed 9-quantile head — none let you request arbitrary precision below their grid resolution\n",
+    "- **Covariate support**: the Twiga wrappers in this notebook ignore exogenous features — they pass only the target series through\n",
     "\n",
-    "### When Learned Models Win\n",
-    "- Large domain-specific datasets (>10k samples)\n",
+    "### When learned (per-dataset) models win\n",
+    "- Large domain-specific datasets (> 10 k samples) with stable dynamics\n",
     "- Extreme precision requirements (financial trading, critical infrastructure)\n",
-    "- Need custom quantile levels or intervals\n",
-    "- Latency constraints (inference must be <100ms)\n",
+    "- Need custom quantile levels or strict interval shapes\n",
+    "- Latency constraints (inference must be < 100 ms)\n",
     "\n",
     "### Phase 2: Fine-tuning\n",
     "\n",
-    "In a future update, Twiga will support **fine-tuning** Chronos-2 on your data:\n",
+    "Future Twiga releases will expose fine-tuning hooks for each foundation model:\n",
+    "\n",
     "```python\n",
-    "Chronos2Config(device=\"cuda\", fine_tune=True)\n",
+    "Chronos2Config(device=\"cuda\", fine_tune=True)   # planned\n",
+    "TabICLConfig(fine_tune=True)                    # FinetunedTabICLRegressor already exists upstream\n",
+    "MoiraiConfig(model_type=\"moirai\", fine_tune=True)  # MoiraiFinetune supports Moirai 1.x / MoE\n",
+    "LagLlamaConfig(fine_tune=True)  # Lag-Llama exposes a PyTorch Lightning training loop upstream\n",
+    "# TimesFM 2.5 fine-tuning is out of scope for the wrapper; use the upstream examples/finetuning recipe\n",
     "```\n",
-    "This combines the best of both worlds: transfer learning from 2M+ pre-training + domain-specific optimisation."
+    "\n",
+    "This combines the best of both worlds: transfer learning from a broad pre-training prior plus domain-specific adaptation."
    ]
   },
   {
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "## 8. Forecast Traces\n",
+    "## 10. Forecast Traces\n",
     "\n",
     "Visual comparison of predictions across the test set."
    ]
@@ -426,7 +719,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "preds_all = pd.concat([pred_chronos, pred_seasonal], ignore_index=True)\n",
+    "preds_all = pd.concat(\n",
+    "    [pred_chronos, pred_tabicl, pred_moirai, pred_timesfm, pred_lagllama, pred_seasonal], ignore_index=True\n",
+    ")\n",
     "\n",
     "p = plot_forecast_grid(\n",
     "    preds_all,\n",
@@ -435,10 +730,312 @@
     "    model_col=\"Model\",\n",
     "    n_samples_per_model=7 * 48,  # first 7 days of test set\n",
     "    y_label=\"Net Load (kW)\",\n",
-    "    title=\"Chronos-2 vs Learned QR Models — first 7 days of test set\",\n",
+    "    title=\"Chronos-2 vs TabICL vs Moirai vs TimesFM vs Lag-Llama vs Seasonal-Naive — first 7 days of test set\",\n",
     "    fig_width=1200,\n",
     ")\n",
     "p"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 11. Context-Length Sensitivity\n",
+    "\n",
+    "How much past does each foundation model actually need to see? We sweep the lookback window across two horizons:\n",
+    "\n",
+    "- **Short-term (1-day ahead, h = 48 steps):** contexts of 2 days · 1 week · 2 weeks · 1 month.\n",
+    "- **Long-term (1-week ahead, h = 336 steps):** contexts of 1 week · 2 weeks · 1 month · 2 months · 3 months.\n",
+    "\n",
+    "For each `(model, context)` pair we rebuild the `DataPipelineConfig` with a new `lookback_window_size` and `forecast_horizon`, then re-fit + re-evaluate against the same `test_df`. Each fit is zero-shot (no training), but CPU inference scales with horizon × context, so the long-term sweep takes meaningfully longer than the short-term one.\n",
+    "\n",
+    "> ⚠️ TabICL's default `max_context_length` is 4096; the long-term sweep includes a 3-month context (4320 steps), so we bump that cap in the config for that sweep.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from twiga.models.foundational.chronos2_model import Chronos2Config\n",
+    "from twiga.models.foundational.lag_llama_model import LagLlamaConfig\n",
+    "from twiga.models.foundational.moirai_model import MoiraiConfig\n",
+    "from twiga.models.foundational.tabicl_model import TabICLConfig\n",
+    "from twiga.models.foundational.timesfm_model import TimesFMConfig\n",
+    "\n",
+    "\n",
+    "def make_model_configs(*, tabicl_max_context: int = 4096) -> list[tuple[str, object]]:\n",
+    "    \"\"\"Build a fresh set of (display_name, config) pairs for one sweep iteration.\"\"\"\n",
+    "    return [\n",
+    "        (\"Chronos-2\", Chronos2Config(device=\"cpu\")),\n",
+    "        (\n",
+    "            \"TabICL\",\n",
+    "            TabICLConfig(device=\"cpu\", n_estimators=4, max_context_length=tabicl_max_context),\n",
+    "        ),\n",
+    "        (\n",
+    "            \"Moirai-2\",\n",
+    "            MoiraiConfig(model_type=\"moirai2\", size=\"small\", device=\"cpu\", frequency=\"30min\"),\n",
+    "        ),\n",
+    "        (\"TimesFM\", TimesFMConfig(device=\"cpu\")),\n",
+    "        (\"Lag-Llama\", LagLlamaConfig(device=\"cpu\", num_samples=100)),\n",
+    "    ]\n",
+    "\n",
+    "\n",
+    "def run_context_sweep(\n",
+    "    *,\n",
+    "    horizon: int,\n",
+    "    contexts: list[tuple[str, int]],\n",
+    "    train_df: pd.DataFrame,\n",
+    "    test_df: pd.DataFrame,\n",
+    "    tabicl_max_context: int = 4096,\n",
+    ") -> tuple[pd.DataFrame, pd.DataFrame]:\n",
+    "    \"\"\"Evaluate each foundational model under each context length for a fixed horizon.\n",
+    "\n",
+    "    Returns ``(metrics_df, preds_df)`` annotated with ``context_label``,\n",
+    "    ``context_steps`` (in 30-min steps) and ``model_label`` columns ready to plot.\n",
+    "    \"\"\"\n",
+    "    base_dc_kwargs = {\n",
+    "        \"target_feature\": \"NetLoad(kW)\",\n",
+    "        \"period\": \"30min\",\n",
+    "        \"latitude\": 32.371666,\n",
+    "        \"longitude\": -16.274998,\n",
+    "        \"calendar_features\": [],\n",
+    "        \"known_future_features\": [],\n",
+    "        \"input_scaler\": \"standard\",\n",
+    "        \"target_scaler\": \"robust\",\n",
+    "    }\n",
+    "\n",
+    "    metric_frames, pred_frames = [], []\n",
+    "    for ctx_label, ctx_steps in contexts:\n",
+    "        log.info(\"Context = %s (%d steps), horizon = %d\", ctx_label, ctx_steps, horizon)\n",
+    "        dc = DataPipelineConfig(\n",
+    "            **base_dc_kwargs,\n",
+    "            forecast_horizon=horizon,\n",
+    "            lookback_window_size=ctx_steps,\n",
+    "            window_stride=horizon,  # non-overlapping eval windows\n",
+    "        )\n",
+    "        for model_label, model_config in make_model_configs(tabicl_max_context=tabicl_max_context):\n",
+    "            log.info(\"  %s …\", model_label)\n",
+    "            forecaster = TwigaForecaster(data_params=dc, model_params=[model_config], cv_params=train_config)\n",
+    "            forecaster.fit(train_df=train_df)\n",
+    "            preds, metrics = forecaster.evaluate_quantile_forecast(test_df=test_df)\n",
+    "            clear_output()\n",
+    "            metrics = metrics.assign(context_label=ctx_label, context_steps=ctx_steps, model_label=model_label)\n",
+    "            preds = preds.assign(context_label=ctx_label, context_steps=ctx_steps, model_label=model_label)\n",
+    "            metric_frames.append(metrics)\n",
+    "            pred_frames.append(preds)\n",
+    "\n",
+    "    return (\n",
+    "        pd.concat(metric_frames, ignore_index=True),\n",
+    "        pd.concat(pred_frames, ignore_index=True),\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 11.1 Short-term horizon — 1 day ahead (h = 48)\n",
+    "\n",
+    "Sweep contexts: 2 days · 1 week · 2 weeks · 1 month.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "short_contexts = [\n",
+    "    (\"2 days\", 48 * 2),\n",
+    "    (\"1 week\", 48 * 7),\n",
+    "    (\"2 weeks\", 48 * 14),\n",
+    "    (\"1 month\", 48 * 30),\n",
+    "]\n",
+    "\n",
+    "metrics_short, preds_short = run_context_sweep(\n",
+    "    horizon=48,\n",
+    "    contexts=short_contexts,\n",
+    "    train_df=train_df,\n",
+    "    test_df=test_df,\n",
+    ")\n",
+    "log.info(\n",
+    "    \"Short-term sweep complete: %d (model, context) runs\",\n",
+    "    metrics_short.groupby([\"model_label\", \"context_label\"]).ngroups,\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from lets_plot import (\n",
+    "    aes,\n",
+    "    element_blank,\n",
+    "    facet_grid,\n",
+    "    facet_wrap,\n",
+    "    geom_line,\n",
+    "    geom_point,\n",
+    "    ggplot,\n",
+    "    ggsize,\n",
+    "    ggtitle,\n",
+    "    labs,\n",
+    "    scale_x_continuous,\n",
+    "    theme,\n",
+    ")\n",
+    "\n",
+    "\n",
+    "def plot_context_metrics(metrics_df: pd.DataFrame, horizon_label: str):\n",
+    "    \"\"\"Faceted line chart of mae / crps / pinball / calibration_error vs context length (in days).\"\"\"\n",
+    "    metric_cols = [\"mae\", \"crps\", \"pinball\", \"calibration_error\"]\n",
+    "    agg = (\n",
+    "        metrics_df.groupby([\"model_label\", \"context_label\", \"context_steps\"], sort=False)[metric_cols]\n",
+    "        .mean()\n",
+    "        .reset_index()\n",
+    "    )\n",
+    "    agg[\"context_days\"] = agg[\"context_steps\"] / 48.0\n",
+    "    long = agg.melt(\n",
+    "        id_vars=[\"model_label\", \"context_label\", \"context_steps\", \"context_days\"],\n",
+    "        value_vars=metric_cols,\n",
+    "        var_name=\"metric\",\n",
+    "        value_name=\"value\",\n",
+    "    )\n",
+    "    return (\n",
+    "        ggplot(long, aes(x=\"context_days\", y=\"value\", color=\"model_label\"))\n",
+    "        + geom_line(size=1)\n",
+    "        + geom_point(size=2.5)\n",
+    "        + facet_wrap(\"metric\", ncol=2, scales=\"free_y\")\n",
+    "        + labs(\n",
+    "            x=\"Context length (days)\",\n",
+    "            y=\"Metric value\",\n",
+    "            color=\"Model\",\n",
+    "            title=f\"Context-length sensitivity — {horizon_label}\",\n",
+    "        )\n",
+    "        + ggsize(900, 600)\n",
+    "    )\n",
+    "\n",
+    "\n",
+    "plot_context_metrics(metrics_short, \"1-day horizon\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def build_trace_df(preds_df: pd.DataFrame, n_days: int = 2) -> pd.DataFrame:\n",
+    "    \"\"\"Take the first ``n_days * 48`` rows of each (model, context) trace and reshape for plotting.\"\"\"\n",
+    "    n_keep = n_days * 48\n",
+    "    sub = (\n",
+    "        preds_df.sort_values([\"model_label\", \"context_label\", \"timestamp\"])\n",
+    "        .groupby([\"model_label\", \"context_label\"], sort=False, group_keys=False)\n",
+    "        .head(n_keep)\n",
+    "        .reset_index(drop=True)\n",
+    "    )\n",
+    "    actual = (\n",
+    "        sub[[\"model_label\", \"context_label\", \"context_steps\", \"timestamp\", \"Actual\"]]\n",
+    "        .rename(columns={\"Actual\": \"value\"})\n",
+    "        .assign(series=\"Actual\")\n",
+    "    )\n",
+    "    forecast = (\n",
+    "        sub[[\"model_label\", \"context_label\", \"context_steps\", \"timestamp\", \"forecast\"]]\n",
+    "        .rename(columns={\"forecast\": \"value\"})\n",
+    "        .assign(series=\"Forecast (median)\")\n",
+    "    )\n",
+    "    return pd.concat([actual, forecast], ignore_index=True)\n",
+    "\n",
+    "\n",
+    "def plot_context_traces(preds_df: pd.DataFrame, horizon_label: str, n_days: int = 2):\n",
+    "    long = build_trace_df(preds_df, n_days=n_days)\n",
+    "    # Preserve the original context ordering on the x-facet\n",
+    "    ctx_order = preds_df.drop_duplicates(\"context_label\").sort_values(\"context_steps\")[\"context_label\"].tolist()\n",
+    "    long[\"context_label\"] = pd.Categorical(long[\"context_label\"], categories=ctx_order, ordered=True)\n",
+    "    return (\n",
+    "        ggplot(long, aes(x=\"timestamp\", y=\"value\", color=\"series\"))\n",
+    "        + geom_line(size=0.7)\n",
+    "        + facet_grid(y=\"model_label\", x=\"context_label\")\n",
+    "        + labs(\n",
+    "            x=\"Time\",\n",
+    "            y=\"Net Load (kW)\",\n",
+    "            color=\"Series\",\n",
+    "            title=f\"Forecast traces — {horizon_label} (first {n_days} days of test set)\",\n",
+    "        )\n",
+    "        + ggsize(1200, 650)\n",
+    "    )\n",
+    "\n",
+    "\n",
+    "plot_context_traces(preds_short, \"1-day horizon\", n_days=3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 11.2 Long-term horizon — 1 week ahead (h = 336)\n",
+    "\n",
+    "Sweep contexts: 1 week · 2 weeks · 1 month · 2 months · 3 months. We raise TabICL's `max_context_length` to 5000 so the 3-month context (4320 steps) fits.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "long_contexts = [\n",
+    "    (\"1 week\", 48 * 7),\n",
+    "    (\"2 weeks\", 48 * 14),\n",
+    "    (\"1 month\", 48 * 30),\n",
+    "    (\"2 months\", 48 * 60),\n",
+    "    (\"3 months\", 48 * 90),\n",
+    "]\n",
+    "\n",
+    "metrics_long, preds_long = run_context_sweep(\n",
+    "    horizon=48 * 7,\n",
+    "    contexts=long_contexts,\n",
+    "    train_df=train_df,\n",
+    "    test_df=test_df,\n",
+    "    tabicl_max_context=5000,\n",
+    ")\n",
+    "log.info(\n",
+    "    \"Long-term sweep complete: %d (model, context) runs\", metrics_long.groupby([\"model_label\", \"context_label\"]).ngroups\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "plot_context_metrics(metrics_long, \"1-week horizon\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "plot_context_traces(preds_long, \"1-week horizon\", n_days=3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 11.3 Reading the plots\n",
+    "\n",
+    "A few things to look for:\n",
+    "\n",
+    "- **Where does each model's MAE curve flatten?** That's the \"enough context\" point for that model.\n",
+    "- **Does CRPS improve with longer context, or get worse?** A worsening trend often means the model is being distracted by stale dynamics.\n",
+    "- **Calibration vs context** — sometimes longer context tightens the predictive distribution past the point where coverage breaks; the calibration-error panel is the canary.\n",
+    "- **Trace panels:** look for systematic phase shifts or amplitude misses that resolve at a particular context length — that's the model picking up the weekly seasonality.\n"
    ]
   },
   {
@@ -450,14 +1047,18 @@
     "**What you did**\n",
     "- [x] Loaded and split the MLVS-PT dataset\n",
     "- [x] Configured a data pipeline compatible with foundation models\n",
-    "- [x] Loaded and evaluated Chronos-2 (zero-shot, no training)\n",
-    "- [x] Trained Seaonal Naie\n",
+    "- [x] Loaded and evaluated Chronos-2 (autoregressive transformer)\n",
+    "- [x] Loaded and evaluated TabICLv2 (tabular in-context learner)\n",
+    "- [x] Loaded and evaluated Moirai 2.0 (universal transformer)\n",
+    "- [x] Loaded and evaluated TimesFM 2.5 (decoder-only transformer)\n",
+    "- [x] Loaded and evaluated Lag-Llama (lag-feature decoder)\n",
+    "- [x] Trained a Seasonal-Naive baseline\n",
     "- [x] Built a side-by-side benchmark table\n",
     "- [x] Visualised forecast traces\n",
     "\n",
     "**Key takeaways**\n",
     "1. Foundation models are a new paradigm: pre-trained knowledge vs. local optimisation\n",
-    "2. Chronos-2 delivers probabilistic forecasts (21 quantiles) without training\n",
+    "2. Three very different architectures (autoregressive, in-context tabular, universal transformer) expose the same Twiga interface\n",
     "3. Zero-shot performance is often competitive on diverse domains\n",
     "4. Fine-tuning (Phase 2) will let you retain pre-training while adapting to your data\n",
     "5. Choose based on: data size, latency budget, precision needs, and domain shift\n",
@@ -466,15 +1067,15 @@
     "\n",
     "## What's next?\n",
     "\n",
-    "- **[10 - Conformal Prediction](10-conformal-prediction.ipynb)**: Add coverage guarantees to any forecast (Chronos-2, QR, parametric)\n",
-    "- **Ensemble**: Combine Chronos-2 + QR-LightGBM for robustness\n",
-    "- **Fine-tuning** (Phase 2, coming soon): Train Chronos-2 on your data while retaining 2M+ prior knowledge"
+    "- **[10 - Conformal Prediction](10-conformal-prediction.ipynb)**: Add coverage guarantees to any forecast\n",
+    "- **Ensemble**: Combine Chronos-2 + TabICL + Moirai + TimesFM + Lag-Llama + QR-LightGBM for robustness\n",
+    "- **Fine-tuning** (Phase 2, coming soon): Train foundation models on your data while retaining the pre-training prior\n"
    ]
   }
  ],
  "metadata": {
   "kernelspec": {
-   "display_name": "twiga-forecast (3.12.12)",
+   "display_name": "twiga-forecast (3.12.10)",
    "language": "python",
    "name": "python3"
   },
@@ -488,7 +1089,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.12.12"
+   "version": "3.12.10"
   }
  },
  "nbformat": 4,

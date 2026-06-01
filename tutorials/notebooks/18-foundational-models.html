@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Zero-Shot Foundation Models &#8212; Twiga Forecast</title>
+    <title>Zero-Shot Foundation Models — Chronos-2, TabICL, Moirai, TimesFM, and Lag-Llama &#8212; Twiga Forecast</title>
   
   
   
@@ -584,7 +584,7 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Zero-Shot Foundation Models</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Zero-Shot Foundation Models — Chronos-2, TabICL, Moirai, TimesFM, and Lag-Llama</span></li>
   </ul>
 </nav>
 </div>
@@ -601,24 +601,32 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="zero-shot-foundation-models">
-<h1>Zero-Shot Foundation Models<a class="headerlink" href="#zero-shot-foundation-models" title="Link to this heading">#</a></h1>
-<p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~15%20min-lightgrey" /></p>
+  <section class="tex2jax_ignore mathjax_ignore" id="zero-shot-foundation-models-chronos-2-tabicl-moirai-timesfm-and-lag-llama">
+<h1>Zero-Shot Foundation Models — Chronos-2, TabICL, Moirai, TimesFM, and Lag-Llama<a class="headerlink" href="#zero-shot-foundation-models-chronos-2-tabicl-moirai-timesfm-and-lag-llama" title="Link to this heading">#</a></h1>
+<p><img alt="Level" src="https://img.shields.io/badge/level-intermediate-yellow" /> <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" /> <img alt="Twiga" src="https://img.shields.io/badge/twiga-forecast-orange" /> <img alt="Time" src="https://img.shields.io/badge/time-~35%20min-lightgrey" /></p>
 <hr class="docutils" />
 <p><strong>What you’ll build</strong></p>
-<p>A zero-shot probabilistic forecast using Chronos-2, a 12B-parameter foundation model trained on 2M+ diverse time series. Unlike all learnable models (QR-LightGBM, Neural Networks, etc.), Chronos-2 requires <strong>no training on your data</strong> — it downloads pre-trained weights and generates 21 quantile predictions immediately.</p>
+<p>Five zero-shot probabilistic forecasts on the same dataset, using five different foundation models:</p>
+<ul class="simple">
+<li><p><strong>Chronos-2</strong> — Amazon’s 12B-parameter autoregressive transformer (21 quantiles).</p></li>
+<li><p><strong>TabICLv2</strong> — A tabular foundation model that performs forecasting via in-context learning on engineered temporal features (9 quantiles).</p></li>
+<li><p><strong>Moirai 2.0</strong> — Salesforce’s universal time-series transformer; quantile output via the <code class="docutils literal notranslate"><span class="pre">uni2ts</span></code> package (9 quantiles).</p></li>
+<li><p><strong>TimesFM 2.5</strong> — Google’s 200M decoder-only transformer with a 16k context and a continuous quantile head (9 quantiles).</p></li>
+<li><p><strong>Lag-Llama</strong> — A decoder-only transformer using lag features; the first open-source TSFM (sample-based → 9 quantiles).</p></li>
+</ul>
+<p>All five download pre-trained weights and produce quantile predictions <strong>without training on your data</strong>. We then benchmark them against a seasonal-naive baseline.</p>
 <p><strong>Prerequisites</strong></p>
 <ul class="simple">
 <li><p><span class="xref myst">01 - Getting Started</span> (DataPipelineConfig, TwigaForecaster)</p></li>
 <li><p><span class="xref myst">08 - Quantile Regression</span> (quantile concepts, prediction intervals)</p></li>
-<li><p>A GPU is helpful but not required (inference on CPU is slow but works)</p></li>
+<li><p>A GPU is helpful but not required (inference on CPU works, just slower)</p></li>
 </ul>
 <p><strong>Learning objectives</strong></p>
 <p>By the end of this notebook you will be able to:</p>
 <ol class="arabic simple">
 <li><p>Explain the paradigm shift: pre-trained, task-agnostic models vs. data-specific learning</p></li>
-<li><p>Load and evaluate Chronos-2 as a zero-shot quantile forecaster</p></li>
-<li><p>Compare Chronos-2’s quantile outputs (21 fixed levels) against learned QR models</p></li>
+<li><p>Load and evaluate five zero-shot quantile forecasters side-by-side</p></li>
+<li><p>Compare different foundation-model architectures (autoregressive, in-context tabular, universal transformer, lag-feature decoder)</p></li>
 <li><p>Interpret when foundation models excel vs. when domain-specific fine-tuning wins</p></li>
 <li><p>Visualise quantile fan charts and coverage plots from foundation models</p></li>
 </ol>
@@ -696,9 +704,11 @@
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">great_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">GT</span><span class="p">,</span> <span class="n">md</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">LetsPlot</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_forecast_grid</span><span class="p">,</span> <span class="n">plot_metrics_bar</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot.gt</span><span class="w"> </span><span class="kn">import</span> <span class="n">twiga_gt</span><span class="p">,</span> <span class="n">twiga_report</span>
@@ -794,16 +804,13 @@ The <code class="docutils literal notranslate"><span class="pre">lookback_window
 <li><p>Loads the pre-trained Chronos-2 weights from HuggingFace</p></li>
 <li><p>Returns immediately (no optimization loop)</p></li>
 </ol>
-<p>All 24 CV folds run through the same pre-trained model — there is no per-fold retraining.</p>
+<p>All CV folds run through the same pre-trained model — there is no per-fold retraining.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.chronos2_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chronos2Config</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.chronos2_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chronos2Config</span>
 
 <span class="c1"># device=&quot;cuda&quot; if you have a GPU; &quot;cpu&quot; works but is slower</span>
-<span class="n">chronos_config</span> <span class="o">=</span> <span class="n">Chronos2Config</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;mps&quot;</span><span class="p">)</span>
+<span class="n">chronos_config</span> <span class="o">=</span> <span class="n">Chronos2Config</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 
 <span class="n">forecaster_chronos</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
     <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
@@ -820,9 +827,8 @@ The <code class="docutils literal notranslate"><span class="pre">lookback_window
 </div>
 </div>
 </div>
-</section>
-<section id="evaluate-quantile-forecast">
-<h2>4. Evaluate Quantile Forecast<a class="headerlink" href="#evaluate-quantile-forecast" title="Link to this heading">#</a></h2>
+<section id="evaluate-chronos-2-s-quantile-forecast">
+<h3>Evaluate Chronos-2’s quantile forecast<a class="headerlink" href="#evaluate-chronos-2-s-quantile-forecast" title="Link to this heading">#</a></h3>
 <p>Chronos-2 outputs 21 quantiles. We evaluate it exactly like a trained QR model.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -871,9 +877,227 @@ The <code class="docutils literal notranslate"><span class="pre">lookback_window
 </div>
 </div>
 </section>
-<section id="benchmark-chronos-2-vs-simple-baseline">
-<h2>5. Benchmark: Chronos-2 vs Simple baseline<a class="headerlink" href="#benchmark-chronos-2-vs-simple-baseline" title="Link to this heading">#</a></h2>
-<p>Compare the zero-shot foundation model against</p>
+</section>
+<section id="zero-shot-tabicl-foundation-model">
+<h2>4. Zero-Shot TabICL Foundation Model<a class="headerlink" href="#zero-shot-tabicl-foundation-model" title="Link to this heading">#</a></h2>
+<p><strong>TabICLv2</strong> takes a different architectural route to zero-shot forecasting: rather than autoregressively decoding tokenised values, it engineers temporal features (lags, calendar context, etc.) and runs <strong>in-context learning</strong> with a tabular foundation model. The pre-training mixes synthetic and real tabular datasets, so it generalises across domains without per-task fitting.</p>
+<p>Same Twiga interface — only the model swap differs.</p>
+<ul class="simple">
+<li><p>9 quantiles by default: <code class="docutils literal notranslate"><span class="pre">[0.1,</span> <span class="pre">0.2,</span> <span class="pre">...,</span> <span class="pre">0.9]</span></code></p></li>
+<li><p>Inference is ensembled across <code class="docutils literal notranslate"><span class="pre">n_estimators</span></code> members (4–8 is a good speed/quality trade-off on CPU)</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.tabicl_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabICLConfig</span>
+
+<span class="c1"># device=&quot;cuda&quot; if you have a GPU; &quot;cpu&quot; works but is slower</span>
+<span class="n">tabicl_config</span> <span class="o">=</span> <span class="n">TabICLConfig</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">n_estimators</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_context_length</span><span class="o">=</span><span class="mi">48</span> <span class="o">*</span> <span class="mi">30</span><span class="p">)</span>
+
+<span class="n">forecaster_tabicl</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">tabicl_config</span><span class="p">],</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># fit() instantiates the forecaster; weights are loaded lazily on first predict</span>
+<span class="n">forecaster_tabicl</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;TabICL zero-shot model ready for inference.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="evaluate-tabicl-s-quantile-forecast">
+<h3>Evaluate TabICL’s quantile forecast<a class="headerlink" href="#evaluate-tabicl-s-quantile-forecast" title="Link to this heading">#</a></h3>
+<p>TabICL produces 9 quantiles. We evaluate it through the same Twiga quantile-forecast pathway as Chronos-2.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_tabicl</span><span class="p">,</span> <span class="n">metric_tabicl</span> <span class="o">=</span> <span class="n">forecaster_tabicl</span><span class="o">.</span><span class="n">evaluate_quantile_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;TabICL evaluation complete.&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Predictions shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">pred_tabicl</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_tabicl</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="zero-shot-moirai-foundation-model">
+<h2>5. Zero-Shot Moirai Foundation Model<a class="headerlink" href="#zero-shot-moirai-foundation-model" title="Link to this heading">#</a></h2>
+<p><strong>Moirai</strong> (Salesforce Research) is a universal time-series transformer trained on a massive multi-domain corpus. We use <strong>Moirai 2.0</strong>, which produces native quantile output. The same wrapper also supports Moirai 1.x and Moirai-MoE via the <code class="docutils literal notranslate"><span class="pre">model_type</span></code> config field.</p>
+<p>Moirai is loaded through the <code class="docutils literal notranslate"><span class="pre">uni2ts</span></code> package and runs the GluonTS predictor pipeline under the hood; Twiga reshapes the output into the same <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">n_quantiles,</span> <span class="pre">horizon)</span></code> contract as the other foundation models.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.moirai_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">MoiraiConfig</span>
+
+<span class="c1"># device=&quot;cuda&quot; if you have a GPU; &quot;cpu&quot; works but is slower</span>
+<span class="n">moirai_config</span> <span class="o">=</span> <span class="n">MoiraiConfig</span><span class="p">(</span>
+    <span class="n">model_type</span><span class="o">=</span><span class="s2">&quot;moirai2&quot;</span><span class="p">,</span>
+    <span class="n">size</span><span class="o">=</span><span class="s2">&quot;small&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">frequency</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">,</span>  <span class="c1"># matches data_config.period</span>
+<span class="p">)</span>
+
+<span class="n">forecaster_moirai</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">moirai_config</span><span class="p">],</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># fit() downloads the model but does NOT train</span>
+<span class="n">forecaster_moirai</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Moirai zero-shot model ready for inference.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="evaluate-moirai-s-quantile-forecast">
+<h3>Evaluate Moirai’s quantile forecast<a class="headerlink" href="#evaluate-moirai-s-quantile-forecast" title="Link to this heading">#</a></h3>
+<p>Moirai 2.0 emits quantile outputs natively. Twiga reduces these to its standard 9-quantile grid and evaluates via the same quantile-forecast path as Chronos-2 and TabICL.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_moirai</span><span class="p">,</span> <span class="n">metric_moirai</span> <span class="o">=</span> <span class="n">forecaster_moirai</span><span class="o">.</span><span class="n">evaluate_quantile_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Moirai evaluation complete.&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Predictions shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">pred_moirai</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_moirai</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="zero-shot-timesfm-foundation-model">
+<h2>6. Zero-Shot TimesFM Foundation Model<a class="headerlink" href="#zero-shot-timesfm-foundation-model" title="Link to this heading">#</a></h2>
+<p><strong>TimesFM 2.5</strong> (Google Research) is a 200M-parameter decoder-only transformer with a 16k-token context and a continuous quantile head. Like Chronos-2 it forecasts autoregressively, but at a fraction of the parameter count, and it emits 9 quantile levels (0.1 … 0.9) natively.</p>
+<blockquote>
+<div><p>TimesFM 2.5 is not on PyPI — install it from source: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;git+https://github.com/google-research/timesfm.git#egg=timesfm[torch]&quot;</span></code>.</p>
+</div></blockquote>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.timesfm_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimesFMConfig</span>
+
+<span class="c1"># device=&quot;cuda&quot; if you have a GPU; &quot;cpu&quot; works but is slower</span>
+<span class="n">timesfm_config</span> <span class="o">=</span> <span class="n">TimesFMConfig</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+<span class="n">forecaster_timesfm</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">timesfm_config</span><span class="p">],</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># fit() downloads + compiles the model but does NOT train</span>
+<span class="n">forecaster_timesfm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;TimesFM zero-shot model ready for inference.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="evaluate-timesfm-s-quantile-forecast">
+<h3>Evaluate TimesFM’s quantile forecast<a class="headerlink" href="#evaluate-timesfm-s-quantile-forecast" title="Link to this heading">#</a></h3>
+<p>TimesFM 2.5’s continuous quantile head yields 9 quantiles. We evaluate it through the same quantile-forecast path as the other foundation models.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_timesfm</span><span class="p">,</span> <span class="n">metric_timesfm</span> <span class="o">=</span> <span class="n">forecaster_timesfm</span><span class="o">.</span><span class="n">evaluate_quantile_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;TimesFM evaluation complete.&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Predictions shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">pred_timesfm</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_timesfm</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="zero-shot-lag-llama-foundation-model">
+<h2>7. Zero-Shot Lag-Llama Foundation Model<a class="headerlink" href="#zero-shot-lag-llama-foundation-model" title="Link to this heading">#</a></h2>
+<p><strong>Lag-Llama</strong> was the first open-source time-series foundation model: a decoder-only transformer that ingests <strong>lag features</strong> rather than raw sequences. It is sample-based; we draw 100 samples per series and reduce them to the standard 9-quantile grid.</p>
+<blockquote>
+<div><p>Lag-Llama is <strong>not</strong> on PyPI as a forecasting checkpoint — install the Python package, then download the weights into the Twiga model directory. Run these from the <strong>project root</strong> (<code class="docutils literal notranslate"><span class="pre">twiga-forecast/</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">time</span><span class="o">-</span><span class="n">series</span><span class="o">-</span><span class="n">foundation</span><span class="o">-</span><span class="n">models</span><span class="o">/</span><span class="n">lag</span><span class="o">-</span><span class="n">llama</span><span class="o">.</span><span class="n">git</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="s2">&quot;gluonts[torch]&lt;=0.14.4&quot;</span> <span class="n">pytorch</span><span class="o">-</span><span class="n">lightning</span>
+
+<span class="n">huggingface</span><span class="o">-</span><span class="n">cli</span> <span class="n">download</span> <span class="n">time</span><span class="o">-</span><span class="n">series</span><span class="o">-</span><span class="n">foundation</span><span class="o">-</span><span class="n">models</span><span class="o">/</span><span class="n">Lag</span><span class="o">-</span><span class="n">Llama</span> \\
+    <span class="n">lag</span><span class="o">-</span><span class="n">llama</span><span class="o">.</span><span class="n">ckpt</span> <span class="o">--</span><span class="n">local</span><span class="o">-</span><span class="nb">dir</span> <span class="n">twiga</span><span class="o">/</span><span class="n">models</span><span class="o">/</span><span class="n">foundational</span><span class="o">/</span><span class="n">lag</span><span class="o">-</span><span class="n">llama</span>
+</pre></div>
+</div>
+<p>This places the checkpoint at <code class="docutils literal notranslate"><span class="pre">twiga/models/foundational/lag-llama/lag-llama.ckpt</span></code>. The wrapper’s default <code class="docutils literal notranslate"><span class="pre">ckpt_path=&quot;lag-llama/lag-llama.ckpt&quot;</span></code> is resolved against the project root automatically, so it’s found regardless of where the notebook runs from.</p>
+</div></blockquote>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.lag_llama_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LagLlamaConfig</span>
+
+<span class="c1"># device=&quot;cuda&quot; if you have a GPU; &quot;cpu&quot; works but is slower</span>
+<span class="n">lagllama_config</span> <span class="o">=</span> <span class="n">LagLlamaConfig</span><span class="p">(</span>
+    <span class="n">ckpt_path</span><span class="o">=</span><span class="s2">&quot;lag-llama/lag-llama.ckpt&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">forecaster_lagllama</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">lagllama_config</span><span class="p">],</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># fit() loads the checkpoint and prepares the predictor (no training)</span>
+<span class="n">forecaster_lagllama</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Lag-Llama zero-shot model ready for inference.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="evaluate-lag-llama-s-quantile-forecast">
+<h3>Evaluate Lag-Llama’s quantile forecast<a class="headerlink" href="#evaluate-lag-llama-s-quantile-forecast" title="Link to this heading">#</a></h3>
+<p>Lag-Llama emits probabilistic samples. Twiga reduces these to its standard 9-quantile grid and evaluates via the same quantile-forecast path as the other foundation models.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pred_lagllama</span><span class="p">,</span> <span class="n">metric_lagllama</span> <span class="o">=</span> <span class="n">forecaster_lagllama</span><span class="o">.</span><span class="n">evaluate_quantile_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">clear_output</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Lag-Llama evaluation complete.&quot;</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Predictions shape: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">pred_lagllama</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_metric_table</span><span class="p">(</span><span class="n">metric_lagllama</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="benchmark-five-foundation-models-vs-a-simple-baseline">
+<h2>8. Benchmark: Five foundation models vs a simple baseline<a class="headerlink" href="#benchmark-five-foundation-models-vs-a-simple-baseline" title="Link to this heading">#</a></h2>
+<p>Compare all five zero-shot foundation models against a seasonal-naive baseline on the same test set.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.baseline.seasonal_naive_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">SEASONALNAIVEConfig</span>
@@ -904,7 +1128,7 @@ The <code class="docutils literal notranslate"><span class="pre">lookback_window
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metrics_all</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">metric_chronos</span><span class="p">,</span> <span class="n">metric_seasonal</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">metric_chronos</span><span class="p">,</span> <span class="n">metric_tabicl</span><span class="p">,</span> <span class="n">metric_moirai</span><span class="p">,</span> <span class="n">metric_timesfm</span><span class="p">,</span> <span class="n">metric_lagllama</span><span class="p">,</span> <span class="n">metric_seasonal</span><span class="p">],</span>
     <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -937,49 +1161,55 @@ The <code class="docutils literal notranslate"><span class="pre">lookback_window
 </div>
 </section>
 <section id="key-insights">
-<h2>7. Key Insights<a class="headerlink" href="#key-insights" title="Link to this heading">#</a></h2>
-<section id="chronos-2-strengths">
-<h3>Chronos-2 Strengths<a class="headerlink" href="#chronos-2-strengths" title="Link to this heading">#</a></h3>
+<h2>9. Key Insights<a class="headerlink" href="#key-insights" title="Link to this heading">#</a></h2>
+<section id="shared-strengths-all-five-foundation-models">
+<h3>Shared strengths (all five foundation models)<a class="headerlink" href="#shared-strengths-all-five-foundation-models" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p><strong>No training time</strong>: ready in seconds</p></li>
-<li><p><strong>Diverse pre-training</strong>: benefits from 2M+ different time series</p></li>
-<li><p><strong>Probabilistic by default</strong>: 21 quantiles without extra work</p></li>
-<li><p><strong>Stable predictions</strong>: pre-trained weights don’t drift per fold</p></li>
+<li><p><strong>No training time</strong>: zero-shot — <code class="docutils literal notranslate"><span class="pre">fit()</span></code> only loads pre-trained weights</p></li>
+<li><p><strong>Diverse pre-training</strong>: benefit from millions of cross-domain time series</p></li>
+<li><p><strong>Probabilistic by default</strong>: every model emits quantile output without extra work</p></li>
+<li><p><strong>Stable predictions</strong>: pre-trained weights don’t drift per fold or per dataset</p></li>
 </ul>
 </section>
-<section id="chronos-2-limitations">
-<h3>Chronos-2 Limitations<a class="headerlink" href="#chronos-2-limitations" title="Link to this heading">#</a></h3>
+<section id="shared-limitations">
+<h3>Shared limitations<a class="headerlink" href="#shared-limitations" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p><strong>Generic</strong>: not optimized for YOUR specific domain</p></li>
-<li><p><strong>Slow inference</strong>: ~seconds per prediction batch (GPU helps dramatically)</p></li>
-<li><p><strong>Fixed quantiles</strong>: cannot request arbitrary τ values</p></li>
-<li><p><strong>Univariate only</strong>: ignores exogenous features (v1 limitation)</p></li>
+<li><p><strong>Generic</strong>: no model has seen your specific operating conditions</p></li>
+<li><p><strong>Inference cost</strong>: all five are slow per window on CPU compared to a tuned QR-LightGBM; a GPU helps dramatically</p></li>
+<li><p><strong>Fixed (or near-fixed) quantile grids</strong>: Chronos-2 is fully fixed at 21; TabICL / Moirai accept a quantile list; TimesFM emits a fixed 9-quantile head — none let you request arbitrary precision below their grid resolution</p></li>
+<li><p><strong>Covariate support</strong>: the Twiga wrappers in this notebook ignore exogenous features — they pass only the target series through</p></li>
 </ul>
 </section>
-<section id="when-learned-models-win">
-<h3>When Learned Models Win<a class="headerlink" href="#when-learned-models-win" title="Link to this heading">#</a></h3>
+<section id="when-learned-per-dataset-models-win">
+<h3>When learned (per-dataset) models win<a class="headerlink" href="#when-learned-per-dataset-models-win" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p>Large domain-specific datasets (&gt;10k samples)</p></li>
+<li><p>Large domain-specific datasets (&gt; 10 k samples) with stable dynamics</p></li>
 <li><p>Extreme precision requirements (financial trading, critical infrastructure)</p></li>
-<li><p>Need custom quantile levels or intervals</p></li>
-<li><p>Latency constraints (inference must be &lt;100ms)</p></li>
+<li><p>Need custom quantile levels or strict interval shapes</p></li>
+<li><p>Latency constraints (inference must be &lt; 100 ms)</p></li>
 </ul>
 </section>
 <section id="phase-2-fine-tuning">
 <h3>Phase 2: Fine-tuning<a class="headerlink" href="#phase-2-fine-tuning" title="Link to this heading">#</a></h3>
-<p>In a future update, Twiga will support <strong>fine-tuning</strong> Chronos-2 on your data:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Chronos2Config</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="n">fine_tune</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<p>Future Twiga releases will expose fine-tuning hooks for each foundation model:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Chronos2Config</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="n">fine_tune</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># planned</span>
+<span class="n">TabICLConfig</span><span class="p">(</span><span class="n">fine_tune</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>                    <span class="c1"># FinetunedTabICLRegressor already exists upstream</span>
+<span class="n">MoiraiConfig</span><span class="p">(</span><span class="n">model_type</span><span class="o">=</span><span class="s2">&quot;moirai&quot;</span><span class="p">,</span> <span class="n">fine_tune</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># MoiraiFinetune supports Moirai 1.x / MoE</span>
+<span class="n">LagLlamaConfig</span><span class="p">(</span><span class="n">fine_tune</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Lag-Llama exposes a PyTorch Lightning training loop upstream</span>
+<span class="c1"># TimesFM 2.5 fine-tuning is out of scope for the wrapper; use the upstream examples/finetuning recipe</span>
 </pre></div>
 </div>
-<p>This combines the best of both worlds: transfer learning from 2M+ pre-training + domain-specific optimisation.</p>
+<p>This combines the best of both worlds: transfer learning from a broad pre-training prior plus domain-specific adaptation.</p>
 </section>
 </section>
 <section id="forecast-traces">
-<h2>8. Forecast Traces<a class="headerlink" href="#forecast-traces" title="Link to this heading">#</a></h2>
+<h2>10. Forecast Traces<a class="headerlink" href="#forecast-traces" title="Link to this heading">#</a></h2>
 <p>Visual comparison of predictions across the test set.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">preds_all</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">pred_chronos</span><span class="p">,</span> <span class="n">pred_seasonal</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">preds_all</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">pred_chronos</span><span class="p">,</span> <span class="n">pred_tabicl</span><span class="p">,</span> <span class="n">pred_moirai</span><span class="p">,</span> <span class="n">pred_timesfm</span><span class="p">,</span> <span class="n">pred_lagllama</span><span class="p">,</span> <span class="n">pred_seasonal</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
 
 <span class="n">p</span> <span class="o">=</span> <span class="n">plot_forecast_grid</span><span class="p">(</span>
     <span class="n">preds_all</span><span class="p">,</span>
@@ -988,7 +1218,7 @@ The <code class="docutils literal notranslate"><span class="pre">lookback_window
     <span class="n">model_col</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
     <span class="n">n_samples_per_model</span><span class="o">=</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">48</span><span class="p">,</span>  <span class="c1"># first 7 days of test set</span>
     <span class="n">y_label</span><span class="o">=</span><span class="s2">&quot;Net Load (kW)&quot;</span><span class="p">,</span>
-    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Chronos-2 vs Learned QR Models — first 7 days of test set&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Chronos-2 vs TabICL vs Moirai vs TimesFM vs Lag-Llama vs Seasonal-Naive — first 7 days of test set&quot;</span><span class="p">,</span>
     <span class="n">fig_width</span><span class="o">=</span><span class="mi">1200</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">p</span>
@@ -997,21 +1227,295 @@ The <code class="docutils literal notranslate"><span class="pre">lookback_window
 </div>
 </div>
 </section>
+<section id="context-length-sensitivity">
+<h2>11. Context-Length Sensitivity<a class="headerlink" href="#context-length-sensitivity" title="Link to this heading">#</a></h2>
+<p>How much past does each foundation model actually need to see? We sweep the lookback window across two horizons:</p>
+<ul class="simple">
+<li><p><strong>Short-term (1-day ahead, h = 48 steps):</strong> contexts of 2 days · 1 week · 2 weeks · 1 month.</p></li>
+<li><p><strong>Long-term (1-week ahead, h = 336 steps):</strong> contexts of 1 week · 2 weeks · 1 month · 2 months · 3 months.</p></li>
+</ul>
+<p>For each <code class="docutils literal notranslate"><span class="pre">(model,</span> <span class="pre">context)</span></code> pair we rebuild the <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> with a new <code class="docutils literal notranslate"><span class="pre">lookback_window_size</span></code> and <code class="docutils literal notranslate"><span class="pre">forecast_horizon</span></code>, then re-fit + re-evaluate against the same <code class="docutils literal notranslate"><span class="pre">test_df</span></code>. Each fit is zero-shot (no training), but CPU inference scales with horizon × context, so the long-term sweep takes meaningfully longer than the short-term one.</p>
+<blockquote>
+<div><p>⚠️ TabICL’s default <code class="docutils literal notranslate"><span class="pre">max_context_length</span></code> is 4096; the long-term sweep includes a 3-month context (4320 steps), so we bump that cap in the config for that sweep.</p>
+</div></blockquote>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.chronos2_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chronos2Config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.lag_llama_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LagLlamaConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.moirai_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">MoiraiConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.tabicl_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabICLConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.foundational.timesfm_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimesFMConfig</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_model_configs</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">tabicl_max_context</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a fresh set of (display_name, config) pairs for one sweep iteration.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;Chronos-2&quot;</span><span class="p">,</span> <span class="n">Chronos2Config</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)),</span>
+        <span class="p">(</span>
+            <span class="s2">&quot;TabICL&quot;</span><span class="p">,</span>
+            <span class="n">TabICLConfig</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">n_estimators</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_context_length</span><span class="o">=</span><span class="n">tabicl_max_context</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="p">(</span>
+            <span class="s2">&quot;Moirai-2&quot;</span><span class="p">,</span>
+            <span class="n">MoiraiConfig</span><span class="p">(</span><span class="n">model_type</span><span class="o">=</span><span class="s2">&quot;moirai2&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="s2">&quot;30min&quot;</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;TimesFM&quot;</span><span class="p">,</span> <span class="n">TimesFMConfig</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)),</span>
+        <span class="p">(</span><span class="s2">&quot;Lag-Llama&quot;</span><span class="p">,</span> <span class="n">LagLlamaConfig</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">)),</span>
+    <span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">run_context_sweep</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">contexts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+    <span class="n">train_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">test_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">tabicl_max_context</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate each foundational model under each context length for a fixed horizon.</span>
+
+<span class="sd">    Returns ``(metrics_df, preds_df)`` annotated with ``context_label``,</span>
+<span class="sd">    ``context_steps`` (in 30-min steps) and ``model_label`` columns ready to plot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">base_dc_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;target_feature&quot;</span><span class="p">:</span> <span class="s2">&quot;NetLoad(kW)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;period&quot;</span><span class="p">:</span> <span class="s2">&quot;30min&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="mf">32.371666</span><span class="p">,</span>
+        <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">16.274998</span><span class="p">,</span>
+        <span class="s2">&quot;calendar_features&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;known_future_features&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;input_scaler&quot;</span><span class="p">:</span> <span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;target_scaler&quot;</span><span class="p">:</span> <span class="s2">&quot;robust&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">metric_frames</span><span class="p">,</span> <span class="n">pred_frames</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ctx_label</span><span class="p">,</span> <span class="n">ctx_steps</span> <span class="ow">in</span> <span class="n">contexts</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Context = </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%d</span><span class="s2"> steps), horizon = </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ctx_label</span><span class="p">,</span> <span class="n">ctx_steps</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+        <span class="n">dc</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+            <span class="o">**</span><span class="n">base_dc_kwargs</span><span class="p">,</span>
+            <span class="n">forecast_horizon</span><span class="o">=</span><span class="n">horizon</span><span class="p">,</span>
+            <span class="n">lookback_window_size</span><span class="o">=</span><span class="n">ctx_steps</span><span class="p">,</span>
+            <span class="n">window_stride</span><span class="o">=</span><span class="n">horizon</span><span class="p">,</span>  <span class="c1"># non-overlapping eval windows</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">model_label</span><span class="p">,</span> <span class="n">model_config</span> <span class="ow">in</span> <span class="n">make_model_configs</span><span class="p">(</span><span class="n">tabicl_max_context</span><span class="o">=</span><span class="n">tabicl_max_context</span><span class="p">):</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  </span><span class="si">%s</span><span class="s2"> …&quot;</span><span class="p">,</span> <span class="n">model_label</span><span class="p">)</span>
+            <span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span><span class="n">data_params</span><span class="o">=</span><span class="n">dc</span><span class="p">,</span> <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">model_config</span><span class="p">],</span> <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">)</span>
+            <span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">)</span>
+            <span class="n">preds</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_quantile_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">)</span>
+            <span class="n">clear_output</span><span class="p">()</span>
+            <span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">context_label</span><span class="o">=</span><span class="n">ctx_label</span><span class="p">,</span> <span class="n">context_steps</span><span class="o">=</span><span class="n">ctx_steps</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="n">model_label</span><span class="p">)</span>
+            <span class="n">preds</span> <span class="o">=</span> <span class="n">preds</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">context_label</span><span class="o">=</span><span class="n">ctx_label</span><span class="p">,</span> <span class="n">context_steps</span><span class="o">=</span><span class="n">ctx_steps</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="n">model_label</span><span class="p">)</span>
+            <span class="n">metric_frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+            <span class="n">pred_frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">metric_frames</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">pred_frames</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="short-term-horizon-1-day-ahead-h-48">
+<h3>11.1 Short-term horizon — 1 day ahead (h = 48)<a class="headerlink" href="#short-term-horizon-1-day-ahead-h-48" title="Link to this heading">#</a></h3>
+<p>Sweep contexts: 2 days · 1 week · 2 weeks · 1 month.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">short_contexts</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;2 days&quot;</span><span class="p">,</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;1 week&quot;</span><span class="p">,</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">7</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;2 weeks&quot;</span><span class="p">,</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">14</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;1 month&quot;</span><span class="p">,</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">30</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="n">metrics_short</span><span class="p">,</span> <span class="n">preds_short</span> <span class="o">=</span> <span class="n">run_context_sweep</span><span class="p">(</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">contexts</span><span class="o">=</span><span class="n">short_contexts</span><span class="p">,</span>
+    <span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span>
+    <span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="s2">&quot;Short-term sweep complete: </span><span class="si">%d</span><span class="s2"> (model, context) runs&quot;</span><span class="p">,</span>
+    <span class="n">metrics_short</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;model_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_label&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">ngroups</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">aes</span><span class="p">,</span>
+    <span class="n">element_blank</span><span class="p">,</span>
+    <span class="n">facet_grid</span><span class="p">,</span>
+    <span class="n">facet_wrap</span><span class="p">,</span>
+    <span class="n">geom_line</span><span class="p">,</span>
+    <span class="n">geom_point</span><span class="p">,</span>
+    <span class="n">ggplot</span><span class="p">,</span>
+    <span class="n">ggsize</span><span class="p">,</span>
+    <span class="n">ggtitle</span><span class="p">,</span>
+    <span class="n">labs</span><span class="p">,</span>
+    <span class="n">scale_x_continuous</span><span class="p">,</span>
+    <span class="n">theme</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_context_metrics</span><span class="p">(</span><span class="n">metrics_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">horizon_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Faceted line chart of mae / crps / pinball / calibration_error vs context length (in days).&quot;&quot;&quot;</span>
+    <span class="n">metric_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;crps&quot;</span><span class="p">,</span> <span class="s2">&quot;pinball&quot;</span><span class="p">,</span> <span class="s2">&quot;calibration_error&quot;</span><span class="p">]</span>
+    <span class="n">agg</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">metrics_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;model_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_steps&quot;</span><span class="p">],</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">metric_cols</span><span class="p">]</span>
+        <span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="n">agg</span><span class="p">[</span><span class="s2">&quot;context_days&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">agg</span><span class="p">[</span><span class="s2">&quot;context_steps&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">48.0</span>
+    <span class="n">long</span> <span class="o">=</span> <span class="n">agg</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span>
+        <span class="n">id_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;model_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_steps&quot;</span><span class="p">,</span> <span class="s2">&quot;context_days&quot;</span><span class="p">],</span>
+        <span class="n">value_vars</span><span class="o">=</span><span class="n">metric_cols</span><span class="p">,</span>
+        <span class="n">var_name</span><span class="o">=</span><span class="s2">&quot;metric&quot;</span><span class="p">,</span>
+        <span class="n">value_name</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">ggplot</span><span class="p">(</span><span class="n">long</span><span class="p">,</span> <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;context_days&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;model_label&quot;</span><span class="p">))</span>
+        <span class="o">+</span> <span class="n">geom_line</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">geom_point</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">facet_wrap</span><span class="p">(</span><span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">scales</span><span class="o">=</span><span class="s2">&quot;free_y&quot;</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">labs</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="s2">&quot;Context length (days)&quot;</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="s2">&quot;Metric value&quot;</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Context-length sensitivity — </span><span class="si">{</span><span class="n">horizon_label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="o">+</span> <span class="n">ggsize</span><span class="p">(</span><span class="mi">900</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="n">plot_context_metrics</span><span class="p">(</span><span class="n">metrics_short</span><span class="p">,</span> <span class="s2">&quot;1-day horizon&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_trace_df</span><span class="p">(</span><span class="n">preds_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">n_days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Take the first ``n_days * 48`` rows of each (model, context) trace and reshape for plotting.&quot;&quot;&quot;</span>
+    <span class="n">n_keep</span> <span class="o">=</span> <span class="n">n_days</span> <span class="o">*</span> <span class="mi">48</span>
+    <span class="n">sub</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">preds_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">&quot;model_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_label&quot;</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">])</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;model_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_label&quot;</span><span class="p">],</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">group_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">n_keep</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">actual</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">sub</span><span class="p">[[</span><span class="s2">&quot;model_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_steps&quot;</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;Actual&quot;</span><span class="p">]]</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Actual&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+        <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">forecast</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">sub</span><span class="p">[[</span><span class="s2">&quot;model_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_steps&quot;</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;forecast&quot;</span><span class="p">]]</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;forecast&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+        <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="s2">&quot;Forecast (median)&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">actual</span><span class="p">,</span> <span class="n">forecast</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_context_traces</span><span class="p">(</span><span class="n">preds_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">horizon_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n_days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
+    <span class="n">long</span> <span class="o">=</span> <span class="n">build_trace_df</span><span class="p">(</span><span class="n">preds_df</span><span class="p">,</span> <span class="n">n_days</span><span class="o">=</span><span class="n">n_days</span><span class="p">)</span>
+    <span class="c1"># Preserve the original context ordering on the x-facet</span>
+    <span class="n">ctx_order</span> <span class="o">=</span> <span class="n">preds_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="s2">&quot;context_label&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;context_steps&quot;</span><span class="p">)[</span><span class="s2">&quot;context_label&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">long</span><span class="p">[</span><span class="s2">&quot;context_label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">long</span><span class="p">[</span><span class="s2">&quot;context_label&quot;</span><span class="p">],</span> <span class="n">categories</span><span class="o">=</span><span class="n">ctx_order</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">ggplot</span><span class="p">(</span><span class="n">long</span><span class="p">,</span> <span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;series&quot;</span><span class="p">))</span>
+        <span class="o">+</span> <span class="n">geom_line</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">facet_grid</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="s2">&quot;model_label&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">&quot;context_label&quot;</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">labs</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="s2">&quot;Time&quot;</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="s2">&quot;Net Load (kW)&quot;</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s2">&quot;Series&quot;</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Forecast traces — </span><span class="si">{</span><span class="n">horizon_label</span><span class="si">}</span><span class="s2"> (first </span><span class="si">{</span><span class="n">n_days</span><span class="si">}</span><span class="s2"> days of test set)&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="o">+</span> <span class="n">ggsize</span><span class="p">(</span><span class="mi">1200</span><span class="p">,</span> <span class="mi">650</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="n">plot_context_traces</span><span class="p">(</span><span class="n">preds_short</span><span class="p">,</span> <span class="s2">&quot;1-day horizon&quot;</span><span class="p">,</span> <span class="n">n_days</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="long-term-horizon-1-week-ahead-h-336">
+<h3>11.2 Long-term horizon — 1 week ahead (h = 336)<a class="headerlink" href="#long-term-horizon-1-week-ahead-h-336" title="Link to this heading">#</a></h3>
+<p>Sweep contexts: 1 week · 2 weeks · 1 month · 2 months · 3 months. We raise TabICL’s <code class="docutils literal notranslate"><span class="pre">max_context_length</span></code> to 5000 so the 3-month context (4320 steps) fits.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">long_contexts</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;1 week&quot;</span><span class="p">,</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">7</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;2 weeks&quot;</span><span class="p">,</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">14</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;1 month&quot;</span><span class="p">,</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">30</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;2 months&quot;</span><span class="p">,</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">60</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;3 months&quot;</span><span class="p">,</span> <span class="mi">48</span> <span class="o">*</span> <span class="mi">90</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="n">metrics_long</span><span class="p">,</span> <span class="n">preds_long</span> <span class="o">=</span> <span class="n">run_context_sweep</span><span class="p">(</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="mi">48</span> <span class="o">*</span> <span class="mi">7</span><span class="p">,</span>
+    <span class="n">contexts</span><span class="o">=</span><span class="n">long_contexts</span><span class="p">,</span>
+    <span class="n">train_df</span><span class="o">=</span><span class="n">train_df</span><span class="p">,</span>
+    <span class="n">test_df</span><span class="o">=</span><span class="n">test_df</span><span class="p">,</span>
+    <span class="n">tabicl_max_context</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="s2">&quot;Long-term sweep complete: </span><span class="si">%d</span><span class="s2"> (model, context) runs&quot;</span><span class="p">,</span> <span class="n">metrics_long</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;model_label&quot;</span><span class="p">,</span> <span class="s2">&quot;context_label&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">ngroups</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_context_metrics</span><span class="p">(</span><span class="n">metrics_long</span><span class="p">,</span> <span class="s2">&quot;1-week horizon&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_context_traces</span><span class="p">(</span><span class="n">preds_long</span><span class="p">,</span> <span class="s2">&quot;1-week horizon&quot;</span><span class="p">,</span> <span class="n">n_days</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="reading-the-plots">
+<h3>11.3 Reading the plots<a class="headerlink" href="#reading-the-plots" title="Link to this heading">#</a></h3>
+<p>A few things to look for:</p>
+<ul class="simple">
+<li><p><strong>Where does each model’s MAE curve flatten?</strong> That’s the “enough context” point for that model.</p></li>
+<li><p><strong>Does CRPS improve with longer context, or get worse?</strong> A worsening trend often means the model is being distracted by stale dynamics.</p></li>
+<li><p><strong>Calibration vs context</strong> — sometimes longer context tightens the predictive distribution past the point where coverage breaks; the calibration-error panel is the canary.</p></li>
+<li><p><strong>Trace panels:</strong> look for systematic phase shifts or amplitude misses that resolve at a particular context length — that’s the model picking up the weekly seasonality.</p></li>
+</ul>
+</section>
+</section>
 <section id="wrapping-up">
 <h2>Wrapping up<a class="headerlink" href="#wrapping-up" title="Link to this heading">#</a></h2>
 <p><strong>What you did</strong></p>
 <ul class="contains-task-list simple">
 <li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Loaded and split the MLVS-PT dataset</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Configured a data pipeline compatible with foundation models</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Loaded and evaluated Chronos-2 (zero-shot, no training)</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Trained Seaonal Naie</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Loaded and evaluated Chronos-2 (autoregressive transformer)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Loaded and evaluated TabICLv2 (tabular in-context learner)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Loaded and evaluated Moirai 2.0 (universal transformer)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Loaded and evaluated TimesFM 2.5 (decoder-only transformer)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Loaded and evaluated Lag-Llama (lag-feature decoder)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Trained a Seasonal-Naive baseline</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Built a side-by-side benchmark table</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox">Visualised forecast traces</p></li>
 </ul>
 <p><strong>Key takeaways</strong></p>
 <ol class="arabic simple">
 <li><p>Foundation models are a new paradigm: pre-trained knowledge vs. local optimisation</p></li>
-<li><p>Chronos-2 delivers probabilistic forecasts (21 quantiles) without training</p></li>
+<li><p>Three very different architectures (autoregressive, in-context tabular, universal transformer) expose the same Twiga interface</p></li>
 <li><p>Zero-shot performance is often competitive on diverse domains</p></li>
 <li><p>Fine-tuning (Phase 2) will let you retain pre-training while adapting to your data</p></li>
 <li><p>Choose based on: data size, latency budget, precision needs, and domain shift</p></li>
@@ -1021,9 +1525,9 @@ The <code class="docutils literal notranslate"><span class="pre">lookback_window
 <section id="what-s-next">
 <h2>What’s next?<a class="headerlink" href="#what-s-next" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p><strong><span class="xref myst">10 - Conformal Prediction</span></strong>: Add coverage guarantees to any forecast (Chronos-2, QR, parametric)</p></li>
-<li><p><strong>Ensemble</strong>: Combine Chronos-2 + QR-LightGBM for robustness</p></li>
-<li><p><strong>Fine-tuning</strong> (Phase 2, coming soon): Train Chronos-2 on your data while retaining 2M+ prior knowledge</p></li>
+<li><p><strong><span class="xref myst">10 - Conformal Prediction</span></strong>: Add coverage guarantees to any forecast</p></li>
+<li><p><strong>Ensemble</strong>: Combine Chronos-2 + TabICL + Moirai + TimesFM + Lag-Llama + QR-LightGBM for robustness</p></li>
+<li><p><strong>Fine-tuning</strong> (Phase 2, coming soon): Train foundation models on your data while retaining the pre-training prior</p></li>
 </ul>
 </section>
 </section>
@@ -1068,17 +1572,41 @@ The <code class="docutils literal notranslate"><span class="pre">lookback_window
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shared-pipeline-and-training-config">Shared pipeline and training config</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#zero-shot-chronos-2-foundation-model">3. Zero-Shot Chronos-2 Foundation Model</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluate-quantile-forecast">4. Evaluate Quantile Forecast</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#benchmark-chronos-2-vs-simple-baseline">5. Benchmark: Chronos-2 vs Simple baseline</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-insights">7. Key Insights</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#chronos-2-strengths">Chronos-2 Strengths</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#chronos-2-limitations">Chronos-2 Limitations</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#when-learned-models-win">When Learned Models Win</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#zero-shot-chronos-2-foundation-model">3. Zero-Shot Chronos-2 Foundation Model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluate-chronos-2-s-quantile-forecast">Evaluate Chronos-2’s quantile forecast</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#zero-shot-tabicl-foundation-model">4. Zero-Shot TabICL Foundation Model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluate-tabicl-s-quantile-forecast">Evaluate TabICL’s quantile forecast</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#zero-shot-moirai-foundation-model">5. Zero-Shot Moirai Foundation Model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluate-moirai-s-quantile-forecast">Evaluate Moirai’s quantile forecast</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#zero-shot-timesfm-foundation-model">6. Zero-Shot TimesFM Foundation Model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluate-timesfm-s-quantile-forecast">Evaluate TimesFM’s quantile forecast</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#zero-shot-lag-llama-foundation-model">7. Zero-Shot Lag-Llama Foundation Model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluate-lag-llama-s-quantile-forecast">Evaluate Lag-Llama’s quantile forecast</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#benchmark-five-foundation-models-vs-a-simple-baseline">8. Benchmark: Five foundation models vs a simple baseline</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-insights">9. Key Insights</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shared-strengths-all-five-foundation-models">Shared strengths (all five foundation models)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shared-limitations">Shared limitations</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#when-learned-per-dataset-models-win">When learned (per-dataset) models win</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#phase-2-fine-tuning">Phase 2: Fine-tuning</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#forecast-traces">8. Forecast Traces</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#forecast-traces">10. Forecast Traces</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#context-length-sensitivity">11. Context-Length Sensitivity</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#short-term-horizon-1-day-ahead-h-48">11.1 Short-term horizon — 1 day ahead (h = 48)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#long-term-horizon-1-week-ahead-h-336">11.2 Long-term horizon — 1 week ahead (h = 336)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-the-plots">11.3 Reading the plots</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#wrapping-up">Wrapping up</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-s-next">What’s next?</a></li>
 </ul>
