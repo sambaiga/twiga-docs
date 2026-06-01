@@ -15,7 +15,7 @@ This guide covers how to set up a development environment, the project structure
 
 ### Prerequisites
 
-- **Python 3.12** (required: `>=3.12,<3.13`)
+- **Python 3.12+** (required: `>=3.12`)
 - **[uv](https://docs.astral.sh/uv/)**  -  fast Python package manager
 - **Git** with pre-commit hook support
 
@@ -128,7 +128,7 @@ Twiga uses [Ruff](https://docs.astral.sh/ruff/) for both linting and formatting:
 
 | Setting | Value |
 |---|---|
-| Target version | Python 3.11 |
+| Target version | Python 3.12 |
 | Line length | 120 characters |
 | Docstring convention | Google style |
 | Import sorting | isort-compatible (`known-first-party: twiga`) |
@@ -271,27 +271,30 @@ See [Creating Custom Models](../models/custom-models.md) for a step-by-step guid
 
 ## Documentation
 
-Documentation is built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) and uses [mkdocstrings](https://mkdocstrings.github.io/) for API reference generation.
+Documentation is built with [Sphinx](https://www.sphinx-doc.org/) and [MyST-NB](https://myst-nb.readthedocs.io/) for notebook rendering. API reference is auto-generated from docstrings via `sphinx-autodoc`.
 
 ### Build Locally
 
 ```bash
-# Install docs dependencies
-uv sync --extra docs
+# Install all dev dependencies (includes Sphinx and extensions)
+uv sync --extra dev --extra nn --extra explain
 
-# Serve with live reload
-uv run mkdocs serve
+# Build static HTML
+uv run sphinx-build -b html docs_sphinx docs_sphinx/_build/html
 
-# Build static site
-uv run mkdocs build
+# Build with warnings-as-errors (same as CI)
+uv run sphinx-build -b html docs_sphinx docs_sphinx/_build/html -W -T
+
+# Live-reload server
+uv run sphinx-autobuild docs_sphinx docs_sphinx/_build/html
 ```
 
 ### Writing Docs
 
-- Place new pages in the appropriate `docs/` subdirectory
-- Use MkDocs Material [admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) (`!!! note`, `!!! tip`, `!!! warning`)
-- Use [Mermaid diagrams](https://mermaid.js.org/) for architecture and flow visualizations
-- Use `:::` directives for auto-generated API docs from docstrings:
+- Place new pages in the appropriate `docs_sphinx/` subdirectory and add them to the relevant `toctree` in `index.rst`
+- Use [MyST admonitions](https://myst-parser.readthedocs.io/en/latest/syntax/admonitions.html) (`:::{note}`, `:::{tip}`, `:::{warning}`)
+- Use [Mermaid diagrams](https://mermaid.js.org/) inside fenced code blocks with the `mermaid` language tag
+- Use `eval-rst` blocks for auto-generated API docs from docstrings:
 
 ```markdown
 

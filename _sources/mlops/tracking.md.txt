@@ -92,6 +92,75 @@ tracker.log_forecaster(forecaster)
 
 ---
 
+## ExperimentEngine tracking
+
+[`ExperimentEngine`](../api/index.md#experiment-engine) automatically logs to MLflow when
+a tracking URI is configured.  No code changes are needed — just set the URI before
+running any experiment script.
+
+### Recommended backend: SQLite
+
+The MLflow file-based backend (`file://`) works for artifact storage but the
+newer MLflow UI (2.x+) requires a SQL store for full functionality (run tables,
+comparisons, search).  Use SQLite — it is still local, requires no server, and
+is a single file:
+
+```bash
+# Set once in your shell profile or .env
+export MLFLOW_TRACKING_URI=sqlite:///$(pwd)/mlruns.db
+```
+
+Or pass it per-run via `--tracking-uri`:
+
+```bash
+uv run python experiment/mlgaf_ablation.py \
+    --group gating --dataset MLVS-PT \
+    --tracking-uri sqlite:///$(pwd)/mlruns.db
+```
+
+### Starting the MLflow UI
+
+After running one or more experiments, start the UI in a separate terminal:
+
+```bash
+uv run mlflow ui \
+    --backend-store-uri sqlite:///mlruns.db \
+    --port 5000
+```
+
+Then open <http://localhost:5000> in your browser.  The experiment named after
+`spec.name` (e.g. *MLPGAF Regularization Ablation*) appears in the left sidebar
+under **Experiments**.  Click it and go to the **Runs** tab to see all runs.
+
+To keep the UI running in the background:
+
+```bash
+uv run mlflow ui --backend-store-uri sqlite:///mlruns.db --port 5000 &
+```
+
+### Run hierarchy
+
+Each `engine.run()` call writes a three-level hierarchy:
+
+```text
+MLflow Experiment: <spec.name>
+  └─ Parent Run: <YYYYMMDD_HHMMSS_<git-hash>>
+       ├─ hpo/<dataset>/<model>         ← backbone HPO (one per model/dataset)
+       └─ <dataset>/<group>/<condition> ← one per ablation condition
+            └─ fold_1, fold_2, …        ← per-fold NN training runs
+```
+
+The parent run logs CV split settings and a `results/` artifact with the
+cross-condition summary CSV.  Each condition child run logs mean ± std metrics
+across folds and the effective model config params.
+
+### Disabling tracking
+
+Omit the env var and do not pass `--tracking-uri` — the engine detects that no
+URI is configured and runs without any MLflow calls.
+
+---
+
 ## Using a remote tracking server
 
 Pass `tracking_uri` to point at a remote MLflow instance:

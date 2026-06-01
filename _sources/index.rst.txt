@@ -46,13 +46,14 @@ Twiga Forecast
          document.getElementById('tw-hero-code').innerHTML =
            '<pre>' +
            '<span class="k">from</span> twiga <span class="k">import</span> TwigaForecaster\n' +
-           '<span class="k">from</span> twiga.core.config <span class="k">import</span> ExperimentConfig\n\n' +
+           '<span class="k">from</span> twiga.core.config <span class="k">import</span> DataPipelineConfig\n' +
+           '<span class="k">from</span> twiga.models.ml.lightgbm_model <span class="k">import</span> LIGHTGBMConfig\n\n' +
            'forecaster = TwigaForecaster(\n' +
-           '    model=<span class="s">&quot;lightgbm&quot;</span>,\n' +
-           '    config=ExperimentConfig(...),\n' +
+           '    data_params=DataPipelineConfig(target_feature=<span class="s">&quot;load&quot;</span>),\n' +
+           '    model_params=LIGHTGBMConfig(),\n' +
            ')\n' +
-           'forecaster.fit(train)\n' +
-           'result = forecaster.predict(test)' +
+           'forecaster.fit(train_df)\n' +
+           'preds, metrics = forecaster.evaluate_point_forecast(test_df)' +
            '</pre>';
        </script>
      </div>
@@ -62,8 +63,9 @@ Twiga Forecast
    <div class="tw-why">
      <p class="tw-why-lead">
        Most forecasting libraries force a choice between ML and deep learning, between
-       point forecasts and probabilistic ones, or between flexibility and production
-       readiness. Twiga removes that trade-off.
+       point forecasts and probabilistic ones, between training from scratch and
+       leveraging pre-trained models, or between flexibility and production readiness.
+       Twiga removes those trade-offs.
      </p>
 
      <div class="tw-feature-grid">
@@ -76,11 +78,28 @@ Twiga Forecast
            <h3 class="tw-fcard-title">One interface, every model</h3>
          </div>
          <p class="tw-fcard-body">A single <code>TwigaForecaster</code> trains, tunes,
-         evaluates and backtests any model through an identical API. Switching from a
-         gradient-boosted tree to a neural network means changing one config object,
-         not rewriting code.</p>
+         evaluates and backtests any model through an identical API. From
+         parameter-free baselines and pre-trained zero-shot models to gradient-boosted
+         trees, neural networks and weighted ensembles, switching architectures means
+         changing one config object.</p>
          <a href="models/index.html" class="tw-fcard-link">
            Explore models <i class="bi bi-arrow-right"></i>
+         </a>
+       </div>
+
+       <div class="tw-fcard">
+         <div class="tw-fcard-header">
+           <span class="tw-feature-dot" style="background:linear-gradient(135deg,#01579b,#0277bd)">
+             <i class="bi bi-stars"></i>
+           </span>
+           <h3 class="tw-fcard-title">Zero-shot forecasting, no training required</h3>
+         </div>
+         <p class="tw-fcard-body">Chronos2, pre-trained on 2M+ diverse time series,
+         generates 21-quantile probabilistic forecasts with no domain data, no fitting
+         step and no calibration. Use it as a fast baseline, on small datasets, or
+         blended in an ensemble with learned models.</p>
+         <a href="models/foundational-models.html" class="tw-fcard-link">
+           Explore foundational models <i class="bi bi-arrow-right"></i>
          </a>
        </div>
 
@@ -119,16 +138,17 @@ Twiga Forecast
        <div class="tw-fcard">
          <div class="tw-fcard-header">
            <span class="tw-feature-dot" style="background:linear-gradient(135deg,#e65100,#fb8c00)">
-             <i class="bi bi-sliders"></i>
+             <i class="bi bi-diagram-3-fill"></i>
            </span>
-           <h3 class="tw-fcard-title">Experiment-ready by default</h3>
+           <h3 class="tw-fcard-title">Structured experiments and ablations</h3>
          </div>
-         <p class="tw-fcard-body">Every component is configured through validated Pydantic
-         dataclasses that are serialisable and directly wired to Optuna search spaces.
-         Hyperparameter tuning, time-based backtesting and checkpoint-based resume are
-         first-class features.</p>
-         <a href="core/index.html" class="tw-fcard-link">
-           Explore handbook <i class="bi bi-arrow-right"></i>
+         <p class="tw-fcard-body">A single <code>ExperimentEngine.run(spec)</code> call
+         runs backbone HPO once per dataset, then evaluates every condition across all
+         folds with automatic MLflow tracking and result aggregation. Pydantic configs,
+         Optuna integration, time-based backtesting and checkpoint-based resume are
+         first-class throughout.</p>
+         <a href="advanced/experiment-engine.html" class="tw-fcard-link">
+           Explore experiment engine <i class="bi bi-arrow-right"></i>
          </a>
        </div>
 
@@ -142,9 +162,27 @@ Twiga Forecast
          <p class="tw-fcard-body">Eight feature-target association measures are computed
          in a single call and fused with Borda-count rank aggregation and random-forest
          importance to produce a robust ranked feature list. Stationarity tests, entropy
-         measures and residual diagnostics are included, all returning tidy DataFrames.</p>
+         measures and residual diagnostics are included, all returning tidy DataFrames.
+         SHAP attribution is available for any fitted model via the optional
+         <code>twiga[explain]</code> extra.</p>
          <a href="core/feature-analysis.html" class="tw-fcard-link">
            Explore feature analysis <i class="bi bi-arrow-right"></i>
+         </a>
+       </div>
+
+       <div class="tw-fcard">
+         <div class="tw-fcard-header">
+           <span class="tw-feature-dot" style="background:linear-gradient(135deg,#00838f,#00acc1)">
+             <i class="bi bi-bar-chart-line-fill"></i>
+           </span>
+           <h3 class="tw-fcard-title">Integrated visualization toolkit</h3>
+         </div>
+         <p class="tw-fcard-body">A Lets-Plot suite covers the full workflow: forecast
+         vs. actual plots, quantile fan charts, reliability diagrams, residual
+         diagnostics and experiment result heatmaps. All functions return composable
+         <code>ggplot</code> objects with no Matplotlib boilerplate.</p>
+         <a href="advanced/visualization.html" class="tw-fcard-link">
+           Explore visualization <i class="bi bi-arrow-right"></i>
          </a>
        </div>
 
@@ -349,3 +387,4 @@ Twiga Forecast
    :caption: More
 
    Visualization <advanced/visualization>
+   Experiment Engine <advanced/experiment-engine>

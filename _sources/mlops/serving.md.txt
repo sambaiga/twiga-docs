@@ -67,11 +67,21 @@ Returns service status and loaded model metadata:
   "status": "ok",
   "models": ["lightgbm", "catboost"],
   "forecast_horizon": 24,
+  "lookback_window_size": 96,
   "targets": ["Load(MW)"]
 }
 ```
 
+`lookback_window_size` is the number of past records `/predict` expects in
+each call - read it at startup to size your request payloads dynamically.
+
 ### `POST /predict`
+
+Send exactly `lookback_window_size` past records. The endpoint synthesizes
+the `forecast_horizon` future rows internally (future timestamps stepped by
+the configured `period`, target column set to `NaN`, other columns
+forward-filled from the last lookback row), so the caller does **not**
+provide horizon rows.
 
 **Request**
 
@@ -85,6 +95,9 @@ Returns service status and loaded model metadata:
   "prepare_test_data": true
 }
 ```
+
+Sending the wrong number of records returns **422** with a message naming
+the expected `lookback_window_size`.
 
 **Response**  -  `ForecastResponse`
 

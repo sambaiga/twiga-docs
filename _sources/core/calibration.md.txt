@@ -1,0 +1,396 @@
+# Calibration and Conformal Prediction
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/core/config/conformal.py` — `ConformalConfig`
+- `twiga/distributions/conformal/base.py` — `SplitConformal`
+- `twiga/distributions/conformal/cqr.py` — `ConformalQuantileRegressor`
+- `twiga/distributions/conformal/crc.py` — `ConformalResidualFitting`
+- `twiga/forecaster/core.py` — `calibrate()` method
+
+</details>
+
+Conformal prediction is a distribution-free way to build prediction intervals with guaranteed coverage. It works as a post-hoc calibration step that wraps any trained forecaster. No need to retrain your model. Just use holdout data to calibrate, then get automatic uncertainty quantification.
+
+## Overview
+
+After training your model, you use a calibration set (holdout data) to learn how much wider your intervals need to be. Then on test data, you apply those learned margins to build prediction intervals with a coverage guarantee you specify.
+
+There are three conformal methods available:
+
+- **Residual-based** (`"residual"`) - Uses absolute residuals |y − ŷ|
+- **Quantile-based** (`"quantile"`) - Uses lower/upper quantiles from QR models
+- **Residual-fitting** (`"residual-fitting"`) - Fits a scale model for sample-specific widths
+
+All three are validated to achieve (1 − α) marginal coverage on held-out data.
+
+## ConformalConfig
+
+Configure conformal prediction via `ConformalConfig`:
+
+```python
+from twiga.core.config import ConformalConfig
+
+# 90% coverage (α = 0.1)
+config = ConformalConfig(
+    method="residual",
+    score_type="res",
+    alpha=0.1,
+)
+
+# Alternatively, specify coverage directly
+config = ConformalConfig.from_coverage(0.9, method="residual")
+```
+
+### Configuration Fields
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `method` | `Literal["residual", "quantile", "residual-fitting"]` | `"residual"` | Conformal prediction method |
+| `score_type` | `Literal["scaled", "unscaled", "res", "sign-res"]` | `"res"` | Nonconformity score type. "res" for residual methods; "scaled"/"unscaled" for quantile |
+| `alpha` | `float` in (0, 1) | `0.1` | Significance level. Coverage = 1 − alpha (e.g., alpha=0.1 → 90% coverage) |
+| `calib_method` | `Literal["uniform", "temporal"]` | `"uniform"` | Quantile estimation: "uniform" or "temporal" (exponentially weighted, recent samples prioritized) |
+| `lambda_` | `float` >= 0 | `1.0` | Exponential decay rate for temporal calibration. Ignored when calib_method="uniform" |
+
+### Method and Score Type Compatibility
+
+| Method | Valid Score Types |
+| --- | --- |
+| `"residual"` | `"res"`, `"sign-res"` |
+| `"quantile"` | `"scaled"`, `"unscaled"` |
+| `"residual-fitting"` | `"res"`, `"sign-res"` |
+
+## Calibration Workflow
+
+### 1. Split Data
+
+Allocate a **calibration set** (holdout data, disjoint from training and test):
+
+```python
+from twiga.core.config import ExperimentConfig
+from twiga.forecaster.core import TwigaForecaster
+
+train_config = ExperimentConfig(
+    split_freq="months",
+    train_size=12,      # 12 months of training
+    test_size=1,        # 1 month of testing
+    calib_size=2,       # 2 months of calibration (holdout)
+    calib_source="train_tail",  # From the tail of training data
+)
+```
+
+Available `calib_source` options:
+- `"train_tail"` — Final `calib_size` periods of the training set
+- `"gap"` — Gap period between training and test splits
+- `"test_prefix"` — First `calib_size` periods of the test set
+
+### 2. Train Models
+
+Train your forecasters on the training set (excluding the calibration window):
+
+```python
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[model_config_1, model_config_2, ...],
+    cv_params=train_config,
+    conformal_params=ConformalConfig(method="residual", alpha=0.1),
+)
+
+forecaster.fit(train_df)
+```
+
+The `conformal_params` tells `TwigaForecaster` to reserve a calibration set but not yet calibrate.
+
+### 3. Calibrate
+
+Call `calibrate()` with the calibration data:
+
+```python
+forecaster.calibrate(calibrate_df=calib_df)
+```
+
+The calibration step:
+- Generates predictions on the calibration set
+- Computes nonconformity scores (residuals, quantile crossings, or auxiliary scale estimates)
+- Computes the (1 − α)-quantile of these scores
+- Stores the threshold in a `Conformal` object per model
+
+### 4. Predict with Intervals
+
+Generate prediction intervals on test data using the calibrated thresholds:
+
+```python
+results_df, metrics_df = forecaster.evaluate_interval_forecast(test_df)
+# Columns: timestamp, target, forecast, lower, upper, ...
+```
+
+The intervals are guaranteed to have at least (1 − α) marginal coverage on test data (assuming exchangeability).
+
+## Residual-Based Method
+
+The classical **split conformal** approach. Uses absolute residuals |y − ŷ| on the calibration set.
+
+### Nonconformity Score
+
+$$S_i = |y_i - \hat{y}_i|$$
+
+### Threshold Computation
+
+$$q = \lceil (n+1)(1-\alpha) \rceil \text{-th quantile of } \{S_1, \ldots, S_n\}$$
+
+### Prediction Interval
+
+$$[L, U] = [\hat{y} - q, \hat{y} + q]$$
+
+Symmetric around the point forecast.
+
+### Score Type: `"res"` vs. `"sign-res"`
+
+- `"res"` — Standard absolute residual, enforces symmetric intervals
+- `"sign-res"` — Sign-aware residual; can produce asymmetric intervals when residuals are skewed
+
+### When to Use
+
+- Point forecasters (any model outputting only a point prediction)
+- When you want simple, symmetric intervals
+- Fast calibration (no auxiliary model fitting)
+
+### Example
+
+```python
+from twiga.core.config import ConformalConfig
+
+config = ConformalConfig(
+    method="residual",
+    score_type="res",
+    alpha=0.1,
+)
+
+forecaster.fit(train_df)
+forecaster.calibrate(calib_df)
+results, metrics = forecaster.evaluate_interval_forecast(test_df)
+```
+
+## Quantile-Based Method
+
+For **quantile regression models** that output lower and upper quantiles. The nonconformity score is the distance from the ground truth to the nearest quantile boundary.
+
+### Nonconformity Score
+
+$$S_i = \max(L_i - y_i, y_i - U_i, 0)$$
+
+Where $L_i$ and $U_i$ are the lower and upper quantiles from the QR model.
+
+### Threshold Computation
+
+Same as residual-based: (1 − α)-quantile of calibration scores.
+
+### Prediction Interval
+
+$$[L_{\text{final}}, U_{\text{final}}] = [L - q, U + q]$$
+
+Widens the model's native quantiles by the calibrated margin.
+
+### Score Type: `"scaled"` vs. `"unscaled"`
+
+- `"scaled"` — Normalise scores by the model's native interval width; more responsive to model uncertainty
+- `"unscaled"` — Use absolute score magnitudes; stable but may be conservative
+
+### When to Use
+
+- Quantile regression models (QR, FPQR, Chronos2)
+- When the model already provides quantiles
+- To post-hoc tighten or widen native quantile predictions
+
+### Example
+
+```python
+from twiga.models.ml import QRXGBOOSTConfig
+from twiga.core.config import ConformalConfig
+
+config = ConformalConfig(
+    method="quantile",
+    score_type="scaled",
+    alpha=0.1,
+)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[QRXGBOOSTConfig()],
+    conformal_params=config,
+)
+
+forecaster.fit(train_df)
+forecaster.calibrate(calib_df)
+results, metrics = forecaster.evaluate_interval_forecast(test_df)
+```
+
+## Residual-Fitting Method
+
+An adaptive method that fits an auxiliary model to predict the magnitude of residuals, enabling sample-specific interval widths. Uses two-stage training: first the backbone, then the scale predictor.
+
+### Two-Stage Process
+
+**Stage 1:** Train the point forecaster on the full training set, learning the mean μ.
+
+**Stage 2:** On calibration data, fit an auxiliary network (conditioned on μ) to predict the magnitude of residuals |y − μ|, obtaining σ (scale estimate).
+
+**Calibration:** Use the predicted σ values as nonconformity scores and compute their (1 − α)-quantile on the calibration set, yielding threshold q.
+
+**Test:** Construct intervals as [μ − q·σ, μ + q·σ], where σ adapts per sample.
+
+### Temporal Calibration (Optional)
+
+By default, all calibration samples are weighted equally. With `calib_method="temporal"`, recent samples receive exponentially higher weight:
+
+$$w_i \propto \exp(\lambda_{\text{age}_i})$$
+
+This is useful when the data distribution is drifting or seasonal patterns are evolving.
+
+- `lambda_=0` → uniform weights (equivalent to `calib_method="uniform"`)
+- `lambda_=1.0` (default) → exponential decay, giving recent samples about e times more weight
+- `lambda_=5.0` → aggressive recency bias; useful for rapidly changing regimes
+
+### When to Use
+
+- Heteroscedastic time series (variance changes over time or across samples)
+- When adaptive, sample-specific intervals improve precision
+- Models that learn both mean and auxiliary scale (e.g., Gaussian, parametric distributions)
+
+### Example
+
+```python
+from twiga.models.nn.mlpfnormal_model import MLPFNormalConfig
+from twiga.core.config import ConformalConfig
+
+config = ConformalConfig(
+    method="residual-fitting",
+    score_type="res",
+    alpha=0.1,
+    calib_method="temporal",
+    lambda_=1.0,
+)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[MLPFNormalConfig()],
+    conformal_params=config,
+)
+
+forecaster.fit(train_df)
+forecaster.calibrate(calib_df)
+results, metrics = forecaster.evaluate_interval_forecast(test_df)
+```
+
+## calibrate() Method Signature
+
+```python
+def calibrate(
+    self,
+    calibrate_df: pd.DataFrame | None = None,
+    covariate_df: pd.DataFrame | None = None,
+    ensemble_strategy: str | None = None,
+    ensemble_weights: dict[str, float] | None = None,
+) -> None:
+```
+
+| Parameter | Description |
+| --- | --- |
+| `calibrate_df` | Holdout calibration data. If `None`, uses stored training data (discouraged; breaks exchangeability assumption) |
+| `covariate_df` | Optional external features (known future values) |
+| `ensemble_strategy` | If multiple models, how to combine: `"mean"`, `"median"`, or `"weighted"` |
+| `ensemble_weights` | For weighted ensemble: dict mapping model names to normalized weights |
+
+### Raises
+
+- `ValueError` if `conformal_params` was not set during forecaster initialization
+- `ValueError` if the model type is incompatible with the chosen conformal method
+
+## Complete Example
+
+```python
+import pandas as pd
+from twiga.core.config import DataPipelineConfig, ExperimentConfig, ConformalConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.models.ml import QRXGBOOSTConfig
+
+# 1. Load data
+data_df = pd.read_parquet("data.parquet")
+
+# 2. Configure pipeline
+data_config = DataPipelineConfig(
+    target_feature="load_mw",
+    period="1h",
+    lookback_window_size=168,
+    forecast_horizon=24,
+    calendar_features=["hour", "dayofweek"],
+)
+
+# 3. Configure cross-validation with calibration
+cv_config = ExperimentConfig(
+    split_freq="months",
+    train_size=12,
+    test_size=1,
+    calib_size=2,
+    calib_source="train_tail",
+)
+
+# 4. Configure conformal prediction
+conformal_config = ConformalConfig(
+    method="quantile",
+    score_type="scaled",
+    alpha=0.1,  # 90% coverage
+)
+
+# 5. Create forecaster
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[QRXGBOOSTConfig(quantiles=[0.1, 0.5, 0.9])],
+    cv_params=cv_config,
+    conformal_params=conformal_config,
+)
+
+# 6. Train (splits data into train, calib, test automatically)
+forecaster.fit(data_df)
+
+# 7. Calibrate on the reserved calibration set
+forecaster.calibrate()
+
+# 8. Evaluate with intervals
+results, metrics = forecaster.evaluate_interval_forecast(data_df)
+print(results)  # timestamp | target | forecast | lower | upper | ...
+print(metrics)  # PICP, CWE, winkler_score, ...
+```
+
+## Guarantees and Assumptions
+
+### Marginal Coverage Guarantee
+
+Under the **exchangeability assumption** (all samples are i.i.d. or weakly dependent):
+
+$$\mathbb{P}[Y \in [L, U]] \geq 1 - \alpha$$
+
+This holds in-distribution and on average across the test set.
+
+### Exchangeability
+
+Conformal methods assume the calibration and test data are exchangeable (no distribution shift). If the test distribution differs significantly from calibration, coverage may degrade. Consider:
+- Recalibrating if you detect drift
+- Using temporal calibration (`calib_method="temporal"`) to down-weight stale calibration data
+- Validating coverage on rolling windows during backtesting
+
+### Finite-Sample Guarantee
+
+With n calibration samples, the smallest achievable confidence is:
+
+$$1 - \alpha' = 1 - \left\lceil (n+1)(1-\alpha) \right\rceil / n$$
+
+For large n, this approaches 1 − α. For small n (< 100), expect some slack.
+
+## See Also
+
+- [Prediction Intervals](../advanced/prediction-intervals.md) — General interval forecasting
+- [Metrics](metrics.md#interval-forecast-metrics) — Interval evaluation (PICP, CWE, Winkler)
+- [Backtesting](backtesting.md) — Rolling window validation of conformal intervals
+- [Quantile Regression](../models/ml-models.md#quantile-regression) — QR models for use with quantile-based conformal

@@ -1,0 +1,316 @@
+# Foundational Models
+
+:::{dropdown} Source Files
+
+- `twiga/models/foundational/base.py`  -  `BaseFoundationalModel`
+- `twiga/models/foundational/chronos2_model.py`  -  `Chronos2Model` / `Chronos2Config`
+
+:::
+
+Twiga's **foundational domain** provides pre-trained, task-agnostic models that require no training on your target data. Unlike learned models that fit parameters to your specific time series, foundational models download pre-trained weights and generate probabilistic forecasts immediately through zero-shot inference. They leverage transfer learning from training on millions of diverse time series, making them robust to domain shift and data scarcity.
+
+Foundational models share the same TwigaForecaster interface as ML and NN models and can be composed freely with learned models for ensemble forecasting. All foundational models are inherently probabilistic (quantile-based) and generate confidence intervals and prediction intervals without requiring explicit calibration.
+
+For the full model catalogue see the [Model Catalog Overview](index.md).
+
+:::{admonition} When to use foundational models
+:class: tip
+
+| Use case | Recommended model |
+|---|---|
+| Rapid prototyping on new domain | `Chronos2Model()` — validate problem in seconds, no data tuning required |
+| Small datasets (<1000 samples) | `Chronos2Model()` — pre-training beats local fitting on limited data |
+| Production with minimal latency | `Chronos2Model()` — inference time measured in seconds per batch |
+| Domain transfer / few-shot learning | `Chronos2Model()` — leverage 2M+ diverse time series in pre-training |
+| Probabilistic baseline or ensemble component | `Chronos2Model()` — 21 quantiles require no fine-tuning |
+| Confidence estimation without calibration | `Chronos2Model()` — zero-shot intervals from pre-trained quantile distribution |
+
+**When NOT to use foundational models:**
+- Extreme latency requirements (<100ms per prediction) — inference is ~seconds per batch
+- Custom quantile levels — Chronos2 outputs 21 fixed quantiles, not arbitrary τ values
+- Multivariate forecasting — current generation is univariate only
+- Specialized domains with abundant domain-specific data — fine-tuned domain models often outperform
+:::
+
+
+## Common Interface
+
+All foundational models extend `BaseQuantileRegressor` and implement the quantile regression interface. They are zero-shot: no local training occurs, only weight loading and inference.
+
+### Constructor Pattern
+
+```python
+Model(model_config: Config | None = None)
+```
+
+Each model defaults to its own config class when `model_config` is omitted.
+
+### Shared Attributes
+
+| Attribute | Type | Description |
+|---|---|---|
+| `model` | Object | Pre-trained model pipeline (e.g., `Chronos2Pipeline`). Loaded during `fit()`. |
+| `num_targets` | `int` | Always `1` — foundational models are univariate only. |
+| `horizon` | `int` | Forecast horizon length. Set during `fit()` from `y.shape`. |
+| `quantiles` | `list[float]` | Quantile levels produced by the model (fixed architecture). |
+| `device` | `str` | Compute device: `'cpu'`, `'cuda'`, or `'mps'` (Apple Silicon). |
+
+### Shared Methods
+
+| Method | Signature | Description |
+|---|---|---|
+| `fit` | `fit(X, y, eval_set=None, verbose=False) -> self` | Validates dimensions, loads pre-trained weights from HuggingFace or cache, sets `num_targets` and `horizon`. No parameter optimization. `eval_set` accepted for API compatibility. |
+| `predict` | `predict(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]` | Returns median forecast and full quantile predictions. Shape: `(B, horizon, n_targets)` and `(B, n_quantiles, horizon, n_targets)`. |
+| `forecast` | `forecast(x: np.ndarray, sigma=False) -> dict` | Returns dict with keys `'loc'` (median) and `'quantiles'` (all quantile predictions). |
+| `update` | `update(trial) -> None` | Rebuilds config from Optuna trial parameters if hyperparameter tuning is enabled. |
+
+:::{admonition} Feature-column convention
+:class: important
+
+Foundational models read the target variable from the input array `X`. The `DataPipeline` convention applies: `X[:, t, :num_targets]` contains raw target values at time step `t` within the lookback window. When using custom pipelines with foundational models, ensure the first `num_targets` columns are the target variable(s) in chronological order.
+:::
+
+
+## Chronos2Model
+
+`Chronos2Model` implements zero-shot forecasting via a pre-trained 12-billion-parameter autoregressive transformer trained on 2M+ diverse time series spanning energy, traffic, weather, retail, and more. It generates 21 quantile predictions per forecast horizon without any fine-tuning on your data.
+
+### Zero-Shot Inference Paradigm
+
+Unlike learned models (QR, parametric) that fit to your dataset:
+
+```python
+# Learned model: fit on training data, then predict
+qr_model = QRXGBOOSTConfig()
+forecaster = TwigaForecaster(data_config, [qr_model])
+forecaster.fit(train_df)  # ← Parameters optimized to train_df
+forecaster.predict(test_df)
+```
+
+Foundational models skip the fitting step:
+
+```python
+# Foundational model: download weights, then predict (no fit optimization)
+chronos = Chronos2Config(device="cpu")
+forecaster = TwigaForecaster(data_config, [chronos])
+forecaster.fit(train_df)  # ← Downloads pre-trained weights, validates dimensions only
+forecaster.predict(test_df)
+```
+
+The training phase validates shapes and prepares the data pipeline, but does **not** optimize parameters. All predictive knowledge comes from the 2M+ time series in pre-training.
+
+### Quantile Levels
+
+Chronos2 outputs **21 fixed quantile levels**. These are architectural and cannot be changed:
+
+```
+[0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45,
+ 0.5 (median),
+ 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.975]
+```
+
+These levels provide **95% nominal coverage** (0.025 to 0.975) with fine granularity in the center and tails. If custom quantiles are required, use [Quantile Regression](../probabilistic/quantile-regression.md) models instead.
+
+### Device Selection
+
+Chronos2 supports three compute devices for inference:
+
+| Device | Use case | Performance |
+|---|---|---|
+| `'cpu'` | Default, broad compatibility | ~seconds per batch |
+| `'cuda'` | NVIDIA GPUs (large batches) | ~100ms per large batch on V100/A100 |
+| `'mps'` | Apple Silicon (M1/M2/M3 chips) | ~500ms per batch on M1 Pro |
+
+Device defaults to `'cpu'`. Switch at config time:
+
+```python
+config = Chronos2Config(device="cuda")
+forecaster = TwigaForecaster(data_config, [config])
+```
+
+:::{admonition} GPU Inference
+:class: note
+
+For production batch inference, `'cuda'` with batch sizes 64–256 is 10–100× faster than CPU. For single-step or small batches (<32), CPU overhead is comparable.
+:::
+
+### Monotonicity Enforcement
+
+Chronos2 quantile predictions are enforced to be monotonically increasing (Q₀.₁ ≤ Q₀.₂ ≤ ... ≤ Q₀.₉) to respect the definition of quantiles. Three strategies control enforcement:
+
+| Strategy | Method | Speed | Use case |
+|---|---|---|---|
+| `'sort'` | Sort along quantile axis | Fastest | Default; respects quantile order absolutely |
+| `'isotonic'` | Isotonic regression per (horizon, target) | Slower; preserves more prediction structure | When crossing quantiles indicate model miscalibration |
+| `'none'` | No enforcement | Fastest | Research / diagnostic; warnings enabled |
+
+```python
+config = Chronos2Config(enforce_monotonic="sort")  # default
+```
+
+All strategies are applied post-inference and do not affect weight loading or latency significantly.
+
+### Chronos2Config
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["chronos2"]` | `"chronos2"` | Model identifier. Excluded from parameter dumps. |
+| `domain` | `Literal["foundational"]` | `"foundational"` | Domain identifier. Excluded from parameter dumps. |
+| `device` | `Literal["cpu", "cuda", "mps"]` | `"cpu"` | Compute device for inference. |
+| `enforce_monotonic` | `Literal["sort", "isotonic", "none"]` | `"sort"` | Monotonicity enforcement strategy. |
+| `search_space` | `BaseSearchSpace` | *empty* | No hyperparameter tuning; omitted from Optuna trials. |
+
+**No search space:** Chronos2 has no tunable hyperparameters. The `search_space` field is always empty. All behavior is controlled via the config fields above.
+
+### Example: Zero-Shot Forecasting
+
+```python
+import pandas as pd
+from twiga import TwigaForecaster
+from twiga.core.config import DataPipelineConfig, ExperimentConfig
+from twiga.models.foundational.chronos2_model import Chronos2Config
+
+# Load data
+data = pd.read_parquet("my_timeseries.parquet")
+train_df = data[data["timestamp"] < "2024-01-01"]
+test_df = data[data["timestamp"] >= "2024-01-01"]
+
+# Configure pipeline and model
+data_config = DataPipelineConfig(
+    target_feature="load",
+    period="30min",
+    forecast_horizon=48,
+    lookback_window_size=96,
+    latitude=40.0,
+    longitude=-75.0,
+    calendar_features=["hour", "day_of_week"],
+)
+
+chronos = Chronos2Config(device="cpu")
+
+# Create forecaster
+forecaster = TwigaForecaster(data_config, [chronos])
+
+# Fit (loads weights, no training)
+forecaster.fit(train_df)
+
+# Predict
+predictions, metrics = forecaster.evaluate_quantile_forecast(test_df)
+
+# Access quantiles
+print(predictions.columns)  # ['timestamp', 'Actual', 'forecast', 'q_0.025', 'q_0.05', ..., 'q_0.975']
+```
+
+### Example: Ensemble with Learned Models
+
+Combine Chronos2 (zero-shot) with learned models for robustness:
+
+```python
+from twiga.models.ml import QRXGBOOSTConfig
+
+configs = [
+    Chronos2Config(device="cpu"),
+    QRXGBOOSTConfig(),
+]
+
+forecaster = TwigaForecaster(
+    data_config,
+    configs,
+    ensemble_strategy="median_quantiles",
+)
+
+forecaster.fit(train_df)
+predictions, metrics = forecaster.evaluate_quantile_forecast(test_df)
+```
+
+The ensemble median across Chronos2 and QR-XGBoost provides blended uncertainty.
+
+## BaseFoundationalModel
+
+Internal abstract base class for foundational models. Custom foundational models should inherit from this class and implement:
+
+```python
+class MyFoundationalModel(BaseFoundationalModel):
+    quantile_levels = [0.1, 0.5, 0.9]  # Define fixed quantiles
+
+    def __init__(self, model_config):
+        super().__init__(
+            data_pipeline=None,
+            model_instance=None,
+            quantiles=self.quantile_levels,
+            conf_level=0.05,
+            enforce_monotonic="sort",
+        )
+        self.model_config = model_config
+
+    def _initialize_models(self):
+        """Load pre-trained weights from external source."""
+        self.model = load_pretrained_weights(...)
+
+    def _predict(self, x):
+        """Generate quantile predictions."""
+        return self.model.predict(x)  # shape (B, n_quantiles, horizon, n_targets)
+```
+
+See [Custom Models](custom-models.md) for a complete walkthrough.
+
+## Advantages vs. Disadvantages
+
+### Advantages
+
+✅ **No training cost** — Download weights, forecast immediately (seconds to setup)
+✅ **Robust to domain shift** — Pre-trained on 2M+ diverse series
+✅ **Works on small datasets** — No overfitting risk; better than underfitted QR on <500 samples
+✅ **Automatic uncertainty** — 21 quantiles without explicit calibration
+✅ **Ensemble-ready** — Mix with learned models for blended forecasts
+✅ **Simple API** — One config, identical to learned models
+
+### Disadvantages
+
+❌ **Slow inference** — ~seconds per batch (vs. ~10ms for tree models)
+❌ **Fixed quantiles** — Cannot request custom τ values; must accept 21 levels
+❌ **Univariate only** — No multivariate or multi-output support (current gen)
+❌ **May underperform** — On specialized domains with abundant domain-specific training data
+❌ **Black-box** — Cannot inspect or fine-tune learned parameters (by design)
+
+## Comparison with Other Quantile Models
+
+| Model | Training | Inference | Quantiles | Uncertainty Calibration | Use case |
+|---|---|---|---|---|---|
+| **Chronos2** (foundational) | None (zero-shot) | ~seconds | 21 fixed | Automatic (pre-trained) | Rapid prototyping, domain transfer, small data |
+| **QR-XGBoost** (ML) | Minutes to hours | ~10ms | Any τ | Manual (calibration step) | Production, custom quantiles, large data |
+| **QR-MLPF** (NN) | Hours (GPU) | ~50ms | Any τ | Manual (calibration step) | High-capacity, complex patterns, very large data |
+| **FPQR-MLPGAM** (NN) | Hours (GPU) | ~50ms | Any τ | Learned (output layer) | Adaptive quantile bounds, complex interactions |
+
+## References
+
+- [Ansari et al., 2024. Chronos: Pretrained (Language) Models for Time Series Forecasting](https://arxiv.org/abs/2310.07554)
+- Foundational Model Architecture: Autoregressive Transformer with Tokenization
+- Pre-training corpus: 2M+ public and proprietary time series
+
+
+## API Reference
+
+### BaseFoundationalModel
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.base.BaseFoundationalModel
+   :members:
+   :show-inheritance:
+```
+
+### Chronos2Model
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.chronos2_model.Chronos2Model
+   :members:
+   :show-inheritance:
+```
+
+### Chronos2Config
+
+```{eval-rst}
+.. autoclass:: twiga.models.foundational.chronos2_model.Chronos2Config
+   :members:
+   :show-inheritance:
+```

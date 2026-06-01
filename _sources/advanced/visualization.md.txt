@@ -8,6 +8,7 @@
 - `twiga/core/plot/distribution.py`  -  density, KDE, CDF, distribution
 - `twiga/core/plot/stats.py`  -  ACF, metrics bar, PIT histogram, reliability diagram
 - `twiga/core/plot/residuals.py`  -  residual diagnostic plots
+- `twiga/core/plot/evaluation.py`  -  ablation result loading & experiment evaluation plots
 - `twiga/core/plot/matplot_theme.py`  -  Matplotlib theme & `plot_prediction`
 - `twiga/core/plot/gt.py`  -  Great Tables result formatting
 :::
@@ -430,6 +431,163 @@ from twiga.core.plot.matplot_theme import plotting_context
 with plotting_context():
     fig, ax = plt.subplots()
     ax.plot(dates, values)
+```
+
+---
+
+---
+
+## Ablation & Experiment Evaluation Plots
+
+`twiga/core/plot/evaluation.py` provides the full plotting and analysis API for `ExperimentEngine` results. All functions are available through the same flat import as other plot modules:
+
+```python
+from twiga.core.plot import (
+    load_ablation,
+    enrich_summary,
+    plot_group,
+    plot_summary_heatmap,
+    plot_lollipop,
+    plot_sweep,
+    save_ablation_plots,
+)
+```
+
+### Loading and enriching results
+
+`load_ablation` reads the CSV files written by `ExperimentEngine` (or `aggregate`) and returns an `AblationResult` dataclass bundling the full and summary frames.
+
+```python
+from pathlib import Path
+from twiga.core.plot import load_ablation, enrich_summary, AblationResult
+
+result: AblationResult = load_ablation(
+    root=Path("results/ganf_ablation"),
+    prefix="ganf_ablation",
+    suffix="_val",
+)
+
+# result.full    - long-form DataFrame with one row per fold / horizon
+# result.summary - mean +/- std per (group, condition, metric_type)
+
+# Add Cohen's d effect sizes and bootstrap confidence intervals
+result = enrich_summary(result, reference="baseline")
+```
+
+`bootstrap_ci` and `cohen_d` are also available directly if you need them on arbitrary DataFrames:
+
+```python
+from twiga.core.plot import bootstrap_ci, cohen_d
+
+ci_lo, ci_hi = bootstrap_ci(values, n_bootstrap=2000, alpha=0.05)
+d = cohen_d(treatment_values, control_values)
+```
+
+### Per-group bar and lollipop charts
+
+`plot_group` produces a faceted bar chart comparing all conditions within a single dataset group:
+
+```python
+from twiga.core.plot import plot_group
+
+p = plot_group(
+    result.summary,
+    group="ETTh1",
+    metric="mae",
+    reference="baseline",
+    title="MAE by condition - ETTh1",
+)
+p
+```
+
+`plot_lollipop` shows the same comparison as a lollipop chart, which reduces clutter when there are many conditions:
+
+```python
+from twiga.core.plot import plot_lollipop
+
+p = plot_lollipop(result.summary, group="ETTh1", metric="mae")
+p
+```
+
+### Heatmap across all groups
+
+`plot_summary_heatmap` renders a conditions x datasets heat map for a single metric. Cells are colour-coded relative to the reference condition:
+
+```python
+from twiga.core.plot import plot_summary_heatmap
+
+p = plot_summary_heatmap(
+    result.summary,
+    metric="mae",
+    reference="baseline",
+    title="MAE relative to baseline",
+)
+p
+```
+
+### Hyperparameter sweep plot
+
+`plot_sweep` traces a single metric across multiple values of a swept hyperparameter:
+
+```python
+from twiga.core.plot import plot_sweep
+
+p = plot_sweep(
+    result.full,
+    sweep_col="lambda_gate",
+    metric="mae",
+    group="ETTh1",
+    title="Gate penalty sweep",
+)
+p
+```
+
+### Trade-off scatter
+
+`plot_tradeoff` places two metrics on opposing axes to visualise accuracy/efficiency or accuracy/complexity trade-offs across conditions:
+
+```python
+from twiga.core.plot import plot_tradeoff
+
+p = plot_tradeoff(
+    result.summary,
+    x_metric="mae",
+    y_metric="mse",
+    label_col="condition",
+    title="MAE vs MSE",
+)
+p
+```
+
+### Additional comparison plots
+
+| Function | Description |
+| --- | --- |
+| `plot_bar(summary, metric, ...)` | Simple grouped bar chart without faceting |
+| `plot_strip(full, metric, group, ...)` | Per-fold strip chart showing distribution across folds |
+| `plot_comparison(summary, metrics, ...)` | Multi-metric comparison panel, one subplot per metric |
+| `plot_seasonal(full, metric, group, ...)` | Metric broken down by season or time slice |
+| `plot_metric_across_datasets(summary, metric, ...)` | Single metric across all dataset groups |
+| `plot_metrics_by_type(summary, group, ...)` | Metrics separated by type (point vs. probabilistic) |
+| `plot_all_groups(summary, metric, ...)` | Calls `plot_group` for every group and returns a list |
+
+### Saving plots to disk
+
+`save_condition_plot` writes a single figure and `save_ablation_plots` writes the full standard suite for one experiment run:
+
+```python
+from twiga.core.plot import save_condition_plot, save_ablation_plots
+
+# Save one figure
+save_condition_plot(p, path=Path("figures/mae_heatmap.html"))
+
+# Save the standard suite for an experiment run
+save_ablation_plots(
+    result=result,
+    output_dir=Path("figures/ganf_ablation"),
+    reference="baseline",
+    metrics=["mae", "rmse", "smape"],
+)
 ```
 
 ---

@@ -1,0 +1,354 @@
+# Forecast Results
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/forecaster/result.py` - `ForecastResult`, `ForecastCollection`, `ForecastKind`, `RawPrediction`
+
+</details>
+
+When you call `forecast()`, `predict()`, or `evaluate_*_forecast()`, the forecaster returns forecast results as typed data structures. Understanding these containers helps you work with predictions, convert to DataFrames, and extract specific forecast kinds.
+
+## ForecastKind
+
+Defines the type of forecast output:
+
+```python
+from twiga.forecaster.result import ForecastKind
+
+print(ForecastKind.POINT)           # "point"
+print(ForecastKind.PARAMETRIC)      # "parametric"
+print(ForecastKind.QUANTILE)        # "quantile"
+print(ForecastKind.SAMPLES)         # "samples"
+print(ForecastKind.INTERVAL)        # "interval"
+```
+
+| Kind | Description | Required Fields |
+| --- | --- | --- |
+| `POINT` | Single point prediction (mean or median) | `loc` |
+| `PARAMETRIC` | Mean and standard deviation | `loc`, `scale` |
+| `QUANTILE` | Multiple quantile levels | `loc`, `quantiles`, `quantile_levels` |
+| `SAMPLES` | Monte Carlo samples from the predictive distribution | `loc`, `samples` |
+| `INTERVAL` | Lower and upper bounds (conformal or otherwise) | `loc`, `lower`, `upper` |
+
+## RawPrediction
+
+An intermediate typed container for model output before inverse-scaling. Sits between the model's output and the final `ForecastResult`.
+
+### Fields
+
+```python
+@dataclass
+class RawPrediction:
+    loc: np.ndarray                              # Required: (B, H, T)
+    kind: ForecastKind = ForecastKind.POINT
+    lower: np.ndarray | None = None              # For INTERVAL
+    upper: np.ndarray | None = None              # For INTERVAL
+    scale: np.ndarray | None = None              # For PARAMETRIC
+    quantiles: np.ndarray | None = None          # For QUANTILE
+    quantile_levels: list[float] | np.ndarray = None
+    conf_level: list[float] | np.ndarray = None
+    samples: np.ndarray | None = None            # For SAMPLES
+```
+
+### Creating a RawPrediction
+
+```python
+from twiga.forecaster.result import RawPrediction, ForecastKind
+import numpy as np
+
+# From a point forecast (ndarray)
+raw = RawPrediction.from_model_output(np.random.randn(10, 24, 1))
+# kind = POINT, loc shape = (10, 24, 1)
+
+# From a dict with mean and scale
+raw = RawPrediction.from_model_output({
+    "loc": np.random.randn(10, 24, 1),
+    "scale": np.abs(np.random.randn(10, 24, 1)),
+})
+# kind = PARAMETRIC
+
+# From a dict with quantiles
+raw = RawPrediction.from_model_output({
+    "loc": np.random.randn(10, 24, 1),
+    "quantiles": np.random.randn(10, 5, 24, 1),
+    "quantile_levels": [0.1, 0.25, 0.5, 0.75, 0.9],
+})
+# kind = QUANTILE
+
+# From a conformal tuple (lower, loc, upper)
+raw = RawPrediction.from_model_output((
+    lower_array,
+    point_array,
+    upper_array,
+))
+# kind = INTERVAL
+```
+
+## ForecastResult
+
+The main output container for a single model's forecast. Stores predictions, optional ground truth, metadata, and provides conversion methods.
+
+### Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `timestamps` | `np.ndarray` (B, H, T) | Forecast timestamps |
+| `loc` | `np.ndarray` (B, H, T) | Point predictions |
+| `targets` | `list[str]` | Target variable names |
+| `model_name` | `str` | Human-readable model identifier |
+| `kind` | `ForecastKind` | Type of forecast |
+| `ground_truth` | `np.ndarray` or `None` | Optional actual values |
+| `scale` | `np.ndarray` or `None` | For PARAMETRIC: standard deviation |
+| `quantiles` | `np.ndarray` or `None` | For QUANTILE: (B, N_q, H, T) |
+| `quantile_levels` | `list[float]` or `None` | For QUANTILE: probability levels |
+| `samples` | `np.ndarray` or `None` | For SAMPLES: (B, N_samples, H, T) |
+| `lower` | `np.ndarray` or `None` | For INTERVAL: lower bound |
+| `upper` | `np.ndarray` or `None` | For INTERVAL: upper bound |
+| `inference_time` | `float` | Inference duration in seconds |
+
+### Creating a ForecastResult
+
+```python
+from twiga.forecaster.result import ForecastResult, ForecastKind
+import numpy as np
+
+# Point forecast
+result = ForecastResult(
+    timestamps=timestamps_array,  # (B, H, T)
+    loc=predictions_array,        # (B, H, T)
+    targets=["load_mw"],
+    model_name="xgboost",
+    kind=ForecastKind.POINT,
+)
+
+# Quantile forecast
+result = ForecastResult(
+    timestamps=timestamps_array,
+    loc=median_quantile,          # (B, H, T)
+    targets=["load_mw"],
+    model_name="qr_xgboost",
+    kind=ForecastKind.QUANTILE,
+    quantiles=all_quantiles,      # (B, 5, H, T)
+    quantile_levels=[0.1, 0.25, 0.5, 0.75, 0.9],
+)
+
+# Parametric forecast
+result = ForecastResult(
+    timestamps=timestamps_array,
+    loc=mean_array,
+    targets=["load_mw"],
+    model_name="mlpf_normal",
+    kind=ForecastKind.PARAMETRIC,
+    scale=std_array,              # (B, H, T)
+)
+
+# With ground truth
+result = ForecastResult(
+    timestamps=timestamps_array,
+    loc=predictions_array,
+    targets=["load_mw"],
+    model_name="xgboost",
+    kind=ForecastKind.POINT,
+    ground_truth=actual_values,   # (B, H, T)
+)
+```
+
+### Converting to DataFrame
+
+Convert a result to tidy long-format DataFrame:
+
+```python
+# Long format (default)
+df = result.to_dataframe(fmt="long")
+# Columns: timestamp, target, model, forecast, [actual], [scale|lower/upper|q_level/quantile_forecast]
+
+# Wide format for quantiles
+df = result.to_dataframe(fmt="wide")
+# Columns: timestamp, target, model, forecast, [actual], q_0.10, q_0.25, q_0.50, q_0.75, q_0.90
+```
+
+### Evaluating a Result
+
+If ground truth is attached, evaluate it directly:
+
+```python
+metrics_df = result.evaluate()
+# Returns DataFrame with point metrics (MAE, RMSE, etc.)
+```
+
+Or pass new ground truth:
+
+```python
+metrics_df = result.evaluate(ground_truth=new_actual_values)
+```
+
+## ForecastCollection
+
+Container for multiple `ForecastResult` objects, one per model.
+
+### Fields
+
+```python
+@dataclass
+class ForecastCollection:
+    results: dict[str, ForecastResult]
+```
+
+### Creating and Using a Collection
+
+```python
+from twiga.forecaster.result import ForecastCollection
+
+collection = ForecastCollection()
+collection.add(result_model_1)
+collection.add(result_model_2)
+
+# Access by model name
+result = collection["xgboost"]
+
+# Iterate
+for result in collection:
+    print(result.model_name, result.loc.shape)
+
+# Get all model names
+names = collection.model_names
+# Output: ["xgboost", "mlpf_normal", ...]
+
+# Check if a model exists
+if "qr_xgboost" in collection:
+    print("Found")
+```
+
+### Converting to DataFrame
+
+Combine all results into one DataFrame:
+
+```python
+# Long format
+df = collection.to_dataframe(fmt="long")
+# Rows: all forecasts from all models
+
+# Wide format
+df = collection.to_dataframe(fmt="wide")
+# Columns: timestamp, target, model, forecast, q_0.10, q_0.25, ...
+```
+
+### Evaluating All Models
+
+```python
+metrics_df = collection.evaluate()
+# Returns DataFrame with one row per model, columns for all metrics
+```
+
+## Shape Conventions
+
+All arrays follow this shape convention:
+
+- B = batch size (number of forecast sequences)
+- H = horizon (number of forecast steps)
+- T = number of targets (usually 1 for univariate forecasting)
+- N_q = number of quantiles
+- N_samples = number of Monte Carlo samples
+
+| Array | Shape | Meaning |
+| --- | --- | --- |
+| `loc` | (B, H, T) | Point forecast for each step and target |
+| `ground_truth` | (B, H, T) | Actual observed values |
+| `scale` | (B, H, T) | Parametric std (one value per step) |
+| `quantiles` | (B, N_q, H, T) | Quantile forecasts in order: [q_0.1, q_0.5, q_0.9, ...] |
+| `samples` | (B, N_samples, H, T) | MC samples; summarized to quantiles for DataFrames |
+| `lower`, `upper` | (B, H, T) | Interval bounds |
+| `timestamps` | (B, H, T) | Forecast datetime for each step (stored as nanoseconds) |
+
+## DataFrame Output Examples
+
+### Point Forecast
+
+```
+  timestamp  target  model  forecast  actual
+0 2024-01-01  load_mw xgboost  1234.5  1250.2
+1 2024-01-02  load_mw xgboost  1256.3  1270.1
+```
+
+### Quantile Forecast (Wide)
+
+```
+  timestamp  target  model  forecast  actual  q_0.10  q_0.25  q_0.50  q_0.75  q_0.90
+0 2024-01-01  load_mw   qrxgb  1234.5  1250.2  1150.0  1200.0  1234.5  1270.0  1320.0
+1 2024-01-02  load_mw   qrxgb  1256.3  1270.1  1180.0  1220.0  1256.3  1290.0  1340.0
+```
+
+### Quantile Forecast (Long)
+
+```
+  timestamp  target  model  forecast  actual  q_level  quantile_forecast
+0 2024-01-01  load_mw   qrxgb  1234.5  1250.2     0.10             1150.0
+1 2024-01-01  load_mw   qrxgb  1234.5  1250.2     0.50             1234.5
+2 2024-01-01  load_mw   qrxgb  1234.5  1250.2     0.90             1320.0
+```
+
+### Interval Forecast
+
+```
+  timestamp  target  model  forecast  actual  lower  upper
+0 2024-01-01  load_mw  conformal  1234.5  1250.2  1150  1320
+1 2024-01-02  load_mw  conformal  1256.3  1270.1  1180  1340
+```
+
+## Accessing Results from TwigaForecaster
+
+Methods that return results:
+
+```python
+# Returns a ForecastCollection with one result per model
+collection = forecaster.forecast(test_df)
+result = collection["xgboost"]
+
+# Returns results_df and metrics_df
+results_df, metrics_df = forecaster.evaluate_point_forecast(test_df)
+
+results_df, metrics_df = forecaster.evaluate_interval_forecast(test_df)
+
+results_df, metrics_df = forecaster.evaluate_quantile_forecast(test_df)
+```
+
+## API Reference
+
+### ForecastKind
+
+```{eval-rst}
+.. autoclass:: twiga.forecaster.result.ForecastKind
+   :members:
+   :show-inheritance:
+```
+
+### RawPrediction
+
+```{eval-rst}
+.. autoclass:: twiga.forecaster.result.RawPrediction
+   :members:
+   :show-inheritance:
+```
+
+### ForecastResult
+
+```{eval-rst}
+.. autoclass:: twiga.forecaster.result.ForecastResult
+   :members:
+   :show-inheritance:
+```
+
+### ForecastCollection
+
+```{eval-rst}
+.. autoclass:: twiga.forecaster.result.ForecastCollection
+   :members:
+   :show-inheritance:
+```
+
+## See Also
+
+- [Metrics](metrics.md) - Evaluate forecasts
+- [Forecaster](forecaster.md) - Main API for training and prediction
+- [Result Plotting](visualization.md) - Visualize forecast results

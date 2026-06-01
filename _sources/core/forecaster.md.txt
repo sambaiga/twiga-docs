@@ -121,8 +121,14 @@ forecaster = TwigaForecaster(
 |---|---|---|
 | `data_params` | [`DataPipelineConfig`](config.md) | Defines target features, feature engineering, scaling, and temporal settings for the [`DataPipeline`](data-pipeline.md). |
 | `model_params` | `BaseModelConfig \| list[BaseModelConfig] \| dict \| list[dict]` | One or more model configurations. Each configuration is validated against the model's registered config class. Accepts Pydantic models or plain dictionaries. |
-| `cv_params` | [`ExperimentConfig`](config.md) | Cross-validation split parameters (`split_freq`, `train_size`, `test_size`, `gap`, `window`), project naming, paths, and evaluation metrics. |
-| `conformal_params` | [`ConformalConfig`](../probabilistic/conformal-prediction.md) `\| None` | Optional. Enables conformal prediction intervals when provided. Requires a subsequent `calibrate()` call before `predict_interval`. |
+| `cv_params` | [`ExperimentConfig`](config.md) | Cross-validation split parameters (`split_freq`, `train_size`, `test_size`, `gap`, `window`, `val_size`, `calib_size`, `calib_source`), project naming, paths, and evaluation metrics. |
+| `conformal_params` | [`ConformalConfig`](../probabilistic/conformal-prediction.md) `\| None` | Optional. Enables conformal prediction intervals when provided. Requires a subsequent `calibrate()` call before `predict_interval`. When `None`, native interval prediction is available for parametric and quantile models via `interval_alpha`. |
+
+After construction the forecaster exposes:
+
+| Attribute | Type | Description |
+|---|---|---|
+| `interval_alpha` | `float` | Significance level used for native interval prediction (z-score width for parametric heads, quantile selection for QR heads). Set to `conformal_params.alpha` when conformal is configured, otherwise defaults to `0.10`. Can be overridden directly: `forecaster.interval_alpha = 0.05`. |
 
 During construction the forecaster:
 
@@ -195,7 +201,7 @@ The `fit` method applies temporal filtering internally: it keeps only the last `
 :::{admonition} Note
 :class: note
 
-The data pipeline is fitted **once** on the first call. Subsequent calls to `fit` (e.g. during backtesting) skip the pipeline fit if it has already been initialised.
+During backtesting, the data pipeline is reset at the start of each fold and re-fitted on that fold's training window. This prevents leakage from earlier (smaller) folds into later ones. When calling `fit` directly outside of backtesting, the pipeline is fitted on the first call and reused on subsequent calls unless explicitly reset.
 :::
 
 
@@ -221,12 +227,15 @@ df = collection.to_dataframe()          # tidy long-format DataFrame
 metrics = collection.evaluate()         # metrics DataFrame across all models
 ```
 
-`predict_interval` requires that `conformal_params` was supplied at construction and that `calibrate()` has been called.
+`predict_interval` supports two paths depending on how the forecaster is configured:
+
+- **Conformal path** — when `conformal_params` is set at construction, the forecaster must be calibrated via `calibrate()` before calling `predict_interval`. Skipping calibration raises a `ValueError`.
+- **Native interval path** — when `conformal_params` is `None`, interval bounds are derived directly from the model output without calibration. Parametric heads (Normal, Laplace, etc.) produce `[μ - z·σ, μ + z·σ]` where z is determined by `interval_alpha`. Quantile heads (QR, FPQR) use the lowest and highest predicted quantile as bounds.
 
 :::{admonition} Warning
 :class: warning
 
-Calling `predict_interval` before `calibrate()` raises a `ValueError`. Always calibrate on a held-out calibration set that was **not** used during training.
+Calling `predict_interval` without prior `calibrate()` raises a `ValueError` when `conformal_params` is set. For native-interval models (`conformal_params=None`) calibration is not required.
 :::
 
 
@@ -285,13 +294,19 @@ See [Metrics](metrics.md) for the full list of supported evaluation metrics.
 
 | Method | Signature | Returns |
 |---|---|---|
-| `backtesting` | `backtesting(data, train_ratio=1.0, start_dt=None, end_dt=None, verbose=True, trial=None, ensemble_strategy=None, ensemble_weights=None)` | `tuple[pd.DataFrame, pd.DataFrame]` |
+| `backtesting` | `backtesting(data, train_ratio=1.0, start_dt=None, end_dt=None, verbose=True, trial=None, ensemble_strategy=None, ensemble_weights=None, eval_interval=False)` | `tuple[pd.DataFrame, pd.DataFrame]` |
 
-Backtesting performs walk-forward cross-validation by iterating over temporal splits produced by the inherited `TimeBasedCV.split()` method. For each fold it:
+Backtesting performs walk-forward cross-validation by iterating over temporal splits produced by the inherited `TimeBasedCV.split()` method. For each fold it resets the data pipeline, retrains on the current window, and evaluates on the held-out test fold. Results are tagged with a `Folds` column.
 
-1. Calls `fit(train_df)` to retrain on the expanding (or rolling) training window.
-2. Calls `evaluate_point_forecast(test_df)` on the held-out test window.
-3. Tags results with a `Folds` column.
+**Evaluation routing per fold:**
+
+Each fold follows one of three paths depending on configuration:
+
+1. **Conformal path** — when `calib_size > 0` and `conformal_params` is set: calls `fit(train_df, val_df=val_df)`, then `calibrate(calib_df)`, then `evaluate_interval_forecast(test_df)`.
+2. **Native interval path** — when `eval_interval=True` and no conformal is configured: calls `fit(train_df, val_df=val_df)`, then `evaluate_interval_forecast(test_df)` using intervals derived directly from the model output (z-score for parametric heads, lowest and highest quantile for QR heads).
+3. **Point path** (default) — calls `fit(train_df, val_df=val_df)`, then `evaluate_point_forecast(test_df)`.
+
+When `val_size > 0` in `ExperimentConfig`, the validation slice is passed to `fit()` for early stopping at every fold. The data pipeline is reset at the start of each fold so that scalers are re-fitted on the current training window only, preventing leakage from earlier folds.
 
 The split behaviour is controlled by `ExperimentConfig` parameters:
 
@@ -303,6 +318,9 @@ The split behaviour is controlled by `ExperimentConfig` parameters:
 | `gap` | `int` | `0` | Gap between training end and test start |
 | `stride` | `int \| None` | `None` | Step size between folds (defaults to `test_size`) |
 | `window` | `str` | `"expanding"` | `"expanding"` or `"rolling"` |
+| `val_size` | `int` | `0` | Validation window carved from training tail for early stopping |
+| `calib_size` | `int` | `0` | Calibration window for conformal post-hoc calibration |
+| `calib_source` | `str` | `"train_tail"` | Where to draw the calibration set |
 
 See [Backtesting](backtesting.md) for a detailed explanation of the cross-validation scheme.
 
@@ -310,7 +328,7 @@ See [Backtesting](backtesting.md) for a detailed explanation of the cross-valida
 
 | Method | Returns |
 |--------|---------|
-| `tune` | `None`  |
+| `tune` | `dict` — merged best parameters across all models (model-name prefix stripped) |
 
 ```python
 forecaster.tune(
@@ -318,7 +336,9 @@ forecaster.tune(
     num_trials=10, reduction_factor=3, patience=10,
     load_if_exists=True, initial_params=None,
     direction="minimize", sampler=None, base_pruner=None,
-    objective_metric=None, calib_df=None, conformal_params=None,
+    objective_metric=None,
+    calib_df=None, conformal_params=None,
+    max_model_params=5_000_000,
 )
 ```
 
@@ -329,10 +349,13 @@ forecaster.tune(
 3. Enqueues `initial_params` if provided.
 4. Runs `num_trials` trials. Each trial calls `model.update(trial)` to sample hyperparameters, then `_fit` and `_evaluate` to compute a cost.
 5. Replaces each model instance with a new one instantiated from the best parameters.
+6. Returns the merged best-parameter dict (model-name prefix stripped).
 
-**Interval-metric tuning (Strategy 1):** Pass `calib_df` alongside `conformal_params` to extend each trial with a calibrate → evaluate-interval step. The trial score then reflects an interval quality metric (e.g. PICP, PINAW) instead of a point-forecast error. Use `objective_metric` to select which column of the metrics DataFrame to optimise; defaults to the first entry in `self.metrics` or `"mae"`.
+**Interval-metric tuning:** Pass `calib_df` alongside `conformal_params` to extend each trial with a calibrate → evaluate-interval step. The trial score then reflects an interval quality metric (e.g. `winkler`, `picp`, `pinaw`) instead of a point-forecast error. Use `objective_metric` to select which column of the metrics DataFrame to optimise; defaults to the first entry in `self.metrics` or `"mae"`.
 
 `conformal_params` overrides `self.conformal_params` for the duration of the tuning loop only — the original value is restored afterward.
+
+**NN parameter budget (`max_model_params`):** For neural-network models, each trial instantiates the model and counts its trainable parameters before training begins. If the count exceeds `max_model_params` (default `5_000_000`), the trial is pruned immediately. Set to `None` to disable the check. Has no effect for ML-domain models.
 
 After tuning, call `fit` again to train with the optimised configuration.
 
@@ -452,14 +475,17 @@ Checkpoint persistence differs by domain:
 .. autoclass:: twiga.forecaster.result.ForecastResult
    :members:
    :show-inheritance:
+   :no-index:
 
 .. autoclass:: twiga.forecaster.result.ForecastCollection
    :members:
    :show-inheritance:
+   :no-index:
 
 .. autoclass:: twiga.forecaster.result.ForecastKind
    :members:
    :show-inheritance:
+   :no-index:
 ```
 
 ### Registry

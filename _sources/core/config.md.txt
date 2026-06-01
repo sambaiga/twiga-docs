@@ -178,12 +178,16 @@ Pick lags that correspond to meaningful seasonal periods in your data. For hourl
 | `date_column` | `str` | `"timestamp"` | Name of the datetime column in the input DataFrame. |
 | `root_dir` | `str` | `"../"` | Root directory for saving model checkpoints and results. |
 | `metrics` | `tuple[str] \| list[str] \| None` | `None` | Evaluation metrics to compute (e.g., `["mae", "rmse", "smape"]`). When `None`, all default metrics are used. |
+| `val_size` | `int` | `0` | Validation window carved from the end of the training fold, in `split_freq` units. Used for early stopping during `fit`. Set to `0` to disable. |
+| `calib_size` | `int` | `0` | Calibration window size in `split_freq` units. When `> 0`, each backtesting fold reserves this many units for conformal calibration after fitting. Requires `calib_source` to specify the source. |
+| `calib_source` | `Literal["train_tail", "gap", "test_prefix"]` | `"train_tail"` | Where to draw the calibration set. `"train_tail"` carves from the training window end; `"gap"` uses the gap between train and test; `"test_prefix"` takes the first `calib_size` units of the test window. |
 
 ### Example
 
 ```python
 from twiga.core.config import ExperimentConfig
 
+# Point forecast backtesting: 14 days train, 7 days test
 train_config = ExperimentConfig(
     split_freq="days",
     train_size=14,
@@ -193,6 +197,21 @@ train_config = ExperimentConfig(
     project_name="MyProject",
     root_dir="./outputs",
     seed=42,
+    metrics=["mae", "rmse", "smape"],
+)
+
+# Conformal backtesting: 1-month val for early stopping, 1-month calib for conformal
+conformal_config = ExperimentConfig(
+    split_freq="months",
+    test_size=4,
+    stride=2,
+    num_splits=10,
+    window="expanding",
+    val_size=1,
+    calib_size=1,
+    calib_source="train_tail",
+    project_name="ConformalBenchmark",
+    root_dir="./outputs",
     metrics=["mae", "rmse", "smape"],
 )
 ```

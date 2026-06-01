@@ -40,9 +40,11 @@ classDiagram
     class BaseConformal {
         <<abstract>>
         +alpha: float
+        +calib_method: str
+        +lambda_: float
         +q_hat: float | ndarray
         +calibrate(*calib_args, axis)
-        +calculate_conformal_quantile(scores, axis)
+        +calculate_conformal_quantile(scores, axis, calib_timestamps)
         +get_scores()*
         +generate_intervals()*
     }
@@ -61,13 +63,15 @@ classDiagram
 
     class ConformalResidualFitting {
         +score_type: "res" | "sign-res"
+        +q_hat_low: float | ndarray
         +get_scores(predicts, sigma, targets)
+        +calibrate(predicts, sigma, targets, calib_timestamps)
         +generate_intervals(loc, sigma)
     }
 
     class Conformal {
         <<factory>>
-        +__new__(method, score_type, alpha)
+        +__new__(method, score_type, alpha, calib_method, lambda_)
     }
 
     BaseConformal <|-- SplitConformal
@@ -91,9 +95,20 @@ cp = Conformal(method="residual", score_type="res", alpha=0.1)
 # Creates a ConformalQuantileRegressor instance
 cqr = Conformal(method="quantile", score_type="scaled", alpha=0.1)
 
-# Creates a ConformalResidualFitting instance
-crf = Conformal(method="residual-fitting", score_type="res", alpha=0.1)
+# Creates a ConformalResidualFitting instance with uniform calibration
+crf = Conformal(method="residual-fitting", score_type="sign-res", alpha=0.1)
+
+# Creates a ConformalResidualFitting instance with temporal weighting
+crf_t = Conformal(
+    method="residual-fitting",
+    score_type="sign-res",
+    alpha=0.1,
+    calib_method="temporal",
+    lambda_=1.0,
+)
 ```
+
+`calib_method` and `lambda_` are forwarded only when `method="residual-fitting"`.
 
 ## Configuration
 
@@ -102,16 +117,25 @@ Conformal prediction is configured via [`ConformalConfig`](../core/config.md):
 ```python
 from twiga.core.config import ConformalConfig
 
-# Via alpha (significance level):
+# Standard uniform calibration:
 config = ConformalConfig(
-    method="residual",       # "residual", "quantile", "residual-fitting"
-    score_type="res",        # method-dependent (see table below)
-    alpha=0.1,               # significance level (0 < alpha < 1)
+    method="residual-fitting",
+    score_type="sign-res",
+    alpha=0.1,
 )
 
-# Via coverage probability (convenience classmethod):
+# Temporal calibration weighting (addresses seasonal distribution shift):
+config = ConformalConfig(
+    method="residual-fitting",
+    score_type="sign-res",
+    alpha=0.1,
+    calib_method="temporal",
+    lambda_=1.0,
+)
+
+# Via coverage probability:
 config = ConformalConfig.from_coverage(
-    coverage=0.9,            # 90 % target coverage → alpha = 0.1
+    coverage=0.9,
     method="residual",
     score_type="res",
 )
@@ -121,7 +145,9 @@ config = ConformalConfig.from_coverage(
 |---|---|---|---|
 | `method` | `Literal["residual", "quantile", "residual-fitting"]` | Required | Conformal prediction method |
 | `score_type` | `Literal["scaled", "unscaled", "res", "sign-res"]` | Required | Non-conformity score type |
-| `alpha` | `float` | `0 < alpha < 1` | Significance level ($1-\alpha$ = target coverage) |
+| `alpha` | `float` | `0 < alpha < 1` | Significance level (1 minus alpha = target coverage) |
+| `calib_method` | `Literal["uniform", "temporal"]` | Default `"uniform"` | Quantile estimation method for calibration scores |
+| `lambda_` | `float` | `>= 0`, default `1.0` | Exponential decay rate for temporal weighting |
 
 `ConformalConfig.from_coverage(coverage, **kwargs)` is a convenience factory that converts a coverage probability to `alpha = 1 - coverage` and forwards any remaining keyword arguments to the constructor.
 
@@ -199,14 +225,30 @@ Requires a model that produces both a point prediction ($\mu$) and a scale estim
 - `"res"`: $s_i = \frac{|\hat{y}_i - y_i|}{\sigma_i}$ (absolute)
 - `"sign-res"`: $s_i = \frac{\hat{y}_i - y_i}{\sigma_i}$ (signed, can be negative)
 
-**Intervals:** $[\mu - \sigma \cdot \hat{q}, \; \mu + \sigma \cdot \hat{q}]$
+**Intervals (res):** $[\mu - \sigma \cdot \hat{q}, \; \mu + \sigma \cdot \hat{q}]$
+
+**Intervals (sign-res):** $[\mu - \sigma \cdot \hat{q}^+, \; \mu - \sigma \cdot \hat{q}^-]$
+where $\hat{q}^+ = Q_{1-\alpha/2}$ and $\hat{q}^- = Q_{\alpha/2}$ of the signed scores, giving asymmetric bounds with $1-\alpha$ marginal coverage.
 
 ```python
 from twiga.distributions.conformal.crc import ConformalResidualFitting
 
-crf = ConformalResidualFitting(score_type="res", alpha=0.1)
+# Uniform calibration (default):
+crf = ConformalResidualFitting(score_type="sign-res", alpha=0.1)
 crf.calibrate(predictions, sigma, targets)
 lower, upper = crf.generate_intervals(new_predictions, new_sigma)
+
+# Temporal calibration (pass calibration timestamps):
+import pandas as pd
+crf_t = ConformalResidualFitting(
+    score_type="sign-res",
+    alpha=0.1,
+    calib_method="temporal",
+    lambda_=1.0,
+)
+calib_timestamps = pd.to_datetime(calib_df["timestamp"])
+crf_t.calibrate(predictions, sigma, targets, calib_timestamps=calib_timestamps)
+lower, upper = crf_t.generate_intervals(new_predictions, new_sigma)
 ```
 
 :::{admonition} Note
@@ -214,6 +256,82 @@ lower, upper = crf.generate_intervals(new_predictions, new_sigma)
 
 Use residual-fitting with probabilistic models like [`GAUSSCATBOOSTModel`](../models/ml-models.md) or neural models with sigma outputs like [`MLPGAFModel`](../models/nn-models.md).
 :::
+
+
+## Temporal Calibration Weighting
+
+Standard conformal prediction assumes exchangeability: calibration and test samples come from the same distribution. In rolling-origin forecasting this assumption can be violated when calibration data is drawn from a different season than the test window.
+
+Temporal weighting (Tibshirani et al. 2019) addresses this by assigning higher weight to calibration samples that are more recent and therefore closer in distribution to the test period.
+
+**Weight formula:**
+
+$$w_i \propto \exp(-\lambda \cdot d_i), \quad d_i = \frac{t_{\max} - t_i}{t_{\max} - t_{\min}}$$
+
+where $d_i \in [0, 1]$ is the normalised age of sample $i$ ($d_i = 0$ for the newest, $d_i = 1$ for the oldest). Weights are normalised to sum to 1.
+
+The weighted quantile selects the smallest score $s_{(k)}$ such that:
+
+$$\sum_{j=1}^{k} w_{(j)} \geq 1 - \alpha$$
+
+**Decay rate `lambda_`:**
+
+| Value | Effect                                                                    |
+|-------|---------------------------------------------------------------------------|
+| `0.0` | Uniform weighting (same as `calib_method="uniform"`)                      |
+| `1.0` | Moderate recency bias (recommended starting point)                        |
+| `2.0` | Strong recency bias; upweights the most recent ~30 % of calibration data  |
+
+:::{admonition} When to use temporal weighting
+:class: tip
+
+Use `calib_method="temporal"` when the calibration window is drawn from a different season than the test window, for example in expanding-window cross-validation where calibration is always at the training tail while the test window advances into a new season. Temporal weighting does not change the CV protocol and is compatible with any `calib_size`.
+:::
+
+```python
+from twiga.core.config import ConformalConfig
+from twiga.forecaster.core import TwigaForecaster
+
+conformal_config = ConformalConfig(
+    method="residual-fitting",
+    score_type="sign-res",
+    alpha=0.1,
+    calib_method="temporal",
+    lambda_=1.0,
+)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[model_cfg],
+    cv_params=exp_config,
+    conformal_params=conformal_config,
+)
+
+forecaster.fit(train_df=train_df)
+forecaster.calibrate(calibrate_df=calib_df)   # timestamps extracted automatically
+lower, point, upper = forecaster.predict_interval(test_df=test_df)
+```
+
+`TwigaForecaster.calibrate()` extracts per-sample timestamps from the calibration data automatically and passes them to `ConformalResidualFitting.calibrate()` when `calib_method="temporal"`.
+
+### Helper Functions
+
+The weighting utilities are available as standalone functions for custom workflows:
+
+```python
+import pandas as pd
+from twiga.distributions.conformal.base import (
+    calculate_temporal_weights,
+    calculate_weighted_conformal_value,
+)
+
+timestamps = pd.date_range("2021-09-01", periods=90, freq="D")
+weights = calculate_temporal_weights(timestamps, lambda_=1.0)
+# weights: ndarray of shape (90,) summing to 1, newest sample gets highest weight
+
+threshold = calculate_weighted_conformal_value(scores, alpha=0.1, weights=weights)
+# threshold: scalar (1-D scores) or ndarray of shape (H,) for horizon-wise scores
+```
 
 
 ## Integration with TwigaForecaster
@@ -284,11 +402,12 @@ sequenceDiagram
 
 ## API Reference
 
-
 ```{eval-rst}
-.. autoclass:: twiga.distributions.conformal.core.Conformal
-   :members:
-   :show-inheritance:
+.. autofunction:: twiga.distributions.conformal.base.calculate_conformal_value
+
+.. autofunction:: twiga.distributions.conformal.base.calculate_temporal_weights
+
+.. autofunction:: twiga.distributions.conformal.base.calculate_weighted_conformal_value
 
 .. autoclass:: twiga.distributions.conformal.base.BaseConformal
    :members:
@@ -303,6 +422,10 @@ sequenceDiagram
    :show-inheritance:
 
 .. autoclass:: twiga.distributions.conformal.crc.ConformalResidualFitting
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.conformal.core.Conformal
    :members:
    :show-inheritance:
 ```

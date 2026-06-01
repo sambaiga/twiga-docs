@@ -51,7 +51,6 @@ classDiagram
 
     class BaseNeuralForecast {
         <<ABC>>
-        +wandb_logging: bool
         +rich_progress_bar: bool
         +batch_size: int
         +max_epochs: int
@@ -121,8 +120,8 @@ classDiagram
 | Hyperparameter update | `update(trial)` | Abstract - each model subclass reinitializes itself from an Optuna trial. |
 | Checkpoint loading | `load_checkpoint()` | Abstract - loads the best checkpoint for the specific architecture. |
 | Trainer setup | `_set_up_trainer(trial=None)` | Creates a `pl.Trainer` with early stopping (or Optuna pruning), model checkpointing, LR monitoring, and a progress bar. |
-| Logger setup | `_configure_logger()` | `WandbLogger` when `wandb_logging=True`, otherwise `TensorBoardLogger`. |
-| Training | `fit(X_train, y_train, X_val, y_val, trial)` | Wraps data in a `TimeseriesDataModule`, optionally resumes from the latest checkpoint, and calls `trainer.fit()`. |
+| Logger setup | `_configure_logger()` | `MLFlowLogger` when an active MLflow run exists, otherwise `TensorBoardLogger`. |
+| Training | `fit(X_train, y_train, X_val, y_val, trial)` | Wraps data in a `TimeseriesDataModule`, optionally resumes from the latest checkpoint, and calls `trainer.fit()`. If the checkpoint is incompatible with the current architecture (e.g. after a model change), training automatically falls back to a fresh start with a warning. |
 | Inference | `forecast(features: Tensor)` | Switches to eval mode, runs a forward pass with `torch.no_grad()`, and returns NumPy arrays. |
 
 ### BaseNeuralModel
@@ -253,7 +252,7 @@ Registered name: `"mlpgam"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](..
 
 ### MLPGAF - MLP with Gated Additive Features
 
-Builds on the GAM structure with **learned feature gates** and an optional **sigma head** for uncertainty estimation. Feature gates use a sigmoid function (controlled by `gate_scale`) to perform soft feature selection, and a warm-up schedule (`warmup_epochs`) gradually activates the gate penalty.
+Extends the GAM structure with **learned feature gates**, a configurable **group scheme**, and a choice of **cross-group fusion strategy**. Each feature group is encoded independently and then combined via additive, concatenation, or input-conditioned gated fusion. Gates can be applied either at the input (feature-level sparsity) or at the latent encoder output (representation-level selection). A warm-up schedule (`warmup_epochs`) gradually activates the gate penalty.
 
 :::{admonition} Config class: `MLPGAFConfig`
 :class: info
@@ -274,14 +273,18 @@ Registered name: `"mlpgaf"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](..
 | `activation_function` | `Literal["SiLU", "ELU", "LeakyReLU"]` | `"SiLU"` | Hidden activation (restricted set) |
 | `dropout` | `float` | `0.1` | Dropout probability |
 | `alpha` | `float` | `0.2` | MSE/MAE loss weighting |
-| `lambda_weight` | `float` | `1e-6` | Lasso penalty for group weights |
-| `lambda_gate` | `float` | `1e-4` | Lasso penalty for feature gates |
-| `delta` | `float` | `0.05` | Huber-loss delta for gate penalty |
-| `lambda_sigma` | `float` | `1e-6` | Penalty coefficient for the sigma (residual) head |
-| `gate_scale` | `float` | `5.0` | Temperature scaling for gates (higher = more binary) |
-| `gate_type` | `Literal["sigmoid"]` | `"sigmoid"` | Gating mechanism type |
-| `warmup_epochs` | `int` | `10` | Epochs before gate penalty is fully active |
-| `sigma_type` | `str` | `"Residual"` | Uncertainty modeling type for the sigma head |
+| `use_revin` | `bool` | `False` | Apply Reversible Instance Normalization to input series |
+| `use_gate` | `bool` | `True` | When `False`, gates are bypassed — features pass through unmodified. Use as the gate-absent baseline in ablations |
+| `lambda_weight` | `float` | `1e-6` | L1 regularization on encoder weights |
+| `lambda_gate` | `float` | `1e-6` | Sparsity penalty on gate activations (only used when `gate_position="input"`) |
+| `delta` | `float` | `0.05` | Stability constant in gate penalty computation |
+| `gate_scale` | `float` | `3.0` | Scaling factor on gate logits (higher = more binary selection) |
+| `gate_type` | `Literal["sigmoid"]` | `"sigmoid"` | Activation function used for gating |
+| `warmup_epochs` | `int` | `5` | Epochs over which gate penalty is linearly ramped up |
+| `group_scheme` | `Literal["5group", "3group", "2group"]` | `"2group"` | Feature grouping strategy. `"2group"`: one past encoder and one future encoder (MLPGAM-equivalent split). `"5group"`: original five semantic groups (historical target, historical, exogenous, calendar, future covariates). `"3group"`: merges past groups and future groups, keeps exogenous separate |
+| `fusion_type` | `Literal["additive", "concat", "gated"]` | `"gated"` | How group branch projections are combined. `"gated"`: input-conditioned softmax weights (CrossGroupFusion) — the model learns per-sample branch trust. `"additive"`: sums branch projections (original GANF behaviour). `"concat"`: concatenates then projects through a shared head |
+| `gate_position` | `Literal["input", "latent"]` | `"latent"` | Where gates are applied. `"latent"`: gates operate on encoder outputs in representation space — the encoder sees all features unmasked, identical to MLPGAM, and the gate performs per-latent-dimension selection. `"input"`: gates multiply each raw input feature before encoding, with L1 sparsity penalty applied |
+| `disabled_groups` | `list[str]` | `[]` | Group names to zero-out during the forward pass. Used for ablation conditions. Valid names depend on `group_scheme` |
 
 
 ### N-HiTS - Neural Hierarchical Interpolation for Time Series
@@ -393,7 +396,7 @@ Each base architecture supports these distribution heads:
 | LogNormal | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `LogNormalConfig` |
 | Gamma | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `GammaConfig` |
 | Beta | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `BetaConfig` |
-| StudentT | — | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `StudentTConfig` |
+| StudentT | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `StudentTConfig` |
 | QR | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `QRConfig` |
 | FPQR | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `FPQRConfig` |
 | CRC | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | — | `CRCConfig` |
@@ -441,6 +444,55 @@ Registered name: `"mlpfqr"` | Domain: `"nn"` | Extends: `MLPFConfig`
 All other fields are inherited from `MLPFConfig`. See [Quantile Regression](../probabilistic/quantile-regression.md) for details on the loss functions and quantile calibration.
 
 
+### FPQR Models - Full Parameterised Quantile Regression
+
+Full Parameterised Quantile Regression (FPQR) extends standard QR by making the quantile levels themselves learnable during training. Instead of forecasting fixed quantiles (e.g., [0.1, 0.5, 0.9]), the model learns to predict where the quantiles should be positioned to best fit the data, adapting the quantile set for each sample.
+
+**FPQR vs. QR:**
+- **QR**: Forecasts fixed quantile levels specified at config time (e.g., `[0.1, 0.5, 0.9]`)
+- **FPQR**: Learns quantile positions adaptively; each sample gets its own optimal quantile placement
+
+This flexibility helps in heteroscedastic (non-constant variance) time series where the spread of the distribution changes over time and space.
+
+:::{admonition} Config class: `*FPQRConfig` (e.g., `MLPFFPQRConfig`)
+:class: info
+
+Registered names: `"mlpffpqr"`, `"mlpgamfpqr"`, `"mlpgaffpqr"`, `"nhitsfpqr"`, `"rnnfpqr"` | Domain: `"nn"`
+:::
+
+All FPQR configs inherit from their base architecture (MLPF, MLPGAM, MLPGAF, NHITS, RNN) and add these fields:
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `quantiles` | `list[float] \| None` | `None` | Initial quantile levels. When `None`, derived from `conf_level`. FPQR learns to reposition these during training. |
+| `conf_level` | `float` | `0.05` | Confidence level for auto-computed quantile bounds when `quantiles=None`. |
+| `loss_fn` | `Literal["pinball", "huber-pinball"]` | `"pinball"` | Loss function for learning quantile positions. |
+| `kappa` | `float` | `0.25` | Smoothing parameter for Huber-pinball loss. |
+| `eps` | `float` | `1e-6` | Numerical stability parameter. |
+| `proposal_loss_fn` | `Literal["wasserstein", "sqda", "sqda_kl", "combined"]` | `"wasserstein"` | Loss used to train the quantile-grid proposal network. `"wasserstein"` is the original FQF signal; `"sqda"` uses the Spectral Quantile Density-Adaptive loss (theoretically optimal q⁻¹ target widths); `"sqda_kl"` uses KL divergence; `"combined"` sums Wasserstein-1 and SQDA. |
+| `sqda_weight` | `float` | `0.1` | Scale factor for the SQDA term when `proposal_loss_fn="combined"`. |
+| `proposal_stop_gradient` | `bool` | `True` | When `True` (default), detaches τ-hats from the pinball gradient so the proposal is trained only via `proposal_loss_fn`. Set to `False` to let pinball gradients flow back to the proposal, adding a direct coverage signal. |
+
+**Example:**
+
+```python
+from twiga.models.nn.mlpffpqr_model import MLPFFPQRConfig
+
+# FPQR learns adaptive quantile positions
+fpqr_config = MLPFFPQRConfig.from_data_config(
+    data_config,
+    quantiles=[0.1, 0.5, 0.9],  # initial positions (FPQR will adapt)
+    max_epochs=100,
+)
+
+forecaster = TwigaForecaster(data_config, [fpqr_config])
+forecaster.fit(train_df)
+preds, metrics = forecaster.evaluate_quantile_forecast(test_df)
+```
+
+See [Quantile Regression](../probabilistic/quantile-regression.md) for loss functions and calibration details.
+
+
 ### MLPGAM-CRC - MLPGAM with Conditional Residual Calibration
 
 Pairs the MLPGAM backbone with an `AdditiveCRCDistribution` head. The backbone's additive mean (the sum of group-wise projections) is used directly as $\mu$ — no extra linear projection is applied — so the GAM decomposition is fully preserved. A two-layer sigma MLP, conditioned on the detached $\mu$, learns to predict the per-step absolute residual $|y - \mu|$.
@@ -468,7 +520,7 @@ See [CRC Distribution](../probabilistic/distributions.md#conditional-residual-ca
 
 | Model | Type | Feature Combination | Interpretable | Sparsity | Probabilistic variants | Best For |
 |---|---|---|---|---|---|---|
-| **MLPF** | Point | Attention / weighted / additive | - | - | Normal, Laplace, LogNormal, Gamma, Beta, QR, FPQR, CRC | General-purpose deep forecasting |
+| **MLPF** | Point | Attention / weighted / additive | - | - | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | General-purpose deep forecasting |
 | **MLPGAM** | Point | Additive (GAM) | Yes | L1 Lasso | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Interpretable group-additive forecasts |
 | **MLPGAF** | Point | Gated additive features | Yes | Gate + weight Lasso | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Feature selection with uncertainty |
 | **N-HiTS** | Point | Hierarchical stack sum | Decomposable | - | Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC | Multi-resolution temporal patterns |

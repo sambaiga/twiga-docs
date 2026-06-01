@@ -1,0 +1,1889 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Experiment Engine &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/twiga.css?v=5225fff5" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
+
+    <script src="../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=3c7def43"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'advanced/experiment-engine';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Probabilistic Forecasting" href="../probabilistic/index.html" />
+    <link rel="prev" title="Hyperparameter Optimization" href="hyperparameter-tuning.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.2" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting-started/index.html">
+    Quickstart
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../core/index.html">
+    Handbook
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../mlops/index.html">
+    Deploy
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../developer-guide/index.html">
+    Contribute
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../overview.html">
+    Blueprint
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="visualization.html">
+    Visualization
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Experiment Engine
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="dropdown tw-version-wrapper">
+  <button
+    class="btn dropdown-toggle tw-version-btn"
+    type="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+    aria-label="Twiga version 0.1.2"
+  >
+    <span class="tw-version-label">v0.1.2</span>
+    <span class="tw-alpha-pill">alpha</span>
+  </button>
+  <div class="dropdown-menu dropdown-menu-end tw-version-menu">
+    <div class="tw-version-info">
+      <p>
+        <strong>Twiga 0.1.2</strong> is in alpha.
+        The API may change before 1.0.
+      </p>
+      <a
+        href="https://github.com/sambaiga/twiga-forecast/blob/main/CHANGELOG.md"
+        class="tw-version-changelog-link"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        View changelog <i class="bi bi-arrow-up-right-square"></i>
+      </a>
+    </div>
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/twiga/" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/box-seam-fill.svg" class="icon-link-image" alt="PyPI"/></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting-started/index.html">
+    Quickstart
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../core/index.html">
+    Handbook
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../mlops/index.html">
+    Deploy
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../developer-guide/index.html">
+    Contribute
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../overview.html">
+    Blueprint
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="visualization.html">
+    Visualization
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="#">
+    Experiment Engine
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="dropdown tw-version-wrapper">
+  <button
+    class="btn dropdown-toggle tw-version-btn"
+    type="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+    aria-label="Twiga version 0.1.2"
+  >
+    <span class="tw-version-label">v0.1.2</span>
+    <span class="tw-alpha-pill">alpha</span>
+  </button>
+  <div class="dropdown-menu dropdown-menu-end tw-version-menu">
+    <div class="tw-version-info">
+      <p>
+        <strong>Twiga 0.1.2</strong> is in alpha.
+        The API may change before 1.0.
+      </p>
+      <a
+        href="https://github.com/sambaiga/twiga-forecast/blob/main/CHANGELOG.md"
+        class="tw-version-changelog-link"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        View changelog <i class="bi bi-arrow-up-right-square"></i>
+      </a>
+    </div>
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/twiga/" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/box-seam-fill.svg" class="icon-link-image" alt="PyPI"/></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../models/baseline-models.html">Baseline Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/foundational-models.html">Foundational Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/ml-models.html">Machine Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/nn-models.html">Neural Network Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/ensemble-strategies.html">Ensemble Strategies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/custom-models.html">Creating Custom Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hyperparameter-tuning.html">Hyperparameter Optimization</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Experiment Engine</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../models/index.html" class="nav-link">Model Catalog Overview</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Experiment Engine</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="experiment-engine">
+<h1>Experiment Engine<a class="headerlink" href="#experiment-engine" title="Link to this heading">#</a></h1>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Source Files</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<ul class="simple">
+<li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">twiga/experiment/engine.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">ExperimentEngine</span></code> orchestration</p></li>
+<li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">twiga/experiment/spec.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">ExperimentSpec</span></code> dataclass</p></li>
+<li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">twiga/experiment/condition.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">Condition</span></code> dataclass</p></li>
+<li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">twiga/experiment/hpo.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">run_backbone_hpo</span></code>, <code class="docutils literal notranslate"><span class="pre">load_backbone_params</span></code></p></li>
+<li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">twiga/experiment/analysis.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">aggregate</span></code></p></li>
+<li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">twiga/experiment/tracking.py</span></code>  -  MLflow bridge</p></li>
+</ul>
+</div>
+</details><p><code class="docutils literal notranslate"><span class="pre">ExperimentEngine</span></code> is a two-phase orchestrator for structured rolling-origin ablation experiments. It handles backbone HPO, ablation condition evaluation across multiple datasets and CV folds, result aggregation, and MLflow tracking in a single reusable entry point. Experiment scripts define a declarative <code class="docutils literal notranslate"><span class="pre">ExperimentSpec</span></code> and call <code class="docutils literal notranslate"><span class="pre">ExperimentEngine.run(spec)</span></code>.</p>
+<hr class="docutils" />
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">#</a></h2>
+<pre  class="mermaid">
+        graph TD
+    A[ExperimentSpec] --&gt; B[ExperimentEngine.run]
+    B --&gt; C{Phase 1: Backbone HPO}
+    C --&gt; D[run_backbone_hpo per dataset]
+    D --&gt; E[Optuna study - SQLite]
+    E --&gt; F[save best_params.npy]
+    B --&gt; G{Phase 2: Ablation}
+    G --&gt; H[For each condition]
+    H --&gt; I[For each dataset]
+    I --&gt; J[For each CV fold]
+    J --&gt; K[load_backbone_params]
+    K --&gt; L[Apply condition overrides]
+    L --&gt; M[fit + evaluate]
+    M --&gt; N[log to MLflow]
+    G --&gt; O[aggregate per group]
+    O --&gt; P[CSV full + summary]
+    </pre><p><strong>Phase 1 — Backbone HPO</strong> searches the backbone model’s hyperparameter space using Optuna and saves the best parameters to disk. This phase runs once per dataset and is skipped automatically on subsequent runs when the cached result exists.</p>
+<p><strong>Phase 2 — Ablation</strong> evaluates each condition in <code class="docutils literal notranslate"><span class="pre">ExperimentSpec.conditions</span></code> across all datasets and CV folds using the backbone parameters from Phase 1 as the starting point. Each condition can selectively override any config field. Results are aggregated across folds and saved as CSV files.</p>
+</section>
+<hr class="docutils" />
+<section id="defining-an-experiment">
+<h2>Defining an Experiment<a class="headerlink" href="#defining-an-experiment" title="Link to this heading">#</a></h2>
+<section id="experimentspec">
+<h3>ExperimentSpec<a class="headerlink" href="#experimentspec" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">ExperimentSpec</span></code> declares the full experiment: which backbone to tune, which datasets to run on, and which conditions to compare.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.experiment</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExperimentSpec</span><span class="p">,</span> <span class="n">Condition</span>
+
+<span class="n">spec</span> <span class="o">=</span> <span class="n">ExperimentSpec</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ganf_ablation&quot;</span><span class="p">,</span>
+    <span class="n">backbone_cls</span><span class="o">=</span><span class="n">MLPGAFConfig</span><span class="p">,</span>
+    <span class="n">datasets</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ETTh1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="p">,</span> <span class="n">test_df</span><span class="p">),</span> <span class="s2">&quot;ETTm1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">...</span><span class="p">)},</span>
+    <span class="n">pipeline_cfg</span><span class="o">=</span><span class="n">DataPipelineConfig</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">Condition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;baseline&quot;</span><span class="p">,</span>    <span class="n">overrides</span><span class="o">=</span><span class="p">{}),</span>
+        <span class="n">Condition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;no_gate&quot;</span><span class="p">,</span>     <span class="n">overrides</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;use_gate&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}),</span>
+        <span class="n">Condition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;3group&quot;</span><span class="p">,</span>      <span class="n">overrides</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;group_scheme&quot;</span><span class="p">:</span> <span class="s2">&quot;3group&quot;</span><span class="p">}),</span>
+        <span class="n">Condition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;input_gate&quot;</span><span class="p">,</span>  <span class="n">overrides</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;gate_position&quot;</span><span class="p">:</span> <span class="s2">&quot;input&quot;</span><span class="p">}),</span>
+    <span class="p">],</span>
+    <span class="n">results_dir</span><span class="o">=</span><span class="s2">&quot;results/ganf_ablation&quot;</span><span class="p">,</span>
+    <span class="n">hpo_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p></td>
+<td><p>Experiment name. Used as the MLflow experiment name and file prefix</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">backbone_cls</span></code></p></td>
+<td><p>type</p></td>
+<td><p>Config class for the backbone model (e.g. <code class="docutils literal notranslate"><span class="pre">MLPGAFConfig</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">datasets</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">tuple]</span></code></p></td>
+<td><p>Maps dataset name to <code class="docutils literal notranslate"><span class="pre">(train_df,</span> <span class="pre">val_df,</span> <span class="pre">test_df)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pipeline_cfg</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code></p></td>
+<td><p>Shared data pipeline configuration</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">conditions</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">list[Condition]</span></code></p></td>
+<td><p>Ablation conditions to evaluate</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">results_dir</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">Path</span></code></p></td>
+<td><p>Root directory for CSV output and HPO caches</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hpo_trials</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p>Number of Optuna trials for backbone HPO</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cv_params</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ExperimentConfig</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p>Cross-validation split settings. Defaults to single train/val/test</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="condition">
+<h3>Condition<a class="headerlink" href="#condition" title="Link to this heading">#</a></h3>
+<p>Each <code class="docutils literal notranslate"><span class="pre">Condition</span></code> names one ablation arm and specifies field overrides applied on top of the backbone config.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Condition</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;latent_gate_2g&quot;</span><span class="p">,</span>
+    <span class="n">overrides</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;group_scheme&quot;</span><span class="p">:</span> <span class="s2">&quot;2group&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;gate_position&quot;</span><span class="p">:</span> <span class="s2">&quot;latent&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;fusion_type&quot;</span><span class="p">:</span> <span class="s2">&quot;gated&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">hpo_variant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>   <span class="c1"># shares backbone HPO cache with other 2group conditions</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p></td>
+<td><p>Unique condition identifier. Appears in result DataFrames and MLflow run names</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">overrides</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">Any]</span></code></p></td>
+<td><p>Config fields to override. Applied after backbone HPO params are loaded</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hpo_variant</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p>When set, selects a separate HPO cache key. Use when an override changes architecture in a way that invalidates backbone params (e.g. a different <code class="docutils literal notranslate"><span class="pre">group_scheme</span></code>)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tip admonition">
+<p class="admonition-title">When to set <code class="docutils literal notranslate"><span class="pre">hpo_variant</span></code></p>
+<p>Two conditions that differ only in a regularisation weight can share backbone HPO results. Two conditions that differ in <code class="docutils literal notranslate"><span class="pre">group_scheme</span></code> or <code class="docutils literal notranslate"><span class="pre">gate_position</span></code> produce different network shapes and should use separate HPO caches. Set <code class="docutils literal notranslate"><span class="pre">hpo_variant</span></code> to a short descriptive string (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;3group&quot;</span></code>) to create an isolated cache for that arm.</p>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="running-an-experiment">
+<h2>Running an Experiment<a class="headerlink" href="#running-an-experiment" title="Link to this heading">#</a></h2>
+<section id="from-python">
+<h3>From Python<a class="headerlink" href="#from-python" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.experiment</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExperimentEngine</span>
+
+<span class="n">engine</span> <span class="o">=</span> <span class="n">ExperimentEngine</span><span class="p">()</span>
+<span class="n">engine</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">run()</span></code> executes both phases in order and writes results under <code class="docutils literal notranslate"><span class="pre">spec.results_dir</span></code>.</p>
+</section>
+<section id="from-the-command-line">
+<h3>From the command line<a class="headerlink" href="#from-the-command-line" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">ExperimentEngine.cli_main</span></code> provides a minimal CLI entry point. Experiment scripts expose it directly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>experiment/ganf_ablation.py<span class="w"> </span>--datasets<span class="w"> </span>ETTh1<span class="w"> </span>ETTm1<span class="w"> </span>--hpo-trials<span class="w"> </span><span class="m">50</span>
+</pre></div>
+</div>
+<p>The script calls:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">ExperimentEngine</span><span class="o">.</span><span class="n">cli_main</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="config-precedence">
+<h2>Config Precedence<a class="headerlink" href="#config-precedence" title="Link to this heading">#</a></h2>
+<p>When <code class="docutils literal notranslate"><span class="pre">ExperimentEngine</span></code> builds the model config for a condition it merges four layers in order (lowest to highest priority):</p>
+<ol class="arabic simple">
+<li><p>Config class defaults</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ExperimentSpec</span></code>-level overrides (applied to every condition)</p></li>
+<li><p>Backbone HPO best parameters loaded from cache</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Condition.overrides</span></code></p></li>
+</ol>
+<p>This means a condition override always wins over HPO-tuned params, which in turn always win over spec-level settings.</p>
+</section>
+<hr class="docutils" />
+<section id="hpo-cache">
+<h2>HPO Cache<a class="headerlink" href="#hpo-cache" title="Link to this heading">#</a></h2>
+<p>Backbone HPO results are cached as <code class="docutils literal notranslate"><span class="pre">.npy</span></code> files under <code class="docutils literal notranslate"><span class="pre">results_dir</span></code>. The cache key is <code class="docutils literal notranslate"><span class="pre">{backbone_cls.name}_{dataset}_{hpo_variant</span> <span class="pre">or</span> <span class="pre">&quot;default&quot;}</span></code>. Re-running a script with <code class="docutils literal notranslate"><span class="pre">--hpo-trials</span></code> greater than the previous run will resume the existing Optuna study and add more trials; it will not restart from scratch.</p>
+<p>Load cached params directly with:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.experiment</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_backbone_params</span>
+
+<span class="n">params</span> <span class="o">=</span> <span class="n">load_backbone_params</span><span class="p">(</span>
+    <span class="n">results_dir</span><span class="o">=</span><span class="s2">&quot;results/ganf_ablation&quot;</span><span class="p">,</span>
+    <span class="n">backbone_name</span><span class="o">=</span><span class="s2">&quot;mlpgaf&quot;</span><span class="p">,</span>
+    <span class="n">dataset</span><span class="o">=</span><span class="s2">&quot;ETTh1&quot;</span><span class="p">,</span>
+    <span class="n">hpo_variant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="mlflow-tracking">
+<h2>MLflow Tracking<a class="headerlink" href="#mlflow-tracking" title="Link to this heading">#</a></h2>
+<p>Set <code class="docutils literal notranslate"><span class="pre">MLFLOW_TRACKING_URI</span></code> before running to enable automatic experiment tracking:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">MLFLOW_TRACKING_URI</span><span class="o">=</span>http://localhost:5000
+python<span class="w"> </span>experiment/ganf_ablation.py
+</pre></div>
+</div>
+<p>The run hierarchy mirrors the experiment structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Experiment</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="o">&gt;</span>
+  <span class="n">Parent</span> <span class="n">run</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">dataset</span><span class="o">&gt;</span>
+    <span class="n">Child</span> <span class="n">run</span><span class="p">:</span> <span class="n">hpo</span><span class="o">/&lt;</span><span class="n">dataset</span><span class="o">&gt;/&lt;</span><span class="n">model</span><span class="o">&gt;</span>      <span class="n">run_backbone_hpo</span><span class="p">()</span>
+    <span class="n">Child</span> <span class="n">run</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">condition</span><span class="o">&gt;/&lt;</span><span class="n">dataset</span><span class="o">&gt;/</span><span class="n">fold_N</span>
+</pre></div>
+</div>
+<p>All condition overrides, fold metrics, and HPO parameters are logged as MLflow params and metrics automatically. No additional instrumentation is needed in the experiment script.</p>
+<p><code class="docutils literal notranslate"><span class="pre">detect_tracking_uri</span></code> is a safe helper that returns the configured URI or <code class="docutils literal notranslate"><span class="pre">None</span></code> if MLflow is absent or unconfigured:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.experiment</span><span class="w"> </span><span class="kn">import</span> <span class="n">detect_tracking_uri</span>
+
+<span class="n">uri</span> <span class="o">=</span> <span class="n">detect_tracking_uri</span><span class="p">()</span>  <span class="c1"># None if not configured</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="aggregating-results">
+<h2>Aggregating Results<a class="headerlink" href="#aggregating-results" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">aggregate</span></code> computes mean and standard deviation per <code class="docutils literal notranslate"><span class="pre">(group,</span> <span class="pre">condition,</span> <span class="pre">metric_type)</span></code> across folds and writes two CSV files: a full long-form table and a summary table.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.experiment</span><span class="w"> </span><span class="kn">import</span> <span class="n">aggregate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">summary</span> <span class="o">=</span> <span class="n">aggregate</span><span class="p">(</span>
+    <span class="n">combined</span><span class="o">=</span><span class="n">full_df</span><span class="p">,</span>
+    <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;ganf_ablation&quot;</span><span class="p">,</span>
+    <span class="n">root</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;results/ganf_ablation&quot;</span><span class="p">),</span>
+    <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;_val&quot;</span><span class="p">,</span>
+    <span class="n">reference_conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ETTh1&quot;</span><span class="p">:</span> <span class="s2">&quot;baseline&quot;</span><span class="p">,</span> <span class="s2">&quot;ETTm1&quot;</span><span class="p">:</span> <span class="s2">&quot;baseline&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ExperimentEngine.run</span></code> calls <code class="docutils literal notranslate"><span class="pre">aggregate</span></code> automatically at the end of Phase 2. Call it manually only when post-processing results outside an engine run.</p>
+</section>
+<hr class="docutils" />
+<section id="visualising-results">
+<h2>Visualising Results<a class="headerlink" href="#visualising-results" title="Link to this heading">#</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">twiga.core.plot.evaluation</span></code> to plot aggregated results. See <a class="reference internal" href="visualization.html#ablation-experiment-evaluation-plots"><span class="std std-ref">Visualization</span></a> for the full plotting API.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_ablation</span><span class="p">,</span> <span class="n">plot_summary_heatmap</span><span class="p">,</span> <span class="n">save_ablation_plots</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">load_ablation</span><span class="p">(</span>
+    <span class="n">root</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;results/ganf_ablation&quot;</span><span class="p">),</span>
+    <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;ganf_ablation&quot;</span><span class="p">,</span>
+    <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;_val&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_summary_heatmap</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">summary</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="s2">&quot;baseline&quot;</span><span class="p">)</span>
+<span class="n">p</span>
+
+<span class="n">save_ablation_plots</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;figures/ganf_ablation&quot;</span><span class="p">),</span> <span class="n">reference</span><span class="o">=</span><span class="s2">&quot;baseline&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentEngine">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.experiment.</span></span><span class="sig-name descname"><span class="pre">ExperimentEngine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.experiment.ExperimentEngine" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Runs a <a class="reference internal" href="#twiga.experiment.ExperimentSpec" title="twiga.experiment.spec.ExperimentSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExperimentSpec</span></code></a> end to end.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">engine</span> <span class="o">=</span> <span class="n">ExperimentEngine</span><span class="p">(</span><span class="n">SPEC</span><span class="p">)</span>
+<span class="n">engine</span><span class="o">.</span><span class="n">cli_main</span><span class="p">(</span><span class="n">base_cfg</span><span class="o">=</span><span class="n">PipelineConfig</span><span class="p">(</span><span class="o">...</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Or programmatically:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">summary</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">base_cfg</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;gating&quot;</span><span class="p">],</span> <span class="n">dataset_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;MLVS-PT&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentEngine.cli_main">
+<span class="sig-name descname"><span class="pre">cli_main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">argv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.experiment.ExperimentEngine.cli_main" title="Link to this definition">#</a></dt>
+<dd><p>Parse CLI args then call <a class="reference internal" href="#twiga.experiment.ExperimentEngine.run" title="twiga.experiment.ExperimentEngine.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<p>Recognised flags: <code class="docutils literal notranslate"><span class="pre">--group</span></code>, <code class="docutils literal notranslate"><span class="pre">--dataset</span></code>, <code class="docutils literal notranslate"><span class="pre">--skip-hpo</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--tracking-uri</span></code>, <code class="docutils literal notranslate"><span class="pre">--epochs</span></code>, <code class="docutils literal notranslate"><span class="pre">--num-trials</span></code>, <code class="docutils literal notranslate"><span class="pre">--folds</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_cfg</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineConfig</span></code></span>) – Root pipeline config (output_dir, epochs, etc.).</p></li>
+<li><p><strong>argv</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Argument list; defaults to <code class="docutils literal notranslate"><span class="pre">sys.argv[1:]</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentEngine.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_hpo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracking_uri</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.experiment.ExperimentEngine.run" title="Link to this definition">#</a></dt>
+<dd><p>Run all conditions × datasets and return a cross-condition summary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_cfg</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineConfig</span></code></span>) – Root <code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineConfig</span></code>.
+Dataset-specific keys are applied on top via
+<code class="docutils literal notranslate"><span class="pre">dataclasses.replace</span></code>.</p></li>
+<li><p><strong>groups</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Condition groups to run.  <code class="docutils literal notranslate"><span class="pre">None</span></code> runs all groups.</p></li>
+<li><p><strong>dataset_keys</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Dataset keys from <code class="docutils literal notranslate"><span class="pre">spec.datasets</span></code>.  <code class="docutils literal notranslate"><span class="pre">None</span></code> runs
+all datasets.</p></li>
+<li><p><strong>skip_hpo</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Skip Phase 1 backbone HPO (reuse saved params).</p></li>
+<li><p><strong>tracking_uri</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – MLflow tracking URI.  Falls back to the
+<code class="docutils literal notranslate"><span class="pre">MLFLOW_TRACKING_URI</span></code> / <code class="docutils literal notranslate"><span class="pre">TWIGA_MLFLOW_TRACKING_URI</span></code> env
+vars.  Pass <code class="docutils literal notranslate"><span class="pre">None</span></code> to disable tracking entirely.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Summary <a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a> with mean ± std per condition.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.experiment.</span></span><span class="sig-name descname"><span class="pre">ExperimentSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_train_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_test_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_val_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_calib_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hemisphere</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'NH'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_conditions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_figures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_condition_plots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_plot_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">336</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.experiment.ExperimentSpec" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Full declaration of a twiga ablation / benchmark experiment.</p>
+<p>Pass an instance to <a class="reference internal" href="#twiga.experiment.ExperimentEngine" title="twiga.experiment.engine.ExperimentEngine"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExperimentEngine</span></code></a>
+to run the experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Human-readable experiment title (used in logs and plot titles).</p></li>
+<li><p><strong>output_prefix</strong> – Prefix for all CSV output files
+(e.g. <code class="docutils literal notranslate"><span class="pre">&quot;mlgaf_ablation&quot;</span></code> → <code class="docutils literal notranslate"><span class="pre">mlgaf_ablation_summary.csv</span></code>).</p></li>
+<li><p><strong>condition_cls</strong> – Model config class instantiated per condition
+(e.g. <code class="docutils literal notranslate"><span class="pre">MLPGAFConfig</span></code>).</p></li>
+<li><p><strong>backbone_cls</strong> – Model config class used for Phase 1 backbone HPO.
+Must be specified explicitly — typically the plain backbone without
+a probabilistic head (e.g. <code class="docutils literal notranslate"><span class="pre">MLPGAMConfig</span></code> for a CRC experiment).</p></li>
+<li><p><strong>conditions</strong> – List of <a class="reference internal" href="#twiga.experiment.Condition" title="twiga.experiment.condition.Condition"><code class="xref py py-class docutils literal notranslate"><span class="pre">Condition</span></code></a>
+objects defining the experimental grid.</p></li>
+<li><p><strong>datasets</strong> – Registry of datasets.  Keys are short names used with
+<code class="docutils literal notranslate"><span class="pre">--dataset</span></code>; values are dicts of <code class="docutils literal notranslate"><span class="pre">PipelineConfig</span></code> field
+overrides (<code class="docutils literal notranslate"><span class="pre">dataset_name</span></code>, <code class="docutils literal notranslate"><span class="pre">train_start</span></code>, <code class="docutils literal notranslate"><span class="pre">window_stride</span></code>,
+…).</p></li>
+<li><p><strong>hemisphere</strong> – Meteorological hemisphere used when annotating fold seasons
+in the summary.  <code class="docutils literal notranslate"><span class="pre">&quot;NH&quot;</span></code> (default) uses Northern-Hemisphere
+conventions (Dec–Feb = Winter).  Use <code class="docutils literal notranslate"><span class="pre">&quot;SH&quot;</span></code> for Southern
+Hemisphere sites where seasons are reversed.</p></li>
+</ul>
+</dd>
+</dl>
+<dl>
+<dt>CV protocol (all fields default to the standard 10-fold expanding window):</dt><dd><p>cv_train_size: Initial training window in <code class="docutils literal notranslate"><span class="pre">split_freq</span></code> units.
+cv_test_size: Test window per fold in <code class="docutils literal notranslate"><span class="pre">split_freq</span></code> units.
+cv_val_size: Validation window carved from the training tail.
+cv_calib_size: Calibration window for conformal experiments (0 =</p>
+<blockquote>
+<div><p>disabled).</p>
+</div></blockquote>
+<p>cv_stride: Advance between folds.
+cv_folds: Maximum number of folds.</p>
+</dd>
+<dt>Output:</dt><dd><dl class="simple">
+<dt>fixed_overrides: Applied to every model config before backbone params</dt><dd><p>(e.g. <code class="docutils literal notranslate"><span class="pre">{&quot;use_revin&quot;:</span> <span class="pre">False,</span> <span class="pre">&quot;value_embed_type&quot;:</span> <span class="pre">&quot;ConvEmb&quot;}</span></code>).</p>
+</dd>
+<dt>controlled_fields: Stripped from backbone HPO params so ablation</dt><dd><p>overrides always win.</p>
+</dd>
+<dt>reference_conditions: Maps group name → reference condition name for</dt><dd><p>Δ-vs-reference columns in the summary.</p>
+</dd>
+</dl>
+<p>plot_figures: Whether to call <code class="docutils literal notranslate"><span class="pre">save_ablation_plots</span></code> after the run.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.backbone_cls">
+<span class="sig-name descname"><span class="pre">backbone_cls</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.14)"><span class="pre">type</span></a></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.backbone_cls" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.condition_cls">
+<span class="sig-name descname"><span class="pre">condition_cls</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.14)"><span class="pre">type</span></a></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.condition_cls" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.conditions">
+<span class="sig-name descname"><span class="pre">conditions</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#twiga.experiment.Condition" title="twiga.experiment.condition.Condition"><span class="pre">Condition</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.conditions" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.controlled_fields">
+<span class="sig-name descname"><span class="pre">controlled_fields</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#frozenset" title="(in Python v3.14)"><span class="pre">frozenset</span></a></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.controlled_fields" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.cv_calib_size">
+<span class="sig-name descname"><span class="pre">cv_calib_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.cv_calib_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.cv_folds">
+<span class="sig-name descname"><span class="pre">cv_folds</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.cv_folds" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.cv_stride">
+<span class="sig-name descname"><span class="pre">cv_stride</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.cv_stride" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.cv_test_size">
+<span class="sig-name descname"><span class="pre">cv_test_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.cv_test_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.cv_train_size">
+<span class="sig-name descname"><span class="pre">cv_train_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">12</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.cv_train_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.cv_val_size">
+<span class="sig-name descname"><span class="pre">cv_val_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.cv_val_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.datasets">
+<span class="sig-name descname"><span class="pre">datasets</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.datasets" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.fixed_overrides">
+<span class="sig-name descname"><span class="pre">fixed_overrides</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.fixed_overrides" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.hemisphere">
+<span class="sig-name descname"><span class="pre">hemisphere</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'NH'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'SH'</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'NH'</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.hemisphere" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.output_prefix">
+<span class="sig-name descname"><span class="pre">output_prefix</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.output_prefix" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.plot_figures">
+<span class="sig-name descname"><span class="pre">plot_figures</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.plot_figures" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.reference_conditions">
+<span class="sig-name descname"><span class="pre">reference_conditions</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.reference_conditions" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.sample_plot_steps">
+<span class="sig-name descname"><span class="pre">sample_plot_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">336</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.sample_plot_steps" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.save_condition_plots">
+<span class="sig-name descname"><span class="pre">save_condition_plots</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.save_condition_plots" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="twiga.experiment.Condition">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.experiment.</span></span><span class="sig-name descname"><span class="pre">Condition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpo_variant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_types</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stage1_epochs_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calib_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train_tail'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.experiment.Condition" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>One experimental condition — what varies between backtesting runs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Short identifier used in filenames and summaries.</p></li>
+<li><p><strong>group</strong> – Experiment group this condition belongs to (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;gating&quot;</span></code>).</p></li>
+<li><p><strong>description</strong> – Human-readable note, shown in logs.</p></li>
+<li><p><strong>overrides</strong> – Key–value pairs applied to the model config <em>after</em> backbone
+HPO params and fixed overrides.  These always win.</p></li>
+<li><p><strong>model_cls</strong> – Override the spec’s <code class="docutils literal notranslate"><span class="pre">condition_cls</span></code> for this condition.
+Use for multi-model experiments (e.g. MLPF vs MLPGAM vs MLPGAF).</p></li>
+<li><p><strong>metric_types</strong> – Which evaluation methods to call per fold.  Each entry
+maps to one call: <code class="docutils literal notranslate"><span class="pre">&quot;point&quot;</span></code> → <code class="docutils literal notranslate"><span class="pre">evaluate_point_forecast</span></code>;
+<code class="docutils literal notranslate"><span class="pre">&quot;interval&quot;</span></code> → <code class="docutils literal notranslate"><span class="pre">evaluate_interval_forecast</span></code>; <code class="docutils literal notranslate"><span class="pre">&quot;quantile&quot;</span></code>
+→ <code class="docutils literal notranslate"><span class="pre">evaluate_quantile_forecast</span></code>.  Defaults to <code class="docutils literal notranslate"><span class="pre">[&quot;point&quot;]</span></code>.</p></li>
+<li><p><strong>conformal_config</strong> – When set the forecaster is given these conformal
+params and <code class="docutils literal notranslate"><span class="pre">calib_size</span></code> from the spec is used for calibration
+within each backtesting fold.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.Condition.calib_source">
+<span class="sig-name descname"><span class="pre">calib_source</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'train_tail'</span></span><a class="headerlink" href="#twiga.experiment.Condition.calib_source" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.Condition.conformal_config">
+<span class="sig-name descname"><span class="pre">conformal_config</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../core/config.html#twiga.core.config.ConformalConfig" title="twiga.core.config.conformal.ConformalConfig"><span class="pre">ConformalConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#twiga.experiment.Condition.conformal_config" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.Condition.description">
+<span class="sig-name descname"><span class="pre">description</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></span><a class="headerlink" href="#twiga.experiment.Condition.description" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.Condition.group">
+<span class="sig-name descname"><span class="pre">group</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#twiga.experiment.Condition.group" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.Condition.hpo_variant">
+<span class="sig-name descname"><span class="pre">hpo_variant</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></span><a class="headerlink" href="#twiga.experiment.Condition.hpo_variant" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.Condition.metric_types">
+<span class="sig-name descname"><span class="pre">metric_types</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.experiment.Condition.metric_types" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.Condition.model_cls">
+<span class="sig-name descname"><span class="pre">model_cls</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.14)"><span class="pre">type</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#twiga.experiment.Condition.model_cls" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.Condition.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#twiga.experiment.Condition.name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.Condition.overrides">
+<span class="sig-name descname"><span class="pre">overrides</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span><a class="headerlink" href="#twiga.experiment.Condition.overrides" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.Condition.stage1_epochs_frac">
+<span class="sig-name descname"><span class="pre">stage1_epochs_frac</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#twiga.experiment.Condition.stage1_epochs_frac" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.experiment.run_backbone_hpo">
+<span class="sig-prename descclassname"><span class="pre">twiga.experiment.</span></span><span class="sig-name descname"><span class="pre">run_backbone_hpo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backbone_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calendar_variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exogenous_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpo_cache_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpo_variant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.experiment.run_backbone_hpo" title="Link to this definition">#</a></dt>
+<dd><p>Run Optuna HPO for <em>backbone_cls</em> on a fixed 14-month / 2-month split.</p>
+<p>Saves best params to
+<code class="docutils literal notranslate"><span class="pre">&lt;hpo_cache_dir&gt;/&lt;dataset_key&gt;/&lt;model_name&gt;_best_params.json</span></code>
+and returns the param dict.  The file is shared across runs — params are
+never recomputed unless the file is deleted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>backbone_cls</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">type</span></code></a></span>) – Model config class with a <code class="docutils literal notranslate"><span class="pre">from_data_config</span></code> factory.</p></li>
+<li><p><strong>cfg</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineConfig</span></code></span>) – Pipeline config providing <code class="docutils literal notranslate"><span class="pre">train_start</span></code>, <code class="docutils literal notranslate"><span class="pre">epochs</span></code>, <code class="docutils literal notranslate"><span class="pre">num_trials</span></code>.</p></li>
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span>) – Full dataset DataFrame (must have a <code class="docutils literal notranslate"><span class="pre">timestamp</span></code> column).</p></li>
+<li><p><strong>target_series</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Target variable name.</p></li>
+<li><p><strong>calendar_variables</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a></span>) – Calendar feature names.</p></li>
+<li><p><strong>exogenous_features</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a></span>) – Exogenous feature names.</p></li>
+<li><p><strong>lags</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a></span>) – Lag indices.</p></li>
+<li><p><strong>latitude</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Site latitude (used by some feature builders).</p></li>
+<li><p><strong>longitude</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Site longitude.</p></li>
+<li><p><strong>dataset_key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Short dataset identifier used in the cache path.</p></li>
+<li><p><strong>hpo_cache_dir</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span>) – Root directory for cached HPO params.</p></li>
+<li><p><strong>hpo_variant</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Optional suffix appended to the model name when computing the
+cache key (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;3group&quot;</span></code> → <code class="docutils literal notranslate"><span class="pre">mlpgaf_3group_best_params.json</span></code>).
+Allows a single config class to have per-variant HPO files.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Best hyperparameter dict (same format as <a class="reference internal" href="#twiga.experiment.load_backbone_params" title="twiga.experiment.load_backbone_params"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_backbone_params()</span></code></a>).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.experiment.load_backbone_params">
+<span class="sig-prename descclassname"><span class="pre">twiga.experiment.</span></span><span class="sig-name descname"><span class="pre">load_backbone_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpo_cache_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name_str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fallback_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.experiment.load_backbone_params" title="Link to this definition">#</a></dt>
+<dd><p>Load saved backbone HPO params, strip controlled fields and model prefix.</p>
+<p>Searches <em>fallback_paths</em> first (in order), then the canonical engine path.
+Returns an empty dict — with a warning — when no file is found.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset_key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Short dataset identifier (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;MLVS-PT&quot;</span></code>).</p></li>
+<li><p><strong>hpo_cache_dir</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span>) – Root directory for cached HPO params
+(typically <code class="docutils literal notranslate"><span class="pre">&lt;experiment_root&gt;/backbone_hpo</span></code>).</p></li>
+<li><p><strong>model_name_str</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Model name string (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;mlpgaf&quot;</span></code>).</p></li>
+<li><p><strong>controlled_fields</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#frozenset" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">frozenset</span></code></a></span>) – Keys to strip from the loaded params so ablation
+condition overrides always take precedence.</p></li>
+<li><p><strong>fallback_paths</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Additional JSON files to try before the canonical path.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict of hyperparameter names → values, ready to <code class="docutils literal notranslate"><span class="pre">setattr</span></code> onto a
+model config object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.experiment.aggregate">
+<span class="sig-prename descclassname"><span class="pre">twiga.experiment.</span></span><span class="sig-name descname"><span class="pre">aggregate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">combined</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_conditions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.experiment.aggregate" title="Link to this definition">#</a></dt>
+<dd><p>Compute mean ± std per (group, condition, metric_type) and save CSVs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>combined</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span>) – Long-form DataFrame with one row per fold/horizon, tagged with
+<code class="docutils literal notranslate"><span class="pre">group</span></code>, <code class="docutils literal notranslate"><span class="pre">condition</span></code>, <code class="docutils literal notranslate"><span class="pre">dataset</span></code>, and optionally <code class="docutils literal notranslate"><span class="pre">metric_type</span></code>
+columns.</p></li>
+<li><p><strong>prefix</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Filename prefix for output CSVs.</p></li>
+<li><p><strong>root</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span>) – Directory to write <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;_full&lt;suffix&gt;.csv</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;_summary&lt;suffix&gt;.csv</span></code>.</p></li>
+<li><p><strong>suffix</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Optional tag appended to filenames (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;_val&quot;</span></code>).</p></li>
+<li><p><strong>reference_conditions</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span>) – Maps group → reference condition name for
+Δ-vs-reference columns.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Summary <a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a> with MultiIndex
+(group, condition[, metric_type]) and one column per metric, plus
+<code class="docutils literal notranslate"><span class="pre">_std</span></code> variants, <code class="docutils literal notranslate"><span class="pre">n_runs</span></code>, and Δ columns.  Empty DataFrame if no
+recognised metric columns are present.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="hyperparameter-tuning.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Hyperparameter Optimization</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../probabilistic/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Probabilistic Forecasting</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#architecture">Architecture</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#defining-an-experiment">Defining an Experiment</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#experimentspec">ExperimentSpec</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#condition">Condition</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-an-experiment">Running an Experiment</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-python">From Python</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-the-command-line">From the command line</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#config-precedence">Config Precedence</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hpo-cache">HPO Cache</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mlflow-tracking">MLflow Tracking</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#aggregating-results">Aggregating Results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#visualising-results">Visualising Results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api-reference">API Reference</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentEngine"><code class="docutils literal notranslate"><span class="pre">ExperimentEngine</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentEngine.cli_main"><code class="docutils literal notranslate"><span class="pre">ExperimentEngine.cli_main()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentEngine.run"><code class="docutils literal notranslate"><span class="pre">ExperimentEngine.run()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.backbone_cls"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.backbone_cls</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.condition_cls"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.condition_cls</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.conditions"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.conditions</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.controlled_fields"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.controlled_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.cv_calib_size"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.cv_calib_size</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.cv_folds"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.cv_folds</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.cv_stride"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.cv_stride</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.cv_test_size"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.cv_test_size</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.cv_train_size"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.cv_train_size</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.cv_val_size"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.cv_val_size</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.datasets"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.datasets</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.fixed_overrides"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.fixed_overrides</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.hemisphere"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.hemisphere</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.name"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.output_prefix"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.output_prefix</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.plot_figures"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.plot_figures</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.reference_conditions"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.reference_conditions</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.sample_plot_steps"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.sample_plot_steps</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.save_condition_plots"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.save_condition_plots</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition"><code class="docutils literal notranslate"><span class="pre">Condition</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition.calib_source"><code class="docutils literal notranslate"><span class="pre">Condition.calib_source</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition.conformal_config"><code class="docutils literal notranslate"><span class="pre">Condition.conformal_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition.description"><code class="docutils literal notranslate"><span class="pre">Condition.description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition.group"><code class="docutils literal notranslate"><span class="pre">Condition.group</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition.hpo_variant"><code class="docutils literal notranslate"><span class="pre">Condition.hpo_variant</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition.metric_types"><code class="docutils literal notranslate"><span class="pre">Condition.metric_types</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition.model_cls"><code class="docutils literal notranslate"><span class="pre">Condition.model_cls</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition.name"><code class="docutils literal notranslate"><span class="pre">Condition.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition.overrides"><code class="docutils literal notranslate"><span class="pre">Condition.overrides</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.Condition.stage1_epochs_frac"><code class="docutils literal notranslate"><span class="pre">Condition.stage1_epochs_frac</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.run_backbone_hpo"><code class="docutils literal notranslate"><span class="pre">run_backbone_hpo()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.load_backbone_params"><code class="docutils literal notranslate"><span class="pre">load_backbone_params()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.aggregate"><code class="docutils literal notranslate"><span class="pre">aggregate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

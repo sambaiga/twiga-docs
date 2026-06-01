@@ -49,7 +49,7 @@ BaseQuantileRegressor(
 
 | Attribute | Type | Description |
 | --- | --- | --- |
-| `quantiles` | `list[float]` | Sorted quantile fractions, automatically extended with `conf_level / 2` and `1 - conf_level / 2`. |
+| `quantiles` | `list[float]` | Sorted quantile fractions. `conf_level` is stored as metadata only and is **not** automatically added to the quantile grid — include boundary quantiles (e.g. `conf_level/2`, `1−conf_level/2`) explicitly if needed. |
 | `conf_level` | `float` | Significance level; `0.1` produces a 90 % prediction interval. |
 | `supports_multi_output` | `bool` | Whether the underlying engine natively handles multiple outputs. |
 | `models` | `dict[float, Any]` | One trained model per quantile (LightGBM), or a single `MultiOutputRegressor` (CatBoost, XGBoost). |
@@ -58,14 +58,14 @@ BaseQuantileRegressor(
 
 | Method | Signature | Description |
 | --- | --- | --- |
-| `fit` | `fit(X, y, verbose=False)` | Trains all quantile models. Iterates per-quantile for LightGBM; fits a single model for CatBoost and XGBoost. |
+| `fit` | `fit(X, y, eval_set=None, verbose=False, trial=None)` | Trains all quantile models. Iterates per-quantile for LightGBM; fits a single model for CatBoost and XGBoost. `trial` is passed through from the forecaster during HPO and is not used directly by quantile regressors. |
 | `predict` | `predict(X, sigma=False)` | Returns `(median, quantile_array)`. When `sigma=True` returns `(median, sigma)` where sigma is the inter-quantile range. Quantile array shape: `(batch, num_quantiles, horizon, num_targets)`. |
-| `forecast` | `forecast(x, sigma=False)` | Returns `{"loc": median, "scale": sigma}` when `sigma=True`; otherwise `(median, quantile_predictions)`. |
+| `forecast` | `forecast(x, sigma=False)` | Returns `{"loc": median, "scale": sigma}` when `sigma=True`; otherwise returns `{"loc": median, "quantiles": array, "conf_level": float, "quantile_levels": list}`. |
 
-:::{admonition} Quantile merging
-:class: info
+:::{admonition} conf_level is metadata only
+:class: note
 
-User-specified quantiles are merged with the confidence bounds derived from `conf_level`. For example, with `quantiles=[0.25, 0.5, 0.75]` and `conf_level=0.1`, the final sorted quantile list is `[0.05, 0.25, 0.5, 0.75, 0.95]`.
+`conf_level` is stored as a reference value (e.g. `0.1` for a 90 % interval) but is **not** automatically merged into the quantile grid. To get boundary quantiles for interval construction, include them explicitly: e.g. `quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]` when `conf_level=0.1`.
 :::
 
 ### Per-Engine Handling
@@ -81,7 +81,7 @@ Each engine uses a different internal strategy for quantile regression:
 :::{admonition} LightGBM training time
 :class: note
 
-LightGBM trains a **separate model per quantile**, so training time scales linearly with the number of quantiles. With the default 5 quantiles plus 2 confidence bounds (7 total), expect roughly 7× the training time of a single point model. CatBoost and XGBoost predict all quantiles in a single model, making them more efficient for large quantile sets.
+LightGBM trains a **separate model per quantile**, so training time scales linearly with the number of quantiles. With the default 5 quantiles, expect roughly 5× the training time of a single point model. CatBoost and XGBoost predict all quantiles in a single model, making them more efficient for large quantile sets.
 :::
 
 ### Available Models
@@ -279,7 +279,7 @@ All CRC configs share these additional fields (on top of their backbone config):
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sigma_loss_fn` | `Literal["hybrid","gaussian","laplace","mse"]` | `"hybrid"` | Calibration objective for σ |
+| `sigma_loss_fn` | `Literal["gaussian","laplace","mse","hybrid","hybrid_sqrt","log"]` | `"hybrid_sqrt"` | Calibration objective for σ |
 | `alpha` | `float` | `0.1` | MSE weight in the mu and hybrid sigma losses |
 | `two_stage` | `bool` | `True` | Two-stage training (stage 1: backbone; stage 2: sigma MLP only) |
 
@@ -287,7 +287,7 @@ All CRC configs share these additional fields (on top of their backbone config):
 from twiga.models.nn.mlpgamcrc_model import MLPGAMCRCConfig
 
 config = MLPGAMCRCConfig.from_data_config(data_config)
-config.sigma_loss_fn = "hybrid"   # default — alpha*MSE + (1-alpha)*MAE on |y - mu|
+config.sigma_loss_fn = "hybrid_sqrt"   # default — alpha*MSE + (1-alpha)*MAE on sqrt|y - mu|
 config.alpha = 0.1
 config.two_stage = True           # freeze backbone for sigma-only stage 2
 config.max_epochs = 30

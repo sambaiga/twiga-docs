@@ -7,13 +7,13 @@
    "source": [
     "# Forecastability Analysis\n",
     "\n",
-    "![Beginner](https://img.shields.io/badge/level-beginner-green) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~20%20min-lightgrey)\n",
+    "![Beginner](https://img.shields.io/badge/level-beginner-green) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~25%20min-lightgrey)\n",
     "\n",
     "---\n",
     "\n",
     "**What you'll build**\n",
     "\n",
-    "A **Forecastability Profile** for the MLVS-PT net-load signal - a concise set of metrics (entropy, seasonality, stationarity, feature correlation) that tells you how predictable the series is and directly maps to every parameter in `DataPipelineConfig`.\n",
+    "A **Forecastability Profile** for the MLVS-PT net-load signal - a concise set of metrics (entropy, seasonality, stationarity, feature correlation, lag safety) that tells you how predictable the series is and directly maps to every parameter in `DataPipelineConfig`.\n",
     "\n",
     "**Prerequisites**\n",
     "- [NB01 - Getting Started](01-getting-started.ipynb)\n",
@@ -27,9 +27,11 @@
     "2. Identify dominant seasonal periods using the Autocorrelation Function (ACF) and translate them into `lags` and `lookback_window_size`\n",
     "3. Estimate the autoregressive order of a series from the Partial Autocorrelation Function (PACF)\n",
     "4. Determine whether a series is stationary using ADF and KPSS tests and select an appropriate scaler\n",
-    "5. Rank exogenous features by their predictive power using Xi correlation and decide which to include in `known_future_features`\n",
+    "5. Rank exogenous features by Xi correlation and scan their predictive signal across lags using cross-lagged MI\n",
+    "6. Apply `recommend_predictive_lags` to find leakage-safe feature lags for a given forecast horizon\n",
+    "7. Assemble all findings into a Forecastability Profile and map them to `DataPipelineConfig` parameters\n",
     "\n",
-    "**The five-step workflow**\n",
+    "**The six-step workflow**\n",
     "\n",
     "```mermaid\n",
     "flowchart LR\n",
@@ -37,13 +39,12 @@
     "    B[\"📉 Entropy<br>(structure)\"]\n",
     "    C[\"🔁 Seasonality<br>(ACF/PACF)\"]\n",
     "    D[\"📏 Stationarity<br>(ADF/KPSS)\"]\n",
-    "    E[\"🔗 Feature Corr<br>(xicor)\"]\n",
-    "    F[\"⚙ Profile<br>(config)\"]\n",
+    "    E[\"🔗 Feature Relevance<br>(xicor + cross-lag)\"]\n",
+    "    F[\"🔮 AMI Profile<br>(predictability)\"]\n",
+    "    G[\"⚙ Profile<br>(config)\"]\n",
     "\n",
-    "    A --> B --> C --> D --> E --> F\n",
+    "    A --> B --> C --> D --> E --> F --> G\n",
     "```\n",
-    "\n",
-    "\n",
     "\n",
     "Every analysis step in this notebook produces a concrete recommendation for `DataPipelineConfig` - the profile at the end assembles them all."
    ]
@@ -703,7 +704,164 @@
    "metadata": {},
    "source": [
     "---\n",
-    "## 6. Forecastability Profile\n",
+    "## 6. Feature Relevance: Cross-Lagged Association\n",
+    "\n",
+    "Knowing *which* exogenous features carry predictive signal and *at which lag* avoids two common mistakes: including irrelevant features that add noise, and using features at lags that leak future information into the model.\n",
+    "\n",
+    "The analysis here uses two complementary tools:\n",
+    "\n",
+    "1. **Xi correlation** — contemporaneous relevance. A non-parametric measure that detects any functional relationship (linear or non-linear) between $X_t$ and $Y_t$.\n",
+    "2. **Cross-lagged MI** — temporal predictability. Scans $\\text{MI}(X_{t-h},\\, Y_t)$ across lags $h = 0 \\ldots 96$ and flags every lag $h < \\text{forecast\\_horizon}$ as data-leakage-unsafe."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "32",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from twiga.core.stats import compute_xicorr\n",
+    "\n",
+    "exog_features = [\"Ghi\", \"Temperature\"]\n",
+    "xi_df = compute_xicorr(data, target_col=\"NetLoad(kW)\", variable_cols=exog_features)\n",
+    "xi_scores = xi_df[[\"col2\", \"xicor\", \"p_value\"]].rename(columns={\"col2\": \"feature\", \"xicor\": \"xi_score\"})\n",
+    "\n",
+    "twiga_gt(\n",
+    "    GT(xi_scores.round({\"xi_score\": 4, \"p_value\": 4}))\n",
+    "    .tab_header(title=md(\"**Xi Correlation — Exogenous Features → NetLoad(kW)**\"))\n",
+    "    .cols_label(\n",
+    "        feature=md(\"**Feature**\"),\n",
+    "        xi_score=md(\"**Xi Score**\"),\n",
+    "        p_value=md(\"**p-value**\"),\n",
+    "    )\n",
+    "    .tab_source_note(\"Twiga Forecast · NB02 — Forecastability Analysis\"),\n",
+    "    n_rows=len(xi_scores),\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "33",
+   "metadata": {},
+   "source": [
+    "### Cross-Lagged Association\n",
+    "\n",
+    "Xi correlation above captures *contemporaneous* relevance: how much does $X_t$ predict $Y_t$ right now? For a model that uses **past features** ($X_{t-h}$, historical values only), the relevant question is: *at which lag does the feature carry peak signal while remaining data-leakage-safe?*\n",
+    "\n",
+    "A lag $h$ is **leakage-safe** when $h \\geq \\text{forecast\\_horizon}$. At prediction time $t$, the model has access to all feature values up to $t$; predicting $Y_{t+H}$ using $X_{t-h}$ is only valid when $t - h \\leq t - H$, i.e. $h \\geq H$. The scan below flags every lag $h < 48$ as unsafe (shaded region left of the red dashed line)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "34",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from twiga.core.stats import compute_crosslag_association\n",
+    "\n",
+    "forecast_horizon = 48  # 24-hour ahead at 30-min resolution\n",
+    "\n",
+    "log.info(\"Computing cross-lagged MI (this may take ~30 s) ...\")\n",
+    "cl = compute_crosslag_association(\n",
+    "    data=data,\n",
+    "    feature_cols=exog_features,\n",
+    "    target_col=\"NetLoad(kW)\",\n",
+    "    max_lag=96,\n",
+    "    forecast_horizon=forecast_horizon,\n",
+    "    method=\"mi\",\n",
+    ")\n",
+    "log.info(\n",
+    "    f\"Computed {len(cl)} lag scores across {cl['feature'].nunique()} features; \"\n",
+    "    f\"{cl['leakage_safe'].sum()} lags are leakage-safe\"\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "35",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from lets_plot import geom_vline\n",
+    "\n",
+    "p = (\n",
+    "    ggplot(cl, aes(x=\"lag\", y=\"score\", color=\"feature\"))\n",
+    "    + geom_line(size=1.2)\n",
+    "    + geom_vline(\n",
+    "        xintercept=forecast_horizon - 0.5,\n",
+    "        linetype=\"dashed\",\n",
+    "        color=\"#dc3545\",\n",
+    "        size=1.0,\n",
+    "    )\n",
+    "    + labs(\n",
+    "        x=\"Lag (30-min steps)\",\n",
+    "        y=\"MI score (nats)\",\n",
+    "        title=\"Cross-Lagged Association — MI score vs lag\",\n",
+    "        subtitle=\"Lags left of the red line are data-leakage-unsafe (require future feature values)\",\n",
+    "        color=\"Feature\",\n",
+    "    )\n",
+    "    + ggsize(860, 320)\n",
+    "    + twiga_theme()\n",
+    ")\n",
+    "p"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "36",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from twiga.core.stats import recommend_predictive_lags\n",
+    "\n",
+    "recs = recommend_predictive_lags(\n",
+    "    data=data,\n",
+    "    feature_cols=exog_features,\n",
+    "    target_col=\"NetLoad(kW)\",\n",
+    "    forecast_horizon=forecast_horizon,\n",
+    "    max_lag=96,\n",
+    "    top_k=3,\n",
+    ")\n",
+    "\n",
+    "safe_feature_lags = recs.groupby(\"feature\")[\"lag\"].apply(list).to_dict()\n",
+    "log.info(f\"Recommended safe lags: {safe_feature_lags}\")\n",
+    "\n",
+    "twiga_gt(\n",
+    "    GT(recs.round({\"score\": 4}))\n",
+    "    .tab_header(\n",
+    "        title=md(\"**Recommended Predictive Lags — Leakage-Safe**\"),\n",
+    "        subtitle=f\"All lags satisfy lag >= forecast_horizon ({forecast_horizon} steps = 24 h)\",\n",
+    "    )\n",
+    "    .cols_label(\n",
+    "        feature=md(\"**Feature**\"),\n",
+    "        lag=md(\"**Lag**\"),\n",
+    "        score=md(\"**MI Score**\"),\n",
+    "        rank=md(\"**Rank**\"),\n",
+    "    )\n",
+    "    .tab_source_note(\"Twiga Forecast · NB02 — Forecastability Analysis\"),\n",
+    "    n_rows=len(recs),\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "37",
+   "metadata": {},
+   "source": [
+    "**Takeaway:** Ghi and Temperature carry peak predictive signal close to the daily cycle (around lag 48). All recommended lags satisfy `lag >= forecast_horizon`, so they are safe to pass directly to `DataPipelineConfig` as `lags` per past feature. If a weather forecast is available at prediction time, use `known_future_features` instead; otherwise use the safe lags identified here."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "38",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## 7. Forecastability Profile\n",
     "\n",
     "Assembling all findings into a single profile that directly maps to modelling decisions."
    ]
@@ -711,7 +869,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "32",
+   "id": "39",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -723,6 +881,7 @@
     "    \"is_stationary_adf\": bool(adf_pval < 0.05),\n",
     "    \"is_stationary_kpss\": bool(kpss_pval > 0.05),\n",
     "    \"dominant_seasonal_lags\": dominant_lags,\n",
+    "    \"safe_feature_lags\": safe_feature_lags,  # from cross-lagged association\n",
     "}\n",
     "\n",
     "log.info(\"Forecastability profile:\\n%s\", json.dumps(profile, indent=2, default=str))"
@@ -730,7 +889,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "33",
+   "id": "40",
    "metadata": {},
    "source": [
     "### From profile to model choices\n",
@@ -742,7 +901,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "34",
+   "id": "41",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -754,7 +913,7 @@
     "            \"H > 0.5 (persistent memory)\",\n",
     "            \"Low PE (regular patterns)\",\n",
     "            \"Stationary (ADF + KPSS agree)\",\n",
-    "            \"High xicor for Ghi, hour\",\n",
+    "            \"MI peaks at lag >= 48 for Ghi and Temperature\",\n",
     "        ],\n",
     "        \"Model / config recommendation\": [\n",
     "            \"`lookback_window_size >= 48`, `lags=[1, 48]`\",\n",
@@ -762,7 +921,7 @@
     "            \"Larger lookback helps; NN models benefit from attention/embedding layers\",\n",
     "            \"Even simple ML baselines (LightGBM) should perform well\",\n",
     "            \"`standard` is sufficient for `input_scaler`\",\n",
-    "            \"Include in `known_future_features` and `calendar_features`\",\n",
+    "            \"Use `safe_feature_lags` as `lags` in `DataPipelineConfig` (leakage-safe)\",\n",
     "        ],\n",
     "    }\n",
     ")\n",
@@ -786,7 +945,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "35",
+   "id": "42",
    "metadata": {},
    "source": [
     "Concretely, this profile suggests the following starting `DataPipelineConfig`:\n",
@@ -797,11 +956,15 @@
     "data_config = DataPipelineConfig(\n",
     "    target_feature=\"NetLoad(kW)\",\n",
     "    forecast_horizon=48,\n",
-    "    lookback_window_size=96,          # >= lag 48, covers 2 days\n",
-    "    lags=[1, 48, 336],                # dominant seasonal lags\n",
+    "    lookback_window_size=96,              # >= lag 48, covers 2 days\n",
+    "    lags=[1, 48, 336],                    # dominant self-lags from ACF/PACF\n",
     "    calendar_features=[\"hour\", \"day_night\"],\n",
+    "    # Option A — weather forecasts available at prediction time\n",
     "    known_future_features=[\"Ghi\", \"Temperature\"],\n",
-    "    input_scaler=\"standard\",    # stationary series\n",
+    "    # Option B — only historical weather values available:\n",
+    "    # past_features=list(safe_feature_lags.keys()),\n",
+    "    # lags={**{t: [1, 48, 336] for t in [\"NetLoad(kW)\"]}, **safe_feature_lags},\n",
+    "    input_scaler=\"standard\",              # stationary series\n",
     "    period=\"30min\",\n",
     ")\n",
     "```"
@@ -810,7 +973,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "36",
+   "id": "43",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -854,11 +1017,11 @@
   },
   {
    "cell_type": "markdown",
-   "id": "37",
+   "id": "44",
    "metadata": {},
    "source": [
     "---\n",
-    "## 7. Signal Characterisation: One call to rule them all\n",
+    "## 8. Signal Characterisation: One call to rule them all\n",
     "\n",
     "The individual steps above (entropy, ACF/PACF, stationarity, AMI) are wrapped into a single `SignalCharacteriser` that runs all four diagnostic dimensions in one call and returns an immutable `CharacterisationResult`.\n",
     "\n",
@@ -868,7 +1031,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "38",
+   "id": "45",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -887,7 +1050,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "39",
+   "id": "46",
    "metadata": {},
    "source": [
     "### Tabular summary"
@@ -896,7 +1059,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "40",
+   "id": "47",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -906,7 +1069,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "41",
+   "id": "48",
    "metadata": {},
    "source": [
     "### Key outputs"
@@ -915,7 +1078,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "42",
+   "id": "49",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -934,7 +1097,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "43",
+   "id": "50",
    "metadata": {},
    "source": [
     "### Pipeline hints: from characterisation to DataPipeline"
@@ -943,7 +1106,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "44",
+   "id": "51",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -955,7 +1118,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "45",
+   "id": "52",
    "metadata": {},
    "source": [
     "---\n",
@@ -967,15 +1130,18 @@
     "- [x] Identified dominant seasonal periods (daily lag 48, weekly lag 336) from the ACF\n",
     "- [x] Estimated the AR order (p = 7) from the PACF cutoff\n",
     "- [x] Ran ADF and KPSS stationarity tests and selected an appropriate scaler\n",
-    "- [x] Ranked exogenous features by Xi correlation to decide which to include in the config\n",
+    "- [x] Ranked exogenous features (Ghi, Temperature) by Xi correlation\n",
+    "- [x] Used cross-lagged MI to find the lag at which each feature carries peak predictive signal\n",
+    "- [x] Applied `recommend_predictive_lags` to surface only leakage-safe lags (h >= forecast_horizon)\n",
     "- [x] Assembled a complete Forecastability Profile and mapped it to `DataPipelineConfig` parameters\n",
     "\n",
     "**Key takeaways for beginners**\n",
-    "1. **Entropy tells you how hard forecasting will be** - a high Hurst exponent (H > 0.5) means the series has memory and patterns that a model can exploit.\n",
-    "2. **ACF peaks are your lags** - a strong peak at lag 48 means \"yesterday at this time is a good predictor\". Set `lags` and `lookback_window_size` accordingly.\n",
-    "3. **PACF gives the minimum AR order** - lags beyond the PACF cutoff are redundant; including them adds noise but not signal.\n",
-    "4. **Always test stationarity before choosing a scaler** - `StandardScaler` works for stationary series; non-stationary series may need differencing or `RobustScaler`.\n",
-    "5. **Xi correlation ranks features fairly** - it captures non-linear dependencies and is more reliable than Pearson correlation for engineering signals.\n",
+    "1. **Entropy tells you how hard forecasting will be** — a high Hurst exponent (H > 0.5) means the series has memory and patterns that a model can exploit.\n",
+    "2. **ACF peaks are your self-lags** — a strong peak at lag 48 means \"yesterday at this time is a good predictor\". Set `lags` and `lookback_window_size` accordingly.\n",
+    "3. **PACF gives the minimum AR order** — lags beyond the PACF cutoff are already explained by shorter lags and add noise rather than signal.\n",
+    "4. **Always test stationarity before choosing a scaler** — `StandardScaler` works for stationary series; non-stationary series may need differencing or `RobustScaler`.\n",
+    "5. **Xi correlation ranks features fairly** — it captures non-linear dependencies and is more reliable than Pearson correlation for engineering signals.\n",
+    "6. **Cross-lagged analysis prevents data leakage** — a lag h is safe only when h >= forecast_horizon. `recommend_predictive_lags` enforces this automatically and returns only leakage-safe lags.\n",
     "\n",
     "---\n",
     "\n",
@@ -993,7 +1159,7 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "46",
+   "id": "53",
    "metadata": {},
    "outputs": [],
    "source": [
@@ -1019,8 +1185,8 @@
     "    {\n",
     "        \"num\": \"02\",\n",
     "        \"title\": \"Forecastability Analysis\",\n",
-    "        \"desc\": \"Entropy · ACF · stationarity tests · forecastability profile\",\n",
-    "        \"tags\": [\"entropy\", \"ACF\", \"stationarity\"],\n",
+    "        \"desc\": \"Entropy · ACF · stationarity · cross-lagged association · forecastability profile\",\n",
+    "        \"tags\": [\"entropy\", \"ACF\", \"stationarity\", \"cross-lag\"],\n",
     "        \"active\": True,\n",
     "    },\n",
     "    {\n",
@@ -1082,7 +1248,7 @@
  ],
  "metadata": {
   "kernelspec": {
-   "display_name": "twiga",
+   "display_name": "twiga-forecast (3.12.12)",
    "language": "python",
    "name": "python3"
   },

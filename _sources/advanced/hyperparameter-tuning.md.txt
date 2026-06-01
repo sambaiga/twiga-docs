@@ -230,6 +230,50 @@ Best parameters are:
 - Applied to the model config via `model_copy(update=best_params)`
 - The model is re-instantiated with the updated config
 
+## Conformal-Aware Tuning
+
+By default `tune` minimises a point-forecast metric (MAE). When tuning a probabilistic model it often makes more sense to optimise directly for interval quality. Pass `calib_df` together with `conformal_params` to activate conformal-aware tuning: each trial extends the normal fit → evaluate loop with a `calibrate(calib_df)` step so that the trial score is an interval metric.
+
+```python
+from twiga.core.config import ConformalConfig
+from twiga.models.nn.mlpgam_model import MLPGAMConfig
+
+conf_config = ConformalConfig(method="crc", score_type="residual", alpha=0.1)
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[MLPGAMConfig()],
+    cv_params=train_config,
+    conformal_params=conf_config,
+)
+
+best_params = forecaster.tune(
+    train_df=train_df,
+    val_df=val_df,
+    calib_df=calib_df,               # held-out calibration window
+    conformal_params=conf_config,    # if None, uses forecaster.conformal_params
+    objective_metric="winkler",      # optimise Winkler score; or "picp", "pinaw", …
+    num_trials=50,
+)
+```
+
+`conformal_params` overrides `self.conformal_params` for the duration of the study only — the original value is restored when `tune` returns. `objective_metric` can be any column produced by `evaluate_interval_forecast` (e.g. `"winkler"`, `"picp"`, `"pinaw"`, `"ace"`).
+
+## NN Parameter Budget
+
+Neural-network search spaces can produce architectures ranging from tiny to enormous. The `max_model_params` argument lets you prune oversized trials before they waste training time: if the instantiated model's trainable parameter count exceeds the budget the trial is pruned immediately without fitting.
+
+```python
+best_params = forecaster.tune(
+    train_df=train_df,
+    val_df=val_df,
+    num_trials=50,
+    max_model_params=2_000_000,   # prune any trial > 2 M parameters; default 5 M
+)
+```
+
+Set `max_model_params=None` to disable the check entirely. The parameter has no effect for ML-domain models (CatBoost, LightGBM, XGBoost).
+
 ## Full Example
 
 ```python

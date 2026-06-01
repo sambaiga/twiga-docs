@@ -6,10 +6,11 @@
 - `twiga/models/baseline/seasonal_naive_model.py`  -  `SEASONALNAIVEModel` / `SEASONALNAIVEConfig`
 - `twiga/models/baseline/window_average_model.py`  -  `WINDOWAVERAGEModel` / `WINDOWAVERAGEConfig`
 - `twiga/models/baseline/drift_model.py`  -  `DRIFTModel` / `DRIFTConfig`
+- `twiga/models/baseline/context_parrot_model.py`  -  `CONTEXTPARROTModel` / `CONTEXTPARROTConfig`
 
 :::
 
-Twiga's **baseline domain** provides four classical reference models that require no training data beyond shape information. They serve as lower-bound benchmarks when evaluating learned models, as inputs to skill score calculations, and as lightweight forecast components for rapid prototyping. All baseline models share the same interface as ML and NN models and can be composed freely with [TwigaForecaster](../core/forecaster.md).
+Twiga's **baseline domain** provides five reference models that require no training data beyond shape information. They serve as lower-bound benchmarks when evaluating learned models, as inputs to skill score calculations, and as lightweight forecast components for rapid prototyping. All baseline models share the same interface as ML and NN models and can be composed freely with [TwigaForecaster](../core/forecaster.md).
 
 For the full model catalogue see the [Model Catalog Overview](index.md).
 
@@ -23,6 +24,8 @@ For the full model catalogue see the [Model Catalog Overview](index.md).
 | Daily or weekly seasonality benchmark | `SEASONALNAIVEModel(period="1D")` / `SEASONALNAIVEModel(period="7D")` |
 | Level-adapted mean baseline | `WINDOWAVERAGEModel(window_size=24)` |
 | Trending signal benchmark | `DRIFTModel()` |
+| Non-parametric motif matching | `CONTEXTPARROTModel()` (default "parrot" method) |
+| Autoregressive k-NN forecast | `CONTEXTPARROTModel(method="simplex")` |
 | Skill score denominator | Any of the above, chosen to match the naive reference in your domain |
 
 Baseline models are especially valuable in energy forecasting: a well-tuned seasonal naive forecast is a strong competitor for load, and any learned model that does not clearly outperform it on skill score should be scrutinised before production use.
@@ -296,14 +299,145 @@ flowchart LR
 ```
 
 
+## CONTEXTPARROTModel
+
+`CONTEXTPARROTModel` implements non-parametric forecasting through delay-coordinate embedding. It searches for patterns in the input window similar to recent observations, then uses the continuation of those patterns as forecasts. Two strategies are available: **parrot** (motif-following) and **simplex** (autoregressive k-NN).
+
+Unlike the simpler baselines above, Context Parrot adapts to complex recurring patterns in the time series without learning parameters, making it a bridge between classical statistics and machine learning.
+
+### Delay-Coordinate Embedding
+
+Both strategies rely on delay-coordinate embedding: reconstructing the state of a dynamical system from a univariate time series using a sliding window of lagged observations.
+
+For a series `x` and embedding parameters `D` (dimension) and `τ` (delay/lag), the embedding creates vectors:
+
+```
+[x_t, x_{t+τ}, x_{t+2τ}, ..., x_{t+(D-1)τ}]
+```
+
+This representation captures repeating patterns and is the foundation for motif matching.
+
+### Parrot Method
+
+The **"parrot"** method (default) implements motif-following:
+
+1. Embed the query (most recent `D` lagged observations) into the delay-coordinate space.
+2. Find the best-matching historical motif (highest-dimensional nearest neighbor) using Euclidean distance.
+3. Return the continuation of that historical pattern as the forecast.
+
+| Aspect | Description |
+|---|---|
+| **Matching** | Finds the closest historical embedding to the current state. |
+| **Forecast** | Returns the next `horizon` steps that followed that historical state, repeating if necessary. |
+| **Adapts to** | Recurring patterns, cycles, and repeating events. |
+| **Fails on** | Unique or unprecedented states not seen in the training window. |
+
+### Simplex Method
+
+The **"simplex"** method implements autoregressive k-NN Sugihara-style projection:
+
+1. Construct a library of embedded state vectors and their one-step-ahead targets.
+2. For each forecast step, find the `k` nearest neighbors in embedding space.
+3. Predict the next value as an exponentially-weighted average of the `k` targets, weighting by inverse distance.
+4. Append the prediction to the series history and iterate for the full horizon.
+
+| Aspect | Description |
+|---|---|
+| **Matching** | Weighted ensemble of `k` nearest neighbors per step. |
+| **Forecast** | Autoregressive: each prediction feeds into the next step's state. |
+| **Adapts to** | Smooth continuations; better for extrapolation beyond the training window. |
+| **Fails on** | High-dimensional data; may struggle with chaotic or unpredictable signals. |
+
+### CONTEXTPARROTConfig
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | `Literal["context_parrot"]` | `"context_parrot"` | Model identifier. Excluded from parameter dumps. |
+| `domain` | `Literal["baseline"]` | `"baseline"` | Domain identifier. Excluded from parameter dumps. |
+| `embedding_dim` | `int` | `10` | Delay embedding dimension `D` (motif length). Must be positive. |
+| `tau` | `int` | `1` | Delay (lag) between embedding coordinates. Must be positive. |
+| `method` | `Literal["parrot", "simplex"]` | `"parrot"` | Forecasting strategy. |
+| `k` | `int \| None` | `None` | Number of nearest neighbors for simplex. Defaults to `embedding_dim + 1` when `None`. Ignored for parrot. |
+| `search_space` | `BaseSearchSpace` | *(see below)* | Default hyperparameter search space. Excluded from parameter dumps. |
+
+**Default Search Space:**
+
+| Parameter | Values | Type |
+|---|---|---|
+| `embedding_dim` | `[5, 10, 24, 48, 96]` | categorical |
+
+### Sequence Length Requirement
+
+The model requires a minimum input sequence length:
+
+```
+seq_len >= 2 * embedding_dim + 1
+```
+
+This ensures enough data points to construct `embedding_dim`-dimensional embeddings with sufficient candidates for motif matching. `fit()` validates this constraint and raises `ValueError` if violated.
+
+### Example: Parrot Method
+
+```python
+from twiga.models.baseline.context_parrot_model import CONTEXTPARROTModel, CONTEXTPARROTConfig
+
+# Default parrot method with embedding dimension 10
+config = CONTEXTPARROTConfig(embedding_dim=10, method="parrot")
+model = CONTEXTPARROTModel(model_config=config)
+
+model.fit(X_train, y_train)  # X_train shape: (B, L, F), L >= 21
+preds = model.predict(X_test)  # shape: (B, H, num_targets)
+```
+
+### Example: Simplex Method
+
+```python
+# Autoregressive simplex with k=8 neighbors
+config = CONTEXTPARROTConfig(
+    embedding_dim=10,
+    tau=1,
+    method="simplex",
+    k=8,  # or None to default to embedding_dim + 1
+)
+model = CONTEXTPARROTModel(model_config=config)
+
+model.fit(X_train, y_train)
+preds = model.predict(X_test)
+```
+
+### Hyperparameter Tuning
+
+The default search space covers embedding dimensions from 5 to 96. Use `tune()` with Optuna to select the best embedding dimension for your signal:
+
+```python
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[CONTEXTPARROTConfig()],
+    cv_params=train_config,
+)
+
+forecaster.fit(train_df=train_df)
+forecaster.tune(train_df=train_df, val_df=val_df, num_trials=5)  # tuning embedding_dim
+```
+
+### API Reference
+
+```{eval-rst}
+.. autoclass:: twiga.models.baseline.context_parrot_model.CONTEXTPARROTModel
+   :members:
+   :show-inheritance:
+```
+
+
 ## Model Comparison
 
 | Model | Config Class | Hyperparameters | Adapts to window | Typical use |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `NAIVEModel` | `NAIVEConfig` | `strategy` (categorical) | Only `"window_last"` | Universal persistence benchmark |
-| `SEASONALNAIVEModel` | `SEASONALNAIVEConfig` | `period` (categorical) | Yes  -  per-window seasonal lookup | Signals with strong daily/weekly periodicity |
-| `WINDOWAVERAGEModel` | `WINDOWAVERAGEConfig` | `window_size` (categorical) | Yes  -  local mean | Stationary signals with variable level |
-| `DRIFTModel` | `DRIFTConfig` | *(none)* | Yes  -  per-window slope | Trending signals, ramp events |
+| `SEASONALNAIVEModel` | `SEASONALNAIVEConfig` | `period` (categorical) | Yes (per-window seasonal lookup) | Signals with strong daily/weekly periodicity |
+| `WINDOWAVERAGEModel` | `WINDOWAVERAGEConfig` | `window_size` (categorical) | Yes (local mean) | Stationary signals with variable level |
+| `DRIFTModel` | `DRIFTConfig` | None | Yes (per-window slope) | Trending signals, ramp events |
+| `CONTEXTPARROTModel` | `CONTEXTPARROTConfig` | `embedding_dim` (categorical) | Yes (motif or simplex) | Recurring patterns, cycles |
 
 
 ## Usage Example

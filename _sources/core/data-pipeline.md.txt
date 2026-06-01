@@ -47,8 +47,8 @@ The `DataPipeline` class wires these stages together into a single `sklearn.pipe
 |---|---|---|---|
 | `target_feature` | `list[str] \| str` | *required* | Column name(s) of the variable(s) to forecast. |
 | `period` | `str` | *required* | Sampling frequency as a pandas offset alias (e.g. `"30min"`, `"1h"`). |
-| `lookback_window_size` | `int` | *required* | Number of past time steps used as input features. |
-| `forecast_horizon` | `int` | *required* | Number of future time steps to predict. |
+| `lookback_window_size` | `int \| str` | *required* | Number of past time steps used as input features. Accepts an integer or a duration string (e.g. `"7D"`) resolved to steps via `period`. |
+| `forecast_horizon` | `int \| str` | *required* | Number of future time steps to predict. Accepts an integer or a duration string (e.g. `"1D"`) resolved to steps via `period`. |
 | `latitude` | `float \| None` | `None` | Latitude for day/night feature calculation (required when `"day_night"` is in `calendar_features`). |
 | `longitude` | `float \| None` | `None` | Longitude for day/night feature calculation. |
 | `past_features` | `list[str] \| None` | `None` | Columns with unknown future values (past-only context). |
@@ -207,6 +207,82 @@ Supported values: `"standard"` (z-score), `"robust"` (IQR-based), `"minmax"` ([0
 :class: warning
 
 The pipeline calls `fit` on the scaler only during `DataPipeline.fit()`. At inference time (`transform`), the scaler uses the statistics learned during training. Always fit on training data only to prevent data leakage.
+:::
+
+
+## Pipeline HPO Search Space
+
+`DataPipelineConfig` accepts an optional `search_space` field that lets Optuna co-optimise preprocessing choices alongside model hyperparameters in a single study.
+
+### Time-unit strings for horizon and lookback
+
+`forecast_horizon` and `lookback_window_size` accept either an integer (number of steps) or a pandas-compatible duration string that is resolved to steps using `period` at construction time.
+
+```python
+from twiga.core.config import DataPipelineConfig
+
+# 48-step horizon, 336-step lookback — equivalent to writing the integers directly
+cfg = DataPipelineConfig(
+    target_feature="load",
+    period="30min",
+    forecast_horizon="1D",    # 1 day = 48 half-hour steps
+    lookback_window_size="7D",  # 7 days = 336 steps
+)
+```
+
+After construction `cfg.forecast_horizon` and `cfg.lookback_window_size` are always plain integers. Only fixed-duration periods such as `"30min"`, `"1h"`, or `"1D"` are supported; calendar-based offsets such as `"1ME"` are not.
+
+### Searching over lookback window size
+
+The optimal lookback window is dataset-dependent. A lookback that is too short discards useful history; one that is too long adds noise and increases training cost. The recommended practice is to search the lookback as an integer multiple of the forecast horizon, which keeps it at or above the horizon length at all times.
+
+`recommended_lookback_search_space` builds this range from the config instance, reading `forecast_horizon` and applying `max_multiplier`:
+
+```python
+cfg = DataPipelineConfig(
+    target_feature="load",
+    period="30min",
+    forecast_horizon="1D",       # resolved to 48 steps
+    lookback_window_size=48,     # initial value, overridden by HPO
+)
+
+space = cfg.recommended_lookback_search_space(max_multiplier=7)
+# lookback searched over [48, 336] — always >= forecast_horizon
+
+cfg = cfg.model_copy(update={"search_space": space})
+```
+
+The default `max_multiplier=7` gives a 1x to 7x range relative to the horizon, which covers a full week of history for a 24-hour horizon at half-hourly resolution. Pass `scalers=False` to search only the lookback without adding scaler choices.
+
+### Combining lookback and scaler search
+
+`recommended_lookback_search_space(scalers=True)` (the default) includes scaler choices alongside the lookback range:
+
+```python
+space = cfg.recommended_lookback_search_space()
+# Searches: lookback_window_size, input_scaler, target_scaler
+```
+
+To define a custom combined search space manually:
+
+```python
+from twiga.core.config import BaseSearchSpace
+
+space = BaseSearchSpace(
+    lookback_window_size=(48, 336),
+    input_scaler=["passthrough", "standard", "robust"],
+    target_scaler=["standard", "robust"],
+)
+cfg = DataPipelineConfig(
+    ...,
+    search_space=space,
+)
+```
+
+:::{admonition} Lookback and NN model dimensions
+:class: tip
+
+When `lookback_window_size` is in the search space and the model is a neural network, Twiga automatically calls `sync_data_config` on the model after each trial to rebuild the Lightning module with matching input dimensions. No extra setup is required.
 :::
 
 

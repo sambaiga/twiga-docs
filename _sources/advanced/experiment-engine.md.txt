@@ -1,0 +1,267 @@
+# Experiment Engine
+
+:::{dropdown} Source Files
+
+- `twiga/experiment/engine.py`  -  `ExperimentEngine` orchestration
+- `twiga/experiment/spec.py`  -  `ExperimentSpec` dataclass
+- `twiga/experiment/condition.py`  -  `Condition` dataclass
+- `twiga/experiment/hpo.py`  -  `run_backbone_hpo`, `load_backbone_params`
+- `twiga/experiment/analysis.py`  -  `aggregate`
+- `twiga/experiment/tracking.py`  -  MLflow bridge
+
+:::
+
+`ExperimentEngine` is a two-phase orchestrator for structured rolling-origin ablation experiments. It handles backbone HPO, ablation condition evaluation across multiple datasets and CV folds, result aggregation, and MLflow tracking in a single reusable entry point. Experiment scripts define a declarative `ExperimentSpec` and call `ExperimentEngine.run(spec)`.
+
+---
+
+## Architecture
+
+```{mermaid}
+graph TD
+    A[ExperimentSpec] --> B[ExperimentEngine.run]
+    B --> C{Phase 1: Backbone HPO}
+    C --> D[run_backbone_hpo per dataset]
+    D --> E[Optuna study - SQLite]
+    E --> F[save best_params.npy]
+    B --> G{Phase 2: Ablation}
+    G --> H[For each condition]
+    H --> I[For each dataset]
+    I --> J[For each CV fold]
+    J --> K[load_backbone_params]
+    K --> L[Apply condition overrides]
+    L --> M[fit + evaluate]
+    M --> N[log to MLflow]
+    G --> O[aggregate per group]
+    O --> P[CSV full + summary]
+```
+
+**Phase 1 — Backbone HPO** searches the backbone model's hyperparameter space using Optuna and saves the best parameters to disk. This phase runs once per dataset and is skipped automatically on subsequent runs when the cached result exists.
+
+**Phase 2 — Ablation** evaluates each condition in `ExperimentSpec.conditions` across all datasets and CV folds using the backbone parameters from Phase 1 as the starting point. Each condition can selectively override any config field. Results are aggregated across folds and saved as CSV files.
+
+---
+
+## Defining an Experiment
+
+### ExperimentSpec
+
+`ExperimentSpec` declares the full experiment: which backbone to tune, which datasets to run on, and which conditions to compare.
+
+```python
+from twiga.core.config import DataPipelineConfig
+from twiga.experiment import ExperimentSpec, Condition
+
+spec = ExperimentSpec(
+    name="ganf_ablation",
+    backbone_cls=MLPGAFConfig,
+    datasets={"ETTh1": (train_df, val_df, test_df), "ETTm1": (...)},
+    pipeline_cfg=DataPipelineConfig(...),
+    conditions=[
+        Condition(name="baseline",    overrides={}),
+        Condition(name="no_gate",     overrides={"use_gate": False}),
+        Condition(name="3group",      overrides={"group_scheme": "3group"}),
+        Condition(name="input_gate",  overrides={"gate_position": "input"}),
+    ],
+    results_dir="results/ganf_ablation",
+    hpo_trials=30,
+)
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Experiment name. Used as the MLflow experiment name and file prefix |
+| `backbone_cls` | type | Config class for the backbone model (e.g. `MLPGAFConfig`) |
+| `datasets` | `dict[str, tuple]` | Maps dataset name to `(train_df, val_df, test_df)` |
+| `pipeline_cfg` | `DataPipelineConfig` | Shared data pipeline configuration |
+| `conditions` | `list[Condition]` | Ablation conditions to evaluate |
+| `results_dir` | `str \| Path` | Root directory for CSV output and HPO caches |
+| `hpo_trials` | `int` | Number of Optuna trials for backbone HPO |
+| `cv_params` | `ExperimentConfig \| None` | Cross-validation split settings. Defaults to single train/val/test |
+
+### Condition
+
+Each `Condition` names one ablation arm and specifies field overrides applied on top of the backbone config.
+
+```python
+Condition(
+    name="latent_gate_2g",
+    overrides={
+        "group_scheme": "2group",
+        "gate_position": "latent",
+        "fusion_type": "gated",
+    },
+    hpo_variant=None,   # shares backbone HPO cache with other 2group conditions
+)
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Unique condition identifier. Appears in result DataFrames and MLflow run names |
+| `overrides` | `dict[str, Any]` | Config fields to override. Applied after backbone HPO params are loaded |
+| `hpo_variant` | `str \| None` | When set, selects a separate HPO cache key. Use when an override changes architecture in a way that invalidates backbone params (e.g. a different `group_scheme`) |
+
+:::{admonition} When to set `hpo_variant`
+:class: tip
+
+Two conditions that differ only in a regularisation weight can share backbone HPO results. Two conditions that differ in `group_scheme` or `gate_position` produce different network shapes and should use separate HPO caches. Set `hpo_variant` to a short descriptive string (e.g. `"3group"`) to create an isolated cache for that arm.
+:::
+
+---
+
+## Running an Experiment
+
+### From Python
+
+```python
+from twiga.experiment import ExperimentEngine
+
+engine = ExperimentEngine()
+engine.run(spec)
+```
+
+`run()` executes both phases in order and writes results under `spec.results_dir`.
+
+### From the command line
+
+`ExperimentEngine.cli_main` provides a minimal CLI entry point. Experiment scripts expose it directly:
+
+```bash
+python experiment/ganf_ablation.py --datasets ETTh1 ETTm1 --hpo-trials 50
+```
+
+The script calls:
+
+```python
+if __name__ == "__main__":
+    ExperimentEngine.cli_main(spec)
+```
+
+---
+
+## Config Precedence
+
+When `ExperimentEngine` builds the model config for a condition it merges four layers in order (lowest to highest priority):
+
+1. Config class defaults
+2. `ExperimentSpec`-level overrides (applied to every condition)
+3. Backbone HPO best parameters loaded from cache
+4. `Condition.overrides`
+
+This means a condition override always wins over HPO-tuned params, which in turn always win over spec-level settings.
+
+---
+
+## HPO Cache
+
+Backbone HPO results are cached as `.npy` files under `results_dir`. The cache key is `{backbone_cls.name}_{dataset}_{hpo_variant or "default"}`. Re-running a script with `--hpo-trials` greater than the previous run will resume the existing Optuna study and add more trials; it will not restart from scratch.
+
+Load cached params directly with:
+
+```python
+from twiga.experiment import load_backbone_params
+
+params = load_backbone_params(
+    results_dir="results/ganf_ablation",
+    backbone_name="mlpgaf",
+    dataset="ETTh1",
+    hpo_variant=None,
+)
+```
+
+---
+
+## MLflow Tracking
+
+Set `MLFLOW_TRACKING_URI` before running to enable automatic experiment tracking:
+
+```bash
+export MLFLOW_TRACKING_URI=http://localhost:5000
+python experiment/ganf_ablation.py
+```
+
+The run hierarchy mirrors the experiment structure:
+
+```
+Experiment: <spec.name>
+  Parent run: <dataset>
+    Child run: hpo/<dataset>/<model>      run_backbone_hpo()
+    Child run: <condition>/<dataset>/fold_N
+```
+
+All condition overrides, fold metrics, and HPO parameters are logged as MLflow params and metrics automatically. No additional instrumentation is needed in the experiment script.
+
+`detect_tracking_uri` is a safe helper that returns the configured URI or `None` if MLflow is absent or unconfigured:
+
+```python
+from twiga.experiment import detect_tracking_uri
+
+uri = detect_tracking_uri()  # None if not configured
+```
+
+---
+
+## Aggregating Results
+
+`aggregate` computes mean and standard deviation per `(group, condition, metric_type)` across folds and writes two CSV files: a full long-form table and a summary table.
+
+```python
+from twiga.experiment import aggregate
+from pathlib import Path
+
+summary = aggregate(
+    combined=full_df,
+    prefix="ganf_ablation",
+    root=Path("results/ganf_ablation"),
+    suffix="_val",
+    reference_conditions={"ETTh1": "baseline", "ETTm1": "baseline"},
+)
+```
+
+`ExperimentEngine.run` calls `aggregate` automatically at the end of Phase 2. Call it manually only when post-processing results outside an engine run.
+
+---
+
+## Visualising Results
+
+Use `twiga.core.plot.evaluation` to plot aggregated results. See [Visualization](visualization.md#ablation-experiment-evaluation-plots) for the full plotting API.
+
+```python
+from pathlib import Path
+from twiga.core.plot import load_ablation, plot_summary_heatmap, save_ablation_plots
+
+result = load_ablation(
+    root=Path("results/ganf_ablation"),
+    prefix="ganf_ablation",
+    suffix="_val",
+)
+
+p = plot_summary_heatmap(result.summary, metric="mae", reference="baseline")
+p
+
+save_ablation_plots(result, output_dir=Path("figures/ganf_ablation"), reference="baseline")
+```
+
+---
+
+## API Reference
+
+```{eval-rst}
+.. autoclass:: twiga.experiment.ExperimentEngine
+   :members: run, cli_main
+   :show-inheritance:
+
+.. autoclass:: twiga.experiment.ExperimentSpec
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.experiment.Condition
+   :members:
+   :show-inheritance:
+
+.. autofunction:: twiga.experiment.run_backbone_hpo
+
+.. autofunction:: twiga.experiment.load_backbone_params
+
+.. autofunction:: twiga.experiment.aggregate
+```

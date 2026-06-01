@@ -39,3 +39,33 @@ This pulls in **MLflow**, **FastAPI**, **uvicorn**, **Evidently**, and **Prefect
 | `twiga.serve` | `ForecastMonitor` | Evidently drift & performance reports |
 | `twiga.pipeline` | `training_flow` | Prefect training orchestration |
 | `twiga.pipeline` | `retraining_flow` | Drift-triggered retraining |
+
+### `twiga.mlops` core API
+
+A small, **Streamlit-free** layer for workspace orchestration, dataset
+transforms, storage, capture-data access, and the training model registry. Any
+script or service can import it directly — `from twiga.mlops import workspace`
+needs no Streamlit runtime.
+
+| Module | Class / function | Responsibility |
+|--------|-----------------|----------------|
+| `twiga.mlops.workspace` | `create_workspace`, `load_workspace_data`, `LoadedWorkspace` | Create / load / reconfigure workspaces; returns data, no session state |
+| `twiga.mlops.data` | `parse_dataset`, `split_raw_frame`, `build_configs_from_setup` | Pure dataset parsing, splitting, and config construction |
+| `twiga.mlops.catalog` | `Catalog`, `WorkspaceRow` | SQLite registry of workspaces (thread-safe writes) |
+| `twiga.mlops.storage` | `LocalFsStorage`, `local_tracking_uri_for` | Per-workspace filesystem layout (dataset, mlruns, checkpoints, reports) |
+| `twiga.mlops.monitoring` | `read_predictions`, `read_actuals`, `predictions_vs_actuals`, `daily_capture_counts`, `run_batch` | Read and join captured production traffic; batch drift/performance |
+| `twiga.mlops.mlflow_query` | `list_runs`, `latest_run` | Convenience wrappers over the MLflow tracking store |
+| `twiga.mlops.training` | `get_registry`, `build_model_config`, `ModelEntry` | Lazy model registry + per-run config construction |
+| `twiga.mlops.paths` | `MLOPS_ROOT`, `STATE_DB_PATH`, `WORKSPACES_DIR` | Catalog DB / workspace root locations (override via `TWIGA_MLOPS_ROOT`) |
+
+:::{note}
+The multi-page **Streamlit dashboard** that drives this layer lives in
+`examples/mlops/` and is **not** shipped in the installed wheel — it is a
+demo, like the notebooks under `examples/tutorials/`. Run it from a checkout:
+
+```bash
+pip install "twiga[mlops]" streamlit
+cd examples/mlops
+streamlit run app.py
+```
+:::

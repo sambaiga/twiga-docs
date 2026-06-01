@@ -1,0 +1,1253 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Calibration and Conformal Prediction &#8212; Twiga Forecast</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/twiga.css?v=5225fff5" />
+    <link crossorigin="anonymous" rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
+
+    <script src="../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=3c7def43"></script>
+    <script>let toggleHintShow = 'Show';</script>
+    <script>let toggleHintHide = 'Hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'core/calibration';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../_static/twiga-icon.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Forecast Results" href="forecast-results.html" />
+    <link rel="prev" title="Evaluation Metrics" href="metrics.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.2" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/twiga-logo-light.svg" class="logo__image only-light" alt="Twiga Forecast"/>
+    <img src="../_static/twiga-logo.svg" class="logo__image only-dark pst-js-only" alt="Twiga Forecast"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting-started/index.html">
+    Quickstart
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Handbook
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../mlops/index.html">
+    Deploy
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../developer-guide/index.html">
+    Contribute
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../overview.html">
+    Blueprint
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../advanced/visualization.html">
+    Visualization
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../advanced/experiment-engine.html">
+    Experiment Engine
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="dropdown tw-version-wrapper">
+  <button
+    class="btn dropdown-toggle tw-version-btn"
+    type="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+    aria-label="Twiga version 0.1.2"
+  >
+    <span class="tw-version-label">v0.1.2</span>
+    <span class="tw-alpha-pill">alpha</span>
+  </button>
+  <div class="dropdown-menu dropdown-menu-end tw-version-menu">
+    <div class="tw-version-info">
+      <p>
+        <strong>Twiga 0.1.2</strong> is in alpha.
+        The API may change before 1.0.
+      </p>
+      <a
+        href="https://github.com/sambaiga/twiga-forecast/blob/main/CHANGELOG.md"
+        class="tw-version-changelog-link"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        View changelog <i class="bi bi-arrow-up-right-square"></i>
+      </a>
+    </div>
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/twiga/" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/box-seam-fill.svg" class="icon-link-image" alt="PyPI"/></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting-started/index.html">
+    Quickstart
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Handbook
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../models/index.html">
+    Models
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../probabilistic/index.html">
+    Probabilistic
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../mlops/index.html">
+    Deploy
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../gallery.html">
+    Gallery
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../developer-guide/index.html">
+    Contribute
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../overview.html">
+    Blueprint
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../advanced/visualization.html">
+    Visualization
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../advanced/experiment-engine.html">
+    Experiment Engine
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="dropdown tw-version-wrapper">
+  <button
+    class="btn dropdown-toggle tw-version-btn"
+    type="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+    aria-label="Twiga version 0.1.2"
+  >
+    <span class="tw-version-label">v0.1.2</span>
+    <span class="tw-alpha-pill">alpha</span>
+  </button>
+  <div class="dropdown-menu dropdown-menu-end tw-version-menu">
+    <div class="tw-version-info">
+      <p>
+        <strong>Twiga 0.1.2</strong> is in alpha.
+        The API may change before 1.0.
+      </p>
+      <a
+        href="https://github.com/sambaiga/twiga-forecast/blob/main/CHANGELOG.md"
+        class="tw-version-changelog-link"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        View changelog <i class="bi bi-arrow-up-right-square"></i>
+      </a>
+    </div>
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/sambaiga/twiga-forecast" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/github.svg" class="icon-link-image" alt="GitHub"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/twiga/" title="PyPI" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/box-seam-fill.svg" class="icon-link-image" alt="PyPI"/></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="forecaster.html">TwigaForecaster &amp; Forecaster Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-pipeline.html">Data Processing Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="feature-analysis.html">Feature Analysis &amp; Statistical Toolkit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Evaluation Metrics</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Calibration and Conformal Prediction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecast-results.html">Forecast Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backtesting.html">Backtesting &amp; Time-Based Cross-Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explain.html">Feature Attribution (SHAP)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item"><nav class="sidebar-indices-items" aria-labelledby="pst-indices-navigation-heading-2">
+  <p id="pst-indices-navigation-heading-2" class="sidebar-indices-items__title" role="heading" aria-level="1">Indices</p>
+  <ul class="indices-link">
+        <li class="toctree-l1">
+          <a class="reference internal"
+             href="../genindex.html"
+             accesskey="I">General Index</a>
+        </li>
+        <li class="toctree-l1">
+          <a class="reference internal" href="../py-modindex.html">Python Module Index</a>
+        </li>
+  </ul>
+</nav></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Calibration and Conformal Prediction</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="calibration-and-conformal-prediction">
+<h1>Calibration and Conformal Prediction<a class="headerlink" href="#calibration-and-conformal-prediction" title="Link to this heading">#</a></h1>
+<details>
+<summary>Source Files</summary>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/core/config/conformal.py</span></code> — <code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/distributions/conformal/base.py</span></code> — <code class="docutils literal notranslate"><span class="pre">SplitConformal</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/distributions/conformal/cqr.py</span></code> — <code class="docutils literal notranslate"><span class="pre">ConformalQuantileRegressor</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/distributions/conformal/crc.py</span></code> — <code class="docutils literal notranslate"><span class="pre">ConformalResidualFitting</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">twiga/forecaster/core.py</span></code> — <code class="docutils literal notranslate"><span class="pre">calibrate()</span></code> method</p></li>
+</ul>
+</details>
+<p>Conformal prediction is a distribution-free way to build prediction intervals with guaranteed coverage. It works as a post-hoc calibration step that wraps any trained forecaster. No need to retrain your model. Just use holdout data to calibrate, then get automatic uncertainty quantification.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>After training your model, you use a calibration set (holdout data) to learn how much wider your intervals need to be. Then on test data, you apply those learned margins to build prediction intervals with a coverage guarantee you specify.</p>
+<p>There are three conformal methods available:</p>
+<ul class="simple">
+<li><p><strong>Residual-based</strong> (<code class="docutils literal notranslate"><span class="pre">&quot;residual&quot;</span></code>) - Uses absolute residuals |y − ŷ|</p></li>
+<li><p><strong>Quantile-based</strong> (<code class="docutils literal notranslate"><span class="pre">&quot;quantile&quot;</span></code>) - Uses lower/upper quantiles from QR models</p></li>
+<li><p><strong>Residual-fitting</strong> (<code class="docutils literal notranslate"><span class="pre">&quot;residual-fitting&quot;</span></code>) - Fits a scale model for sample-specific widths</p></li>
+</ul>
+<p>All three are validated to achieve (1 − α) marginal coverage on held-out data.</p>
+</section>
+<section id="conformalconfig">
+<h2>ConformalConfig<a class="headerlink" href="#conformalconfig" title="Link to this heading">#</a></h2>
+<p>Configure conformal prediction via <code class="docutils literal notranslate"><span class="pre">ConformalConfig</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformalConfig</span>
+
+<span class="c1"># 90% coverage (α = 0.1)</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;residual&quot;</span><span class="p">,</span>
+    <span class="n">score_type</span><span class="o">=</span><span class="s2">&quot;res&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Alternatively, specify coverage directly</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="o">.</span><span class="n">from_coverage</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;residual&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="configuration-fields">
+<h3>Configuration Fields<a class="headerlink" href="#configuration-fields" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">method</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;residual&quot;,</span> <span class="pre">&quot;quantile&quot;,</span> <span class="pre">&quot;residual-fitting&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;residual&quot;</span></code></p></td>
+<td><p>Conformal prediction method</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">score_type</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;scaled&quot;,</span> <span class="pre">&quot;unscaled&quot;,</span> <span class="pre">&quot;res&quot;,</span> <span class="pre">&quot;sign-res&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;res&quot;</span></code></p></td>
+<td><p>Nonconformity score type. “res” for residual methods; “scaled”/”unscaled” for quantile</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alpha</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">float</span></code> in (0, 1)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0.1</span></code></p></td>
+<td><p>Significance level. Coverage = 1 − alpha (e.g., alpha=0.1 → 90% coverage)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">calib_method</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;uniform&quot;,</span> <span class="pre">&quot;temporal&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;uniform&quot;</span></code></p></td>
+<td><p>Quantile estimation: “uniform” or “temporal” (exponentially weighted, recent samples prioritized)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lambda_</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">float</span></code> &gt;= 0</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1.0</span></code></p></td>
+<td><p>Exponential decay rate for temporal calibration. Ignored when calib_method=”uniform”</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="method-and-score-type-compatibility">
+<h3>Method and Score Type Compatibility<a class="headerlink" href="#method-and-score-type-compatibility" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Valid Score Types</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;residual&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;res&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;sign-res&quot;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;quantile&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;scaled&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;unscaled&quot;</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;residual-fitting&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;res&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;sign-res&quot;</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="calibration-workflow">
+<h2>Calibration Workflow<a class="headerlink" href="#calibration-workflow" title="Link to this heading">#</a></h2>
+<section id="split-data">
+<h3>1. Split Data<a class="headerlink" href="#split-data" title="Link to this heading">#</a></h3>
+<p>Allocate a <strong>calibration set</strong> (holdout data, disjoint from training and test):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExperimentConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+
+<span class="n">train_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
+    <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>      <span class="c1"># 12 months of training</span>
+    <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>        <span class="c1"># 1 month of testing</span>
+    <span class="n">calib_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>       <span class="c1"># 2 months of calibration (holdout)</span>
+    <span class="n">calib_source</span><span class="o">=</span><span class="s2">&quot;train_tail&quot;</span><span class="p">,</span>  <span class="c1"># From the tail of training data</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Available <code class="docutils literal notranslate"><span class="pre">calib_source</span></code> options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;train_tail&quot;</span></code> — Final <code class="docutils literal notranslate"><span class="pre">calib_size</span></code> periods of the training set</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;gap&quot;</span></code> — Gap period between training and test splits</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;test_prefix&quot;</span></code> — First <code class="docutils literal notranslate"><span class="pre">calib_size</span></code> periods of the test set</p></li>
+</ul>
+</section>
+<section id="train-models">
+<h3>2. Train Models<a class="headerlink" href="#train-models" title="Link to this heading">#</a></h3>
+<p>Train your forecasters on the training set (excluding the calibration window):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">model_config_1</span><span class="p">,</span> <span class="n">model_config_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">train_config</span><span class="p">,</span>
+    <span class="n">conformal_params</span><span class="o">=</span><span class="n">ConformalConfig</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;residual&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">conformal_params</span></code> tells <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> to reserve a calibration set but not yet calibrate.</p>
+</section>
+<section id="calibrate">
+<h3>3. Calibrate<a class="headerlink" href="#calibrate" title="Link to this heading">#</a></h3>
+<p>Call <code class="docutils literal notranslate"><span class="pre">calibrate()</span></code> with the calibration data:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">forecaster</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calibrate_df</span><span class="o">=</span><span class="n">calib_df</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The calibration step:</p>
+<ul class="simple">
+<li><p>Generates predictions on the calibration set</p></li>
+<li><p>Computes nonconformity scores (residuals, quantile crossings, or auxiliary scale estimates)</p></li>
+<li><p>Computes the (1 − α)-quantile of these scores</p></li>
+<li><p>Stores the threshold in a <code class="docutils literal notranslate"><span class="pre">Conformal</span></code> object per model</p></li>
+</ul>
+</section>
+<section id="predict-with-intervals">
+<h3>4. Predict with Intervals<a class="headerlink" href="#predict-with-intervals" title="Link to this heading">#</a></h3>
+<p>Generate prediction intervals on test data using the calibrated thresholds:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">results_df</span><span class="p">,</span> <span class="n">metrics_df</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
+<span class="c1"># Columns: timestamp, target, forecast, lower, upper, ...</span>
+</pre></div>
+</div>
+<p>The intervals are guaranteed to have at least (1 − α) marginal coverage on test data (assuming exchangeability).</p>
+</section>
+</section>
+<section id="residual-based-method">
+<h2>Residual-Based Method<a class="headerlink" href="#residual-based-method" title="Link to this heading">#</a></h2>
+<p>The classical <strong>split conformal</strong> approach. Uses absolute residuals |y − ŷ| on the calibration set.</p>
+<section id="nonconformity-score">
+<h3>Nonconformity Score<a class="headerlink" href="#nonconformity-score" title="Link to this heading">#</a></h3>
+<div class="math notranslate nohighlight">
+\[S_i = |y_i - \hat{y}_i|\]</div>
+</section>
+<section id="threshold-computation">
+<h3>Threshold Computation<a class="headerlink" href="#threshold-computation" title="Link to this heading">#</a></h3>
+<div class="math notranslate nohighlight">
+\[q = \lceil (n+1)(1-\alpha) \rceil \text{-th quantile of } \{S_1, \ldots, S_n\}\]</div>
+</section>
+<section id="prediction-interval">
+<h3>Prediction Interval<a class="headerlink" href="#prediction-interval" title="Link to this heading">#</a></h3>
+<div class="math notranslate nohighlight">
+\[[L, U] = [\hat{y} - q, \hat{y} + q]\]</div>
+<p>Symmetric around the point forecast.</p>
+</section>
+<section id="score-type-res-vs-sign-res">
+<h3>Score Type: <code class="docutils literal notranslate"><span class="pre">&quot;res&quot;</span></code> vs. <code class="docutils literal notranslate"><span class="pre">&quot;sign-res&quot;</span></code><a class="headerlink" href="#score-type-res-vs-sign-res" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;res&quot;</span></code> — Standard absolute residual, enforces symmetric intervals</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;sign-res&quot;</span></code> — Sign-aware residual; can produce asymmetric intervals when residuals are skewed</p></li>
+</ul>
+</section>
+<section id="when-to-use">
+<h3>When to Use<a class="headerlink" href="#when-to-use" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Point forecasters (any model outputting only a point prediction)</p></li>
+<li><p>When you want simple, symmetric intervals</p></li>
+<li><p>Fast calibration (no auxiliary model fitting)</p></li>
+</ul>
+</section>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformalConfig</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;residual&quot;</span><span class="p">,</span>
+    <span class="n">score_type</span><span class="o">=</span><span class="s2">&quot;res&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calib_df</span><span class="p">)</span>
+<span class="n">results</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="quantile-based-method">
+<h2>Quantile-Based Method<a class="headerlink" href="#quantile-based-method" title="Link to this heading">#</a></h2>
+<p>For <strong>quantile regression models</strong> that output lower and upper quantiles. The nonconformity score is the distance from the ground truth to the nearest quantile boundary.</p>
+<section id="id1">
+<h3>Nonconformity Score<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<div class="math notranslate nohighlight">
+\[S_i = \max(L_i - y_i, y_i - U_i, 0)\]</div>
+<p>Where <span class="math notranslate nohighlight">\(L_i\)</span> and <span class="math notranslate nohighlight">\(U_i\)</span> are the lower and upper quantiles from the QR model.</p>
+</section>
+<section id="id2">
+<h3>Threshold Computation<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<p>Same as residual-based: (1 − α)-quantile of calibration scores.</p>
+</section>
+<section id="id3">
+<h3>Prediction Interval<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<div class="math notranslate nohighlight">
+\[[L_{\text{final}}, U_{\text{final}}] = [L - q, U + q]\]</div>
+<p>Widens the model’s native quantiles by the calibrated margin.</p>
+</section>
+<section id="score-type-scaled-vs-unscaled">
+<h3>Score Type: <code class="docutils literal notranslate"><span class="pre">&quot;scaled&quot;</span></code> vs. <code class="docutils literal notranslate"><span class="pre">&quot;unscaled&quot;</span></code><a class="headerlink" href="#score-type-scaled-vs-unscaled" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;scaled&quot;</span></code> — Normalise scores by the model’s native interval width; more responsive to model uncertainty</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;unscaled&quot;</span></code> — Use absolute score magnitudes; stable but may be conservative</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>When to Use<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Quantile regression models (QR, FPQR, Chronos2)</p></li>
+<li><p>When the model already provides quantiles</p></li>
+<li><p>To post-hoc tighten or widen native quantile predictions</p></li>
+</ul>
+</section>
+<section id="id5">
+<h3>Example<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">QRXGBOOSTConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformalConfig</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span>
+    <span class="n">score_type</span><span class="o">=</span><span class="s2">&quot;scaled&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">QRXGBOOSTConfig</span><span class="p">()],</span>
+    <span class="n">conformal_params</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calib_df</span><span class="p">)</span>
+<span class="n">results</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="residual-fitting-method">
+<h2>Residual-Fitting Method<a class="headerlink" href="#residual-fitting-method" title="Link to this heading">#</a></h2>
+<p>An adaptive method that fits an auxiliary model to predict the magnitude of residuals, enabling sample-specific interval widths. Uses two-stage training: first the backbone, then the scale predictor.</p>
+<section id="two-stage-process">
+<h3>Two-Stage Process<a class="headerlink" href="#two-stage-process" title="Link to this heading">#</a></h3>
+<p><strong>Stage 1:</strong> Train the point forecaster on the full training set, learning the mean μ.</p>
+<p><strong>Stage 2:</strong> On calibration data, fit an auxiliary network (conditioned on μ) to predict the magnitude of residuals |y − μ|, obtaining σ (scale estimate).</p>
+<p><strong>Calibration:</strong> Use the predicted σ values as nonconformity scores and compute their (1 − α)-quantile on the calibration set, yielding threshold q.</p>
+<p><strong>Test:</strong> Construct intervals as [μ − q·σ, μ + q·σ], where σ adapts per sample.</p>
+</section>
+<section id="temporal-calibration-optional">
+<h3>Temporal Calibration (Optional)<a class="headerlink" href="#temporal-calibration-optional" title="Link to this heading">#</a></h3>
+<p>By default, all calibration samples are weighted equally. With <code class="docutils literal notranslate"><span class="pre">calib_method=&quot;temporal&quot;</span></code>, recent samples receive exponentially higher weight:</p>
+<div class="math notranslate nohighlight">
+\[w_i \propto \exp(\lambda_{\text{age}_i})\]</div>
+<p>This is useful when the data distribution is drifting or seasonal patterns are evolving.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">lambda_=0</span></code> → uniform weights (equivalent to <code class="docutils literal notranslate"><span class="pre">calib_method=&quot;uniform&quot;</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lambda_=1.0</span></code> (default) → exponential decay, giving recent samples about e times more weight</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lambda_=5.0</span></code> → aggressive recency bias; useful for rapidly changing regimes</p></li>
+</ul>
+</section>
+<section id="id6">
+<h3>When to Use<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Heteroscedastic time series (variance changes over time or across samples)</p></li>
+<li><p>When adaptive, sample-specific intervals improve precision</p></li>
+<li><p>Models that learn both mean and auxiliary scale (e.g., Gaussian, parametric distributions)</p></li>
+</ul>
+</section>
+<section id="id7">
+<h3>Example<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.nn.mlpfnormal_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">MLPFNormalConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformalConfig</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;residual-fitting&quot;</span><span class="p">,</span>
+    <span class="n">score_type</span><span class="o">=</span><span class="s2">&quot;res&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">calib_method</span><span class="o">=</span><span class="s2">&quot;temporal&quot;</span><span class="p">,</span>
+    <span class="n">lambda_</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">MLPFNormalConfig</span><span class="p">()],</span>
+    <span class="n">conformal_params</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">calib_df</span><span class="p">)</span>
+<span class="n">results</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="calibrate-method-signature">
+<h2>calibrate() Method Signature<a class="headerlink" href="#calibrate-method-signature" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">calibrate</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">calibrate_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">covariate_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ensemble_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ensemble_weights</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</pre></div>
+</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">calibrate_df</span></code></p></td>
+<td><p>Holdout calibration data. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, uses stored training data (discouraged; breaks exchangeability assumption)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">covariate_df</span></code></p></td>
+<td><p>Optional external features (known future values)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ensemble_strategy</span></code></p></td>
+<td><p>If multiple models, how to combine: <code class="docutils literal notranslate"><span class="pre">&quot;mean&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;median&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;weighted&quot;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ensemble_weights</span></code></p></td>
+<td><p>For weighted ensemble: dict mapping model names to normalized weights</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="raises">
+<h3>Raises<a class="headerlink" href="#raises" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if <code class="docutils literal notranslate"><span class="pre">conformal_params</span></code> was not set during forecaster initialization</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if the model type is incompatible with the chosen conformal method</p></li>
+</ul>
+</section>
+</section>
+<section id="complete-example">
+<h2>Complete Example<a class="headerlink" href="#complete-example" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPipelineConfig</span><span class="p">,</span> <span class="n">ExperimentConfig</span><span class="p">,</span> <span class="n">ConformalConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">TwigaForecaster</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml</span><span class="w"> </span><span class="kn">import</span> <span class="n">QRXGBOOSTConfig</span>
+
+<span class="c1"># 1. Load data</span>
+<span class="n">data_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="s2">&quot;data.parquet&quot;</span><span class="p">)</span>
+
+<span class="c1"># 2. Configure pipeline</span>
+<span class="n">data_config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="s2">&quot;load_mw&quot;</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;1h&quot;</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">168</span><span class="p">,</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span>
+    <span class="n">calendar_features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="s2">&quot;dayofweek&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="c1"># 3. Configure cross-validation with calibration</span>
+<span class="n">cv_config</span> <span class="o">=</span> <span class="n">ExperimentConfig</span><span class="p">(</span>
+    <span class="n">split_freq</span><span class="o">=</span><span class="s2">&quot;months&quot;</span><span class="p">,</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+    <span class="n">test_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">calib_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">calib_source</span><span class="o">=</span><span class="s2">&quot;train_tail&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># 4. Configure conformal prediction</span>
+<span class="n">conformal_config</span> <span class="o">=</span> <span class="n">ConformalConfig</span><span class="p">(</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span>
+    <span class="n">score_type</span><span class="o">=</span><span class="s2">&quot;scaled&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>  <span class="c1"># 90% coverage</span>
+<span class="p">)</span>
+
+<span class="c1"># 5. Create forecaster</span>
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span>
+    <span class="n">data_params</span><span class="o">=</span><span class="n">data_config</span><span class="p">,</span>
+    <span class="n">model_params</span><span class="o">=</span><span class="p">[</span><span class="n">QRXGBOOSTConfig</span><span class="p">(</span><span class="n">quantiles</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">])],</span>
+    <span class="n">cv_params</span><span class="o">=</span><span class="n">cv_config</span><span class="p">,</span>
+    <span class="n">conformal_params</span><span class="o">=</span><span class="n">conformal_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># 6. Train (splits data into train, calib, test automatically)</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data_df</span><span class="p">)</span>
+
+<span class="c1"># 7. Calibrate on the reserved calibration set</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">calibrate</span><span class="p">()</span>
+
+<span class="c1"># 8. Evaluate with intervals</span>
+<span class="n">results</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">evaluate_interval_forecast</span><span class="p">(</span><span class="n">data_df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>  <span class="c1"># timestamp | target | forecast | lower | upper | ...</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>  <span class="c1"># PICP, CWE, winkler_score, ...</span>
+</pre></div>
+</div>
+</section>
+<section id="guarantees-and-assumptions">
+<h2>Guarantees and Assumptions<a class="headerlink" href="#guarantees-and-assumptions" title="Link to this heading">#</a></h2>
+<section id="marginal-coverage-guarantee">
+<h3>Marginal Coverage Guarantee<a class="headerlink" href="#marginal-coverage-guarantee" title="Link to this heading">#</a></h3>
+<p>Under the <strong>exchangeability assumption</strong> (all samples are i.i.d. or weakly dependent):</p>
+<div class="math notranslate nohighlight">
+\[\mathbb{P}[Y \in [L, U]] \geq 1 - \alpha\]</div>
+<p>This holds in-distribution and on average across the test set.</p>
+</section>
+<section id="exchangeability">
+<h3>Exchangeability<a class="headerlink" href="#exchangeability" title="Link to this heading">#</a></h3>
+<p>Conformal methods assume the calibration and test data are exchangeable (no distribution shift). If the test distribution differs significantly from calibration, coverage may degrade. Consider:</p>
+<ul class="simple">
+<li><p>Recalibrating if you detect drift</p></li>
+<li><p>Using temporal calibration (<code class="docutils literal notranslate"><span class="pre">calib_method=&quot;temporal&quot;</span></code>) to down-weight stale calibration data</p></li>
+<li><p>Validating coverage on rolling windows during backtesting</p></li>
+</ul>
+</section>
+<section id="finite-sample-guarantee">
+<h3>Finite-Sample Guarantee<a class="headerlink" href="#finite-sample-guarantee" title="Link to this heading">#</a></h3>
+<p>With n calibration samples, the smallest achievable confidence is:</p>
+<div class="math notranslate nohighlight">
+\[1 - \alpha' = 1 - \left\lceil (n+1)(1-\alpha) \right\rceil / n\]</div>
+<p>For large n, this approaches 1 − α. For small n (&lt; 100), expect some slack.</p>
+</section>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#../advanced/prediction-intervals.md"><span class="xref myst">Prediction Intervals</span></a> — General interval forecasting</p></li>
+<li><p><a class="reference internal" href="metrics.html#interval-forecast-metrics"><span class="std std-ref">Metrics</span></a> — Interval evaluation (PICP, CWE, Winkler)</p></li>
+<li><p><a class="reference internal" href="backtesting.html"><span class="std std-doc">Backtesting</span></a> — Rolling window validation of conformal intervals</p></li>
+<li><p><a class="reference internal" href="../models/ml-models.html#quantile-regression"><span class="std std-ref">Quantile Regression</span></a> — QR models for use with quantile-based conformal</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="metrics.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Evaluation Metrics</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="forecast-results.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Forecast Results</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conformalconfig">ConformalConfig</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-fields">Configuration Fields</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#method-and-score-type-compatibility">Method and Score Type Compatibility</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#calibration-workflow">Calibration Workflow</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#split-data">1. Split Data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#train-models">2. Train Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#calibrate">3. Calibrate</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#predict-with-intervals">4. Predict with Intervals</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#residual-based-method">Residual-Based Method</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nonconformity-score">Nonconformity Score</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#threshold-computation">Threshold Computation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prediction-interval">Prediction Interval</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#score-type-res-vs-sign-res">Score Type: <code class="docutils literal notranslate"><span class="pre">"res"</span></code> vs. <code class="docutils literal notranslate"><span class="pre">"sign-res"</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#when-to-use">When to Use</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example">Example</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantile-based-method">Quantile-Based Method</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Nonconformity Score</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Threshold Computation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Prediction Interval</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#score-type-scaled-vs-unscaled">Score Type: <code class="docutils literal notranslate"><span class="pre">"scaled"</span></code> vs. <code class="docutils literal notranslate"><span class="pre">"unscaled"</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">When to Use</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Example</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#residual-fitting-method">Residual-Fitting Method</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#two-stage-process">Two-Stage Process</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#temporal-calibration-optional">Temporal Calibration (Optional)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">When to Use</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Example</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#calibrate-method-signature">calibrate() Method Signature</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#raises">Raises</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#complete-example">Complete Example</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#guarantees-and-assumptions">Guarantees and Assumptions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#marginal-coverage-guarantee">Marginal Coverage Guarantee</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#exchangeability">Exchangeability</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#finite-sample-guarantee">Finite-Sample Guarantee</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#see-also">See Also</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024–2026, sambaiga, apina.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

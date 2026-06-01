@@ -4,9 +4,10 @@
 <summary>Source Files</summary>
 
 - `twiga/core/data/relevance.py`  -  `AssociationAnalyzer` class
-- `twiga/core/data/selection.py`  -  `select_top_features`, `compute_rf_importance`
+- `twiga/core/data/selection.py`  -  `select_top_features`, `compute_rf_importance`, `diversity_weights`
 - `twiga/core/stats/association.py`  -  `rank_correlation`, `compute_anova_f`, `compute_chi2`
 - `twiga/core/stats/autocorr.py`  -  `get_pacf_values`, `estimate_ar_order`, `calculate_durbin_watson`
+- `twiga/core/stats/crosslag.py`  -  `compute_crosslag_association`, `recommend_predictive_lags`
 - `twiga/core/stats/entropy.py`  -  entropy & complexity measures
 - `twiga/core/stats/mutual_information.py`  -  `compute_mutual_information`
 - `twiga/core/stats/ppscore.py`  -  `compute_ppscore`
@@ -172,11 +173,88 @@ scores = compute_ppscore(
 
 ---
 
+## Cross-Lagged Association
+
+When working with time series, the question is not just *which* features are relevant but *at which lag* they carry predictive signal. A feature observed $h$ steps in the past, $X_{t-h}$, predicts the current target $Y_t$. This is equivalent to asking whether the current feature $X_t$ predicts the target $h$ steps ahead, $Y_{t+H}$.
+
+### Data-Leakage Safety
+
+For a forecast horizon $H$, a lag $h$ is **leakage-safe** when $h \geq H$. At prediction time $t$ the model has access to $X$ up to $t$; predicting $Y_{t+H}$ using $X_{t-h}$ is only leak-free when $t - h \leq t - H$, which requires $h \geq H$. Lags $h < H$ require feature values that would not yet be available at prediction time and must not be used as past features in production.
+
+### `compute_crosslag_association`
+
+Scans every lag $h \in [0, \text{max\_lag}]$ for one or more features and returns a tidy DataFrame with a `leakage_safe` flag per row.
+
+```python
+from twiga.core.stats import compute_crosslag_association
+
+cl = compute_crosslag_association(
+    data=df,
+    feature_cols=["temperature", "irradiance"],
+    target_col="load_mw",
+    max_lag=96,              # evaluate lags 0..96
+    forecast_horizon=48,     # 24-hour ahead at 30-min resolution
+    method="mi",             # "mi" (mutual information) or "xi" (Chatterjee Xi)
+)
+# Returns: feature, lag, score, leakage_safe
+safe = cl[cl["leakage_safe"]]   # h >= 48 only
+```
+
+| Column | Description |
+| --- | --- |
+| `feature` | Feature name |
+| `lag` | Lag $h$ in steps (0 = contemporaneous) |
+| `score` | MI score (>=0, in nats) or Xi score (in [-1, 1]) |
+| `leakage_safe` | True when `lag >= forecast_horizon` |
+
+### `recommend_predictive_lags`
+
+Filters to leakage-safe lags, ranks by score, and returns the top-k lags per feature. All returned lags satisfy `lag >= forecast_horizon`, so they are safe to pass directly to `DataPipelineConfig` as feature lags.
+
+```python
+from twiga.core.stats import recommend_predictive_lags
+
+recs = recommend_predictive_lags(
+    data=df,
+    feature_cols=["temperature", "irradiance", "wind_speed"],
+    target_col="load_mw",
+    forecast_horizon=48,    # minimum safe lag
+    max_lag=192,            # defaults to 4 * forecast_horizon if omitted
+    method="mi",
+    top_k=3,                # top-3 lags per feature
+    min_score=0.01,         # optional: drop near-zero associations
+)
+# Returns: feature, lag, score, rank — all rows have lag >= 48
+safe_lags = recs.groupby("feature")["lag"].apply(list).to_dict()
+# e.g. {"temperature": [48, 50, 52], "irradiance": [48, 96, 144]}
+```
+
+Pass the result directly to `DataPipelineConfig`:
+
+```python
+from twiga.core.config import DataPipelineConfig
+
+pipeline_config = DataPipelineConfig(
+    forecast_horizon=48,
+    lookback_window_size=336,
+    past_features=list(safe_lags.keys()),
+    lags=safe_lags,          # only leakage-safe lags from recommend_predictive_lags
+)
+```
+
+:::{admonition} Method choice
+:class: tip
+
+Use `method="mi"` (default) for a general dependency scan. It captures any type of statistical relationship and is non-negative. Use `method="xi"` (Chatterjee Xi) when you want to detect non-monotonic patterns, such as a feature whose effect reverses direction at certain thresholds.
+:::
+
+---
+
 ## Feature Selection
 
 ### `select_top_features`
 
-Ensemble feature ranking that combines six association signals into a single ranked list using Borda count (or other aggregation strategies). Robust to the noise and bias of any individual metric.
+Ensemble feature ranking that combines six association signals into a single ranked list. Robust to the noise and bias of any individual metric.
 
 ```python
 from twiga.core.data.selection import select_top_features
@@ -186,11 +264,11 @@ top_features = select_top_features(
     features=feature_columns,
     target="load_mw",
     task="regression",
-    top_k=15,           # return the top-k ranked features
-    alpha=0.05,         # optional p-value threshold (spearman/anova)
-    return_scores=True, # include per-method score columns in output
-    rank_method="borda_rank",  # "borda_rank" | "geom_rank" | "arith_rank" | "med_rank" | "sum_rank"
-    include_chi2=False, # set True for classification tasks
+    top_k=15,
+    alpha=0.05,                        # optional p-value filter (ANOVA/Chi2)
+    rank_aggregation="weighted_borda", # see aggregation options below
+    return_scores=True,
+    include_chi2=False,                # set True for classification
 )
 ```
 
@@ -200,10 +278,47 @@ The six signals combined:
 | --- | --- |
 | Rank correlation | Spearman (regression) / ANOVA (classification) |
 | Mutual information | k-NN density estimation |
-| Xi-correlation | Chatterjee's ξ |
+| Xi-correlation | Chatterjee's xi |
 | Predictive Power Score | Decision-tree PPS |
 | RF feature importance | Mean Decrease in Impurity |
-| Chi-squared (optional) | χ² independence test |
+| Chi-squared (optional) | chi2 independence test |
+
+#### Rank Aggregation Options
+
+| Strategy | Key | Behaviour |
+| --- | --- | --- |
+| Borda count | `"borda_count"` | Sum of ranks, equal weight per ranker |
+| Arithmetic mean | `"arith_rank"` | Mean rank across rankers |
+| Geometric mean | `"geom_rank"` | Penalises features that score well on only one ranker |
+| Weighted Borda | `"weighted_borda"` | Diversity-weighted rank sum (recommended) |
+
+#### Weighted Borda Count
+
+Standard Borda count gives each ranker equal weight, which over-represents linear signal: Spearman, Pearson, Kendall, and ANOVA F all measure monotonic association, so together they account for four out of six votes. Mutual information and Xi may catch non-monotonic patterns that those four miss, but their votes are drowned out.
+
+`"weighted_borda"` corrects this by assigning each ranker a weight proportional to its *uniqueness*, computed as:
+
+$$w_i = 1 - \frac{1}{k-1} \sum_{j \neq i} |\rho_s(\text{ranker}_i, \text{ranker}_j)|$$
+
+where $\rho_s$ is the Spearman rank-correlation between ranker score vectors. Rankers that agree strongly with others get lower weight; rankers that contribute independent signal (Xi, PPS, RF importance) get higher weight. Weights are clipped to a floor of 0.05 so no ranker is silenced entirely.
+
+```python
+top_features, scores = select_top_features(
+    data=df,
+    features=feature_columns,
+    target="load_mw",
+    top_k=10,
+    rank_aggregation="weighted_borda",
+    return_scores=True,
+)
+# scores["weighted_borda"] contains the diversity-weighted rank sum per feature
+```
+
+:::{admonition} When to use weighted Borda
+:class: tip
+
+Use `"weighted_borda"` when your feature set contains many linear predictors (e.g. lag features, rolling means) alongside non-linear candidates (interaction terms, categorical encodings). Equal-weight Borda will systematically favour the linear cluster. Weighted Borda restores balance by down-weighting rankers that add redundant information.
+:::
 
 ### `compute_rf_importance`
 
@@ -417,6 +532,14 @@ X, y = prepare_data(df, target="load_mw", features=feature_columns)
 
 ## API Reference
 
+### Cross-lagged association
+
+```{eval-rst}
+.. autofunction:: twiga.core.stats.crosslag.compute_crosslag_association
+
+.. autofunction:: twiga.core.stats.crosslag.recommend_predictive_lags
+```
+
 ### Feature selection & association
 
 ```{eval-rst}
@@ -427,6 +550,8 @@ X, y = prepare_data(df, target="load_mw", features=feature_columns)
 .. autofunction:: twiga.core.data.selection.select_top_features
 
 .. autofunction:: twiga.core.data.selection.compute_rf_importance
+
+.. autofunction:: twiga.core.data.selection.diversity_weights
 
 .. autofunction:: twiga.core.stats.association.rank_correlation
 

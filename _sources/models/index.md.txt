@@ -4,6 +4,9 @@
 <summary>Source Files</summary>
 
 - `twiga/models/baseline/`  -  no-training baselines
+- `twiga/models/foundational/`  -  pre-trained zero-shot models
+- `twiga/models/foundational/base.py`  -  `BaseFoundationalModel`
+- `twiga/models/foundational/chronos2_model.py`  -  `Chronos2Model` / `Chronos2Config`
 - `twiga/models/ml/`  -  tree-based and linear models
 - `twiga/models/nn/`  -  neural network models
 - `twiga/models/nn/rnn_model.py`  -  `RNNModel` / `RNNConfig`
@@ -15,7 +18,7 @@
 
 A single `TwigaForecaster` trains, tunes, evaluates and backtests any model in the catalog through an identical API. Switching from a gradient-boosted tree to a neural network means changing one config object, not rewriting training code. The entire workflow — feature engineering, training, hyperparameter optimisation, backtesting and calibration — is unified in one interface with no library boundaries to cross.
 
-Twiga provides forecasting models across three domains: **baseline** (parameter-free reference models), **ml** (gradient-boosted trees, random forests, linear, and NGBoost), and **nn** (neural networks). All models share a common interface and are loaded dynamically through the [model registry](../core/forecaster.md#model-registry).
+Twiga provides forecasting models across four domains: **baseline** (parameter-free reference models), **foundational** (pre-trained zero-shot models from diverse time series), **ml** (gradient-boosted trees, random forests, linear, and NGBoost), and **nn** (neural networks). All models share a common interface and are loaded dynamically through the [model registry](../core/forecaster.md#model-registry).
 
 The table below lists the **base** model configurations. In addition, every neural architecture (MLPF, MLPGAM, MLPGAF, NHITS) has dedicated probabilistic config classes for each distribution family (Normal, Laplace, LogNormal, Gamma, Beta, StudentT, QR, FPQR, CRC)  -  see [Neural Network Models](nn-models.md#probabilistic-models) for the full matrix.
 
@@ -30,6 +33,12 @@ The table below lists the **base** model configurations. In addition, every neur
 | Window Average | `window_average` | baseline | Point | `WINDOWAVERAGEConfig` | Local mean over the last w steps |
 | Drift | `drift` | baseline | Point | `DRIFTConfig` | Linear extrapolation of per-window trend |
 | Context Parrot | `context_parrot` | baseline | Point | `CONTEXTPARROTConfig` | Repeats the last observed context window as the forecast |
+
+### Foundational Domain
+
+| Model | Name | Domain | Type | Config Class | Description |
+| --- | --- | --- | --- | --- | --- |
+| Chronos-2 | `chronos2` | foundational | Quantile | `Chronos2Config` | 12B autoregressive transformer, pre-trained on 2M+ diverse time series, zero-shot forecasting with 21 quantile levels |
 
 ### ML Domain
 
@@ -149,6 +158,13 @@ classDiagram
         +predict(X, sigma)
     }
 
+    class BaseFoundationalModel {
+        <<Foundational>>
+        +quantiles: list
+        +fit(X, y)
+        +predict(X)
+    }
+
     class BaseNGBoostRegressor {
         <<ML Probabilistic>>
         +fit(X, y)
@@ -208,6 +224,8 @@ classDiagram
     BaseQuantileRegressor <|-- QRCATBOOSTModel
     BaseQuantileRegressor <|-- QRXGBOOSTModel
     BaseQuantileRegressor <|-- QRLIGHTGBMModel
+    BaseQuantileRegressor <|-- BaseFoundationalModel
+    BaseFoundationalModel <|-- Chronos2Model
     BaseNGBoostRegressor <|-- NGBOOSTNORMALModel
     BaseNGBoostRegressor <|-- NGBOOSTLOGNORMALModel
     BaseNGBoostRegressor <|-- NGBOOSTEXPONENTIALModel
@@ -228,6 +246,9 @@ classDiagram
 
 | Use Case | Recommended Models | Why |
 | --- | --- | --- |
+| Rapid prototyping on new domains | `chronos2` | Zero-shot forecasting, no training required, validate problem in seconds |
+| Small datasets (<1000 samples) | `chronos2`, `lineareg`, `randomforest` | Pre-training on 2M+ series beats local fitting on limited data |
+| Zero-shot forecasting (no local data tuning) | `chronos2` | Transfer learning from diverse time series, domain shift robust |
 | Establish performance floor | `naive`, `seasonal_naive`, `drift`, `context_parrot` | Zero-training reference; compute skill scores against ML/NN |
 | Quick ML baseline | `lineareg`, `randomforest` | Fast training, easy to interpret |
 | Tabular data, many features | `catboost`, `lightgbm`, `xgboost` | Strong with heterogeneous features |
@@ -262,8 +283,11 @@ See [Creating Custom Models](custom-models.md) for how to add new models to the 
 :maxdepth: 1
 
 baseline-models
+foundational-models
 ml-models
 nn-models
+ensemble-strategies
 custom-models
 ../advanced/hyperparameter-tuning
+../advanced/experiment-engine
 ```

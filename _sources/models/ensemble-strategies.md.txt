@@ -1,0 +1,319 @@
+# Ensemble Strategies
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/forecaster/ensemble.py` - `EnsembleStrategy`, `compute_ensemble_predictions()`
+
+</details>
+
+When you register multiple models with `TwigaForecaster`, you can combine their predictions using ensemble strategies. This page explains how each strategy works, when to use it, and how to apply it.
+
+## Overview
+
+An ensemble combines predictions from multiple models into a single blended forecast. Twiga supports three strategies:
+
+- **Mean** - Average of all model predictions
+- **Median** - Middle value across models
+- **Weighted** - Custom weighted sum
+
+## Using Ensembles
+
+Pass `ensemble_strategy` to any prediction or evaluation method:
+
+```python
+from twiga.forecaster.core import TwigaForecaster
+
+forecaster = TwigaForecaster(
+    data_params=data_config,
+    model_params=[model_1, model_2, model_3],  # 3 models
+)
+
+forecaster.fit(train_df)
+
+# Get ensemble predictions alongside individual model predictions
+results, metrics = forecaster.evaluate_point_forecast(
+    test_df,
+    ensemble_strategy="mean",
+)
+
+# Results now include an "Ensemble" row in addition to individual models
+print(results)
+# timestamp | target | model | forecast | actual
+# ...
+# 2024-01-01 | load_mw | xgboost | 1234 | 1250
+# 2024-01-01 | load_mw | lightgbm | 1245 | 1250
+# 2024-01-01 | load_mw | catboost | 1240 | 1250
+# 2024-01-01 | load_mw | Ensemble | 1240 | 1250  <- mean of the three
+```
+
+Available in these methods:
+- `predict()`, `predict_interval()`, `forecast()`
+- `evaluate_point_forecast()`, `evaluate_interval_forecast()`, `evaluate_quantile_forecast()`
+- `evaluate()`, `calibrate()`, `backtesting()`
+
+## Mean Ensemble
+
+Computes the arithmetic mean of all model predictions.
+
+### Formula
+
+$$\hat{y}_{\text{ensemble}} = \frac{1}{M}\sum_{m=1}^{M}\hat{y}_m$$
+
+Where M is the number of models.
+
+### When to Use
+
+- All models are roughly equally accurate
+- You want a simple, interpretable blend
+- You expect random errors to cancel out
+
+### Example
+
+```python
+results, metrics = forecaster.evaluate_point_forecast(
+    test_df,
+    ensemble_strategy="mean",
+)
+```
+
+### Advantages
+
+- No hyperparameter tuning needed
+- Interpretable: each model contributes equally
+- Reduces variance if models make independent errors
+
+### Disadvantages
+
+- Equally weights good and bad models
+- Can be pulled off by outlier models
+- No adaptation per sample or time period
+
+## Median Ensemble
+
+Computes the median value across all model predictions.
+
+### Formula
+
+$$\hat{y}_{\text{ensemble}} = \text{median}(\hat{y}_1, \hat{y}_2, \ldots, \hat{y}_M)$$
+
+### When to Use
+
+- Models have outlier predictions that skew the mean
+- You want robustness to one or two bad models
+- Forecast error distributions are heavy-tailed
+
+### Example
+
+```python
+results, metrics = forecaster.evaluate_point_forecast(
+    test_df,
+    ensemble_strategy="median",
+)
+```
+
+### Advantages
+
+- Robust to outlier predictions from one model
+- No hyperparameter tuning
+- Works well with odd numbers of models (3, 5, 7)
+
+### Disadvantages
+
+- Less interpretable than mean
+- Can be less accurate if all models are good
+- Ignores magnitude of disagreement between models
+
+## Weighted Ensemble
+
+Assigns custom weights to each model and computes the weighted sum.
+
+### Formula
+
+$$\hat{y}_{\text{ensemble}} = \sum_{m=1}^{M}w_m \hat{y}_m$$
+
+Where $\sum w_m = 1.0$ (weights must sum to 1).
+
+### When to Use
+
+- Models have different accuracy levels
+- You have domain knowledge about relative reliability
+- You've tuned weights via backtesting or validation
+
+### Example
+
+```python
+ensemble_weights = {
+    "xgboost": 0.5,      # 50%
+    "lightgbm": 0.3,     # 30%
+    "catboost": 0.2,     # 20%
+}
+
+results, metrics = forecaster.evaluate_point_forecast(
+    test_df,
+    ensemble_strategy="weighted",
+    ensemble_weights=ensemble_weights,
+)
+```
+
+### Weight Selection
+
+**Option 1: Equal confidence**
+If all models are similarly accurate, use equal weights:
+```python
+weights = {model_name: 1/n_models for model_name in model_names}
+```
+
+**Option 2: Inverse MAE**
+Weight models inversely by their validation error:
+```python
+# After evaluating on validation set, compute MAE per model
+mae_dict = {"xgboost": 50, "lightgbm": 60, "catboost": 55}
+inv_mae = {m: 1/e for m, e in mae_dict.items()}
+total = sum(inv_mae.values())
+weights = {m: w/total for m, w in inv_mae.items()}
+# Result: {xgboost: 0.343, lightgbm: 0.286, catboost: 0.371}
+```
+
+**Option 3: Ranking**
+Higher rank (lower error) gets higher weight:
+```python
+# xgboost is best (rank 1), lightgbm second (rank 2), catboost third (rank 3)
+ranks = {"xgboost": 1, "lightgbm": 2, "catboost": 3}
+inv_rank = {m: 1/r for m, r in ranks.items()}
+total = sum(inv_rank.values())
+weights = {m: w/total for m, w in inv_rank.items()}
+# Result: {xgboost: 0.545, lightgbm: 0.273, catboost: 0.182}
+```
+
+### Advantages
+
+- Leverages accuracy differences between models
+- Can significantly improve performance
+- Allows domain knowledge to influence the blend
+
+### Disadvantages
+
+- Requires weight tuning (backtesting or validation)
+- Weights that overfit on one period may not transfer
+- More complex than mean/median
+
+## Comparing Strategies
+
+| Strategy | Computation | Robustness | Tuning | Best For |
+| --- | --- | --- | --- | --- |
+| Mean | Sum all, divide by M | Medium | None | Baseline; equally good models |
+| Median | Sort, take middle | High | None | Heavy outliers; robust blend |
+| Weighted | w1·m1 + w2·m2 + ... | Medium | Weight selection | Heterogeneous accuracy |
+
+## Working with Different Forecast Kinds
+
+Ensemble strategies work consistently across forecast kinds:
+
+### Point Forecasts
+```python
+results, metrics = forecaster.evaluate_point_forecast(
+    test_df,
+    ensemble_strategy="weighted",
+    ensemble_weights=weights,
+)
+# Combines loc (point) predictions
+```
+
+### Interval Forecasts
+```python
+results, metrics = forecaster.evaluate_interval_forecast(
+    test_df,
+    ensemble_strategy="mean",
+)
+# Combines lower, point, and upper independently
+# Result: [mean(lower), mean(point), mean(upper)]
+```
+
+### Quantile Forecasts
+```python
+results, metrics = forecaster.evaluate_quantile_forecast(
+    test_df,
+    ensemble_strategy="median",
+)
+# Combines quantile predictions per quantile level
+```
+
+### Parametric (Mean + Scale)
+```python
+results, metrics = forecaster.evaluate_parametric_forecast(
+    test_df,
+    ensemble_strategy="weighted",
+    ensemble_weights=weights,
+)
+# Combines loc and scale independently
+```
+
+## Validating Ensemble Quality
+
+After creating an ensemble, validate it:
+
+```python
+# On validation or test set, compare individual models to ensemble
+results_df, metrics_df = forecaster.evaluate_point_forecast(test_df, ensemble_strategy="weighted")
+
+# metrics_df has one row per model plus one for "Ensemble"
+print(metrics_df)
+#          model      mae    rmse      r2
+# 0      xgboost   45.2   58.3   0.92
+# 1     lightgbm   48.1   61.5   0.91
+# 2      catboost  46.5   59.8   0.92
+# 3      Ensemble  43.1   55.2   0.93  <- Should be good
+
+# Check if ensemble is better than best individual
+best_model_mae = metrics_df[metrics_df["model"] != "Ensemble"]["mae"].min()
+ensemble_mae = metrics_df[metrics_df["model"] == "Ensemble"]["mae"].values[0]
+print(f"Ensemble MAE: {ensemble_mae}, Best model: {best_model_mae}")
+```
+
+## Tuning Weights via Backtesting
+
+Optimize weights on validation data:
+
+```python
+from scipy.optimize import minimize
+
+def evaluate_weights(weights_array, model_names, forecaster, val_df):
+    """Objective: minimize ensemble MAE"""
+    weights = {name: w for name, w in zip(model_names, weights_array)}
+    _, metrics = forecaster.evaluate_point_forecast(
+        val_df,
+        ensemble_strategy="weighted",
+        ensemble_weights=weights,
+    )
+    ensemble_mae = metrics[metrics["model"] == "Ensemble"]["mae"].values[0]
+    return ensemble_mae
+
+model_names = ["xgboost", "lightgbm", "catboost"]
+initial_weights = [1/3, 1/3, 1/3]
+
+result = minimize(
+    lambda w: evaluate_weights(w, model_names, forecaster, val_df),
+    x0=initial_weights,
+    method="Nelder-Mead",
+    constraints=[{"type": "eq", "fun": lambda w: sum(w) - 1.0}],  # sum = 1
+    bounds=[(0, 1) for _ in model_names],  # all in [0, 1]
+)
+
+optimal_weights = {name: w for name, w in zip(model_names, result.x)}
+print(f"Optimal weights: {optimal_weights}")
+
+# Evaluate on test set with optimized weights
+test_results, test_metrics = forecaster.evaluate_point_forecast(
+    test_df,
+    ensemble_strategy="weighted",
+    ensemble_weights=optimal_weights,
+)
+```
+
+## See Also
+
+- [Model Registry](../models/index.md) - Register multiple models
+- [Backtesting](backtesting.md) - Rolling validation for weight tuning
+- [Forecast Results](forecast-results.md) - Understanding the output
+- [Metrics](metrics.md) - Evaluating ensembles

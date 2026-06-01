@@ -1,0 +1,496 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Zero-Shot Foundation Models\n",
+    "\n",
+    "![Level](https://img.shields.io/badge/level-intermediate-yellow) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~15%20min-lightgrey)\n",
+    "\n",
+    "---\n",
+    "\n",
+    "**What you'll build**\n",
+    "\n",
+    "A zero-shot probabilistic forecast using Chronos-2, a 12B-parameter foundation model trained on 2M+ diverse time series. Unlike all learnable models (QR-LightGBM, Neural Networks, etc.), Chronos-2 requires **no training on your data** — it downloads pre-trained weights and generates 21 quantile predictions immediately.\n",
+    "\n",
+    "**Prerequisites**\n",
+    "- [01 - Getting Started](01-getting-started.ipynb) (DataPipelineConfig, TwigaForecaster)\n",
+    "- [08 - Quantile Regression](08-quantile-regression.ipynb) (quantile concepts, prediction intervals)\n",
+    "- A GPU is helpful but not required (inference on CPU is slow but works)\n",
+    "\n",
+    "**Learning objectives**\n",
+    "\n",
+    "By the end of this notebook you will be able to:\n",
+    "\n",
+    "1. Explain the paradigm shift: pre-trained, task-agnostic models vs. data-specific learning\n",
+    "2. Load and evaluate Chronos-2 as a zero-shot quantile forecaster\n",
+    "3. Compare Chronos-2's quantile outputs (21 fixed levels) against learned QR models\n",
+    "4. Interpret when foundation models excel vs. when domain-specific fine-tuning wins\n",
+    "5. Visualise quantile fan charts and coverage plots from foundation models"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 1. The Foundation Model Paradigm\n",
+    "\n",
+    "**Traditional approach (Notebooks 05-10):**\n",
+    "```\n",
+    "Your data → Feature engineering → Train model → Evaluate\n",
+    "```\n",
+    "- Model learns from your dataset only\n",
+    "- Hyperparameter tuning required (5–100× slower)\n",
+    "- Strong performance on YOUR domain IF you have enough data\n",
+    "- Weak on new, unfamiliar patterns\n",
+    "\n",
+    "**Foundation model approach:**\n",
+    "```\n",
+    "Pre-trained on 2M+ time series → Download weights → Forecast immediately\n",
+    "```\n",
+    "- Model learned from internet-scale diversity (energy, traffic, retail, weather, ...)\n",
+    "- Zero training time — deploy in seconds\n",
+    "- Works reasonably on most domains WITHOUT fine-tuning\n",
+    "- May underperform on highly specialised data\n",
+    "\n",
+    "### Chronos-2 Architecture\n",
+    "\n",
+    "Chronos-2 is an **autoregressive transformer** (like GPT, but for time series):\n",
+    "\n",
+    "1. **Input**: tokenise the lookback window into a sequence of values\n",
+    "2. **Encoder-Decoder**: transformer learns to predict the next value given prior context\n",
+    "3. **Output**: 21 quantile values in parallel (τ = 0.025, 0.05, ..., 0.975)\n",
+    "\n",
+    "The 21 quantile levels are **fixed by Chronos-2's architecture** — you cannot request arbitrary quantiles, but you get a rich probabilistic forecast \"for free\".\n",
+    "\n",
+    "### When to use Chronos-2\n",
+    "\n",
+    "| Use Case | Recommendation |\n",
+    "|---|---|\n",
+    "| **Rapid prototyping** | ✓ Use Chronos-2 first — validate the problem in minutes |\n",
+    "| **Small datasets** (<1000 samples) | ✓ Chronos-2 may outperform underfitted QR models |\n",
+    "| **New domains** (unfamiliar patterns) | ✓ Chronos-2's pre-training covers many scenarios |\n",
+    "| **Production on limited data** | ✓ No fine-tuning risk, stable predictions |\n",
+    "| **Large, domain-specific datasets** | ✗ Fine-tuned QR or NN models often win |\n",
+    "| **Extreme latency constraints** | ✗ Chronos-2 inference is ~seconds per window (batch > 1 helps) |\n",
+    "| **Custom quantile levels** | ✗ You are locked to the 21 fixed quantiles |\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 2. Setup"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import warnings\n",
+    "\n",
+    "from great_tables import GT, md\n",
+    "from lets_plot import LetsPlot\n",
+    "import pandas as pd\n",
+    "\n",
+    "from twiga.core.config import DataPipelineConfig, ExperimentConfig\n",
+    "from twiga.core.plot import plot_forecast_grid, plot_metrics_bar\n",
+    "from twiga.core.plot.gt import twiga_gt, twiga_report\n",
+    "from twiga.core.utils import configure, get_logger\n",
+    "\n",
+    "LetsPlot.setup_html()\n",
+    "warnings.filterwarnings(\"ignore\")\n",
+    "\n",
+    "configure()\n",
+    "log = get_logger(\"tutorials\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Load data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data = pd.read_parquet(\"../data/MLVS-PT.parquet\")\n",
+    "data = data[[\"timestamp\", \"NetLoad(kW)\"]].copy()\n",
+    "data[\"timestamp\"] = pd.to_datetime(data[\"timestamp\"])\n",
+    "data = data.drop_duplicates(subset=\"timestamp\").reset_index(drop=True)\n",
+    "# Restrict to 2019-2020 for fast tutorial execution\n",
+    "data = data[(data[\"timestamp\"] >= \"2019-01-01\") & (data[\"timestamp\"] <= \"2020-12-31\")].reset_index(drop=True)\n",
+    "\n",
+    "log.info(\"Shape: %s\", data.shape)\n",
+    "log.info(\"Period: %s -> %s\", data[\"timestamp\"].min().date(), data[\"timestamp\"].max().date())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Train / test split"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "train_df = data[data[\"timestamp\"] < \"2020-07-01\"].reset_index(drop=True)\n",
+    "test_df = data[data[\"timestamp\"] >= \"2020-07-01\"].reset_index(drop=True)\n",
+    "\n",
+    "log.info(\n",
+    "    \"train : %d rows  (%s -> %s)\",\n",
+    "    len(train_df),\n",
+    "    train_df[\"timestamp\"].min().date(),\n",
+    "    train_df[\"timestamp\"].max().date(),\n",
+    ")\n",
+    "log.info(\n",
+    "    \"test  : %d rows  (%s -> %s)\",\n",
+    "    len(test_df),\n",
+    "    test_df[\"timestamp\"].min().date(),\n",
+    "    test_df[\"timestamp\"].max().date(),\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Shared pipeline and training config\n",
+    "\n",
+    "Note: Foundation models use the same `DataPipelineConfig` as learned models.\n",
+    "The `lookback_window_size` is the context window Chronos-2 sees;\n",
+    "`forecast_horizon` is the number of steps predicted."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data_config = DataPipelineConfig(\n",
+    "    target_feature=\"NetLoad(kW)\",\n",
+    "    period=\"30min\",\n",
+    "    latitude=32.371666,\n",
+    "    longitude=-16.274998,\n",
+    "    calendar_features=[],\n",
+    "    known_future_features=[],  # Chronos-2 ignores exogenous features (zero-shot)\n",
+    "    forecast_horizon=48,  # 24 hours @ 30-min resolution\n",
+    "    lookback_window_size=48 * 7,  # one week of context\n",
+    "    window_stride=48,  # non-overlapping windows for honest evaluation\n",
+    "    input_scaler=\"standard\",\n",
+    "    target_scaler=\"robust\",\n",
+    ")\n",
+    "\n",
+    "train_config = ExperimentConfig(\n",
+    "    project_name=\"twiga-tutorials\",\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 3. Zero-Shot Chronos-2 Foundation Model\n",
+    "\n",
+    "**Key property: Zero-shot means `fit()` does not train.**\n",
+    "\n",
+    "The `TwigaForecaster.fit()` method:\n",
+    "1. Validates input dimensions\n",
+    "2. Loads the pre-trained Chronos-2 weights from HuggingFace\n",
+    "3. Returns immediately (no optimization loop)\n",
+    "\n",
+    "All 24 CV folds run through the same pre-trained model — there is no per-fold retraining."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from IPython.display import clear_output\n",
+    "\n",
+    "from twiga import TwigaForecaster\n",
+    "from twiga.models.foundational.chronos2_model import Chronos2Config\n",
+    "\n",
+    "# device=\"cuda\" if you have a GPU; \"cpu\" works but is slower\n",
+    "chronos_config = Chronos2Config(device=\"mps\")\n",
+    "\n",
+    "forecaster_chronos = TwigaForecaster(\n",
+    "    data_params=data_config,\n",
+    "    model_params=[chronos_config],\n",
+    "    cv_params=train_config,\n",
+    ")\n",
+    "\n",
+    "# fit() downloads the model but does NOT train\n",
+    "forecaster_chronos.fit(train_df=train_df)\n",
+    "# clear_output()\n",
+    "\n",
+    "log.info(\"Chronos-2 zero-shot model ready for inference.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 4. Evaluate Quantile Forecast\n",
+    "\n",
+    "Chronos-2 outputs 21 quantiles. We evaluate it exactly like a trained QR model."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pred_chronos, metric_chronos = forecaster_chronos.evaluate_quantile_forecast(test_df=test_df)\n",
+    "clear_output()\n",
+    "\n",
+    "log.info(\"Chronos-2 evaluation complete.\")\n",
+    "log.info(\"Predictions shape: %s\", pred_chronos.shape)\n",
+    "log.info(\"Quantile columns: %s\", [c for c in pred_chronos.columns if c.startswith(\"q_\")][:5])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def get_metric_table(metric_df: pd.DataFrame, metric_cols: list | None = None):\n",
+    "    if metric_cols is None:\n",
+    "        metric_cols = [\"mae\", \"corr\", \"pinball\", \"crps\", \"sharpness\", \"calibration_error\"]\n",
+    "\n",
+    "    res = metric_df.groupby(\"Model\")[metric_cols].mean().round(2).reset_index()\n",
+    "    res = res.rename(\n",
+    "        columns={\n",
+    "            \"mae\": \"MAE\",\n",
+    "            \"corr\": \"Corr\",\n",
+    "            \"pinball\": \"PINBALL\",\n",
+    "            \"crps\": \"CRPS\",\n",
+    "            \"sharpness\": \"SHARPNESS\",\n",
+    "            \"calibration_error\": \"Cal-err\",\n",
+    "        }\n",
+    "    )\n",
+    "\n",
+    "    metric_name = [\"MAE\", \"Corr\", \"PINBALL\", \"CRPS\", \"SHARPNESS\", \"Cal-err\"]\n",
+    "    minimize_cols = [\"MAE\", \"SMAPE\", \"RMSE\"]\n",
+    "    maximize_cols = [\"Corr\"]\n",
+    "\n",
+    "    return twiga_report(res, metric_name, minimize_cols, maximize_cols)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "get_metric_table(metric_chronos)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 5. Benchmark: Chronos-2 vs Simple baseline\n",
+    "\n",
+    "Compare the zero-shot foundation model against "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from twiga.models.baseline.seasonal_naive_model import SEASONALNAIVEConfig\n",
+    "\n",
+    "seasonal_config = SEASONALNAIVEConfig(period=\"7D\", freq=\"30min\")\n",
+    "\n",
+    "forecaster_seasonal = TwigaForecaster(\n",
+    "    data_params=data_config,\n",
+    "    model_params=[seasonal_config],\n",
+    "    cv_params=train_config,\n",
+    ")\n",
+    "forecaster_seasonal.fit(train_df=train_df)\n",
+    "clear_output()\n",
+    "\n",
+    "pred_seasonal, metric_seasonal = forecaster_seasonal.evaluate_point_forecast(test_df=test_df)\n",
+    "clear_output()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "get_metric_table(metric_seasonal, metric_cols=[\"mae\", \"corr\"])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "metrics_all = pd.concat(\n",
+    "    [metric_chronos, metric_seasonal],\n",
+    "    ignore_index=True,\n",
+    ")\n",
+    "\n",
+    "res = (\n",
+    "    metrics_all.groupby(\"Model\", sort=False)[[\"mae\", \"rmse\", \"corr\", \"wmape\", \"smape\", \"nbias\"]]\n",
+    "    .mean()\n",
+    "    .round(4)\n",
+    "    .reset_index()\n",
+    ")\n",
+    "res = res.rename(\n",
+    "    columns={\n",
+    "        \"mae\": \"MAE\",\n",
+    "        \"corr\": \"Corr\",\n",
+    "        \"wmape\": \"WMAPE\",\n",
+    "        \"smape\": \"SMAPE\",\n",
+    "        \"nbias\": \"NBIAS\",\n",
+    "        \"rmse\": \"RMSE\",\n",
+    "    }\n",
+    ")\n",
+    "\n",
+    "twiga_report(\n",
+    "    res,\n",
+    "    [\"MAE\", \"Corr\", \"SMAPE\", \"RMSE\"],\n",
+    "    [\"MAE\", \"SMAPE\", \"RMSE\"],\n",
+    "    [\"Corr\"],\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 7. Key Insights\n",
+    "\n",
+    "### Chronos-2 Strengths\n",
+    "- **No training time**: ready in seconds\n",
+    "- **Diverse pre-training**: benefits from 2M+ different time series\n",
+    "- **Probabilistic by default**: 21 quantiles without extra work\n",
+    "- **Stable predictions**: pre-trained weights don't drift per fold\n",
+    "\n",
+    "### Chronos-2 Limitations\n",
+    "- **Generic**: not optimized for YOUR specific domain\n",
+    "- **Slow inference**: ~seconds per prediction batch (GPU helps dramatically)\n",
+    "- **Fixed quantiles**: cannot request arbitrary τ values\n",
+    "- **Univariate only**: ignores exogenous features (v1 limitation)\n",
+    "\n",
+    "### When Learned Models Win\n",
+    "- Large domain-specific datasets (>10k samples)\n",
+    "- Extreme precision requirements (financial trading, critical infrastructure)\n",
+    "- Need custom quantile levels or intervals\n",
+    "- Latency constraints (inference must be <100ms)\n",
+    "\n",
+    "### Phase 2: Fine-tuning\n",
+    "\n",
+    "In a future update, Twiga will support **fine-tuning** Chronos-2 on your data:\n",
+    "```python\n",
+    "Chronos2Config(device=\"cuda\", fine_tune=True)\n",
+    "```\n",
+    "This combines the best of both worlds: transfer learning from 2M+ pre-training + domain-specific optimisation."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 8. Forecast Traces\n",
+    "\n",
+    "Visual comparison of predictions across the test set."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "preds_all = pd.concat([pred_chronos, pred_seasonal], ignore_index=True)\n",
+    "\n",
+    "p = plot_forecast_grid(\n",
+    "    preds_all,\n",
+    "    actual_col=\"Actual\",\n",
+    "    forecast_col=\"forecast\",\n",
+    "    model_col=\"Model\",\n",
+    "    n_samples_per_model=7 * 48,  # first 7 days of test set\n",
+    "    y_label=\"Net Load (kW)\",\n",
+    "    title=\"Chronos-2 vs Learned QR Models — first 7 days of test set\",\n",
+    "    fig_width=1200,\n",
+    ")\n",
+    "p"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Wrapping up\n",
+    "\n",
+    "**What you did**\n",
+    "- [x] Loaded and split the MLVS-PT dataset\n",
+    "- [x] Configured a data pipeline compatible with foundation models\n",
+    "- [x] Loaded and evaluated Chronos-2 (zero-shot, no training)\n",
+    "- [x] Trained Seaonal Naie\n",
+    "- [x] Built a side-by-side benchmark table\n",
+    "- [x] Visualised forecast traces\n",
+    "\n",
+    "**Key takeaways**\n",
+    "1. Foundation models are a new paradigm: pre-trained knowledge vs. local optimisation\n",
+    "2. Chronos-2 delivers probabilistic forecasts (21 quantiles) without training\n",
+    "3. Zero-shot performance is often competitive on diverse domains\n",
+    "4. Fine-tuning (Phase 2) will let you retain pre-training while adapting to your data\n",
+    "5. Choose based on: data size, latency budget, precision needs, and domain shift\n",
+    "\n",
+    "---\n",
+    "\n",
+    "## What's next?\n",
+    "\n",
+    "- **[10 - Conformal Prediction](10-conformal-prediction.ipynb)**: Add coverage guarantees to any forecast (Chronos-2, QR, parametric)\n",
+    "- **Ensemble**: Combine Chronos-2 + QR-LightGBM for robustness\n",
+    "- **Fine-tuning** (Phase 2, coming soon): Train Chronos-2 on your data while retaining 2M+ prior knowledge"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "twiga-forecast (3.12.12)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

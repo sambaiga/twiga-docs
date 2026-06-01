@@ -255,28 +255,41 @@ predictions_df, metrics_df = forecaster.backtesting(
 
 For each fold, `backtesting()`:
 
-1. Calls `self.fit(train_df)`  -  fits the data pipeline and all models
-2. Calls `self.evaluate_point_forecast(test_df)`  -  generates predictions and computes metrics
-3. Adds a `Folds` column to track which fold produced each result
-4. Concatenates all results across folds
+1. Resets the data pipeline so scalers are re-fitted on this fold's training window only.
+2. Calls `self.fit(train_df, val_df=val_df)` — fits the pipeline and all models. `val_df` is supplied when `val_size > 0` and is used for early stopping.
+3. Routes evaluation through one of three paths depending on configuration:
+   - **Conformal path** (`calib_size > 0` and `conformal_params` set): calls `calibrate(calib_df)` then `evaluate_interval_forecast(test_df)`.
+   - **Native interval path** (`eval_interval=True`, no conformal): calls `evaluate_interval_forecast(test_df)` using intervals from the model's own output.
+   - **Point path** (default): calls `evaluate_point_forecast(test_df)`.
+4. Adds a `Folds` column to track which fold produced each result and concatenates all results.
 
 ```{mermaid}
 sequenceDiagram
     participant B as backtesting()
     participant CV as TimeBasedCV.split()
     participant F as fit()
-    participant E as evaluate_point_forecast()
+    participant C as calibrate()
+    participant E as evaluate()
 
-    B->>CV: Generate train/test splits
+    B->>CV: Generate 4-way splits
     loop For each fold
-        CV-->>B: (train_df, test_df, scheme, fold_idx)
-        B->>F: fit(train_df)
+        CV-->>B: (fit_df, val_df, calib_df, test_df)
+        B->>B: Reset data pipeline
+        B->>F: fit(fit_df, val_df)
         F-->>B: Models trained
-        B->>E: evaluate_point_forecast(test_df)
+        alt conformal path
+            B->>C: calibrate(calib_df)
+            C-->>B: Conformal scores computed
+            B->>E: evaluate_interval_forecast(test_df)
+        else native interval path
+            B->>E: evaluate_interval_forecast(test_df)
+        else point path
+            B->>E: evaluate_point_forecast(test_df)
+        end
         E-->>B: (predictions_df, metrics_df)
         B->>B: Append fold results
     end
-    B-->>B: pd.concat(all_predictions), pd.concat(all_metrics)
+    B-->>B: pd.concat(all_predictions, all_metrics)
 ```
 
 ### Aggregating Results

@@ -78,8 +78,8 @@ Defined in `twiga/core/metrics/interval.py`. Used via `evaluate_interval_forecas
 | ACE | `ace` | $PICP - (1 - \alpha)$ | Average Coverage Error: signed deviation from the nominal level |
 | NMPI | `nmpi` | $\frac{\text{median}(U_t - L_t)}{\text{scale}}$ | Normalised Median Prediction Interval width |
 | CWE | `cwe` | $\lambda \cdot \frac{(1+\beta^2)\,\gamma_{\text{picp}}\,\gamma_{\text{nmpi}}}{\beta^2\,\gamma_{\text{nmpi}} + \gamma_{\text{picp}}}$ | Coverage–Width–Error: harmonic mean of coverage and width scores, weighted by forecast accuracy |
-| γ_picp | — | $\min\!\left(\frac{\text{PICP}}{1-\alpha},\, 1\right)$ | Coverage adequacy: linear ramp from 0 to 1 as PICP reaches the target; saturates at 1 for over-coverage |
-| γ_nmpi | — | $\min\!\left(\left(\frac{\kappa/R}{\text{NMPI}}\right)^k,\, 1\right)$ | Width efficiency: full credit when NMPI ≤ reference; inverse penalty for excess width |
+| γ_picp | — | $\frac{e^{-\|\text{PICP}-(1-\alpha)\|} - m}{1-m},\; m = \min(e^{-(1-\alpha)},\,e^{-\alpha})$ | Coverage adequacy: peaks at 1 when PICP equals the target; decays symmetrically for both under-coverage and over-coverage |
+| γ_nmpi | — | $\begin{cases}\frac{e^{-k(p-\hat{p})}-e^{-kp}}{1-e^{-kp}} & \hat{p}<p \\ \frac{e^{-k(\hat{p}-p)}-e^{-k(1-p)}}{1-e^{-k(1-p)}} & \hat{p}\geq p\end{cases}$ | Width score: peaks at 1 when NMPI equals the reference κ/R; penalises both too-narrow and too-wide intervals |
 | **MSIS** | `msis` | $\frac{\frac{1}{n}\sum_t\!\left[(U_t\!-\!L_t) + \frac{2}{\alpha}(L_t\!-\!y_t)\mathbf{1}_{y_t < L_t} + \frac{2}{\alpha}(y_t\!-\!U_t)\mathbf{1}_{y_t > U_t}\right]}{\frac{1}{T-s}\sum_{i=s+1}^{T}\|y_i - y_{i-s}\|}$ | Mean Scaled Interval Score — M4/M5 competition standard |
 
 ### MSIS
@@ -98,53 +98,55 @@ CWE is the primary interval quality metric in Twiga. It uses the **F-β harmonic
 
 $$\text{CWE} = \lambda \cdot \frac{(1+\beta^2)\,\gamma_{\text{picp}}\,\gamma_{\text{nmpi}}}{\beta^2\,\gamma_{\text{nmpi}} + \gamma_{\text{picp}}}$$
 
-where $\lambda = 1 - \text{error}$ (e.g. $1 - \text{NRMSE}$).
+where $\lambda = 1 - \text{error}$ (e.g. $1 - \text{NRMSE}$). When `error=None` (the default in `get_interval_metrics`), λ = 1 and the accuracy weight is omitted.
 
 **Sub-scores:**
 
-$$\gamma_{\text{picp}} = \min\!\left(\frac{\text{PICP}}{1-\alpha},\; 1\right)$$
+$$\gamma_{\text{picp}} = \frac{e^{-|\text{PICP}-(1-\alpha)|} - m}{1-m}, \quad m = \min\!\left(e^{-(1-\alpha)},\; e^{-\alpha}\right)$$
 
-Linear ramp from 0 at PICP = 0 to 1 at PICP = 1 − α.  Over-coverage (PICP > 1 − α) does not increase this score — it is captured instead by γ_nmpi penalising the wider intervals that caused it.
+Exponential peak at PICP = 1 − α where the score equals 1. The score decays symmetrically toward 0 as PICP moves away from the target in either direction. Both under-coverage (PICP < 1 − α) and over-coverage (PICP > 1 − α) are penalised.
 
-$$\gamma_{\text{nmpi}} = \min\!\left(\left(\frac{\kappa/R}{\text{NMPI}}\right)^k,\; 1\right)$$
+$$\gamma_{\text{nmpi}} = \begin{cases} \dfrac{e^{-k(p-\hat{p})} - e^{-kp}}{1 - e^{-kp}} & \hat{p} < p \\[1em] \dfrac{e^{-k(\hat{p}-p)} - e^{-k(1-p)}}{1 - e^{-k(1-p)}} & \hat{p} \geq p \end{cases}$$
 
-Asymmetric width score. Full credit (1) for any NMPI ≤ κ/R (sharp intervals are not penalised here). For NMPI > κ/R the score falls as the inverse ratio raised to power k — **doubling the width halves the score** (k = 1 default). Increase k for stricter penalisation of excess width.
+where $\hat{p}$ = NMPI (normalised), $p$ = κ/R (reference). The score peaks at 1 when NMPI equals the reference. Both too-narrow ($\hat{p} < p$) and too-wide ($\hat{p} > p$) intervals are penalised, with the falloff rate differing on each side due to the asymmetric normalisation.
 
-**Harmonic mean handles the tension naturally:** a poor score on either dimension pulls CWE toward zero regardless of the other. An over-wide interval (high NMPI) is penalised even when PICP is perfect.
+**Bonus condition:** when NMPI < κ/R and PICP ≥ 1 − α simultaneously (sharper than reference and sufficient coverage), both γ scores are set to 1.0, giving a perfect CWE regardless of how much sharper the interval is.
 
-**Reference κ/R:** computed from the target distribution as spread ÷ scale. Spread defaults to IQR (robust); scale defaults to range (max − min). Both are configurable:
+**Harmonic mean handles the tension naturally:** a poor score on either dimension pulls CWE toward zero regardless of the other. An over-wide interval is penalised even when PICP is perfect, and under-coverage is penalised even when width looks reasonable.
+
+**Reference κ/R:** computed from the target distribution as spread ÷ scale. Both are configurable:
 
 ```python
 from twiga.core.metrics.interval import get_interval_metrics
 
-# Default: IQR spread, range scale — best for skewed/heavy-tailed energy data
+# Default: std spread, max scale
 df = get_interval_metrics(true, lower, upper, alpha=0.1)
 
-# MAD spread (maximum robustness for bimodal data, e.g. solar with nights)
+# IQR spread — robust to outliers and heavy tails
+df = get_interval_metrics(true, lower, upper, alpha=0.1, spread="iqr")
+
+# MAD spread — best for bimodal or heavily skewed targets (e.g. solar with nights)
 df = get_interval_metrics(true, lower, upper, alpha=0.1, spread="mad")
 
-# std spread (only for approximately Gaussian targets)
-df = get_interval_metrics(true, lower, upper, alpha=0.1, spread="std")
-
 # Custom scale denominator
-df = get_interval_metrics(true, lower, upper, alpha=0.1, nmpi_scale="mean")
+df = get_interval_metrics(true, lower, upper, alpha=0.1, nmpi_scale="range")
 
 # Pass your own κ directly (e.g. domain knowledge on expected width)
 df = get_interval_metrics(true, lower, upper, alpha=0.1, true_nmpi=15.0)
 ```
 
-| `spread` | κ formula | Best for |
-|---|---|---|
-| `"iqr"` (default) | q₇₅ − q₂₅ | General; robust to outliers and heavy tails |
-| `"mad"` | median(‖y − median(y)‖) | Bimodal or heavily skewed targets |
-| `"std"` | σ | Approximately Gaussian targets only |
+| `spread` | κ formula | Default | Best for |
+|---|---|---|---|
+| `"std"` | σ | Yes | Approximately Gaussian targets |
+| `"iqr"` | q₇₅ − q₂₅ | | General; robust to outliers and heavy tails |
+| `"mad"` | median(‖y − median(y)‖) | | Bimodal or heavily skewed targets |
 
-| `nmpi_scale` | R formula | Best for |
-|---|---|---|
-| `"range"` (default) | max − min | General; translation-invariant |
-| `"max"` | max | Non-negative data where min ≈ 0 (equivalent to range) |
-| `"mean"` | mean | When NMPI should read as fraction of mean load |
-| `"median"` | median | Robust alternative to mean for skewed data |
+| `nmpi_scale` | R formula | Default in `get_interval_metrics` | Default in `evaluate_interval_forecast` | Best for |
+|---|---|---|---|---|
+| `"max"` | max | Yes | | Non-negative data where min ≈ 0 |
+| `"range"` | max − min | | Yes | General; translation-invariant |
+| `"mean"` | mean | | | NMPI as fraction of mean load |
+| `"median"` | median | | | Robust alternative to mean for skewed data |
 
 ### Using Interval Metrics
 
