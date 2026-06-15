@@ -224,7 +224,7 @@ recs = recommend_predictive_lags(
     top_k=3,                # top-3 lags per feature
     min_score=0.01,         # optional: drop near-zero associations
 )
-# Returns: feature, lag, score, rank — all rows have lag >= 48
+# Returns: feature, lag, score, rank - all rows have lag >= 48
 safe_lags = recs.groupby("feature")["lag"].apply(list).to_dict()
 # e.g. {"temperature": [48, 50, 52], "irradiance": [48, 96, 144]}
 ```
@@ -345,14 +345,14 @@ importance_df = compute_rf_importance(
 ```python
 from twiga.core.stats import adf_test, kpss_test
 
-# Augmented Dickey-Fuller — H0: unit root present (non-stationary)
+# Augmented Dickey-Fuller - H0: unit root present (non-stationary)
 # Returns the raw statsmodels result tuple: (stat, p_value, n_lags, n_obs, critical_values)
 adf_result = adf_test(series, maxlag=None, regression="c", autolag="BIC")
 stat, p_val, n_lags, n_obs, crit = adf_result
 print(f"ADF stat={stat:.4f}  p={p_val:.4f}")
 # p < 0.05 → reject H0 → evidence of stationarity
 
-# KPSS — H0: series IS stationary (level or trend)
+# KPSS - H0: series IS stationary (level or trend)
 # Returns: (stat, p_value, n_lags, critical_values)
 kpss_result = kpss_test(series, regression="c", maxlag=None)
 stat, p_val, n_lags, crit = kpss_result
@@ -372,7 +372,7 @@ Use both tests together for a stronger conclusion:
 | Reject H0 (p < 0.05) | Fail to reject H0 (p ≥ 0.05) | Stationary <i class="bi bi-check-circle-fill" style="color:#198754"></i> |
 | Fail to reject H0 | Reject H0 | Non-stationary (unit root) <i class="bi bi-x-circle-fill" style="color:#dc3545"></i> |
 | Reject H0 | Reject H0 | Trend-stationary or structural break <i class="bi bi-exclamation-triangle-fill" style="color:#fd7e14"></i> |
-| Fail to reject H0 | Fail to reject H0 | Inconclusive — more data needed |
+| Fail to reject H0 | Fail to reject H0 | Inconclusive - more data needed |
 
 :::
 
@@ -383,7 +383,7 @@ Use both tests together for a stronger conclusion:
 ```python
 from twiga.core.stats import get_trend_seasonality
 
-# Single seasonality — daily cycle at 30-min resolution (48 samples/day)
+# Single seasonality - daily cycle at 30-min resolution (48 samples/day)
 result = get_trend_seasonality(
     series,
     periods=[48],
@@ -391,7 +391,7 @@ result = get_trend_seasonality(
 )
 # result.columns → ["Daily", "Trend", "Residual"]
 
-# Multiple seasonalities — daily + weekly
+# Multiple seasonalities - daily + weekly
 result = get_trend_seasonality(
     series,
     periods=[48, 336],          # 336 = 48 * 7
@@ -412,7 +412,7 @@ statsmodels silently drops any period that exceeds half the series length.  Twig
 
 | Parameter | Default | Effect |
 | --- | --- | --- |
-| `iterate` | `3` | Outer MSTL iterations — more = smoother but slower |
+| `iterate` | `3` | Outer MSTL iterations - more = smoother but slower |
 | `seasonal_deg` | `0` | LOESS degree for seasonal smoother (0 = constant, 1 = linear) |
 | `inner_iter` | `2` | STL inner loop iterations |
 | `outer_iter` | `0` | STL robustness iterations (> 0 downweights outliers) |

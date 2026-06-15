@@ -251,14 +251,14 @@ where $\mathbb{H}$ is the entropy of the proposed quantile distribution, acting 
 
 ### Conditional Residual Calibration (CRC)
 
-CRC heads (`twiga/distributions/nn/residual_conformal.py`) learn a point forecast $\mu$ and a per-step scale $\sigma$ **end-to-end** — no post-hoc conformal calibration step required. The scale MLP is trained to approximate the absolute residual $|y - \mu|$, giving prediction intervals of the form $[\mu \pm z_\alpha \sigma]$ at inference time.
+CRC heads (`twiga/distributions/nn/residual_conformal.py`) learn a point forecast $\mu$ and a per-step scale $\sigma$ **end-to-end** - no post-hoc conformal calibration step required. The scale MLP is trained to approximate the absolute residual $|y - \mu|$, giving prediction intervals of the form $[\mu \pm z_\alpha \sigma]$ at inference time.
 
 Two variants exist, differing only in how $\mu$ is computed:
 
 | Class | Backbone family | Mu path |
 |---|---|---|
 | `CRCDistribution` | MLPF, NHiTS, RNN | Linear projection from latent `z (B, hidden_size)` → `(B, H×O)` |
-| `AdditiveCRCDistribution` | MLPGAM, MLPGAF | `encode()` already returns the additive mean directly — no projection, preserving the GAM decomposition |
+| `AdditiveCRCDistribution` | MLPGAM, MLPGAF | `encode()` already returns the additive mean directly - no projection, preserving the GAM decomposition |
 
 **Loss function:**
 
@@ -286,7 +286,7 @@ graph LR
     S1["Stage 1\nBackbone + mu_layer\n(sigma_layer frozen)"] --> S2["Stage 2\nSigma MLP only\n(backbone frozen)"]
 ```
 
-In stage 1 the backbone and mu path are updated via the combined $\mathcal{L}_\mu + \mathcal{L}_\sigma$ loss. In stage 2 only `sigma_layer` parameters receive gradients — the backbone is frozen by Lightning's `toggle_optimizer`. This prevents the scale head from distorting the point forecast.
+In stage 1 the backbone and mu path are updated via the combined $\mathcal{L}_\mu + \mathcal{L}_\sigma$ loss. In stage 2 only `sigma_layer` parameters receive gradients - the backbone is frozen by Lightning's `toggle_optimizer`. This prevents the scale head from distorting the point forecast.
 
 ```python
 from twiga.distributions.nn.residual_conformal import CRCDistribution, AdditiveCRCDistribution
@@ -305,7 +305,7 @@ loss = crc.get_log_likelihood(mu, sigma, y)  # sigma calibration loss only (not 
 # Sigma-only step (stage 2 of two-stage training)
 loss, metric = crc.step_sigma(z, y, metric_fn)
 
-# Additive backbone (MLPGAM, MLPGAF) — mu_layer is Identity, no linear projection
+# Additive backbone (MLPGAM, MLPGAF) - mu_layer is Identity, no linear projection
 add_crc = AdditiveCRCDistribution(
     num_target_output=1,
     hidden_dim=256,          # internal sigma MLP width (independent of H*O)
@@ -317,7 +317,7 @@ mu, sigma = add_crc(z)      # z shape (B, H*O); mu = reshape(z), sigma from Resi
 :::{admonition} CRC vs post-hoc conformal
 :class: note
 
-Post-hoc conformal prediction (see [Conformal Prediction](conformal-prediction.md)) wraps any already-trained model and provides finite-sample coverage guarantees. CRC bakes the calibration objective directly into training — no separate calibration split needed — but the coverage guarantee is empirical rather than distribution-free. CRC typically produces tighter intervals when the signal-to-noise ratio is high.
+Post-hoc conformal prediction (see [Conformal Prediction](conformal-prediction.md)) wraps any already-trained model and provides finite-sample coverage guarantees. CRC bakes the calibration objective directly into training - no separate calibration split needed - but the coverage guarantee is empirical rather than distribution-free. CRC typically produces tighter intervals when the signal-to-noise ratio is high.
 :::
 
 
@@ -356,7 +356,7 @@ config = GAUSSCATBOOSTConfig(
 :::{admonition} Uncertainty decomposition
 :class: info
 
-`predict_with_uncertainty()` returns three components per output step: `mean` (predicted μ), `knowledge_uncertainty` (epistemic — variance across virtual ensemble snapshots), and `data_uncertainty` (aleatoric — the model's second output, exp of predicted log-σ).
+`predict_with_uncertainty()` returns three components per output step: `mean` (predicted μ), `knowledge_uncertainty` (epistemic - variance across virtual ensemble snapshots), and `data_uncertainty` (aleatoric - the model's second output, exp of predicted log-σ).
 :::
 
 ### NGBoost
@@ -443,7 +443,7 @@ config = NGBOOSTEXPONENTIALConfig(n_estimators=400)
 :::{admonition} LogScore vs CRPScore
 :class: tip
 
-`LogScore` maximises the predictive log-likelihood — faster and often better-calibrated for in-distribution data. `CRPScore` (Continuous Ranked Probability Score) is more robust to distributional shift and outliers but typically slower to converge.
+`LogScore` maximises the predictive log-likelihood - faster and often better-calibrated for in-distribution data. `CRPScore` (Continuous Ranked Probability Score) is more robust to distributional shift and outliers but typically slower to converge.
 :::
 
 
@@ -560,10 +560,10 @@ train_config = ExperimentConfig(
     project_name="GaussianForecast",
 )
 
-# Gaussian CatBoost — fast, single model via RMSEWithUncertainty
+# Gaussian CatBoost - fast, single model via RMSEWithUncertainty
 gauss_config = GAUSSCATBOOSTConfig(task_type="CPU", virtual_ensembles_count=10)
 
-# NGBoost Normal — joint optimisation of μ and σ
+# NGBoost Normal - joint optimisation of μ and σ
 ngboost_config = NGBOOSTNORMALConfig(n_estimators=300, learning_rate=0.05)
 
 forecaster = TwigaForecaster(
@@ -590,7 +590,7 @@ for model_name, (lower, point, upper) in interval_dict.items():
    :show-inheritance:
 ```
 
-### Parametric heads — standard backbones
+### Parametric heads - standard backbones
 
 ```{eval-rst}
 .. autoclass:: twiga.distributions.nn.parametric.NormalDistribution
@@ -618,7 +618,7 @@ for model_name, (lower, point, upper) in interval_dict.items():
    :show-inheritance:
 ```
 
-### Parametric heads — additive backbones (MLPGAM / MLPGAF)
+### Parametric heads - additive backbones (MLPGAM / MLPGAF)
 
 These variants receive the pre-summed additive mean directly from the backbone
 instead of a latent vector, preserving the GAM decomposition.

@@ -22,18 +22,18 @@ For the full model catalogue see the [Model Catalog Overview](index.md).
 
 | Use case | Recommended model |
 |---|---|
-| Rapid prototyping on new domain | `Chronos2Model()` — validate problem in seconds, no data tuning required |
-| Small datasets (<1000 samples) | `Chronos2Model()` — pre-training beats local fitting on limited data |
-| Production with minimal latency | `Chronos2Model()` — inference time measured in seconds per batch |
-| Domain transfer / few-shot learning | `Chronos2Model()` — leverage 2M+ diverse time series in pre-training |
-| Probabilistic baseline or ensemble component | `Chronos2Model()` — 21 quantiles require no fine-tuning |
-| Confidence estimation without calibration | `Chronos2Model()` — zero-shot intervals from pre-trained quantile distribution |
+| Rapid prototyping on new domain | `Chronos2Model()` - validate problem in seconds, no data tuning required |
+| Small datasets (<1000 samples) | `Chronos2Model()` - pre-training beats local fitting on limited data |
+| Production with minimal latency | `Chronos2Model()` - inference time measured in seconds per batch |
+| Domain transfer / few-shot learning | `Chronos2Model()` - leverage 2M+ diverse time series in pre-training |
+| Probabilistic baseline or ensemble component | `Chronos2Model()` - 21 quantiles require no fine-tuning |
+| Confidence estimation without calibration | `Chronos2Model()` - zero-shot intervals from pre-trained quantile distribution |
 
 **When NOT to use foundational models:**
-- Extreme latency requirements (<100ms per prediction) — inference is ~seconds per batch
-- Custom quantile levels — Chronos2 outputs 21 fixed quantiles, not arbitrary τ values
-- Multivariate forecasting — current generation is univariate only
-- Specialized domains with abundant domain-specific data — fine-tuned domain models often outperform
+- Extreme latency requirements (<100ms per prediction) - inference is ~seconds per batch
+- Custom quantile levels - Chronos2 outputs 21 fixed quantiles, not arbitrary τ values
+- Multivariate forecasting - current generation is univariate only
+- Specialized domains with abundant domain-specific data - fine-tuned domain models often outperform
 :::
 
 
@@ -54,7 +54,7 @@ Each model defaults to its own config class when `model_config` is omitted.
 | Attribute | Type | Description |
 |---|---|---|
 | `model` | Object | Pre-trained model pipeline (e.g., `Chronos2Pipeline`). Loaded during `fit()`. |
-| `num_targets` | `int` | Always `1` — foundational models are univariate only. |
+| `num_targets` | `int` | Always `1` - foundational models are univariate only. |
 | `horizon` | `int` | Forecast horizon length. Set during `fit()` from `y.shape`. |
 | `quantiles` | `list[float]` | Quantile levels produced by the model (fixed architecture). |
 | `device` | `str` | Compute device: `'cpu'`, `'cuda'`, or `'mps'` (Apple Silicon). |
@@ -260,7 +260,7 @@ rest of the stack. Install it into a dedicated environment.
 
 Salesforce's **universal time-series transformer**, loaded through the `uni2ts`
 package and run via the GluonTS predictor pipeline. The `model_type` field
-selects the variant: `"moirai2"` (v2.0, native quantile output — the default),
+selects the variant: `"moirai2"` (v2.0, native quantile output - the default),
 `"moirai"` (v1.x, sample-based), or `"moirai-moe"` (mixture-of-experts,
 sample-based). Sample-based variants draw `num_samples` paths and reduce them to
 the 9-quantile grid; Moirai 2.0 emits quantiles directly.
@@ -279,14 +279,14 @@ its 9 native quantile levels.
 
 :::{admonition} Installation
 :class: note
-Not on PyPI — install from source:
+Not on PyPI - install from source:
 `pip install "git+https://github.com/google-research/timesfm.git#egg=timesfm[torch]"`.
 :::
 
 ### LagLlamaModel
 
 The first open-source time-series foundation model: a decoder-only transformer
-that ingests **lag features** rather than raw sequences. It is sample-based —
+that ingests **lag features** rather than raw sequences. It is sample-based -
 the wrapper draws `num_samples` paths per series and reduces them to the
 9-quantile grid. The wrapper resolves a relative `ckpt_path` against the CWD, the
 model-file directory, and ancestor directories up to the project root.
@@ -336,20 +336,20 @@ See [Custom Models](custom-models.md) for a complete walkthrough.
 
 ### Advantages
 
-✅ **No training cost** — Download weights, forecast immediately (seconds to setup)
-✅ **Robust to domain shift** — Pre-trained on 2M+ diverse series
-✅ **Works on small datasets** — No overfitting risk; better than underfitted QR on <500 samples
-✅ **Automatic uncertainty** — 21 quantiles without explicit calibration
-✅ **Ensemble-ready** — Mix with learned models for blended forecasts
-✅ **Simple API** — One config, identical to learned models
+✅ **No training cost** - Download weights, forecast immediately (seconds to setup)
+✅ **Robust to domain shift** - Pre-trained on 2M+ diverse series
+✅ **Works on small datasets** - No overfitting risk; better than underfitted QR on <500 samples
+✅ **Automatic uncertainty** - 21 quantiles without explicit calibration
+✅ **Ensemble-ready** - Mix with learned models for blended forecasts
+✅ **Simple API** - One config, identical to learned models
 
 ### Disadvantages
 
-❌ **Slow inference** — ~seconds per batch (vs. ~10ms for tree models)
-❌ **Fixed quantiles** — Cannot request custom τ values; must accept 21 levels
-❌ **Univariate only** — No multivariate or multi-output support (current gen)
-❌ **May underperform** — On specialized domains with abundant domain-specific training data
-❌ **Black-box** — Cannot inspect or fine-tune learned parameters (by design)
+❌ **Slow inference** - ~seconds per batch (vs. ~10ms for tree models)
+❌ **Fixed quantiles** - Cannot request custom τ values; must accept 21 levels
+❌ **Univariate only** - No multivariate or multi-output support (current gen)
+❌ **May underperform** - On specialized domains with abundant domain-specific training data
+❌ **Black-box** - Cannot inspect or fine-tune learned parameters (by design)
 
 ## Comparison with Other Quantile Models
 

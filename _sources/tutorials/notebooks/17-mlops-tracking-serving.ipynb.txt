@@ -7,6 +7,8 @@
    "source": [
     "# MLOps: Tracking, Serving & Monitoring\n",
     "\n",
+    "**Author**: Anthony Faustine, sambaiga@gmail.com\n",
+    "\n",
     "![Intermediate](https://img.shields.io/badge/level-intermediate-yellow) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Twiga](https://img.shields.io/badge/twiga-forecast-orange) ![Time](https://img.shields.io/badge/time-~30%20min-lightgrey)\n",
     "\n",
     "---\n",
@@ -61,7 +63,55 @@
    "execution_count": null,
    "id": "2",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "\n",
+       "        <div id=\"rWVqjQ\"></div>\n",
+       "        <script type=\"text/javascript\" data-lets-plot-script=\"library\">\n",
+       "            if(!window.letsPlotCallQueue) {\n",
+       "                window.letsPlotCallQueue = [];\n",
+       "            };\n",
+       "            window.letsPlotCall = function(f) {\n",
+       "                window.letsPlotCallQueue.push(f);\n",
+       "            };\n",
+       "            (function() {\n",
+       "                var script = document.createElement(\"script\");\n",
+       "                script.type = \"text/javascript\";\n",
+       "                script.src = \"https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.10.1/js-package/distr/lets-plot.min.js\";\n",
+       "                script.onload = function() {\n",
+       "                    window.letsPlotCall = function(f) {f();};\n",
+       "                    window.letsPlotCallQueue.forEach(function(f) {f();});\n",
+       "                    window.letsPlotCallQueue = [];\n",
+       "                    \n",
+       "                };\n",
+       "                script.onerror = function(event) {\n",
+       "                    window.letsPlotCall = function(f) {};    // noop\n",
+       "                    window.letsPlotCallQueue = [];\n",
+       "                    var div = document.createElement(\"div\");\n",
+       "                    div.style.color = 'darkred';\n",
+       "                    div.textContent = 'Error loading Lets-Plot JS';\n",
+       "                    document.getElementById(\"rWVqjQ\").appendChild(div);\n",
+       "                };\n",
+       "                var e = document.getElementById(\"rWVqjQ\");\n",
+       "                e.appendChild(script);\n",
+       "            })()\n",
+       "        </script>\n",
+       "        "
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:41 | INFO     | twiga.tutorial | Setup complete.  Directories: ['mlops_demo/checkpoints', 'mlops_demo/reports', 'mlops_demo/data']\n"
+     ]
+    }
+   ],
    "source": [
     "from pathlib import Path\n",
     "\n",
@@ -121,7 +171,36 @@
    "execution_count": null,
    "id": "4",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:41 | INFO     | twiga.tutorial | train : 16032 rows  (2019-02-01 → 2019-12-31)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:41 | INFO     | twiga.tutorial | val   : 8734 rows  (2020-01-01 → 2020-06-30)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:41 | INFO     | twiga.tutorial | test  : 8787 rows  (2020-07-01 → 2020-12-31)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:41 | INFO     | twiga.tutorial | Splits saved to mlops_demo/data\n"
+     ]
+    }
+   ],
    "source": [
     "data = pd.read_parquet(\"../data/MLVS-PT.parquet\")\n",
     "data = data[[\"timestamp\", \"NetLoad(kW)\", \"Ghi\", \"Temperature\"]]\n",
@@ -165,7 +244,15 @@
    "execution_count": null,
    "id": "6",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:41 | INFO     | twiga.tutorial | Forecaster assembled  -  checkpoint dir: mlops_demo/checkpoints\n"
+     ]
+    }
+   ],
    "source": [
     "data_config = DataPipelineConfig(\n",
     "    target_feature=\"NetLoad(kW)\",\n",
@@ -196,7 +283,7 @@
     "    cv_params=forecaster_config,\n",
     ")\n",
     "\n",
-    "log.info(\"Forecaster assembled — checkpoint dir: %s\", forecaster.checkpoints_path)"
+    "log.info(\"Forecaster assembled  -  checkpoint dir: %s\", forecaster.checkpoints_path)"
    ]
   },
   {
@@ -226,7 +313,74 @@
    "execution_count": null,
    "id": "8",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:46 | INFO     | twiga.tutorial | Training complete.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:46 | INFO     | twiga.forecaster.base | Prediction completed in 0.00 seconds\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2026/06/14 20:23:46 WARNING mlflow.utils.environment: Failed to resolve installed pip version. ``pip`` will be added to conda.yaml environment spec without a version specifier.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2026/06/14 20:23:46 WARNING mlflow.models.model: `artifact_path` is deprecated. Please use `name` instead.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2026/06/14 20:23:46 WARNING mlflow.pyfunc: Passing a Python object as `python_model` causes it to be serialized using CloudPickle, it requires exercising caution as Python object serialization mechanisms may execute arbitrary code during deserialization.Consider using a file path (str or Path) instead. See https://mlflow.org/docs/latest/ml/model/models-from-code/ for details.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:46 | WARNING  | py.warnings | /Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/mlflow/pyfunc/__init__.py:3343: UserWarning: \u001b[1;33mAn input example was not provided when logging the model. To ensure the model signature functions correctly, specify the `input_example` parameter. See https://mlflow.org/docs/latest/model/signatures.html#model-input-example for more details about the benefits of using input_example.\u001b[0m\n",
+      "  color_warning(\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:47 | INFO     | twiga.forecaster.base | Prediction completed in 0.00 seconds\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Registered model 'experiment_seasonal_naive' already exists. Creating a new version of this model...\n",
+      "Created version '13' of model 'experiment_seasonal_naive'.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:47 | INFO     | twiga.tutorial | MLflow run: dabe3e14c5144a768d018dd95a36e83c\n"
+     ]
+    }
+   ],
    "source": [
     "from twiga.tracking import TwigaTracker\n",
     "\n",
@@ -235,7 +389,7 @@
     "    run_name=\"seasonal-naive\",\n",
     "    tags={\"dataset\": \"MLVS-PT\", \"horizon\": \"48-step\", \"tutorial\": \"17\"},\n",
     ") as tracker:\n",
-    "    # Step 1 — dataset lineage\n",
+    "    # Step 1  -  dataset lineage\n",
     "    tracker.log_dataset(\n",
     "        train_df,\n",
     "        name=\"MLVS-PT-train\",\n",
@@ -244,13 +398,13 @@
     "    forecaster.fit(train_df=train_df, val_df=val_df)\n",
     "    clear_output()\n",
     "    log.info(\"Training complete.\")\n",
-    "    # Step 2 — hyperparameters and configs\n",
+    "    # Step 2  -  hyperparameters and configs\n",
     "    tracker.log_forecaster_metadata(forecaster)\n",
     "\n",
-    "    # Step 3 — model artefact\n",
+    "    # Step 3  -  model artefact\n",
     "    tracker.log_model(forecaster, sample_input=train_df.head(500))\n",
     "\n",
-    "    # Step 4 — evaluation\n",
+    "    # Step 4  -  evaluation\n",
     "    predictions_df, metrics_df = forecaster.evaluate_point_forecast(test_df=test_df, ensemble_strategy=\"mean\")\n",
     "    tracker.log_evaluation(metrics_df, results_df=predictions_df)\n",
     "\n",
@@ -282,7 +436,114 @@
    "execution_count": null,
    "id": "11",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div id=\"asdrpcknwh\" style=\"padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;\">\n",
+       "<style>\n",
+       "#asdrpcknwh table {\n",
+       "          font-family: Inter, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;\n",
+       "          -webkit-font-smoothing: antialiased;\n",
+       "          -moz-osx-font-smoothing: grayscale;\n",
+       "        }\n",
+       "\n",
+       "#asdrpcknwh thead, tbody, tfoot, tr, td, th { border-style: none; }\n",
+       " tr { background-color: transparent; }\n",
+       "#asdrpcknwh p { margin: 0; padding: 0; }\n",
+       " #asdrpcknwh .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #2d3748; font-size: 12px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #107591; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #107591; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }\n",
+       " #asdrpcknwh .gt_caption { padding-top: 4px; padding-bottom: 4px; }\n",
+       " #asdrpcknwh .gt_title { color: #2d3748; font-size: 15px; font-weight: bold; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }\n",
+       " #asdrpcknwh .gt_subtitle { color: #2d3748; font-size: 12px; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }\n",
+       " #asdrpcknwh .gt_heading { background-color: #ffffff; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }\n",
+       " #asdrpcknwh .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }\n",
+       " #asdrpcknwh .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }\n",
+       " #asdrpcknwh .gt_col_heading { color: #FFFFFF; background-color: #107591; font-size: 12px; font-weight: bold; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 8px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }\n",
+       " #asdrpcknwh .gt_column_spanner_outer { color: #FFFFFF; background-color: #107591; font-size: 12px; font-weight: bold; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }\n",
+       " #asdrpcknwh .gt_column_spanner_outer:first-child { padding-left: 0; }\n",
+       " #asdrpcknwh .gt_column_spanner_outer:last-child { padding-right: 0; }\n",
+       " #asdrpcknwh .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; vertical-align: bottom; padding-top: 8px; padding-bottom: 8px; overflow-x: hidden; display: inline-block; width: 100%; }\n",
+       " #asdrpcknwh .gt_spanner_row { border-bottom-style: hidden; }\n",
+       " #asdrpcknwh .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }\n",
+       " #asdrpcknwh .gt_empty_group_heading { padding: 0.5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }\n",
+       " #asdrpcknwh .gt_from_md> :first-child { margin-top: 0; }\n",
+       " #asdrpcknwh .gt_from_md> :last-child { margin-bottom: 0; }\n",
+       " #asdrpcknwh .gt_row { padding-top: 6px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }\n",
+       " #asdrpcknwh .gt_stub { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }\n",
+       " #asdrpcknwh .gt_stub_row_group { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }\n",
+       " #asdrpcknwh .gt_row_group_first td { border-top-width: 2px; }\n",
+       " #asdrpcknwh .gt_row_group_first th { border-top-width: 2px; }\n",
+       " #asdrpcknwh .gt_striped { color: #2d3748; background-color: #F4F4F4; }\n",
+       " #asdrpcknwh .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }\n",
+       " #asdrpcknwh .gt_grand_summary_row { color: #2d3748; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }\n",
+       " #asdrpcknwh .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }\n",
+       " #asdrpcknwh .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }\n",
+       " #asdrpcknwh .gt_sourcenotes { color: #2d3748; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }\n",
+       " #asdrpcknwh .gt_sourcenote { font-size: 11px; padding-top: 6px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; text-align: left; }\n",
+       " #asdrpcknwh .gt_left { text-align: left; }\n",
+       " #asdrpcknwh .gt_center { text-align: center; }\n",
+       " #asdrpcknwh .gt_right { text-align: right; font-variant-numeric: tabular-nums; }\n",
+       " #asdrpcknwh .gt_font_normal { font-weight: normal; }\n",
+       " #asdrpcknwh .gt_font_bold { font-weight: bold; }\n",
+       " #asdrpcknwh .gt_font_italic { font-style: italic; }\n",
+       " #asdrpcknwh .gt_super { font-size: 65%; }\n",
+       " #asdrpcknwh .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }\n",
+       " #asdrpcknwh .gt_asterisk { font-size: 100%; vertical-align: 0; }\n",
+       " \n",
+       "</style>\n",
+       "<table class=\"gt_table\" data-quarto-disable-processing=\"false\" data-quarto-bootstrap=\"false\">\n",
+       "<thead>\n",
+       "\n",
+       "  <tr class=\"gt_heading\">\n",
+       "    <td colspan=\"7\" class=\"gt_heading gt_title gt_font_normal\" style=\"color: #107591;font-weight: bold;\">Model Performance</td>\n",
+       "  </tr>\n",
+       "  <tr class=\"gt_heading\">\n",
+       "    <td colspan=\"7\" class=\"gt_heading gt_subtitle gt_font_normal gt_bottom_border\" style=\"color: #718096;\">Metric comparison across all evaluated models</td>\n",
+       "  </tr>\n",
+       "<tr class=\"gt_col_headings\">\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_left\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"Model\">Model</th>\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_right\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"MAE\">MAE</th>\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_right\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"Corr\">Corr</th>\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_right\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"NBIAS\">NBIAS</th>\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_right\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"RMSE\">RMSE</th>\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_right\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"WMAPE\">WMAPE</th>\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_right\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"SMAPE\">SMAPE</th>\n",
+       "</tr>\n",
+       "</thead>\n",
+       "<tbody class=\"gt_table_body\">\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">SEASONAL_NAIVE</td>\n",
+       "    <td style=\"background-color: #d0ecf1; color: #107591;font-weight: bold;\" class=\"gt_row gt_right\">5.320</td>\n",
+       "    <td style=\"background-color: #d0ecf1; color: #107591;font-weight: bold;\" class=\"gt_row gt_right\">0.810</td>\n",
+       "    <td class=\"gt_row gt_right\">0.45</td>\n",
+       "    <td style=\"background-color: #d0ecf1; color: #107591;font-weight: bold;\" class=\"gt_row gt_right\">7.080</td>\n",
+       "    <td class=\"gt_row gt_right\">14.36</td>\n",
+       "    <td style=\"background-color: #d0ecf1; color: #107591;font-weight: bold;\" class=\"gt_row gt_right\">17.420</td>\n",
+       "  </tr>\n",
+       "</tbody>\n",
+       "  <tfoot class=\"gt_sourcenotes\">\n",
+       "  \n",
+       "  <tr>\n",
+       "    <td class=\"gt_sourcenote\" colspan=\"7\" style=\"color: #718096;\">Twiga Forecast</td>\n",
+       "  </tr>\n",
+       "\n",
+       "</tfoot>\n",
+       "\n",
+       "</table>\n",
+       "\n",
+       "</div>\n",
+       "        "
+      ],
+      "text/plain": [
+       "GT(_tbl_data=            Model   MAE  Corr  NBIAS  RMSE  WMAPE  SMAPE\n",
+       "0  SEASONAL_NAIVE  5.32  0.81   0.45  7.08  14.36  17.42, _body=<great_tables._gt_data.Body object at 0x1305e41a0>, _boxhead=Boxhead([ColInfo(var='Model', type=<ColInfoTypeEnum.default: 1>, column_label='Model', column_align='left', column_width=None), ColInfo(var='MAE', type=<ColInfoTypeEnum.default: 1>, column_label='MAE', column_align='right', column_width=None), ColInfo(var='Corr', type=<ColInfoTypeEnum.default: 1>, column_label='Corr', column_align='right', column_width=None), ColInfo(var='NBIAS', type=<ColInfoTypeEnum.default: 1>, column_label='NBIAS', column_align='right', column_width=None), ColInfo(var='RMSE', type=<ColInfoTypeEnum.default: 1>, column_label='RMSE', column_align='right', column_width=None), ColInfo(var='WMAPE', type=<ColInfoTypeEnum.default: 1>, column_label='WMAPE', column_align='right', column_width=None), ColInfo(var='SMAPE', type=<ColInfoTypeEnum.default: 1>, column_label='SMAPE', column_align='right', column_width=None)]), _stub=<great_tables._gt_data.Stub object at 0x130733c50>, _spanners=Spanners([]), _heading=Heading(title='Model Performance', subtitle='Metric comparison across all evaluated models', preheader=None), _stubhead=None, _summary_rows=<great_tables._gt_data.SummaryRows object at 0x1308690d0>, _summary_rows_grand=<great_tables._gt_data.SummaryRows object at 0x13086b560>, _source_notes=['Twiga Forecast'], _footnotes=[], _styles=[StyleInfo(locname=LocTitle(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#107591', font=None, size=None, align=None, v_align=None, style=None, weight='bold', stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocSubTitle(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#718096', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='Model', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='MAE', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='Corr', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='NBIAS', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='RMSE', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='WMAPE', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='SMAPE', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocSourceNotes(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#718096', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocBody(columns='MAE', rows=0, mask=None), grpname=None, colname='MAE', rownum=0, colnum=None, styles=[CellStyleFill(color='#d0ecf1'), CellStyleText(color='#107591', font=None, size=None, align=None, v_align=None, style=None, weight='bold', stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocBody(columns='SMAPE', rows=0, mask=None), grpname=None, colname='SMAPE', rownum=0, colnum=None, styles=[CellStyleFill(color='#d0ecf1'), CellStyleText(color='#107591', font=None, size=None, align=None, v_align=None, style=None, weight='bold', stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocBody(columns='RMSE', rows=0, mask=None), grpname=None, colname='RMSE', rownum=0, colnum=None, styles=[CellStyleFill(color='#d0ecf1'), CellStyleText(color='#107591', font=None, size=None, align=None, v_align=None, style=None, weight='bold', stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocBody(columns='Corr', rows=0, mask=None), grpname=None, colname='Corr', rownum=0, colnum=None, styles=[CellStyleFill(color='#d0ecf1'), CellStyleText(color='#107591', font=None, size=None, align=None, v_align=None, style=None, weight='bold', stretch=None, decorate=None, transform=None, whitespace=None)])], _locale=<great_tables._gt_data.Locale object at 0x13086b920>, _formats=[<great_tables._gt_data.FormatInfo object at 0x13086bfb0>], _substitutions=[], _col_merge=[], _options=Options(table_id=OptionsInfo(scss=False, category='table', type='value', value=None), table_caption=OptionsInfo(scss=False, category='table', type='value', value=None), table_width=OptionsInfo(scss=True, category='table', type='px', value='auto'), table_layout=OptionsInfo(scss=True, category='table', type='value', value='fixed'), table_margin_left=OptionsInfo(scss=True, category='table', type='px', value='auto'), table_margin_right=OptionsInfo(scss=True, category='table', type='px', value='auto'), table_background_color=OptionsInfo(scss=True, category='table', type='value', value='#FFFFFF'), table_additional_css=OptionsInfo(scss=False, category='table', type='values', value=[]), table_font_names=OptionsInfo(scss=False, category='table', type='values', value=['Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif']), table_font_size=OptionsInfo(scss=True, category='table', type='px', value='12px'), table_font_weight=OptionsInfo(scss=True, category='table', type='value', value='normal'), table_font_style=OptionsInfo(scss=True, category='table', type='value', value='normal'), table_font_color=OptionsInfo(scss=True, category='table', type='value', value='#2d3748'), table_font_color_light=OptionsInfo(scss=True, category='table', type='value', value='#FFFFFF'), table_border_top_include=OptionsInfo(scss=False, category='table', type='boolean', value=True), table_border_top_style=OptionsInfo(scss=True, category='table', type='value', value='solid'), table_border_top_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_top_color=OptionsInfo(scss=True, category='table', type='value', value='#107591'), table_border_right_style=OptionsInfo(scss=True, category='table', type='value', value='none'), table_border_right_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_right_color=OptionsInfo(scss=True, category='table', type='value', value='#D3D3D3'), table_border_bottom_include=OptionsInfo(scss=False, category='table', type='boolean', value=True), table_border_bottom_style=OptionsInfo(scss=True, category='table', type='value', value='solid'), table_border_bottom_width=OptionsInfo(scss=True, category='table', type='px', value='1px'), table_border_bottom_color=OptionsInfo(scss=True, category='table', type='value', value='#107591'), table_border_left_style=OptionsInfo(scss=True, category='table', type='value', value='none'), table_border_left_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_left_color=OptionsInfo(scss=True, category='table', type='value', value='#D3D3D3'), heading_background_color=OptionsInfo(scss=True, category='heading', type='value', value='#ffffff'), heading_align=OptionsInfo(scss=True, category='heading', type='value', value='center'), heading_title_font_size=OptionsInfo(scss=True, category='heading', type='px', value='15px'), heading_title_font_weight=OptionsInfo(scss=True, category='heading', type='value', value='bold'), heading_subtitle_font_size=OptionsInfo(scss=True, category='heading', type='px', value='12px'), heading_subtitle_font_weight=OptionsInfo(scss=True, category='heading', type='value', value='initial'), heading_padding=OptionsInfo(scss=True, category='heading', type='px', value='4px'), heading_padding_horizontal=OptionsInfo(scss=True, category='heading', type='px', value='5px'), heading_border_bottom_style=OptionsInfo(scss=True, category='heading', type='value', value='solid'), heading_border_bottom_width=OptionsInfo(scss=True, category='heading', type='px', value='2px'), heading_border_bottom_color=OptionsInfo(scss=True, category='heading', type='value', value='#D3D3D3'), heading_border_lr_style=OptionsInfo(scss=True, category='heading', type='value', value='none'), heading_border_lr_width=OptionsInfo(scss=True, category='heading', type='px', value='1px'), heading_border_lr_color=OptionsInfo(scss=True, category='heading', type='value', value='#D3D3D3'), column_labels_background_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#107591'), column_labels_font_size=OptionsInfo(scss=True, category='column_labels', type='px', value='12px'), column_labels_font_weight=OptionsInfo(scss=True, category='column_labels', type='value', value='bold'), column_labels_text_transform=OptionsInfo(scss=True, category='column_labels', type='value', value='inherit'), column_labels_padding=OptionsInfo(scss=True, category='column_labels', type='px', value='8px'), column_labels_padding_horizontal=OptionsInfo(scss=True, category='column_labels', type='px', value='5px'), column_labels_vlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='none'), column_labels_vlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), column_labels_vlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), column_labels_border_top_style=OptionsInfo(scss=True, category='column_labels', type='value', value='solid'), column_labels_border_top_width=OptionsInfo(scss=True, category='column_labels', type='px', value='2px'), column_labels_border_top_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#D3D3D3'), column_labels_border_bottom_style=OptionsInfo(scss=True, category='column_labels', type='value', value='solid'), column_labels_border_bottom_width=OptionsInfo(scss=True, category='column_labels', type='px', value='1px'), column_labels_border_bottom_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#069fac'), column_labels_border_lr_style=OptionsInfo(scss=True, category='column_labels', type='value', value='none'), column_labels_border_lr_width=OptionsInfo(scss=True, category='column_labels', type='px', value='1px'), column_labels_border_lr_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#D3D3D3'), column_labels_hidden=OptionsInfo(scss=False, category='column_labels', type='boolean', value=False), row_group_background_color=OptionsInfo(scss=True, category='row_group', type='value', value=None), row_group_font_size=OptionsInfo(scss=True, category='row_group', type='px', value='100%'), row_group_font_weight=OptionsInfo(scss=True, category='row_group', type='value', value='initial'), row_group_text_transform=OptionsInfo(scss=True, category='row_group', type='value', value='inherit'), row_group_padding=OptionsInfo(scss=True, category='row_group', type='px', value='8px'), row_group_padding_horizontal=OptionsInfo(scss=True, category='row_group', type='px', value='5px'), row_group_border_top_style=OptionsInfo(scss=True, category='row_group', type='value', value='solid'), row_group_border_top_width=OptionsInfo(scss=True, category='row_group', type='px', value='2px'), row_group_border_top_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_right_style=OptionsInfo(scss=True, category='row_group', type='value', value='none'), row_group_border_right_width=OptionsInfo(scss=True, category='row_group', type='px', value='1px'), row_group_border_right_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_bottom_style=OptionsInfo(scss=True, category='row_group', type='value', value='solid'), row_group_border_bottom_width=OptionsInfo(scss=True, category='row_group', type='px', value='2px'), row_group_border_bottom_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_left_style=OptionsInfo(scss=True, category='row_group', type='value', value='none'), row_group_border_left_width=OptionsInfo(scss=True, category='row_group', type='px', value='1px'), row_group_border_left_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_as_column=OptionsInfo(scss=False, category='row_group', type='boolean', value=False), table_body_hlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_hlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_hlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_vlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='none'), table_body_vlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_vlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_border_top_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_border_top_width=OptionsInfo(scss=True, category='table_body', type='px', value='2px'), table_body_border_top_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_border_bottom_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_border_bottom_width=OptionsInfo(scss=True, category='table_body', type='px', value='2px'), table_body_border_bottom_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), data_row_padding=OptionsInfo(scss=True, category='data_row', type='px', value='6px'), data_row_padding_horizontal=OptionsInfo(scss=True, category='data_row', type='px', value='5px'), stub_background_color=OptionsInfo(scss=True, category='stub', type='value', value=None), stub_font_size=OptionsInfo(scss=True, category='stub', type='px', value='100%'), stub_font_weight=OptionsInfo(scss=True, category='stub', type='value', value='initial'), stub_text_transform=OptionsInfo(scss=True, category='stub', type='value', value='inherit'), stub_border_style=OptionsInfo(scss=True, category='stub', type='value', value='solid'), stub_border_width=OptionsInfo(scss=True, category='stub', type='px', value='2px'), stub_border_color=OptionsInfo(scss=True, category='stub', type='value', value='#D3D3D3'), stub_row_group_background_color=OptionsInfo(scss=True, category='stub', type='value', value=None), stub_row_group_font_size=OptionsInfo(scss=True, category='stub', type='px', value='100%'), stub_row_group_font_weight=OptionsInfo(scss=True, category='stub', type='value', value='initial'), stub_row_group_text_transform=OptionsInfo(scss=True, category='stub', type='value', value='inherit'), stub_row_group_border_style=OptionsInfo(scss=True, category='stub', type='value', value='solid'), stub_row_group_border_width=OptionsInfo(scss=True, category='stub', type='px', value='2px'), stub_row_group_border_color=OptionsInfo(scss=True, category='stub', type='value', value='#D3D3D3'), grand_summary_row_padding=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='8px'), grand_summary_row_padding_horizontal=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='5px'), grand_summary_row_background_color=OptionsInfo(scss=True, category='grand_summary_row', type='value', value=None), grand_summary_row_text_transform=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='inherit'), grand_summary_row_border_style=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='double'), grand_summary_row_border_width=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='6px'), grand_summary_row_border_color=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='#D3D3D3'), source_notes_padding=OptionsInfo(scss=True, category='source_notes', type='px', value='6px'), source_notes_padding_horizontal=OptionsInfo(scss=True, category='source_notes', type='px', value='5px'), source_notes_background_color=OptionsInfo(scss=True, category='source_notes', type='value', value=None), source_notes_font_size=OptionsInfo(scss=True, category='source_notes', type='px', value='11px'), source_notes_border_bottom_style=OptionsInfo(scss=True, category='source_notes', type='value', value='none'), source_notes_border_bottom_width=OptionsInfo(scss=True, category='source_notes', type='px', value='2px'), source_notes_border_bottom_color=OptionsInfo(scss=True, category='source_notes', type='value', value='#D3D3D3'), source_notes_border_lr_style=OptionsInfo(scss=True, category='source_notes', type='value', value='none'), source_notes_border_lr_width=OptionsInfo(scss=True, category='source_notes', type='px', value='2px'), source_notes_border_lr_color=OptionsInfo(scss=True, category='source_notes', type='value', value='#D3D3D3'), source_notes_multiline=OptionsInfo(scss=False, category='source_notes', type='boolean', value=True), source_notes_sep=OptionsInfo(scss=False, category='source_notes', type='value', value=' '), row_striping_background_color=OptionsInfo(scss=True, category='row', type='value', value='#F4F4F4'), row_striping_include_stub=OptionsInfo(scss=False, category='row', type='boolean', value=False), row_striping_include_table_body=OptionsInfo(scss=False, category='row', type='boolean', value=False), container_width=OptionsInfo(scss=False, category='container', type='px', value='auto'), container_height=OptionsInfo(scss=False, category='container', type='px', value='auto'), container_padding_x=OptionsInfo(scss=False, category='container', type='px', value='0px'), container_padding_y=OptionsInfo(scss=False, category='container', type='px', value='10px'), container_overflow_x=OptionsInfo(scss=False, category='container', type='overflow', value='auto'), container_overflow_y=OptionsInfo(scss=False, category='container', type='overflow', value='auto'), quarto_disable_processing=OptionsInfo(scss=False, category='quarto', type='logical', value=False), quarto_use_bootstrap=OptionsInfo(scss=False, category='quarto', type='logical', value=False)), _google_font_imports=GoogleFontImports(imports=frozenset()), _has_built=False)"
+      ]
+     },
+     "execution_count": null,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
    "source": [
     "res = (\n",
     "    metrics_df.groupby(\"Model\")[[\"mae\", \"corr\", \"nbias\", \"rmse\", \"wmape\", \"smape\"]]\n",
@@ -332,7 +593,29 @@
    "execution_count": null,
    "id": "13",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:47 | INFO     | twiga.forecaster.base | Checkpoint saved  path=mlops_demo/checkpoints/model_and_pipeline.pkl  version=35\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:47 | INFO     | twiga.tutorial | Checkpoint saved: mlops_demo/checkpoints\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:47 | INFO     | twiga.tutorial | Manifest: version=35  model_type=seasonal_naive  saved_at=2026-06-14T19:23:47.407217+00:00\n"
+     ]
+    }
+   ],
    "source": [
     "import json\n",
     "\n",
@@ -359,7 +642,29 @@
    "execution_count": null,
    "id": "14",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:47 | INFO     | twiga.forecaster.base | Loading checkpoint via manifest  file=model_and_pipeline.pkl  version=35  saved_at=2026-06-14T19:23:47.407217+00:00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:47 | INFO     | twiga.forecaster.base | Checkpoint loaded successfully  file=mlops_demo/checkpoints/model_and_pipeline.pkl\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:47 | INFO     | twiga.tutorial | Checkpoint loaded  -  model ready: True\n"
+     ]
+    }
+   ],
    "source": [
     "# Create a fresh (unfitted) forecaster and load the checkpoint\n",
     "loaded_forecaster = TwigaForecaster(\n",
@@ -369,7 +674,7 @@
     ")\n",
     "\n",
     "loaded_forecaster.on_load_checkpoint()\n",
-    "log.info(\"Checkpoint loaded — model ready: %s\", loaded_forecaster.model is not None)"
+    "log.info(\"Checkpoint loaded  -  model ready: %s\", loaded_forecaster.model is not None)"
    ]
   },
   {
@@ -404,7 +709,31 @@
    "execution_count": null,
    "id": "16",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:49 | WARNING  | py.warnings | /Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/evidently/descriptors/text_match.py:140: SyntaxWarning: invalid escape sequence '\\d'\n",
+      "  TextMatch(text_column=\"description\", match_items=r\"\\b\\d{3}-\\d{3}-\\d{4}\\b\", match_type=\"regex\")\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.monitor | Reference dataset set | shape=(16032, 4)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | Reference set  -  16032 rows from training split.\n"
+     ]
+    }
+   ],
    "source": [
     "from twiga.serve import ForecastMonitor\n",
     "\n",
@@ -415,7 +744,7 @@
     ")\n",
     "\n",
     "monitor.set_reference(train_df)\n",
-    "log.info(\"Reference set — %d rows from training split.\", len(train_df))"
+    "log.info(\"Reference set  -  %d rows from training split.\", len(train_df))"
    ]
   },
   {
@@ -423,7 +752,43 @@
    "execution_count": null,
    "id": "17",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.monitor | ─────────────────── Data Drift Report ────────────────────\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | WARNING  | twiga.serve.monitor | DATA DRIFT DETECTED: Score 1.0000 exceeds threshold 0.5000\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | Drift detected   : True\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | Dataset score    : 1.000\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | Drifted features : 2 / 2\n"
+     ]
+    }
+   ],
    "source": [
     "import numpy as np\n",
     "\n",
@@ -451,9 +816,89 @@
    "execution_count": null,
    "id": "18",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.forecaster.base | Prediction completed in 0.00 seconds\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.monitor | ───────────── Regression Performance Report ──────────────\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | WARNING  | py.warnings | /Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/evidently/legacy/utils/visualizations.py:1347: UserWarning:\n",
+      "\n",
+      "Converting to PeriodArray/Index representation will drop timezone information.\n",
+      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | WARNING  | py.warnings | /Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/evidently/legacy/utils/visualizations.py:1347: UserWarning:\n",
+      "\n",
+      "Converting to PeriodArray/Index representation will drop timezone information.\n",
+      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | WARNING  | py.warnings | /Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/evidently/legacy/utils/visualizations.py:1347: UserWarning:\n",
+      "\n",
+      "Converting to PeriodArray/Index representation will drop timezone information.\n",
+      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | WARNING  | py.warnings | /Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/evidently/legacy/utils/visualizations.py:1347: UserWarning:\n",
+      "\n",
+      "Converting to PeriodArray/Index representation will drop timezone information.\n",
+      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | MAE  : 1.3484 kW\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | RMSE : 1.6143 kW\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | Report → /Users/anthonyfaustine/Documents/projects/twiga-forecast/examples/tutorials/mlops_demo/reports/performance_20260614_192350.html\n"
+     ]
+    }
+   ],
    "source": [
-    "# Performance monitoring — add a prediction column to a small batch\n",
+    "# Performance monitoring  -  add a prediction column to a small batch\n",
     "# We use the loaded_forecaster from section 5 to show round-trip checkpoint → predict\n",
     "batch = test_df.head(1000).copy()\n",
     "preds_arr, _ = loaded_forecaster.predict(batch)\n",
@@ -514,17 +959,25 @@
    "execution_count": null,
    "id": "20",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | FastAPI app created  -  routes: ['/openapi.json', '/docs', '/docs/oauth2-redirect', '/redoc', '/health', '/predict', '/predict-interval', '/monitor/drift', '/monitor/performance', '/reload']\n"
+     ]
+    }
+   ],
    "source": [
     "from twiga.serve import create_app\n",
     "\n",
     "app = create_app(\n",
     "    forecaster=forecaster,\n",
     "    report_dir=str(REPORT_DIR),\n",
-    "    title=\"Net Load Forecast API — Tutorial 17\",\n",
+    "    title=\"Net Load Forecast API  -  Tutorial 17\",\n",
     ")\n",
     "\n",
-    "log.info(\"FastAPI app created — routes: %s\", [r.path for r in app.routes])"
+    "log.info(\"FastAPI app created  -  routes: %s\", [r.path for r in app.routes])"
    ]
   },
   {
@@ -532,13 +985,119 @@
    "execution_count": null,
    "id": "21",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div id=\"npqgpuieav\" style=\"padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:100%;height:auto;\">\n",
+       "<style>\n",
+       "#npqgpuieav table {\n",
+       "          font-family: Inter, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;\n",
+       "          -webkit-font-smoothing: antialiased;\n",
+       "          -moz-osx-font-smoothing: grayscale;\n",
+       "        }\n",
+       "\n",
+       "#npqgpuieav thead, tbody, tfoot, tr, td, th { border-style: none; }\n",
+       " tr { background-color: transparent; }\n",
+       "#npqgpuieav p { margin: 0; padding: 0; }\n",
+       " #npqgpuieav .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #2d3748; font-size: 13px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: 100%; border-top-style: solid; border-top-width: 2px; border-top-color: #107591; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #107591; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }\n",
+       " #npqgpuieav .gt_caption { padding-top: 4px; padding-bottom: 4px; }\n",
+       " #npqgpuieav .gt_title { color: #2d3748; font-size: 16px; font-weight: bold; padding-top: 10px; padding-bottom: 10px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }\n",
+       " #npqgpuieav .gt_subtitle { color: #2d3748; font-size: 13px; font-weight: initial; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }\n",
+       " #npqgpuieav .gt_heading { background-color: #ffffff; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }\n",
+       " #npqgpuieav .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }\n",
+       " #npqgpuieav .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }\n",
+       " #npqgpuieav .gt_col_heading { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }\n",
+       " #npqgpuieav .gt_column_spanner_outer { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }\n",
+       " #npqgpuieav .gt_column_spanner_outer:first-child { padding-left: 0; }\n",
+       " #npqgpuieav .gt_column_spanner_outer:last-child { padding-right: 0; }\n",
+       " #npqgpuieav .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; vertical-align: bottom; padding-top: 9px; padding-bottom: 9px; overflow-x: hidden; display: inline-block; width: 100%; }\n",
+       " #npqgpuieav .gt_spanner_row { border-bottom-style: hidden; }\n",
+       " #npqgpuieav .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }\n",
+       " #npqgpuieav .gt_empty_group_heading { padding: 0.5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }\n",
+       " #npqgpuieav .gt_from_md> :first-child { margin-top: 0; }\n",
+       " #npqgpuieav .gt_from_md> :last-child { margin-bottom: 0; }\n",
+       " #npqgpuieav .gt_row { padding-top: 7px; padding-bottom: 7px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }\n",
+       " #npqgpuieav .gt_stub { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }\n",
+       " #npqgpuieav .gt_stub_row_group { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }\n",
+       " #npqgpuieav .gt_row_group_first td { border-top-width: 2px; }\n",
+       " #npqgpuieav .gt_row_group_first th { border-top-width: 2px; }\n",
+       " #npqgpuieav .gt_striped { color: #2d3748; background-color: #F4F4F4; }\n",
+       " #npqgpuieav .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #e8e8e8; }\n",
+       " #npqgpuieav .gt_grand_summary_row { color: #2d3748; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }\n",
+       " #npqgpuieav .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }\n",
+       " #npqgpuieav .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }\n",
+       " #npqgpuieav .gt_sourcenotes { color: #2d3748; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }\n",
+       " #npqgpuieav .gt_sourcenote { font-size: 11px; padding-top: 6px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; text-align: left; }\n",
+       " #npqgpuieav .gt_left { text-align: left; }\n",
+       " #npqgpuieav .gt_center { text-align: center; }\n",
+       " #npqgpuieav .gt_right { text-align: right; font-variant-numeric: tabular-nums; }\n",
+       " #npqgpuieav .gt_font_normal { font-weight: normal; }\n",
+       " #npqgpuieav .gt_font_bold { font-weight: bold; }\n",
+       " #npqgpuieav .gt_font_italic { font-style: italic; }\n",
+       " #npqgpuieav .gt_super { font-size: 65%; }\n",
+       " #npqgpuieav .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }\n",
+       " #npqgpuieav .gt_asterisk { font-size: 100%; vertical-align: 0; }\n",
+       " \n",
+       "</style>\n",
+       "<table class=\"gt_table\" data-quarto-disable-processing=\"false\" data-quarto-bootstrap=\"false\">\n",
+       "<thead>\n",
+       "\n",
+       "  <tr class=\"gt_heading\">\n",
+       "    <td colspan=\"2\" class=\"gt_heading gt_title gt_font_normal\" style=\"color: #333333;font-weight: bold;\"><strong>GET /health</strong></td>\n",
+       "  </tr>\n",
+       "  <tr class=\"gt_heading\">\n",
+       "    <td colspan=\"2\" class=\"gt_heading gt_subtitle gt_font_normal gt_bottom_border\" style=\"color: #718096;\">API capability report</td>\n",
+       "  </tr>\n",
+       "<tr class=\"gt_col_headings\">\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_left\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"Field\"><strong>Field</strong></th>\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_left\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"Value\"><strong>Value</strong></th>\n",
+       "</tr>\n",
+       "</thead>\n",
+       "<tbody class=\"gt_table_body\">\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">status</td>\n",
+       "    <td class=\"gt_row gt_left\">degraded</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">models</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">[]</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">forecast_horizon</td>\n",
+       "    <td class=\"gt_row gt_left\">0</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">targets</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">[]</td>\n",
+       "  </tr>\n",
+       "</tbody>\n",
+       "\n",
+       "\n",
+       "</table>\n",
+       "\n",
+       "</div>\n",
+       "        "
+      ],
+      "text/plain": [
+       "GT(_tbl_data=              Field     Value\n",
+       "0            status  degraded\n",
+       "1            models        []\n",
+       "2  forecast_horizon         0\n",
+       "3           targets        [], _body=<great_tables._gt_data.Body object at 0x130b74bf0>, _boxhead=Boxhead([ColInfo(var='Field', type=<ColInfoTypeEnum.default: 1>, column_label=Md(text='**Field**'), column_align='left', column_width=None), ColInfo(var='Value', type=<ColInfoTypeEnum.default: 1>, column_label=Md(text='**Value**'), column_align='left', column_width=None)]), _stub=<great_tables._gt_data.Stub object at 0x130782f60>, _spanners=Spanners([]), _heading=Heading(title=Md(text='**GET /health**'), subtitle='API capability report', preheader=None), _stubhead=None, _summary_rows=<great_tables._gt_data.SummaryRows object at 0x130b75fd0>, _summary_rows_grand=<great_tables._gt_data.SummaryRows object at 0x130b77f80>, _source_notes=[], _footnotes=[], _styles=[StyleInfo(locname=LocTitle(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#333333', font=None, size=None, align=None, v_align=None, style=None, weight='bold', stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocSubTitle(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#718096', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='Field', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='Value', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocSourceNotes(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#718096', font=None, size=None, align=None, v_align=None, style='italic', weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3], mask=None), grpname=None, colname='Field', rownum=1, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3], mask=None), grpname=None, colname='Field', rownum=3, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3], mask=None), grpname=None, colname='Value', rownum=1, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3], mask=None), grpname=None, colname='Value', rownum=3, colnum=None, styles=[CellStyleFill(color='#f7fbfc')])], _locale=<great_tables._gt_data.Locale object at 0x130b75ac0>, _formats=[], _substitutions=[], _col_merge=[], _options=Options(table_id=OptionsInfo(scss=False, category='table', type='value', value=None), table_caption=OptionsInfo(scss=False, category='table', type='value', value=None), table_width=OptionsInfo(scss=True, category='table', type='px', value='100%'), table_layout=OptionsInfo(scss=True, category='table', type='value', value='fixed'), table_margin_left=OptionsInfo(scss=True, category='table', type='px', value='auto'), table_margin_right=OptionsInfo(scss=True, category='table', type='px', value='auto'), table_background_color=OptionsInfo(scss=True, category='table', type='value', value='#FFFFFF'), table_additional_css=OptionsInfo(scss=False, category='table', type='values', value=[]), table_font_names=OptionsInfo(scss=False, category='table', type='values', value=['Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif']), table_font_size=OptionsInfo(scss=True, category='table', type='px', value='13px'), table_font_weight=OptionsInfo(scss=True, category='table', type='value', value='normal'), table_font_style=OptionsInfo(scss=True, category='table', type='value', value='normal'), table_font_color=OptionsInfo(scss=True, category='table', type='value', value='#2d3748'), table_font_color_light=OptionsInfo(scss=True, category='table', type='value', value='#FFFFFF'), table_border_top_include=OptionsInfo(scss=False, category='table', type='boolean', value=True), table_border_top_style=OptionsInfo(scss=True, category='table', type='value', value='solid'), table_border_top_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_top_color=OptionsInfo(scss=True, category='table', type='value', value='#107591'), table_border_right_style=OptionsInfo(scss=True, category='table', type='value', value='none'), table_border_right_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_right_color=OptionsInfo(scss=True, category='table', type='value', value='#D3D3D3'), table_border_bottom_include=OptionsInfo(scss=False, category='table', type='boolean', value=True), table_border_bottom_style=OptionsInfo(scss=True, category='table', type='value', value='solid'), table_border_bottom_width=OptionsInfo(scss=True, category='table', type='px', value='1px'), table_border_bottom_color=OptionsInfo(scss=True, category='table', type='value', value='#107591'), table_border_left_style=OptionsInfo(scss=True, category='table', type='value', value='none'), table_border_left_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_left_color=OptionsInfo(scss=True, category='table', type='value', value='#D3D3D3'), heading_background_color=OptionsInfo(scss=True, category='heading', type='value', value='#ffffff'), heading_align=OptionsInfo(scss=True, category='heading', type='value', value='center'), heading_title_font_size=OptionsInfo(scss=True, category='heading', type='px', value='16px'), heading_title_font_weight=OptionsInfo(scss=True, category='heading', type='value', value='bold'), heading_subtitle_font_size=OptionsInfo(scss=True, category='heading', type='px', value='13px'), heading_subtitle_font_weight=OptionsInfo(scss=True, category='heading', type='value', value='initial'), heading_padding=OptionsInfo(scss=True, category='heading', type='px', value='10px'), heading_padding_horizontal=OptionsInfo(scss=True, category='heading', type='px', value='5px'), heading_border_bottom_style=OptionsInfo(scss=True, category='heading', type='value', value='solid'), heading_border_bottom_width=OptionsInfo(scss=True, category='heading', type='px', value='2px'), heading_border_bottom_color=OptionsInfo(scss=True, category='heading', type='value', value='#D3D3D3'), heading_border_lr_style=OptionsInfo(scss=True, category='heading', type='value', value='none'), heading_border_lr_width=OptionsInfo(scss=True, category='heading', type='px', value='1px'), heading_border_lr_color=OptionsInfo(scss=True, category='heading', type='value', value='#D3D3D3'), column_labels_background_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#107591'), column_labels_font_size=OptionsInfo(scss=True, category='column_labels', type='px', value='13px'), column_labels_font_weight=OptionsInfo(scss=True, category='column_labels', type='value', value='bold'), column_labels_text_transform=OptionsInfo(scss=True, category='column_labels', type='value', value='inherit'), column_labels_padding=OptionsInfo(scss=True, category='column_labels', type='px', value='9px'), column_labels_padding_horizontal=OptionsInfo(scss=True, category='column_labels', type='px', value='5px'), column_labels_vlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='none'), column_labels_vlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), column_labels_vlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), column_labels_border_top_style=OptionsInfo(scss=True, category='column_labels', type='value', value='solid'), column_labels_border_top_width=OptionsInfo(scss=True, category='column_labels', type='px', value='2px'), column_labels_border_top_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#D3D3D3'), column_labels_border_bottom_style=OptionsInfo(scss=True, category='column_labels', type='value', value='solid'), column_labels_border_bottom_width=OptionsInfo(scss=True, category='column_labels', type='px', value='1px'), column_labels_border_bottom_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#069fac'), column_labels_border_lr_style=OptionsInfo(scss=True, category='column_labels', type='value', value='none'), column_labels_border_lr_width=OptionsInfo(scss=True, category='column_labels', type='px', value='1px'), column_labels_border_lr_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#D3D3D3'), column_labels_hidden=OptionsInfo(scss=False, category='column_labels', type='boolean', value=False), row_group_background_color=OptionsInfo(scss=True, category='row_group', type='value', value=None), row_group_font_size=OptionsInfo(scss=True, category='row_group', type='px', value='100%'), row_group_font_weight=OptionsInfo(scss=True, category='row_group', type='value', value='initial'), row_group_text_transform=OptionsInfo(scss=True, category='row_group', type='value', value='inherit'), row_group_padding=OptionsInfo(scss=True, category='row_group', type='px', value='8px'), row_group_padding_horizontal=OptionsInfo(scss=True, category='row_group', type='px', value='5px'), row_group_border_top_style=OptionsInfo(scss=True, category='row_group', type='value', value='solid'), row_group_border_top_width=OptionsInfo(scss=True, category='row_group', type='px', value='2px'), row_group_border_top_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_right_style=OptionsInfo(scss=True, category='row_group', type='value', value='none'), row_group_border_right_width=OptionsInfo(scss=True, category='row_group', type='px', value='1px'), row_group_border_right_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_bottom_style=OptionsInfo(scss=True, category='row_group', type='value', value='solid'), row_group_border_bottom_width=OptionsInfo(scss=True, category='row_group', type='px', value='2px'), row_group_border_bottom_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_left_style=OptionsInfo(scss=True, category='row_group', type='value', value='none'), row_group_border_left_width=OptionsInfo(scss=True, category='row_group', type='px', value='1px'), row_group_border_left_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_as_column=OptionsInfo(scss=False, category='row_group', type='boolean', value=False), table_body_hlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_hlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_hlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_vlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='none'), table_body_vlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_vlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_border_top_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_border_top_width=OptionsInfo(scss=True, category='table_body', type='px', value='2px'), table_body_border_top_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_border_bottom_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_border_bottom_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_border_bottom_color=OptionsInfo(scss=True, category='table_body', type='value', value='#e8e8e8'), data_row_padding=OptionsInfo(scss=True, category='data_row', type='px', value='7px'), data_row_padding_horizontal=OptionsInfo(scss=True, category='data_row', type='px', value='5px'), stub_background_color=OptionsInfo(scss=True, category='stub', type='value', value=None), stub_font_size=OptionsInfo(scss=True, category='stub', type='px', value='100%'), stub_font_weight=OptionsInfo(scss=True, category='stub', type='value', value='initial'), stub_text_transform=OptionsInfo(scss=True, category='stub', type='value', value='inherit'), stub_border_style=OptionsInfo(scss=True, category='stub', type='value', value='solid'), stub_border_width=OptionsInfo(scss=True, category='stub', type='px', value='2px'), stub_border_color=OptionsInfo(scss=True, category='stub', type='value', value='#D3D3D3'), stub_row_group_background_color=OptionsInfo(scss=True, category='stub', type='value', value=None), stub_row_group_font_size=OptionsInfo(scss=True, category='stub', type='px', value='100%'), stub_row_group_font_weight=OptionsInfo(scss=True, category='stub', type='value', value='initial'), stub_row_group_text_transform=OptionsInfo(scss=True, category='stub', type='value', value='inherit'), stub_row_group_border_style=OptionsInfo(scss=True, category='stub', type='value', value='solid'), stub_row_group_border_width=OptionsInfo(scss=True, category='stub', type='px', value='2px'), stub_row_group_border_color=OptionsInfo(scss=True, category='stub', type='value', value='#D3D3D3'), grand_summary_row_padding=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='8px'), grand_summary_row_padding_horizontal=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='5px'), grand_summary_row_background_color=OptionsInfo(scss=True, category='grand_summary_row', type='value', value=None), grand_summary_row_text_transform=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='inherit'), grand_summary_row_border_style=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='double'), grand_summary_row_border_width=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='6px'), grand_summary_row_border_color=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='#D3D3D3'), source_notes_padding=OptionsInfo(scss=True, category='source_notes', type='px', value='6px'), source_notes_padding_horizontal=OptionsInfo(scss=True, category='source_notes', type='px', value='5px'), source_notes_background_color=OptionsInfo(scss=True, category='source_notes', type='value', value=None), source_notes_font_size=OptionsInfo(scss=True, category='source_notes', type='px', value='11px'), source_notes_border_bottom_style=OptionsInfo(scss=True, category='source_notes', type='value', value='none'), source_notes_border_bottom_width=OptionsInfo(scss=True, category='source_notes', type='px', value='2px'), source_notes_border_bottom_color=OptionsInfo(scss=True, category='source_notes', type='value', value='#D3D3D3'), source_notes_border_lr_style=OptionsInfo(scss=True, category='source_notes', type='value', value='none'), source_notes_border_lr_width=OptionsInfo(scss=True, category='source_notes', type='px', value='2px'), source_notes_border_lr_color=OptionsInfo(scss=True, category='source_notes', type='value', value='#D3D3D3'), source_notes_multiline=OptionsInfo(scss=False, category='source_notes', type='boolean', value=True), source_notes_sep=OptionsInfo(scss=False, category='source_notes', type='value', value=' '), row_striping_background_color=OptionsInfo(scss=True, category='row', type='value', value='#F4F4F4'), row_striping_include_stub=OptionsInfo(scss=False, category='row', type='boolean', value=False), row_striping_include_table_body=OptionsInfo(scss=False, category='row', type='boolean', value=False), container_width=OptionsInfo(scss=False, category='container', type='px', value='100%'), container_height=OptionsInfo(scss=False, category='container', type='px', value='auto'), container_padding_x=OptionsInfo(scss=False, category='container', type='px', value='0px'), container_padding_y=OptionsInfo(scss=False, category='container', type='px', value='10px'), container_overflow_x=OptionsInfo(scss=False, category='container', type='overflow', value='auto'), container_overflow_y=OptionsInfo(scss=False, category='container', type='overflow', value='auto'), quarto_disable_processing=OptionsInfo(scss=False, category='quarto', type='logical', value=False), quarto_use_bootstrap=OptionsInfo(scss=False, category='quarto', type='logical', value=False)), _google_font_imports=GoogleFontImports(imports=frozenset()), _has_built=False)"
+      ]
+     },
+     "execution_count": null,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
    "source": [
     "from fastapi.testclient import TestClient\n",
     "\n",
     "client = TestClient(app)\n",
     "\n",
-    "# Health check — confirms the model is loaded and lists capabilities\n",
+    "# Health check  -  confirms the model is loaded and lists capabilities\n",
     "resp = client.get(\"/health\")\n",
     "health = resp.json()\n",
     "\n",
@@ -564,13 +1123,77 @@
    "execution_count": null,
    "id": "22",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.loader | Loading forecaster from checkpoint  path=mlops_demo/checkpoints/_checkpoint_manifest.json\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.forecaster.base | Loading checkpoint via manifest  file=model_and_pipeline.pkl  version=35  saved_at=2026-06-14T19:23:47.407217+00:00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.forecaster.base | Checkpoint loaded successfully  file=mlops_demo/checkpoints/model_and_pipeline.pkl\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.loader | Forecaster loaded  models=['seasonal_naive']  horizon=48  targets=['NetLoad(kW)']\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.app | POST /predict lookback=336 horizon=48 strategy=mean\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.forecaster.base | Prediction completed in 0.00 seconds\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | Response keys : ['forecasts', 'targets', 'forecast_horizon']\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | Models returned: 1\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial |   seasonal_naive        predictions shape: 8\n"
+     ]
+    }
+   ],
    "source": [
-    "# Point forecast — POST /predict\n",
+    "# Point forecast  -  POST /predict\n",
     "# Convert timestamps to ISO strings so JSON serialisation works\n",
     "batch_records = (\n",
-    "    test_df.head(1000)\n",
-    "    .assign(timestamp=test_df.head(1000)[\"timestamp\"].dt.strftime(\"%Y-%m-%dT%H:%M:%S\"))\n",
+    "    test_df.head(data_config.lookback_window_size)\n",
+    "    .assign(timestamp=test_df.head(data_config.lookback_window_size)[\"timestamp\"].dt.strftime(\"%Y-%m-%dT%H:%M:%S\"))\n",
     "    .to_dict(\"records\")\n",
     ")\n",
     "\n",
@@ -589,9 +1212,80 @@
    "execution_count": null,
    "id": "23",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | ERROR    | twiga.serve.app | Drift monitoring failed\n",
+      "Traceback (most recent call last):\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/serve/app.py\", line 397, in monitor_drift\n",
+      "    _is_alert, summary = await anyio.to_thread.run_sync(lambda: monitor.run_data_drift(df))\n",
+      "                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/anyio/to_thread.py\", line 63, in run_sync\n",
+      "    return await get_async_backend().run_sync_in_worker_thread(\n",
+      "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 2518, in run_sync_in_worker_thread\n",
+      "    return await future\n",
+      "           ^^^^^^^^^^^^\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 1002, in run\n",
+      "    result = context.run(func, *args)\n",
+      "             ^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/serve/app.py\", line 397, in <lambda>\n",
+      "    _is_alert, summary = await anyio.to_thread.run_sync(lambda: monitor.run_data_drift(df))\n",
+      "                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/serve/monitor.py\", line 99, in run_data_drift\n",
+      "    self._require_reference()\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/serve/monitor.py\", line 740, in _require_reference\n",
+      "    raise RuntimeError(\"Reference data not set. Call set_reference() first.\")\n",
+      "RuntimeError: Reference data not set. Call set_reference() first.\n",
+      "Traceback (most recent call last):\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/serve/app.py\", line 397, in monitor_drift\n",
+      "    _is_alert, summary = await anyio.to_thread.run_sync(lambda: monitor.run_data_drift(df))\n",
+      "                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/anyio/to_thread.py\", line 63, in run_sync\n",
+      "    return await get_async_backend().run_sync_in_worker_thread(\n",
+      "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 2518, in run_sync_in_worker_thread\n",
+      "    return await future\n",
+      "           ^^^^^^^^^^^^\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 1002, in run\n",
+      "    result = context.run(func, *args)\n",
+      "             ^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/serve/app.py\", line 397, in <lambda>\n",
+      "    _is_alert, summary = await anyio.to_thread.run_sync(lambda: monitor.run_data_drift(df))\n",
+      "                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/serve/monitor.py\", line 99, in run_data_drift\n",
+      "    self._require_reference()\n",
+      "  File \"/Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/serve/monitor.py\", line 740, in _require_reference\n",
+      "    raise RuntimeError(\"Reference data not set. Call set_reference() first.\")\n",
+      "RuntimeError: Reference data not set. Call set_reference() first.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | drift_detected     : None\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | dataset_drift_score: 0.000\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | n_drifted          : 0\n"
+     ]
+    }
+   ],
    "source": [
-    "# Data drift via API — POST /monitor/drift\n",
+    "# Data drift via API  -  POST /monitor/drift\n",
     "drift_records = (\n",
     "    current_df.head(500)\n",
     "    .assign(timestamp=current_df.head(500)[\"timestamp\"].dt.strftime(\"%Y-%m-%dT%H:%M:%S\"))\n",
@@ -611,9 +1305,66 @@
    "execution_count": null,
    "id": "24",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.app | POST /reload - reloading model checkpoint\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.loader | Reloading forecaster from checkpoint\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.loader | Loading forecaster from checkpoint  path=mlops_demo/checkpoints/_checkpoint_manifest.json\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.forecaster.base | Loading checkpoint via manifest  file=model_and_pipeline.pkl  version=35  saved_at=2026-06-14T19:23:47.407217+00:00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.forecaster.base | Checkpoint loaded successfully  file=mlops_demo/checkpoints/model_and_pipeline.pkl\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.loader | Forecaster loaded  models=['seasonal_naive']  horizon=48  targets=['NetLoad(kW)']\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.serve.monitor | Reference dataset set | shape=(9123, 34)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:23:50 | INFO     | twiga.tutorial | Reload status: 200  body: {'status': 'reloaded', 'models': ['seasonal_naive']}\n"
+     ]
+    }
+   ],
    "source": [
-    "# Hot reload — POST /reload\n",
+    "# Hot reload  -  POST /reload\n",
     "# In production, retraining_flow calls this after promoting a new model.\n",
     "# Here we trigger it manually to verify the endpoint works.\n",
     "resp = client.post(\"/reload\")\n",
@@ -689,7 +1440,103 @@
    "execution_count": null,
    "id": "27",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:24:05 | INFO     | twiga.tutorial | fit_forecaster → model fitted: True\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:24:05 | INFO     | twiga.forecaster.base | Prediction completed in 0.11 seconds\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:24:05 | INFO     | twiga.tutorial | evaluate_model → metrics: {'mae': 8.386936201558914, 'rmse': 11.522179882543444}\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:24:05 | INFO     | twiga.forecaster.base | Checkpoint saved  path=mlops_demo/checkpoints/model_and_pipeline.pkl  version=37\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:24:05 | INFO     | twiga.tutorial | save_checkpoint → mlops_demo/checkpoints\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:24:05 | INFO     | twiga.serve.monitor | Reference dataset set | shape=(12825, 4)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:24:05 | INFO     | twiga.serve.monitor | ─────────────────── Data Drift Report ────────────────────\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:31:00 | WARNING  | twiga.serve.monitor | DATA DRIFT DETECTED: Score 1.0000 exceeds threshold 0.5000\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:31:00 | WARNING  | py.warnings | /Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/pipeline/tasks.py:236: RuntimeWarning:\n",
+      "\n",
+      "coroutine 'acreate_markdown_artifact' was never awaited\n",
+      "\n",
+      "\n"
+     ]
+    },
+    {
+     "data": {
+      "text/html": [
+       "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">20:31:00.800 | <span style=\"color: #d7d700; text-decoration-color: #d7d700\">WARNING</span> | py.warnings - /Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/pipeline/tasks.py:236: RuntimeWarning:\n",
+       "\n",
+       "coroutine 'acreate_markdown_artifact' was never awaited\n",
+       "\n",
+       "\n",
+       "</pre>\n"
+      ],
+      "text/plain": [
+       "20:31:00.800 | \u001b[38;5;184mWARNING\u001b[0m | py.warnings - /Users/anthonyfaustine/Documents/projects/twiga-forecast/twiga/pipeline/tasks.py:236: RuntimeWarning:\n",
+       "\n",
+       "coroutine 'acreate_markdown_artifact' was never awaited\n",
+       "\n",
+       "\n"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2026-06-14 20:31:00 | INFO     | twiga.tutorial | run_drift_check → detected=True  score=1.000\n"
+     ]
+    }
+   ],
    "source": [
     "import logging\n",
     "from unittest.mock import patch\n",
@@ -706,7 +1553,7 @@
     "        save_checkpoint,\n",
     "    )\n",
     "\n",
-    "    # 1. load_data — read parquet, parse timestamps, split train/test\n",
+    "    # 1. load_data  -  read parquet, parse timestamps, split train/test\n",
     "    tr, te = load_data.fn(\n",
     "        data_path=DATA_DIR / \"train.parquet\",\n",
     "        date_col=\"timestamp\",\n",
@@ -915,7 +1762,124 @@
    "execution_count": null,
    "id": "31",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div id=\"hghcvdanyv\" style=\"padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:100%;height:auto;\">\n",
+       "<style>\n",
+       "#hghcvdanyv table {\n",
+       "          font-family: Inter, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;\n",
+       "          -webkit-font-smoothing: antialiased;\n",
+       "          -moz-osx-font-smoothing: grayscale;\n",
+       "        }\n",
+       "\n",
+       "#hghcvdanyv thead, tbody, tfoot, tr, td, th { border-style: none; }\n",
+       " tr { background-color: transparent; }\n",
+       "#hghcvdanyv p { margin: 0; padding: 0; }\n",
+       " #hghcvdanyv .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #2d3748; font-size: 13px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: 100%; border-top-style: solid; border-top-width: 2px; border-top-color: #107591; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #107591; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }\n",
+       " #hghcvdanyv .gt_caption { padding-top: 4px; padding-bottom: 4px; }\n",
+       " #hghcvdanyv .gt_title { color: #2d3748; font-size: 16px; font-weight: bold; padding-top: 10px; padding-bottom: 10px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }\n",
+       " #hghcvdanyv .gt_subtitle { color: #2d3748; font-size: 13px; font-weight: initial; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }\n",
+       " #hghcvdanyv .gt_heading { background-color: #ffffff; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }\n",
+       " #hghcvdanyv .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }\n",
+       " #hghcvdanyv .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }\n",
+       " #hghcvdanyv .gt_col_heading { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }\n",
+       " #hghcvdanyv .gt_column_spanner_outer { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }\n",
+       " #hghcvdanyv .gt_column_spanner_outer:first-child { padding-left: 0; }\n",
+       " #hghcvdanyv .gt_column_spanner_outer:last-child { padding-right: 0; }\n",
+       " #hghcvdanyv .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; vertical-align: bottom; padding-top: 9px; padding-bottom: 9px; overflow-x: hidden; display: inline-block; width: 100%; }\n",
+       " #hghcvdanyv .gt_spanner_row { border-bottom-style: hidden; }\n",
+       " #hghcvdanyv .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }\n",
+       " #hghcvdanyv .gt_empty_group_heading { padding: 0.5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }\n",
+       " #hghcvdanyv .gt_from_md> :first-child { margin-top: 0; }\n",
+       " #hghcvdanyv .gt_from_md> :last-child { margin-bottom: 0; }\n",
+       " #hghcvdanyv .gt_row { padding-top: 7px; padding-bottom: 7px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }\n",
+       " #hghcvdanyv .gt_stub { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }\n",
+       " #hghcvdanyv .gt_stub_row_group { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }\n",
+       " #hghcvdanyv .gt_row_group_first td { border-top-width: 2px; }\n",
+       " #hghcvdanyv .gt_row_group_first th { border-top-width: 2px; }\n",
+       " #hghcvdanyv .gt_striped { color: #2d3748; background-color: #F4F4F4; }\n",
+       " #hghcvdanyv .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #e8e8e8; }\n",
+       " #hghcvdanyv .gt_grand_summary_row { color: #2d3748; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }\n",
+       " #hghcvdanyv .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }\n",
+       " #hghcvdanyv .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }\n",
+       " #hghcvdanyv .gt_sourcenotes { color: #2d3748; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }\n",
+       " #hghcvdanyv .gt_sourcenote { font-size: 11px; padding-top: 6px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; text-align: left; }\n",
+       " #hghcvdanyv .gt_left { text-align: left; }\n",
+       " #hghcvdanyv .gt_center { text-align: center; }\n",
+       " #hghcvdanyv .gt_right { text-align: right; font-variant-numeric: tabular-nums; }\n",
+       " #hghcvdanyv .gt_font_normal { font-weight: normal; }\n",
+       " #hghcvdanyv .gt_font_bold { font-weight: bold; }\n",
+       " #hghcvdanyv .gt_font_italic { font-style: italic; }\n",
+       " #hghcvdanyv .gt_super { font-size: 65%; }\n",
+       " #hghcvdanyv .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }\n",
+       " #hghcvdanyv .gt_asterisk { font-size: 100%; vertical-align: 0; }\n",
+       " \n",
+       "</style>\n",
+       "<table class=\"gt_table\" data-quarto-disable-processing=\"false\" data-quarto-bootstrap=\"false\">\n",
+       "<thead>\n",
+       "\n",
+       "  <tr class=\"gt_heading\">\n",
+       "    <td colspan=\"2\" class=\"gt_heading gt_title gt_font_normal\" style=\"color: #333333;font-weight: bold;\"><strong>TwigaSettings  -  active configuration</strong></td>\n",
+       "  </tr>\n",
+       "  <tr class=\"gt_heading\">\n",
+       "    <td colspan=\"2\" class=\"gt_heading gt_subtitle gt_font_normal gt_bottom_border\" style=\"color: #718096;\">Override any value via environment variable or .env file</td>\n",
+       "  </tr>\n",
+       "<tr class=\"gt_col_headings\">\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_left\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"Variable\"><strong>Environment variable</strong></th>\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_left\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"Current-value\"><strong>Current value</strong></th>\n",
+       "</tr>\n",
+       "</thead>\n",
+       "<tbody class=\"gt_table_body\">\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">TWIGA_MLFLOW_TRACKING_URI</td>\n",
+       "    <td class=\"gt_row gt_left\">http://localhost:5000</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">TWIGA_MLFLOW_EXPERIMENT</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">twiga</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">TWIGA_SERVE_API_KEY</td>\n",
+       "    <td class=\"gt_row gt_left\">(empty  -  open access)</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">TWIGA_MODEL_CHECKPOINT_DIR</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">checkpoints</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">TWIGA_SERVE_REPORT_DIR</td>\n",
+       "    <td class=\"gt_row gt_left\">reports</td>\n",
+       "  </tr>\n",
+       "</tbody>\n",
+       "  <tfoot class=\"gt_sourcenotes\">\n",
+       "  \n",
+       "  <tr>\n",
+       "    <td class=\"gt_sourcenote\" colspan=\"2\" style=\"color: #718096;font-style: italic;\">All variables use the TWIGA_ prefix and are read via pydantic-settings</td>\n",
+       "  </tr>\n",
+       "\n",
+       "</tfoot>\n",
+       "\n",
+       "</table>\n",
+       "\n",
+       "</div>\n",
+       "        "
+      ],
+      "text/plain": [
+       "GT(_tbl_data=                     Variable            Current value\n",
+       "0   TWIGA_MLFLOW_TRACKING_URI    http://localhost:5000\n",
+       "1     TWIGA_MLFLOW_EXPERIMENT                    twiga\n",
+       "2         TWIGA_SERVE_API_KEY  (empty  -  open access)\n",
+       "3  TWIGA_MODEL_CHECKPOINT_DIR              checkpoints\n",
+       "4      TWIGA_SERVE_REPORT_DIR                  reports, _body=<great_tables._gt_data.Body object at 0x143c91700>, _boxhead=Boxhead([ColInfo(var='Variable', type=<ColInfoTypeEnum.default: 1>, column_label=Md(text='**Environment variable**'), column_align='left', column_width=None), ColInfo(var='Current value', type=<ColInfoTypeEnum.default: 1>, column_label=Md(text='**Current value**'), column_align='left', column_width=None)]), _stub=<great_tables._gt_data.Stub object at 0x143c91730>, _spanners=Spanners([]), _heading=Heading(title=Md(text='**TwigaSettings  -  active configuration**'), subtitle='Override any value via environment variable or .env file', preheader=None), _stubhead=None, _summary_rows=<great_tables._gt_data.SummaryRows object at 0x143c91c10>, _summary_rows_grand=<great_tables._gt_data.SummaryRows object at 0x143c91610>, _source_notes=['All variables use the TWIGA_ prefix and are read via pydantic-settings'], _footnotes=[], _styles=[StyleInfo(locname=LocTitle(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#333333', font=None, size=None, align=None, v_align=None, style=None, weight='bold', stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocSubTitle(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#718096', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='Variable', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='Current value', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocSourceNotes(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#718096', font=None, size=None, align=None, v_align=None, style='italic', weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3], mask=None), grpname=None, colname='Variable', rownum=1, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3], mask=None), grpname=None, colname='Variable', rownum=3, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3], mask=None), grpname=None, colname='Current value', rownum=1, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3], mask=None), grpname=None, colname='Current value', rownum=3, colnum=None, styles=[CellStyleFill(color='#f7fbfc')])], _locale=<great_tables._gt_data.Locale object at 0x143c92810>, _formats=[], _substitutions=[], _col_merge=[], _options=Options(table_id=OptionsInfo(scss=False, category='table', type='value', value=None), table_caption=OptionsInfo(scss=False, category='table', type='value', value=None), table_width=OptionsInfo(scss=True, category='table', type='px', value='100%'), table_layout=OptionsInfo(scss=True, category='table', type='value', value='fixed'), table_margin_left=OptionsInfo(scss=True, category='table', type='px', value='auto'), table_margin_right=OptionsInfo(scss=True, category='table', type='px', value='auto'), table_background_color=OptionsInfo(scss=True, category='table', type='value', value='#FFFFFF'), table_additional_css=OptionsInfo(scss=False, category='table', type='values', value=[]), table_font_names=OptionsInfo(scss=False, category='table', type='values', value=['Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif']), table_font_size=OptionsInfo(scss=True, category='table', type='px', value='13px'), table_font_weight=OptionsInfo(scss=True, category='table', type='value', value='normal'), table_font_style=OptionsInfo(scss=True, category='table', type='value', value='normal'), table_font_color=OptionsInfo(scss=True, category='table', type='value', value='#2d3748'), table_font_color_light=OptionsInfo(scss=True, category='table', type='value', value='#FFFFFF'), table_border_top_include=OptionsInfo(scss=False, category='table', type='boolean', value=True), table_border_top_style=OptionsInfo(scss=True, category='table', type='value', value='solid'), table_border_top_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_top_color=OptionsInfo(scss=True, category='table', type='value', value='#107591'), table_border_right_style=OptionsInfo(scss=True, category='table', type='value', value='none'), table_border_right_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_right_color=OptionsInfo(scss=True, category='table', type='value', value='#D3D3D3'), table_border_bottom_include=OptionsInfo(scss=False, category='table', type='boolean', value=True), table_border_bottom_style=OptionsInfo(scss=True, category='table', type='value', value='solid'), table_border_bottom_width=OptionsInfo(scss=True, category='table', type='px', value='1px'), table_border_bottom_color=OptionsInfo(scss=True, category='table', type='value', value='#107591'), table_border_left_style=OptionsInfo(scss=True, category='table', type='value', value='none'), table_border_left_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_left_color=OptionsInfo(scss=True, category='table', type='value', value='#D3D3D3'), heading_background_color=OptionsInfo(scss=True, category='heading', type='value', value='#ffffff'), heading_align=OptionsInfo(scss=True, category='heading', type='value', value='center'), heading_title_font_size=OptionsInfo(scss=True, category='heading', type='px', value='16px'), heading_title_font_weight=OptionsInfo(scss=True, category='heading', type='value', value='bold'), heading_subtitle_font_size=OptionsInfo(scss=True, category='heading', type='px', value='13px'), heading_subtitle_font_weight=OptionsInfo(scss=True, category='heading', type='value', value='initial'), heading_padding=OptionsInfo(scss=True, category='heading', type='px', value='10px'), heading_padding_horizontal=OptionsInfo(scss=True, category='heading', type='px', value='5px'), heading_border_bottom_style=OptionsInfo(scss=True, category='heading', type='value', value='solid'), heading_border_bottom_width=OptionsInfo(scss=True, category='heading', type='px', value='2px'), heading_border_bottom_color=OptionsInfo(scss=True, category='heading', type='value', value='#D3D3D3'), heading_border_lr_style=OptionsInfo(scss=True, category='heading', type='value', value='none'), heading_border_lr_width=OptionsInfo(scss=True, category='heading', type='px', value='1px'), heading_border_lr_color=OptionsInfo(scss=True, category='heading', type='value', value='#D3D3D3'), column_labels_background_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#107591'), column_labels_font_size=OptionsInfo(scss=True, category='column_labels', type='px', value='13px'), column_labels_font_weight=OptionsInfo(scss=True, category='column_labels', type='value', value='bold'), column_labels_text_transform=OptionsInfo(scss=True, category='column_labels', type='value', value='inherit'), column_labels_padding=OptionsInfo(scss=True, category='column_labels', type='px', value='9px'), column_labels_padding_horizontal=OptionsInfo(scss=True, category='column_labels', type='px', value='5px'), column_labels_vlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='none'), column_labels_vlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), column_labels_vlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), column_labels_border_top_style=OptionsInfo(scss=True, category='column_labels', type='value', value='solid'), column_labels_border_top_width=OptionsInfo(scss=True, category='column_labels', type='px', value='2px'), column_labels_border_top_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#D3D3D3'), column_labels_border_bottom_style=OptionsInfo(scss=True, category='column_labels', type='value', value='solid'), column_labels_border_bottom_width=OptionsInfo(scss=True, category='column_labels', type='px', value='1px'), column_labels_border_bottom_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#069fac'), column_labels_border_lr_style=OptionsInfo(scss=True, category='column_labels', type='value', value='none'), column_labels_border_lr_width=OptionsInfo(scss=True, category='column_labels', type='px', value='1px'), column_labels_border_lr_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#D3D3D3'), column_labels_hidden=OptionsInfo(scss=False, category='column_labels', type='boolean', value=False), row_group_background_color=OptionsInfo(scss=True, category='row_group', type='value', value=None), row_group_font_size=OptionsInfo(scss=True, category='row_group', type='px', value='100%'), row_group_font_weight=OptionsInfo(scss=True, category='row_group', type='value', value='initial'), row_group_text_transform=OptionsInfo(scss=True, category='row_group', type='value', value='inherit'), row_group_padding=OptionsInfo(scss=True, category='row_group', type='px', value='8px'), row_group_padding_horizontal=OptionsInfo(scss=True, category='row_group', type='px', value='5px'), row_group_border_top_style=OptionsInfo(scss=True, category='row_group', type='value', value='solid'), row_group_border_top_width=OptionsInfo(scss=True, category='row_group', type='px', value='2px'), row_group_border_top_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_right_style=OptionsInfo(scss=True, category='row_group', type='value', value='none'), row_group_border_right_width=OptionsInfo(scss=True, category='row_group', type='px', value='1px'), row_group_border_right_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_bottom_style=OptionsInfo(scss=True, category='row_group', type='value', value='solid'), row_group_border_bottom_width=OptionsInfo(scss=True, category='row_group', type='px', value='2px'), row_group_border_bottom_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_left_style=OptionsInfo(scss=True, category='row_group', type='value', value='none'), row_group_border_left_width=OptionsInfo(scss=True, category='row_group', type='px', value='1px'), row_group_border_left_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_as_column=OptionsInfo(scss=False, category='row_group', type='boolean', value=False), table_body_hlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_hlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_hlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_vlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='none'), table_body_vlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_vlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_border_top_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_border_top_width=OptionsInfo(scss=True, category='table_body', type='px', value='2px'), table_body_border_top_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_border_bottom_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_border_bottom_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_border_bottom_color=OptionsInfo(scss=True, category='table_body', type='value', value='#e8e8e8'), data_row_padding=OptionsInfo(scss=True, category='data_row', type='px', value='7px'), data_row_padding_horizontal=OptionsInfo(scss=True, category='data_row', type='px', value='5px'), stub_background_color=OptionsInfo(scss=True, category='stub', type='value', value=None), stub_font_size=OptionsInfo(scss=True, category='stub', type='px', value='100%'), stub_font_weight=OptionsInfo(scss=True, category='stub', type='value', value='initial'), stub_text_transform=OptionsInfo(scss=True, category='stub', type='value', value='inherit'), stub_border_style=OptionsInfo(scss=True, category='stub', type='value', value='solid'), stub_border_width=OptionsInfo(scss=True, category='stub', type='px', value='2px'), stub_border_color=OptionsInfo(scss=True, category='stub', type='value', value='#D3D3D3'), stub_row_group_background_color=OptionsInfo(scss=True, category='stub', type='value', value=None), stub_row_group_font_size=OptionsInfo(scss=True, category='stub', type='px', value='100%'), stub_row_group_font_weight=OptionsInfo(scss=True, category='stub', type='value', value='initial'), stub_row_group_text_transform=OptionsInfo(scss=True, category='stub', type='value', value='inherit'), stub_row_group_border_style=OptionsInfo(scss=True, category='stub', type='value', value='solid'), stub_row_group_border_width=OptionsInfo(scss=True, category='stub', type='px', value='2px'), stub_row_group_border_color=OptionsInfo(scss=True, category='stub', type='value', value='#D3D3D3'), grand_summary_row_padding=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='8px'), grand_summary_row_padding_horizontal=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='5px'), grand_summary_row_background_color=OptionsInfo(scss=True, category='grand_summary_row', type='value', value=None), grand_summary_row_text_transform=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='inherit'), grand_summary_row_border_style=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='double'), grand_summary_row_border_width=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='6px'), grand_summary_row_border_color=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='#D3D3D3'), source_notes_padding=OptionsInfo(scss=True, category='source_notes', type='px', value='6px'), source_notes_padding_horizontal=OptionsInfo(scss=True, category='source_notes', type='px', value='5px'), source_notes_background_color=OptionsInfo(scss=True, category='source_notes', type='value', value=None), source_notes_font_size=OptionsInfo(scss=True, category='source_notes', type='px', value='11px'), source_notes_border_bottom_style=OptionsInfo(scss=True, category='source_notes', type='value', value='none'), source_notes_border_bottom_width=OptionsInfo(scss=True, category='source_notes', type='px', value='2px'), source_notes_border_bottom_color=OptionsInfo(scss=True, category='source_notes', type='value', value='#D3D3D3'), source_notes_border_lr_style=OptionsInfo(scss=True, category='source_notes', type='value', value='none'), source_notes_border_lr_width=OptionsInfo(scss=True, category='source_notes', type='px', value='2px'), source_notes_border_lr_color=OptionsInfo(scss=True, category='source_notes', type='value', value='#D3D3D3'), source_notes_multiline=OptionsInfo(scss=False, category='source_notes', type='boolean', value=True), source_notes_sep=OptionsInfo(scss=False, category='source_notes', type='value', value=' '), row_striping_background_color=OptionsInfo(scss=True, category='row', type='value', value='#F4F4F4'), row_striping_include_stub=OptionsInfo(scss=False, category='row', type='boolean', value=False), row_striping_include_table_body=OptionsInfo(scss=False, category='row', type='boolean', value=False), container_width=OptionsInfo(scss=False, category='container', type='px', value='100%'), container_height=OptionsInfo(scss=False, category='container', type='px', value='auto'), container_padding_x=OptionsInfo(scss=False, category='container', type='px', value='0px'), container_padding_y=OptionsInfo(scss=False, category='container', type='px', value='10px'), container_overflow_x=OptionsInfo(scss=False, category='container', type='overflow', value='auto'), container_overflow_y=OptionsInfo(scss=False, category='container', type='overflow', value='auto'), quarto_disable_processing=OptionsInfo(scss=False, category='quarto', type='logical', value=False), quarto_use_bootstrap=OptionsInfo(scss=False, category='quarto', type='logical', value=False)), _google_font_imports=GoogleFontImports(imports=frozenset()), _has_built=False)"
+      ]
+     },
+     "execution_count": null,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
    "source": [
     "from twiga.core.settings import TwigaSettings\n",
     "\n",
@@ -927,7 +1891,7 @@
     "        {\"Variable\": \"TWIGA_MLFLOW_EXPERIMENT\", \"Current value\": str(settings.mlflow_experiment)},\n",
     "        {\n",
     "            \"Variable\": \"TWIGA_SERVE_API_KEY\",\n",
-    "            \"Current value\": \"(empty — open access)\" if not settings.serve_api_key else \"***\",\n",
+    "            \"Current value\": \"(empty  -  open access)\" if not settings.serve_api_key else \"***\",\n",
     "        },\n",
     "        {\"Variable\": \"TWIGA_MODEL_CHECKPOINT_DIR\", \"Current value\": str(settings.model_checkpoint_dir)},\n",
     "        {\"Variable\": \"TWIGA_SERVE_REPORT_DIR\", \"Current value\": str(settings.serve_report_dir)},\n",
@@ -937,7 +1901,7 @@
     "twiga_gt(\n",
     "    GT(settings_df)\n",
     "    .tab_header(\n",
-    "        title=md(\"**TwigaSettings — active configuration**\"),\n",
+    "        title=md(\"**TwigaSettings  -  active configuration**\"),\n",
     "        subtitle=\"Override any value via environment variable or .env file\",\n",
     "    )\n",
     "    .cols_label(Variable=md(\"**Environment variable**\"), **{\"Current value\": md(\"**Current value**\")})\n",
@@ -959,7 +1923,186 @@
    "execution_count": null,
    "id": "33",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div id=\"khxxytsoqv\" style=\"padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:100%;height:auto;\">\n",
+       "<style>\n",
+       "#khxxytsoqv table {\n",
+       "          font-family: Inter, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;\n",
+       "          -webkit-font-smoothing: antialiased;\n",
+       "          -moz-osx-font-smoothing: grayscale;\n",
+       "        }\n",
+       "\n",
+       "#khxxytsoqv thead, tbody, tfoot, tr, td, th { border-style: none; }\n",
+       " tr { background-color: transparent; }\n",
+       "#khxxytsoqv p { margin: 0; padding: 0; }\n",
+       " #khxxytsoqv .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #2d3748; font-size: 13px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: 100%; border-top-style: solid; border-top-width: 2px; border-top-color: #107591; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #107591; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }\n",
+       " #khxxytsoqv .gt_caption { padding-top: 4px; padding-bottom: 4px; }\n",
+       " #khxxytsoqv .gt_title { color: #2d3748; font-size: 16px; font-weight: bold; padding-top: 10px; padding-bottom: 10px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }\n",
+       " #khxxytsoqv .gt_subtitle { color: #2d3748; font-size: 13px; font-weight: initial; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }\n",
+       " #khxxytsoqv .gt_heading { background-color: #ffffff; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }\n",
+       " #khxxytsoqv .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }\n",
+       " #khxxytsoqv .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }\n",
+       " #khxxytsoqv .gt_col_heading { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 9px; padding-bottom: 11px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }\n",
+       " #khxxytsoqv .gt_column_spanner_outer { color: #FFFFFF; background-color: #107591; font-size: 13px; font-weight: bold; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }\n",
+       " #khxxytsoqv .gt_column_spanner_outer:first-child { padding-left: 0; }\n",
+       " #khxxytsoqv .gt_column_spanner_outer:last-child { padding-right: 0; }\n",
+       " #khxxytsoqv .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #069fac; vertical-align: bottom; padding-top: 9px; padding-bottom: 9px; overflow-x: hidden; display: inline-block; width: 100%; }\n",
+       " #khxxytsoqv .gt_spanner_row { border-bottom-style: hidden; }\n",
+       " #khxxytsoqv .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }\n",
+       " #khxxytsoqv .gt_empty_group_heading { padding: 0.5px; color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }\n",
+       " #khxxytsoqv .gt_from_md> :first-child { margin-top: 0; }\n",
+       " #khxxytsoqv .gt_from_md> :last-child { margin-bottom: 0; }\n",
+       " #khxxytsoqv .gt_row { padding-top: 7px; padding-bottom: 7px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }\n",
+       " #khxxytsoqv .gt_stub { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }\n",
+       " #khxxytsoqv .gt_stub_row_group { color: #2d3748; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }\n",
+       " #khxxytsoqv .gt_row_group_first td { border-top-width: 2px; }\n",
+       " #khxxytsoqv .gt_row_group_first th { border-top-width: 2px; }\n",
+       " #khxxytsoqv .gt_striped { color: #2d3748; background-color: #F4F4F4; }\n",
+       " #khxxytsoqv .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 1px; border-bottom-color: #e8e8e8; }\n",
+       " #khxxytsoqv .gt_grand_summary_row { color: #2d3748; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }\n",
+       " #khxxytsoqv .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }\n",
+       " #khxxytsoqv .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }\n",
+       " #khxxytsoqv .gt_sourcenotes { color: #2d3748; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }\n",
+       " #khxxytsoqv .gt_sourcenote { font-size: 11px; padding-top: 6px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; text-align: left; }\n",
+       " #khxxytsoqv .gt_left { text-align: left; }\n",
+       " #khxxytsoqv .gt_center { text-align: center; }\n",
+       " #khxxytsoqv .gt_right { text-align: right; font-variant-numeric: tabular-nums; }\n",
+       " #khxxytsoqv .gt_font_normal { font-weight: normal; }\n",
+       " #khxxytsoqv .gt_font_bold { font-weight: bold; }\n",
+       " #khxxytsoqv .gt_font_italic { font-style: italic; }\n",
+       " #khxxytsoqv .gt_super { font-size: 65%; }\n",
+       " #khxxytsoqv .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }\n",
+       " #khxxytsoqv .gt_asterisk { font-size: 100%; vertical-align: 0; }\n",
+       " \n",
+       "</style>\n",
+       "<table class=\"gt_table\" data-quarto-disable-processing=\"false\" data-quarto-bootstrap=\"false\">\n",
+       "<thead>\n",
+       "\n",
+       "  <tr class=\"gt_heading\">\n",
+       "    <td colspan=\"3\" class=\"gt_heading gt_title gt_font_normal\" style=\"color: #333333;font-weight: bold;\"><strong>Tutorial 17  -  MLOps API Quick Reference</strong></td>\n",
+       "  </tr>\n",
+       "  <tr class=\"gt_heading\">\n",
+       "    <td colspan=\"3\" class=\"gt_heading gt_subtitle gt_font_normal gt_bottom_border\" style=\"color: #718096;\">All classes and functions introduced in this notebook</td>\n",
+       "  </tr>\n",
+       "<tr class=\"gt_col_headings\">\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_left\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"Module\"><strong>Module</strong></th>\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_left\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"Class-/-Function\"><strong>Class / Function</strong></th>\n",
+       "  <th class=\"gt_col_heading gt_columns_bottom_border gt_left\" rowspan=\"1\" colspan=\"1\" style=\"color: #ffffff;\" scope=\"col\" id=\"What-it-does\"><strong>What it does</strong></th>\n",
+       "</tr>\n",
+       "</thead>\n",
+       "<tbody class=\"gt_table_body\">\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">twiga.tracking</td>\n",
+       "    <td class=\"gt_row gt_left\">TwigaTracker</td>\n",
+       "    <td class=\"gt_row gt_left\">Context manager around an MLflow run</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">twiga.tracking</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">TwigaTracker.log_*</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">Log dataset lineage, configs, model artefact, evaluation metrics</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">twiga.forecaster</td>\n",
+       "    <td class=\"gt_row gt_left\">on_save_checkpoint()</td>\n",
+       "    <td class=\"gt_row gt_left\">Persist fitted model + write versioned _checkpoint_manifest.json</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">twiga.forecaster</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">on_load_checkpoint()</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">Read manifest → load model; fallback to newest .pkl if no manifest</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">twiga.serve</td>\n",
+       "    <td class=\"gt_row gt_left\">create_app()</td>\n",
+       "    <td class=\"gt_row gt_left\">FastAPI factory  -  wires ModelLoader, ForecastMonitor, CPU offloading</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">twiga.serve</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">ModelLoader</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">Thread-safe lazy checkpoint loader (double-checked locking)</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">twiga.serve</td>\n",
+       "    <td class=\"gt_row gt_left\">ForecastMonitor</td>\n",
+       "    <td class=\"gt_row gt_left\">Evidently wrapper for drift and performance monitoring</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">twiga.serve</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">ForecastMonitor.run_data_drift</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">Detect distribution shift in input features; write HTML report</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">twiga.pipeline</td>\n",
+       "    <td class=\"gt_row gt_left\">training_flow</td>\n",
+       "    <td class=\"gt_row gt_left\">Full Prefect flow: load → fit → evaluate → checkpoint → MLflow</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">twiga.pipeline</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">retraining_flow</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">Drift-aware Prefect flow: check → retrain → promote if better</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td class=\"gt_row gt_left\">twiga.pipeline</td>\n",
+       "    <td class=\"gt_row gt_left\">task.fn(...)</td>\n",
+       "    <td class=\"gt_row gt_left\">Run a single Prefect task outside a flow (notebooks / tests)</td>\n",
+       "  </tr>\n",
+       "  <tr>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">twiga.core</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">TwigaSettings</td>\n",
+       "    <td style=\"background-color: #f7fbfc;\" class=\"gt_row gt_left\">12-factor env-var config for all MLOps components</td>\n",
+       "  </tr>\n",
+       "</tbody>\n",
+       "  <tfoot class=\"gt_sourcenotes\">\n",
+       "  \n",
+       "  <tr>\n",
+       "    <td class=\"gt_sourcenote\" colspan=\"3\" style=\"color: #718096;font-style: italic;\">Full API docs → twiga-forecast.readthedocs.io/mlops</td>\n",
+       "  </tr>\n",
+       "\n",
+       "</tfoot>\n",
+       "\n",
+       "</table>\n",
+       "\n",
+       "</div>\n",
+       "        "
+      ],
+      "text/plain": [
+       "GT(_tbl_data=              Module                Class / Function  \\\n",
+       "0     twiga.tracking                    TwigaTracker   \n",
+       "1     twiga.tracking              TwigaTracker.log_*   \n",
+       "2   twiga.forecaster            on_save_checkpoint()   \n",
+       "3   twiga.forecaster            on_load_checkpoint()   \n",
+       "4        twiga.serve                    create_app()   \n",
+       "5        twiga.serve                     ModelLoader   \n",
+       "6        twiga.serve                 ForecastMonitor   \n",
+       "7        twiga.serve  ForecastMonitor.run_data_drift   \n",
+       "8     twiga.pipeline                   training_flow   \n",
+       "9     twiga.pipeline                 retraining_flow   \n",
+       "10    twiga.pipeline                    task.fn(...)   \n",
+       "11        twiga.core                   TwigaSettings   \n",
+       "\n",
+       "                                         What it does  \n",
+       "0                Context manager around an MLflow run  \n",
+       "1   Log dataset lineage, configs, model artefact, ...  \n",
+       "2   Persist fitted model + write versioned _checkp...  \n",
+       "3   Read manifest → load model; fallback to newest...  \n",
+       "4   FastAPI factory  -  wires ModelLoader, Forecas...  \n",
+       "5   Thread-safe lazy checkpoint loader (double-che...  \n",
+       "6   Evidently wrapper for drift and performance mo...  \n",
+       "7   Detect distribution shift in input features; w...  \n",
+       "8   Full Prefect flow: load → fit → evaluate → che...  \n",
+       "9   Drift-aware Prefect flow: check → retrain → pr...  \n",
+       "10  Run a single Prefect task outside a flow (note...  \n",
+       "11  12-factor env-var config for all MLOps components  , _body=<great_tables._gt_data.Body object at 0x1340b5c10>, _boxhead=Boxhead([ColInfo(var='Module', type=<ColInfoTypeEnum.default: 1>, column_label=Md(text='**Module**'), column_align='left', column_width=None), ColInfo(var='Class / Function', type=<ColInfoTypeEnum.default: 1>, column_label=Md(text='**Class / Function**'), column_align='left', column_width=None), ColInfo(var='What it does', type=<ColInfoTypeEnum.default: 1>, column_label=Md(text='**What it does**'), column_align='left', column_width=None)]), _stub=<great_tables._gt_data.Stub object at 0x1340b6030>, _spanners=Spanners([]), _heading=Heading(title=Md(text='**Tutorial 17  -  MLOps API Quick Reference**'), subtitle='All classes and functions introduced in this notebook', preheader=None), _stubhead=None, _summary_rows=<great_tables._gt_data.SummaryRows object at 0x1340b66c0>, _summary_rows_grand=<great_tables._gt_data.SummaryRows object at 0x1340b66f0>, _source_notes=['Full API docs → twiga-forecast.readthedocs.io/mlops'], _footnotes=[], _styles=[StyleInfo(locname=LocTitle(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#333333', font=None, size=None, align=None, v_align=None, style=None, weight='bold', stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocSubTitle(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#718096', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='Module', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='Class / Function', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocColumnLabels(columns=None), grpname=None, colname='What it does', rownum=None, colnum=None, styles=[CellStyleText(color='#ffffff', font=None, size=None, align=None, v_align=None, style=None, weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocSourceNotes(), grpname=None, colname=None, rownum=None, colnum=None, styles=[CellStyleText(color='#718096', font=None, size=None, align=None, v_align=None, style='italic', weight=None, stretch=None, decorate=None, transform=None, whitespace=None)]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Module', rownum=1, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Module', rownum=3, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Module', rownum=5, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Module', rownum=7, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Module', rownum=9, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Module', rownum=11, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Class / Function', rownum=1, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Class / Function', rownum=3, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Class / Function', rownum=5, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Class / Function', rownum=7, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Class / Function', rownum=9, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='Class / Function', rownum=11, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='What it does', rownum=1, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='What it does', rownum=3, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='What it does', rownum=5, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='What it does', rownum=7, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='What it does', rownum=9, colnum=None, styles=[CellStyleFill(color='#f7fbfc')]), StyleInfo(locname=LocBody(columns=None, rows=[1, 3, 5, 7, 9, 11], mask=None), grpname=None, colname='What it does', rownum=11, colnum=None, styles=[CellStyleFill(color='#f7fbfc')])], _locale=<great_tables._gt_data.Locale object at 0x1340b6720>, _formats=[], _substitutions=[], _col_merge=[], _options=Options(table_id=OptionsInfo(scss=False, category='table', type='value', value=None), table_caption=OptionsInfo(scss=False, category='table', type='value', value=None), table_width=OptionsInfo(scss=True, category='table', type='px', value='100%'), table_layout=OptionsInfo(scss=True, category='table', type='value', value='fixed'), table_margin_left=OptionsInfo(scss=True, category='table', type='px', value='auto'), table_margin_right=OptionsInfo(scss=True, category='table', type='px', value='auto'), table_background_color=OptionsInfo(scss=True, category='table', type='value', value='#FFFFFF'), table_additional_css=OptionsInfo(scss=False, category='table', type='values', value=[]), table_font_names=OptionsInfo(scss=False, category='table', type='values', value=['Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif']), table_font_size=OptionsInfo(scss=True, category='table', type='px', value='13px'), table_font_weight=OptionsInfo(scss=True, category='table', type='value', value='normal'), table_font_style=OptionsInfo(scss=True, category='table', type='value', value='normal'), table_font_color=OptionsInfo(scss=True, category='table', type='value', value='#2d3748'), table_font_color_light=OptionsInfo(scss=True, category='table', type='value', value='#FFFFFF'), table_border_top_include=OptionsInfo(scss=False, category='table', type='boolean', value=True), table_border_top_style=OptionsInfo(scss=True, category='table', type='value', value='solid'), table_border_top_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_top_color=OptionsInfo(scss=True, category='table', type='value', value='#107591'), table_border_right_style=OptionsInfo(scss=True, category='table', type='value', value='none'), table_border_right_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_right_color=OptionsInfo(scss=True, category='table', type='value', value='#D3D3D3'), table_border_bottom_include=OptionsInfo(scss=False, category='table', type='boolean', value=True), table_border_bottom_style=OptionsInfo(scss=True, category='table', type='value', value='solid'), table_border_bottom_width=OptionsInfo(scss=True, category='table', type='px', value='1px'), table_border_bottom_color=OptionsInfo(scss=True, category='table', type='value', value='#107591'), table_border_left_style=OptionsInfo(scss=True, category='table', type='value', value='none'), table_border_left_width=OptionsInfo(scss=True, category='table', type='px', value='2px'), table_border_left_color=OptionsInfo(scss=True, category='table', type='value', value='#D3D3D3'), heading_background_color=OptionsInfo(scss=True, category='heading', type='value', value='#ffffff'), heading_align=OptionsInfo(scss=True, category='heading', type='value', value='center'), heading_title_font_size=OptionsInfo(scss=True, category='heading', type='px', value='16px'), heading_title_font_weight=OptionsInfo(scss=True, category='heading', type='value', value='bold'), heading_subtitle_font_size=OptionsInfo(scss=True, category='heading', type='px', value='13px'), heading_subtitle_font_weight=OptionsInfo(scss=True, category='heading', type='value', value='initial'), heading_padding=OptionsInfo(scss=True, category='heading', type='px', value='10px'), heading_padding_horizontal=OptionsInfo(scss=True, category='heading', type='px', value='5px'), heading_border_bottom_style=OptionsInfo(scss=True, category='heading', type='value', value='solid'), heading_border_bottom_width=OptionsInfo(scss=True, category='heading', type='px', value='2px'), heading_border_bottom_color=OptionsInfo(scss=True, category='heading', type='value', value='#D3D3D3'), heading_border_lr_style=OptionsInfo(scss=True, category='heading', type='value', value='none'), heading_border_lr_width=OptionsInfo(scss=True, category='heading', type='px', value='1px'), heading_border_lr_color=OptionsInfo(scss=True, category='heading', type='value', value='#D3D3D3'), column_labels_background_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#107591'), column_labels_font_size=OptionsInfo(scss=True, category='column_labels', type='px', value='13px'), column_labels_font_weight=OptionsInfo(scss=True, category='column_labels', type='value', value='bold'), column_labels_text_transform=OptionsInfo(scss=True, category='column_labels', type='value', value='inherit'), column_labels_padding=OptionsInfo(scss=True, category='column_labels', type='px', value='9px'), column_labels_padding_horizontal=OptionsInfo(scss=True, category='column_labels', type='px', value='5px'), column_labels_vlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='none'), column_labels_vlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), column_labels_vlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), column_labels_border_top_style=OptionsInfo(scss=True, category='column_labels', type='value', value='solid'), column_labels_border_top_width=OptionsInfo(scss=True, category='column_labels', type='px', value='2px'), column_labels_border_top_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#D3D3D3'), column_labels_border_bottom_style=OptionsInfo(scss=True, category='column_labels', type='value', value='solid'), column_labels_border_bottom_width=OptionsInfo(scss=True, category='column_labels', type='px', value='1px'), column_labels_border_bottom_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#069fac'), column_labels_border_lr_style=OptionsInfo(scss=True, category='column_labels', type='value', value='none'), column_labels_border_lr_width=OptionsInfo(scss=True, category='column_labels', type='px', value='1px'), column_labels_border_lr_color=OptionsInfo(scss=True, category='column_labels', type='value', value='#D3D3D3'), column_labels_hidden=OptionsInfo(scss=False, category='column_labels', type='boolean', value=False), row_group_background_color=OptionsInfo(scss=True, category='row_group', type='value', value=None), row_group_font_size=OptionsInfo(scss=True, category='row_group', type='px', value='100%'), row_group_font_weight=OptionsInfo(scss=True, category='row_group', type='value', value='initial'), row_group_text_transform=OptionsInfo(scss=True, category='row_group', type='value', value='inherit'), row_group_padding=OptionsInfo(scss=True, category='row_group', type='px', value='8px'), row_group_padding_horizontal=OptionsInfo(scss=True, category='row_group', type='px', value='5px'), row_group_border_top_style=OptionsInfo(scss=True, category='row_group', type='value', value='solid'), row_group_border_top_width=OptionsInfo(scss=True, category='row_group', type='px', value='2px'), row_group_border_top_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_right_style=OptionsInfo(scss=True, category='row_group', type='value', value='none'), row_group_border_right_width=OptionsInfo(scss=True, category='row_group', type='px', value='1px'), row_group_border_right_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_bottom_style=OptionsInfo(scss=True, category='row_group', type='value', value='solid'), row_group_border_bottom_width=OptionsInfo(scss=True, category='row_group', type='px', value='2px'), row_group_border_bottom_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_border_left_style=OptionsInfo(scss=True, category='row_group', type='value', value='none'), row_group_border_left_width=OptionsInfo(scss=True, category='row_group', type='px', value='1px'), row_group_border_left_color=OptionsInfo(scss=True, category='row_group', type='value', value='#D3D3D3'), row_group_as_column=OptionsInfo(scss=False, category='row_group', type='boolean', value=False), table_body_hlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_hlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_hlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_vlines_style=OptionsInfo(scss=True, category='table_body', type='value', value='none'), table_body_vlines_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_vlines_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_border_top_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_border_top_width=OptionsInfo(scss=True, category='table_body', type='px', value='2px'), table_body_border_top_color=OptionsInfo(scss=True, category='table_body', type='value', value='#D3D3D3'), table_body_border_bottom_style=OptionsInfo(scss=True, category='table_body', type='value', value='solid'), table_body_border_bottom_width=OptionsInfo(scss=True, category='table_body', type='px', value='1px'), table_body_border_bottom_color=OptionsInfo(scss=True, category='table_body', type='value', value='#e8e8e8'), data_row_padding=OptionsInfo(scss=True, category='data_row', type='px', value='7px'), data_row_padding_horizontal=OptionsInfo(scss=True, category='data_row', type='px', value='5px'), stub_background_color=OptionsInfo(scss=True, category='stub', type='value', value=None), stub_font_size=OptionsInfo(scss=True, category='stub', type='px', value='100%'), stub_font_weight=OptionsInfo(scss=True, category='stub', type='value', value='initial'), stub_text_transform=OptionsInfo(scss=True, category='stub', type='value', value='inherit'), stub_border_style=OptionsInfo(scss=True, category='stub', type='value', value='solid'), stub_border_width=OptionsInfo(scss=True, category='stub', type='px', value='2px'), stub_border_color=OptionsInfo(scss=True, category='stub', type='value', value='#D3D3D3'), stub_row_group_background_color=OptionsInfo(scss=True, category='stub', type='value', value=None), stub_row_group_font_size=OptionsInfo(scss=True, category='stub', type='px', value='100%'), stub_row_group_font_weight=OptionsInfo(scss=True, category='stub', type='value', value='initial'), stub_row_group_text_transform=OptionsInfo(scss=True, category='stub', type='value', value='inherit'), stub_row_group_border_style=OptionsInfo(scss=True, category='stub', type='value', value='solid'), stub_row_group_border_width=OptionsInfo(scss=True, category='stub', type='px', value='2px'), stub_row_group_border_color=OptionsInfo(scss=True, category='stub', type='value', value='#D3D3D3'), grand_summary_row_padding=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='8px'), grand_summary_row_padding_horizontal=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='5px'), grand_summary_row_background_color=OptionsInfo(scss=True, category='grand_summary_row', type='value', value=None), grand_summary_row_text_transform=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='inherit'), grand_summary_row_border_style=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='double'), grand_summary_row_border_width=OptionsInfo(scss=True, category='grand_summary_row', type='px', value='6px'), grand_summary_row_border_color=OptionsInfo(scss=True, category='grand_summary_row', type='value', value='#D3D3D3'), source_notes_padding=OptionsInfo(scss=True, category='source_notes', type='px', value='6px'), source_notes_padding_horizontal=OptionsInfo(scss=True, category='source_notes', type='px', value='5px'), source_notes_background_color=OptionsInfo(scss=True, category='source_notes', type='value', value=None), source_notes_font_size=OptionsInfo(scss=True, category='source_notes', type='px', value='11px'), source_notes_border_bottom_style=OptionsInfo(scss=True, category='source_notes', type='value', value='none'), source_notes_border_bottom_width=OptionsInfo(scss=True, category='source_notes', type='px', value='2px'), source_notes_border_bottom_color=OptionsInfo(scss=True, category='source_notes', type='value', value='#D3D3D3'), source_notes_border_lr_style=OptionsInfo(scss=True, category='source_notes', type='value', value='none'), source_notes_border_lr_width=OptionsInfo(scss=True, category='source_notes', type='px', value='2px'), source_notes_border_lr_color=OptionsInfo(scss=True, category='source_notes', type='value', value='#D3D3D3'), source_notes_multiline=OptionsInfo(scss=False, category='source_notes', type='boolean', value=True), source_notes_sep=OptionsInfo(scss=False, category='source_notes', type='value', value=' '), row_striping_background_color=OptionsInfo(scss=True, category='row', type='value', value='#F4F4F4'), row_striping_include_stub=OptionsInfo(scss=False, category='row', type='boolean', value=False), row_striping_include_table_body=OptionsInfo(scss=False, category='row', type='boolean', value=False), container_width=OptionsInfo(scss=False, category='container', type='px', value='100%'), container_height=OptionsInfo(scss=False, category='container', type='px', value='auto'), container_padding_x=OptionsInfo(scss=False, category='container', type='px', value='0px'), container_padding_y=OptionsInfo(scss=False, category='container', type='px', value='10px'), container_overflow_x=OptionsInfo(scss=False, category='container', type='overflow', value='auto'), container_overflow_y=OptionsInfo(scss=False, category='container', type='overflow', value='auto'), quarto_disable_processing=OptionsInfo(scss=False, category='quarto', type='logical', value=False), quarto_use_bootstrap=OptionsInfo(scss=False, category='quarto', type='logical', value=False)), _google_font_imports=GoogleFontImports(imports=frozenset()), _has_built=False)"
+      ]
+     },
+     "execution_count": null,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
    "source": [
     "api_df = pd.DataFrame(\n",
     "    {\n",
@@ -996,7 +2139,7 @@
     "            \"Log dataset lineage, configs, model artefact, evaluation metrics\",\n",
     "            \"Persist fitted model + write versioned _checkpoint_manifest.json\",\n",
     "            \"Read manifest → load model; fallback to newest .pkl if no manifest\",\n",
-    "            \"FastAPI factory — wires ModelLoader, ForecastMonitor, CPU offloading\",\n",
+    "            \"FastAPI factory  -  wires ModelLoader, ForecastMonitor, CPU offloading\",\n",
     "            \"Thread-safe lazy checkpoint loader (double-checked locking)\",\n",
     "            \"Evidently wrapper for drift and performance monitoring\",\n",
     "            \"Detect distribution shift in input features; write HTML report\",\n",
@@ -1011,7 +2154,7 @@
     "twiga_gt(\n",
     "    GT(api_df)\n",
     "    .tab_header(\n",
-    "        title=md(\"**Tutorial 17 — MLOps API Quick Reference**\"),\n",
+    "        title=md(\"**Tutorial 17  -  MLOps API Quick Reference**\"),\n",
     "        subtitle=\"All classes and functions introduced in this notebook\",\n",
     "    )\n",
     "    .cols_label(\n",
@@ -1073,8 +2216,7 @@
    "mimetype": "text/x-python",
    "name": "python",
    "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.12.12"
+   "pygments_lexer": "ipython3"
   }
  },
  "nbformat": 4,

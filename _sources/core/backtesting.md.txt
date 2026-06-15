@@ -159,17 +159,17 @@ Conformal prediction requires a dedicated calibration set that the model has nev
 
 ### `calib_source` Options
 
-**`"train_tail"` (default)** — calib is carved from the end of the training window:
+**`"train_tail"` (default)** - calib is carved from the end of the training window:
 ```
 [────── fit ──────][── val ──][── calib ──][── gap ──][── test ──]
 ```
 
-**`"gap"`** — calib occupies the gap between training and test (requires `calib_size ≤ gap`):
+**`"gap"`** - calib occupies the gap between training and test (requires `calib_size ≤ gap`):
 ```
 [──────── fit ────────][── calib ──][── gap remainder ──][── test ──]
 ```
 
-**`"test_prefix"`** — calib is the first slice of the test window; evaluation uses the remainder:
+**`"test_prefix"`** - calib is the first slice of the test window; evaluation uses the remainder:
 ```
 [──────── fit ────────][── gap ──][── calib ──][── eval ──]
 ```
@@ -193,7 +193,7 @@ for bundle in cv.split(data):
     predictions, metrics = forecaster.evaluate_interval_forecast(bundle.test_df)
 ```
 
-### `conformal_split()` — Single-Fold Helper
+### `conformal_split()` - Single-Fold Helper
 
 For experiments that use a single pre-defined train/test split rather than full CV:
 
@@ -256,7 +256,7 @@ predictions_df, metrics_df = forecaster.backtesting(
 For each fold, `backtesting()`:
 
 1. Resets the data pipeline so scalers are re-fitted on this fold's training window only.
-2. Calls `self.fit(train_df, val_df=val_df)` — fits the pipeline and all models. `val_df` is supplied when `val_size > 0` and is used for early stopping.
+2. Calls `self.fit(train_df, val_df=val_df)` - fits the pipeline and all models. `val_df` is supplied when `val_size > 0` and is used for early stopping.
 3. Routes evaluation through one of three paths depending on configuration:
    - **Conformal path** (`calib_size > 0` and `conformal_params` set): calls `calibrate(calib_df)` then `evaluate_interval_forecast(test_df)`.
    - **Native interval path** (`eval_interval=True`, no conformal): calls `evaluate_interval_forecast(test_df)` using intervals from the model's own output.

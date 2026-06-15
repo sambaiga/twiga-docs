@@ -229,8 +229,8 @@ metrics = collection.evaluate()         # metrics DataFrame across all models
 
 `predict_interval` supports two paths depending on how the forecaster is configured:
 
-- **Conformal path** — when `conformal_params` is set at construction, the forecaster must be calibrated via `calibrate()` before calling `predict_interval`. Skipping calibration raises a `ValueError`.
-- **Native interval path** — when `conformal_params` is `None`, interval bounds are derived directly from the model output without calibration. Parametric heads (Normal, Laplace, etc.) produce `[μ - z·σ, μ + z·σ]` where z is determined by `interval_alpha`. Quantile heads (QR, FPQR) use the lowest and highest predicted quantile as bounds.
+- **Conformal path** - when `conformal_params` is set at construction, the forecaster must be calibrated via `calibrate()` before calling `predict_interval`. Skipping calibration raises a `ValueError`.
+- **Native interval path** - when `conformal_params` is `None`, interval bounds are derived directly from the model output without calibration. Parametric heads (Normal, Laplace, etc.) produce `[μ - z·σ, μ + z·σ]` where z is determined by `interval_alpha`. Quantile heads (QR, FPQR) use the lowest and highest predicted quantile as bounds.
 
 :::{admonition} Warning
 :class: warning
@@ -302,9 +302,9 @@ Backtesting performs walk-forward cross-validation by iterating over temporal sp
 
 Each fold follows one of three paths depending on configuration:
 
-1. **Conformal path** — when `calib_size > 0` and `conformal_params` is set: calls `fit(train_df, val_df=val_df)`, then `calibrate(calib_df)`, then `evaluate_interval_forecast(test_df)`.
-2. **Native interval path** — when `eval_interval=True` and no conformal is configured: calls `fit(train_df, val_df=val_df)`, then `evaluate_interval_forecast(test_df)` using intervals derived directly from the model output (z-score for parametric heads, lowest and highest quantile for QR heads).
-3. **Point path** (default) — calls `fit(train_df, val_df=val_df)`, then `evaluate_point_forecast(test_df)`.
+1. **Conformal path** - when `calib_size > 0` and `conformal_params` is set: calls `fit(train_df, val_df=val_df)`, then `calibrate(calib_df)`, then `evaluate_interval_forecast(test_df)`.
+2. **Native interval path** - when `eval_interval=True` and no conformal is configured: calls `fit(train_df, val_df=val_df)`, then `evaluate_interval_forecast(test_df)` using intervals derived directly from the model output (z-score for parametric heads, lowest and highest quantile for QR heads).
+3. **Point path** (default) - calls `fit(train_df, val_df=val_df)`, then `evaluate_point_forecast(test_df)`.
 
 When `val_size > 0` in `ExperimentConfig`, the validation slice is passed to `fit()` for early stopping at every fold. The data pipeline is reset at the start of each fold so that scalers are re-fitted on the current training window only, preventing leakage from earlier folds.
 
@@ -328,7 +328,7 @@ See [Backtesting](backtesting.md) for a detailed explanation of the cross-valida
 
 | Method | Returns |
 |--------|---------|
-| `tune` | `dict` — merged best parameters across all models (model-name prefix stripped) |
+| `tune` | `dict` - merged best parameters across all models (model-name prefix stripped) |
 
 ```python
 forecaster.tune(
@@ -353,7 +353,7 @@ forecaster.tune(
 
 **Interval-metric tuning:** Pass `calib_df` alongside `conformal_params` to extend each trial with a calibrate → evaluate-interval step. The trial score then reflects an interval quality metric (e.g. `winkler`, `picp`, `pinaw`) instead of a point-forecast error. Use `objective_metric` to select which column of the metrics DataFrame to optimise; defaults to the first entry in `self.metrics` or `"mae"`.
 
-`conformal_params` overrides `self.conformal_params` for the duration of the tuning loop only — the original value is restored afterward.
+`conformal_params` overrides `self.conformal_params` for the duration of the tuning loop only - the original value is restored afterward.
 
 **NN parameter budget (`max_model_params`):** For neural-network models, each trial instantiates the model and counts its trainable parameters before training begins. If the count exceeds `max_model_params` (default `5_000_000`), the trial is pruned immediately. Set to `None` to disable the check. Has no effect for ML-domain models.
 

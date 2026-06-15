@@ -49,7 +49,7 @@ BaseQuantileRegressor(
 
 | Attribute | Type | Description |
 | --- | --- | --- |
-| `quantiles` | `list[float]` | Sorted quantile fractions. `conf_level` is stored as metadata only and is **not** automatically added to the quantile grid — include boundary quantiles (e.g. `conf_level/2`, `1−conf_level/2`) explicitly if needed. |
+| `quantiles` | `list[float]` | Sorted quantile fractions. `conf_level` is stored as metadata only and is **not** automatically added to the quantile grid - include boundary quantiles (e.g. `conf_level/2`, `1−conf_level/2`) explicitly if needed. |
 | `conf_level` | `float` | Significance level; `0.1` produces a 90 % prediction interval. |
 | `supports_multi_output` | `bool` | Whether the underlying engine natively handles multiple outputs. |
 | `models` | `dict[float, Any]` | One trained model per quantile (LightGBM), or a single `MultiOutputRegressor` (CatBoost, XGBoost). |
@@ -74,9 +74,9 @@ Each engine uses a different internal strategy for quantile regression:
 
 | Engine | Strategy | Loss / Parameter |
 | --- | --- | --- |
-| **CatBoost** | Multi-quantile loss — single model predicts all quantiles | `loss_function="MultiQuantile:alpha=q1,q2,..."` |
+| **CatBoost** | Multi-quantile loss - single model predicts all quantiles | `loss_function="MultiQuantile:alpha=q1,q2,..."` |
 | **XGBoost** | Single model with `quantile_alpha` array | `objective="reg:quantileerror"` |
-| **LightGBM** | Per-quantile models — one `LGBMRegressor` per quantile | `objective="quantile"`, `alpha=qi` |
+| **LightGBM** | Per-quantile models - one `LGBMRegressor` per quantile | `objective="quantile"`, `alpha=qi` |
 
 :::{admonition} LightGBM training time
 :class: note
@@ -88,7 +88,7 @@ LightGBM trains a **separate model per quantile**, so training time scales linea
 
 #### QRCATBOOSTModel
 
-Quantile regression CatBoost using `MultiQuantile` loss — all quantiles predicted in a single forward pass.
+Quantile regression CatBoost using `MultiQuantile` loss - all quantiles predicted in a single forward pass.
 
 **QRCATBOOSTConfig** extends [`CATBOOSTConfig`](../models/ml-models.md#catboostmodel):
 
@@ -221,8 +221,8 @@ config.max_epochs = 20
 
 ### Loss Functions
 
-- **Pinball loss** — standard asymmetric loss penalising over- and under-prediction differently at each quantile level $\tau$
-- **Huber-pinball loss** — smoothed near zero, controlled by `kappa`; reduces sensitivity to outliers
+- **Pinball loss** - standard asymmetric loss penalising over- and under-prediction differently at each quantile level $\tau$
+- **Huber-pinball loss** - smoothed near zero, controlled by `kappa`; reduces sensitivity to outliers
 
 ### FPQR Models (Full Parameterised Quantile Regression)
 
@@ -287,7 +287,7 @@ All CRC configs share these additional fields (on top of their backbone config):
 from twiga.models.nn.mlpgamcrc_model import MLPGAMCRCConfig
 
 config = MLPGAMCRCConfig.from_data_config(data_config)
-config.sigma_loss_fn = "hybrid_sqrt"   # default — alpha*MSE + (1-alpha)*MAE on sqrt|y - mu|
+config.sigma_loss_fn = "hybrid_sqrt"   # default - alpha*MSE + (1-alpha)*MAE on sqrt|y - mu|
 config.alpha = 0.1
 config.two_stage = True           # freeze backbone for sigma-only stage 2
 config.max_epochs = 30
@@ -296,7 +296,7 @@ config.max_epochs = 30
 :::{admonition} CRC vs post-hoc conformal prediction
 :class: note
 
-CRC is trained jointly — no held-out calibration split required. [Post-hoc conformal prediction](conformal-prediction.md) wraps any already-trained model and provides finite-sample distribution-free coverage guarantees. CRC typically produces tighter intervals when the residual signal is strong; post-hoc conformal is always valid regardless of model quality.
+CRC is trained jointly - no held-out calibration split required. [Post-hoc conformal prediction](conformal-prediction.md) wraps any already-trained model and provides finite-sample distribution-free coverage guarantees. CRC typically produces tighter intervals when the residual signal is strong; post-hoc conformal is always valid regardless of model quality.
 :::
 
 See [CRC Distribution](distributions.md#conditional-residual-calibration-crc) for the full head architecture and loss equations.

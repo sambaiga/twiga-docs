@@ -274,7 +274,7 @@ Registered name: `"mlpgaf"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](..
 | `dropout` | `float` | `0.1` | Dropout probability |
 | `alpha` | `float` | `0.2` | MSE/MAE loss weighting |
 | `use_revin` | `bool` | `False` | Apply Reversible Instance Normalization to input series |
-| `use_gate` | `bool` | `True` | When `False`, gates are bypassed — features pass through unmodified. Use as the gate-absent baseline in ablations |
+| `use_gate` | `bool` | `True` | When `False`, gates are bypassed - features pass through unmodified. Use as the gate-absent baseline in ablations |
 | `lambda_weight` | `float` | `1e-6` | L1 regularization on encoder weights |
 | `lambda_gate` | `float` | `1e-6` | Sparsity penalty on gate activations (only used when `gate_position="input"`) |
 | `delta` | `float` | `0.05` | Stability constant in gate penalty computation |
@@ -282,8 +282,8 @@ Registered name: `"mlpgaf"` | Domain: `"nn"` | Extends: [`NeuralModelConfig`](..
 | `gate_type` | `Literal["sigmoid"]` | `"sigmoid"` | Activation function used for gating |
 | `warmup_epochs` | `int` | `5` | Epochs over which gate penalty is linearly ramped up |
 | `group_scheme` | `Literal["5group", "3group", "2group"]` | `"2group"` | Feature grouping strategy. `"2group"`: one past encoder and one future encoder (MLPGAM-equivalent split). `"5group"`: original five semantic groups (historical target, historical, exogenous, calendar, future covariates). `"3group"`: merges past groups and future groups, keeps exogenous separate |
-| `fusion_type` | `Literal["additive", "concat", "gated"]` | `"gated"` | How group branch projections are combined. `"gated"`: input-conditioned softmax weights (CrossGroupFusion) — the model learns per-sample branch trust. `"additive"`: sums branch projections (original GANF behaviour). `"concat"`: concatenates then projects through a shared head |
-| `gate_position` | `Literal["input", "latent"]` | `"latent"` | Where gates are applied. `"latent"`: gates operate on encoder outputs in representation space — the encoder sees all features unmasked, identical to MLPGAM, and the gate performs per-latent-dimension selection. `"input"`: gates multiply each raw input feature before encoding, with L1 sparsity penalty applied |
+| `fusion_type` | `Literal["additive", "concat", "gated"]` | `"gated"` | How group branch projections are combined. `"gated"`: input-conditioned softmax weights (CrossGroupFusion) - the model learns per-sample branch trust. `"additive"`: sums branch projections (original GANF behaviour). `"concat"`: concatenates then projects through a shared head |
+| `gate_position` | `Literal["input", "latent"]` | `"latent"` | Where gates are applied. `"latent"`: gates operate on encoder outputs in representation space - the encoder sees all features unmasked, identical to MLPGAM, and the gate performs per-latent-dimension selection. `"input"`: gates multiply each raw input feature before encoding, with L1 sparsity penalty applied |
 | `disabled_groups` | `list[str]` | `[]` | Group names to zero-out during the forward pass. Used for ablation conditions. Valid names depend on `group_scheme` |
 
 
@@ -330,10 +330,10 @@ A GRU/LSTM-based sequence model. The lookback window is processed step-by-step b
 
 Key architectural details:
 
-- **Cell type** — `"gru"` (default) or `"lstm"`. GRU has fewer parameters and often trains faster; LSTM provides gated memory that can help on longer lookback windows.
-- **Bidirectional** — when enabled, a forward and backward pass over the past window are concatenated, doubling `encode_size = hidden_size × 2`.
-- **Encode contract** — `encode(x)` extracts the past feature window, runs the RNN, extracts the final hidden state (concatenating both directions if bidirectional), and applies `LayerNorm`. This makes `RNNForecastNetwork` directly compatible with all parametric and quantile distribution heads.
-- **Multi-layer dropout** — inter-layer dropout is active only when `n_layers > 1`; a single-layer RNN has no dropout applied by PyTorch to the recurrent connections.
+- **Cell type** - `"gru"` (default) or `"lstm"`. GRU has fewer parameters and often trains faster; LSTM provides gated memory that can help on longer lookback windows.
+- **Bidirectional** - when enabled, a forward and backward pass over the past window are concatenated, doubling `encode_size = hidden_size × 2`.
+- **Encode contract** - `encode(x)` extracts the past feature window, runs the RNN, extracts the final hidden state (concatenating both directions if bidirectional), and applies `LayerNorm`. This makes `RNNForecastNetwork` directly compatible with all parametric and quantile distribution heads.
+- **Multi-layer dropout** - inter-layer dropout is active only when `n_layers > 1`; a single-layer RNN has no dropout applied by PyTorch to the recurrent connections.
 
 :::{admonition} Config class: `RNNConfig`
 :class: info
@@ -399,7 +399,7 @@ Each base architecture supports these distribution heads:
 | StudentT | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `StudentTConfig` |
 | QR | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `QRConfig` |
 | FPQR | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | `FPQRConfig` |
-| CRC | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | — | `CRCConfig` |
+| CRC | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | <i class="bi bi-check-lg"></i> | - | `CRCConfig` |
 
 ```python
 from twiga.models.nn.mlpfnormal_model import MLPFNormalConfig
@@ -495,7 +495,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for loss func
 
 ### MLPGAM-CRC - MLPGAM with Conditional Residual Calibration
 
-Pairs the MLPGAM backbone with an `AdditiveCRCDistribution` head. The backbone's additive mean (the sum of group-wise projections) is used directly as $\mu$ — no extra linear projection is applied — so the GAM decomposition is fully preserved. A two-layer sigma MLP, conditioned on the detached $\mu$, learns to predict the per-step absolute residual $|y - \mu|$.
+Pairs the MLPGAM backbone with an `AdditiveCRCDistribution` head. The backbone's additive mean (the sum of group-wise projections) is used directly as $\mu$ - no extra linear projection is applied - so the GAM decomposition is fully preserved. A two-layer sigma MLP, conditioned on the detached $\mu$, learns to predict the per-step absolute residual $|y - \mu|$.
 
 :::{admonition} Config class: `MLPGAMCRCConfig`
 :class: info
@@ -663,7 +663,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### MLPF — point model
+### MLPF - point model
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.mlpf_model.MLPFConfig
@@ -675,7 +675,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### MLPF — parametric variants
+### MLPF - parametric variants
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.mlpfnormal_model.MLPFNormalConfig
@@ -709,7 +709,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### MLPF — quantile variants
+### MLPF - quantile variants
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.mlpfqr_model.MLPFQRConfig
@@ -730,7 +730,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### MLPGAM — point model
+### MLPGAM - point model
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.mlpgam_model.MLPGAMConfig
@@ -742,7 +742,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### MLPGAM — parametric variants
+### MLPGAM - parametric variants
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.mlpgamnormal_model.MLPGAMNormalConfig
@@ -776,7 +776,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### MLPGAM — quantile and CRC variants
+### MLPGAM - quantile and CRC variants
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.mlpgamqr_model.MLPGAMQRConfig
@@ -796,7 +796,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### MLPGAF — point model
+### MLPGAF - point model
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.mlpgaf_model.MLPGAFConfig
@@ -808,7 +808,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### MLPGAF — parametric variants
+### MLPGAF - parametric variants
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.mlpgafnormal_model.MLPGAFNormalConfig
@@ -842,7 +842,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### MLPGAF — quantile and CRC variants
+### MLPGAF - quantile and CRC variants
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.mlpgafqr_model.MLPGAFQRConfig
@@ -862,7 +862,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### N-HiTS — point model
+### N-HiTS - point model
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.nhits_model.NHITSConfig
@@ -874,7 +874,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### N-HiTS — parametric variants
+### N-HiTS - parametric variants
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.nhitsnormal_model.NHITSNormalConfig
@@ -908,7 +908,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### N-HiTS — quantile and CRC variants
+### N-HiTS - quantile and CRC variants
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.nhitsqr_model.NHITSQRConfig
@@ -928,7 +928,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### RNN — point model
+### RNN - point model
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.rnn_model.RNNConfig
@@ -940,7 +940,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### RNN — parametric variants
+### RNN - parametric variants
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.rnnnormal_model.RNNNormalConfig
@@ -974,7 +974,7 @@ See [Quantile Regression](../probabilistic/quantile-regression.md) for a full wa
    :show-inheritance:
 ```
 
-### RNN — quantile variants
+### RNN - quantile variants
 
 ```{eval-rst}
 .. autoclass:: twiga.models.nn.rnnqr_model.RNNQRConfig

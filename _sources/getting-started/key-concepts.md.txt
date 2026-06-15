@@ -62,7 +62,7 @@ graph LR
 :::{admonition} Why the distinction matters
 :class: note
 
-`past_features` can only contribute lag/rolling statistics — their future values are unknown. `known_future_features` and `forecast_period_features` are passed directly into the forecast window so the model conditions on their future values. `calendar_features` are always derivable from the timestamp and computed automatically.
+`past_features` can only contribute lag/rolling statistics - their future values are unknown. `known_future_features` and `forecast_period_features` are passed directly into the forecast window so the model conditions on their future values. `calendar_features` are always derivable from the timestamp and computed automatically.
 :::
 
 ## Data Format Requirements
@@ -70,8 +70,8 @@ graph LR
 Twiga expects a pandas `DataFrame` with:
 
 1. **A datetime column** named `"timestamp"` by default (configurable via `date_column`)
-2. **One or more target columns** — the variable(s) to forecast
-3. **Optional feature columns** — any combination of the four feature types
+2. **One or more target columns** - the variable(s) to forecast
+3. **Optional feature columns** - any combination of the four feature types
 
 ```python
 import pandas as pd
@@ -79,9 +79,9 @@ import pandas as pd
 df = pd.DataFrame({
     "timestamp":   pd.date_range("2024-01-01", periods=1000, freq="1h"),
     "load_mw":     [...],   # target_feature
-    "temperature": [...],   # known_future_features  — NWP forecast known for full horizon
-    "wind_speed":  [...],   # forecast_period_features   — known only over forecast horizon
-    "irradiance":  [...],   # past_features — no future forecast available
+    "temperature": [...],   # known_future_features  - NWP forecast known for full horizon
+    "wind_speed":  [...],   # forecast_period_features   - known only over forecast horizon
+    "irradiance":  [...],   # past_features - no future forecast available
     # calendar features (hour, dayofweek, etc.) are derived automatically from timestamp
 })
 ```
@@ -115,7 +115,7 @@ Twiga follows a **configuration-as-code** pattern. Every component is configured
 
 ### DataPipelineConfig
 
-Controls data preprocessing — what features to engineer, how to scale, and how to create sequences.
+Controls data preprocessing - what features to engineer, how to scale, and how to create sequences.
 
 ```python
 from twiga.core.config import DataPipelineConfig
@@ -139,7 +139,7 @@ See [Configuration System](../core/config.md) for the full field reference.
 
 ### ExperimentConfig
 
-Controls training orchestration — backtesting splits, project naming, and output directories.
+Controls training orchestration - backtesting splits, project naming, and output directories.
 
 ```python
 from twiga.core.config import ExperimentConfig
@@ -180,7 +180,7 @@ Twiga organizes models into three domains:
 
 The domain is set automatically from the model config's `domain` field and controls how [TwigaForecaster](../core/forecaster.md) handles training, checkpointing, and prediction.
 
-Baseline models require no training — `fit()` only stores metadata — making them fast reference points for computing skill scores. See [Baseline Models](../models/baseline-models.md) and [Model Catalog](../models/index.md) for the full list.
+Baseline models require no training - `fit()` only stores metadata - making them fast reference points for computing skill scores. See [Baseline Models](../models/baseline-models.md) and [Model Catalog](../models/index.md) for the full list.
 
 ## Forecasting Types
 
@@ -200,8 +200,8 @@ Produces a distribution of predicted values, either via quantile regression, par
 
 **ML probabilistic models:**
 
-- `QRCATBOOSTModel`, `QRXGBOOSTModel`, `QRLIGHTGBMModel` — quantile regression
-- `GAUSSCATBOOSTModel` — Gaussian (mean + sigma) output
+- `QRCATBOOSTModel`, `QRXGBOOSTModel`, `QRLIGHTGBMModel` - quantile regression
+- `GAUSSCATBOOSTModel` - Gaussian (mean + sigma) output
 
 **NN probabilistic models** use a composable backbone/head design. Every architecture (MLPF, MLPGAM, MLPGAF, NHITS) can be paired with any distribution head by selecting the appropriate config:
 

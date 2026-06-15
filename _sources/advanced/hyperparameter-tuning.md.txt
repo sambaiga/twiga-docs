@@ -144,12 +144,12 @@ data_config = DataPipelineConfig(
 
 **How it works:**
 
-1. At the start of each Optuna trial, `_update_pipeline_for_trial` samples the pipeline search space with `prefix="pipeline"` — producing keys like `"pipeline_input_scaler"`.
+1. At the start of each Optuna trial, `_update_pipeline_for_trial` samples the pipeline search space with `prefix="pipeline"` - producing keys like `"pipeline_input_scaler"`.
 2. A new `DataPipeline` is constructed from the sampled config for that trial.
 3. After the study completes, the best pipeline parameters are stripped of the `"pipeline_"` prefix and applied permanently to `data_config`. Only model params (no `pipeline_` prefix) are returned from `tune()`.
 4. The original `data_config` is restored after every trial via a `try/finally` guard, so trial mutations never leak between trials.
 
-**Validation** — unknown field names in `search_space` raise a `ValidationError` at construction time, catching typos before tuning starts:
+**Validation** - unknown field names in `search_space` raise a `ValidationError` at construction time, catching typos before tuning starts:
 
 ```python
 # Raises ValidationError: "unknown fields: {'typo_scaler'}"
@@ -216,10 +216,10 @@ forecaster.tune(
 
 The `_objective_fn` per trial:
 
-1. Calls `model.update(trial)` — uses `BaseSearchSpace.get_optuna_params()` to suggest model values
-2. Calls `_update_pipeline_for_trial(trial)` — if `data_config.search_space` is set, samples scaler choices and rebuilds `DataPipeline` for this trial
-3. Calls `_fit(train_df, val_df, trial)` — trains the model
-4. Calls `_evaluate(val_df)` — computes validation metrics
+1. Calls `model.update(trial)` - uses `BaseSearchSpace.get_optuna_params()` to suggest model values
+2. Calls `_update_pipeline_for_trial(trial)` - if `data_config.search_space` is set, samples scaler choices and rebuilds `DataPipeline` for this trial
+3. Calls `_fit(train_df, val_df, trial)` - trains the model
+4. Calls `_evaluate(val_df)` - computes validation metrics
 5. Returns `mean(MAE)` as the cost to minimize
 6. Sets user attributes: `rmse` and `std_dev` for dashboard visualization
 
@@ -257,7 +257,7 @@ best_params = forecaster.tune(
 )
 ```
 
-`conformal_params` overrides `self.conformal_params` for the duration of the study only — the original value is restored when `tune` returns. `objective_metric` can be any column produced by `evaluate_interval_forecast` (e.g. `"winkler"`, `"picp"`, `"pinaw"`, `"ace"`).
+`conformal_params` overrides `self.conformal_params` for the duration of the study only - the original value is restored when `tune` returns. `objective_metric` can be any column produced by `evaluate_interval_forecast` (e.g. `"winkler"`, `"picp"`, `"pinaw"`, `"ace"`).
 
 ## NN Parameter Budget
 
@@ -282,7 +282,7 @@ from twiga.forecaster.core import TwigaForecaster
 from twiga.models.ml.xgboost_model import XGBOOSTConfig
 from twiga.models.nn.mlpf_model import MLPFConfig
 
-# Data pipeline config with pipeline search space — scalers are tuned alongside model params
+# Data pipeline config with pipeline search space - scalers are tuned alongside model params
 data_config = DataPipelineConfig(
     target_feature="load_mw",
     period="1h",
