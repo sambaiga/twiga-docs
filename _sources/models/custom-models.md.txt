@@ -145,12 +145,8 @@ class RANDOMFORESTModel(BaseRegressor):
     """Random Forest regression model for time series forecasting."""
 
     def __init__(self, model_config: RANDOMFORESTConfig = None):
-        self.model_config = (
-            model_config if model_config is not None else RANDOMFORESTConfig()
-        )
-        self.model = MultiOutputRegressor(
-            RandomForestRegressor(**self.model_config.dict())
-        )
+        self.model_config = model_config if model_config is not None else RANDOMFORESTConfig()
+        self.model = MultiOutputRegressor(RandomForestRegressor(**self.model_config.dict()))
 
     def update(self, trial):
         """Reinitialize the model with Optuna-suggested hyperparameters.
@@ -160,9 +156,7 @@ class RANDOMFORESTModel(BaseRegressor):
                 from the search space defined in RANDOMFORESTConfig.
         """
         params = self.model_config.get_optuna_params(trial=trial)
-        self.model = MultiOutputRegressor(
-            RandomForestRegressor(**params)
-        )
+        self.model = MultiOutputRegressor(RandomForestRegressor(**params))
 ```
 
 :::{admonition} MultiOutputRegressor wrapper
@@ -241,19 +235,13 @@ class RANDOMFORESTModel(BaseRegressor):
     """Random Forest regression model for time series forecasting."""
 
     def __init__(self, model_config: RANDOMFORESTConfig = None):
-        self.model_config = (
-            model_config if model_config is not None else RANDOMFORESTConfig()
-        )
-        self.model = MultiOutputRegressor(
-            RandomForestRegressor(**self.model_config.dict())
-        )
+        self.model_config = model_config if model_config is not None else RANDOMFORESTConfig()
+        self.model = MultiOutputRegressor(RandomForestRegressor(**self.model_config.dict()))
 
     def update(self, trial):
         """Reinitialize the model with Optuna-suggested hyperparameters."""
         params = self.model_config.get_optuna_params(trial=trial)
-        self.model = MultiOutputRegressor(
-            RandomForestRegressor(**params)
-        )
+        self.model = MultiOutputRegressor(RandomForestRegressor(**params))
 ```
 
 ### Step 5: Use Your Custom Model
@@ -274,7 +262,7 @@ rf_config_dict = {"name": "randomforest", "n_estimators": 200, "max_depth": 15}
 
 forecaster = TwigaForecaster(
     data_params=data_config,
-    model_params=[rf_config],      # or rf_config_dict
+    model_params=[rf_config],  # or rf_config_dict
     cv_params=train_config,
 )
 forecaster.fit(train_df=train_df)
@@ -425,11 +413,13 @@ class SimpleNNArchitecture(BaseArchitecture):
         layers = []
         in_dim = input_size
         for _ in range(num_layers):
-            layers.extend([
-                nn.Linear(in_dim, hidden_size),
-                activation,
-                nn.Dropout(p=dropout),
-            ])
+            layers.extend(
+                [
+                    nn.Linear(in_dim, hidden_size),
+                    activation,
+                    nn.Dropout(p=dropout),
+                ]
+            )
             in_dim = hidden_size
 
         # Output projection
@@ -458,6 +448,7 @@ Wrap your architecture in a `BaseNeuralModel` subclass. The base class provides 
 
 ```python
 # Continuing in twiga/models/nn/net/simplenn.py
+
 
 class SimpleNNForecastModel(BaseNeuralModel):
     """Lightning module wrapping the SimpleNNArchitecture."""
@@ -610,10 +601,11 @@ from twiga.core.config import BaseSearchSpace
 search_space = BaseSearchSpace(
     n_estimators=(50, 500),
     max_depth=(3, 30),
-    learning_rate=(1e-4, 1e-1),          # log scale (ratio >= 10)
-    subsample=(0.5, 1.0),                # linear scale (ratio < 10)
-    activation=["ReLU", "SiLU", "GELU"], # categorical
+    learning_rate=(1e-4, 1e-1),  # log scale (ratio >= 10)
+    subsample=(0.5, 1.0),  # linear scale (ratio < 10)
+    activation=["ReLU", "SiLU", "GELU"],  # categorical
 )
+
 
 # Named subclass (for reuse or IDE autocompletion)
 class MySearchSpace(BaseSearchSpace):

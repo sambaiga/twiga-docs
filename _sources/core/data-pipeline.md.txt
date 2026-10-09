@@ -10,6 +10,7 @@
 - `twiga/core/data/selection.py` - Feature selection utilities
 - `twiga/core/data/processing.py` - Sequence creation, lag/rolling augmentation
 - `twiga/core/data/loader.py` - `TimeseriesDataModule` (PyTorch Lightning)
+- `twiga/core/data/synthetic.py` - `generate_synthetic_netload`, `SYNTHETIC_PRESETS`
 
 </details>
 
@@ -135,9 +136,9 @@ Adds lagged values and rolling-window statistics of the target variable.
 from twiga.core.data.autores import AutoregressTransformer
 
 transformer = AutoregressTransformer(
-    n_samples=48,              # 48 samples/day for 30-min data
-    lags=[1, 24, 48, 168],    # lag by 1, 24, 48, 168 periods
-    windows=[24, 48],          # rolling windows of 24 and 48 periods
+    n_samples=48,  # 48 samples/day for 30-min data
+    lags=[1, 24, 48, 168],  # lag by 1, 24, 48, 168 periods
+    windows=[24, 48],  # rolling windows of 24 and 48 periods
     window_funcs=["mean", "std"],
     date_column="timestamp",
     value_column="load_mw",
@@ -196,8 +197,8 @@ data_config = DataPipelineConfig(
     period="30min",
     forecast_horizon=48,
     lookback_window_size=96,
-    input_scaler="standard",   # z-score normalization
-    target_scaler="robust",    # robust to outliers
+    input_scaler="standard",  # z-score normalization
+    target_scaler="robust",  # robust to outliers
 )
 ```
 
@@ -225,7 +226,7 @@ from twiga.core.config import DataPipelineConfig
 cfg = DataPipelineConfig(
     target_feature="load",
     period="30min",
-    forecast_horizon="1D",    # 1 day = 48 half-hour steps
+    forecast_horizon="1D",  # 1 day = 48 half-hour steps
     lookback_window_size="7D",  # 7 days = 336 steps
 )
 ```
@@ -242,8 +243,8 @@ The optimal lookback window is dataset-dependent. A lookback that is too short d
 cfg = DataPipelineConfig(
     target_feature="load",
     period="30min",
-    forecast_horizon="1D",       # resolved to 48 steps
-    lookback_window_size=48,     # initial value, overridden by HPO
+    forecast_horizon="1D",  # resolved to 48 steps
+    lookback_window_size=48,  # initial value, overridden by HPO
 )
 
 space = cfg.recommended_lookback_search_space(max_multiplier=7)
@@ -385,7 +386,7 @@ top = select_top_features(
     target="load_mw",
     task="regression",
     top_k=10,
-    alpha=0.05,          # optional p-value filter
+    alpha=0.05,  # optional p-value filter
     return_scores=True,  # include per-method scores in output
 )
 ```
@@ -415,10 +416,10 @@ For neural network models, the pipeline's NumPy arrays are fed into a PyTorch Li
 from twiga.core.data.loader import TimeseriesDataModule
 
 dm = TimeseriesDataModule(
-    train_inputs=train_features,    # np.ndarray
-    train_targets=train_targets,    # np.ndarray
-    val_inputs=val_features,        # np.ndarray (optional)
-    val_targets=val_targets,        # np.ndarray (optional)
+    train_inputs=train_features,  # np.ndarray
+    train_targets=train_targets,  # np.ndarray
+    val_inputs=val_features,  # np.ndarray (optional)
+    val_targets=val_targets,  # np.ndarray (optional)
     batch_size=64,
     num_workers=4,
     pin_memory=True,
@@ -458,8 +459,8 @@ df = pd.read_parquet("data/load_timeseries.parquet")
 pipeline = DataPipeline(
     target_feature="load_mw",
     period="30min",
-    lookback_window_size=96,       # 2 days of 30-min data
-    forecast_horizon=48,           # predict 1 day ahead
+    lookback_window_size=96,  # 2 days of 30-min data
+    forecast_horizon=48,  # predict 1 day ahead
     latitude=-6.8,
     longitude=39.3,
     past_features=["temperature"],
@@ -515,6 +516,29 @@ The example above shows the low-level API. In most cases you will use [`DataPipe
     ```
 
     See the [Quick Start Guide](../getting-started/quickstart.md) for the full workflow.
+
+
+## Synthetic Data
+
+`generate_synthetic_netload` produces a controllable net-load-like series for stress-testing probabilistic forecasting models under conditions real datasets may not cover: tail heaviness (via Student-t residuals) and PV penetration are both configurable, while the underlying deterministic load/solar skeleton (daily, weekly, seasonal patterns, a clearness-index cloud model) stays fixed, so differences in downstream results are attributable to the chosen knobs rather than other distributional properties. The output matches the column schema `TwigaForecaster` and `load_dataset` expect (`timestamp`, `Ghi`, `Temperature`, `NetLoad(kW)`).
+
+```python
+from twiga.core.data import generate_synthetic_netload, SYNTHETIC_PRESETS
+
+# Fully custom configuration
+df = generate_synthetic_netload(
+    n_years=3,
+    solar_penetration=0.40,
+    tail_df=5.0,
+    seed=0,
+)
+
+# Or one of the two named presets
+df_ht3 = generate_synthetic_netload(n_years=3, **SYNTHETIC_PRESETS["SYN-HT3"])  # heavy tails, df=3
+df_ht10 = generate_synthetic_netload(n_years=3, **SYNTHETIC_PRESETS["SYN-HT10"])  # moderate tails, df=10
+```
+
+Lower `tail_df` produces heavier tails (more frequent extreme net-load excursions); `tail_df=float("inf")` falls back to Gaussian residuals. Results are fully reproducible for a fixed `seed`.
 
 
 ## API Reference

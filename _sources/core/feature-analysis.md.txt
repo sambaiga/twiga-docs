@@ -5,7 +5,8 @@
 
 - `twiga/core/data/relevance.py`  -  `AssociationAnalyzer` class
 - `twiga/core/data/selection.py`  -  `select_top_features`, `compute_rf_importance`, `diversity_weights`
-- `twiga/core/stats/association.py`  -  `rank_correlation`, `compute_anova_f`, `compute_chi2`
+- `twiga/core/stats/association.py`  -  `rank_correlation`, `compute_anova_f`, `compute_chi2`, `distance_correlation`, `compute_distance_correlation`
+- `twiga/core/stats/dependence.py`  -  `dependence_profile`
 - `twiga/core/stats/autocorr.py`  -  `get_pacf_values`, `estimate_ar_order`, `calculate_durbin_watson`
 - `twiga/core/stats/crosslag.py`  -  `compute_crosslag_association`, `recommend_predictive_lags`
 - `twiga/core/stats/entropy.py`  -  entropy & complexity measures
@@ -23,6 +24,7 @@ Twiga provides a comprehensive statistical analysis toolkit for understanding an
 
 ```python
 from twiga.core.stats import rank_correlation, adf_test, get_acf_values, compute_xicorr
+from twiga.core.stats import distance_correlation, dependence_profile
 from twiga.core.data import AssociationAnalyzer, select_top_features, compute_rf_importance
 ```
 
@@ -32,7 +34,7 @@ from twiga.core.data import AssociationAnalyzer, select_top_features, compute_rf
 
 ### `AssociationAnalyzer`
 
-The `AssociationAnalyzer` class provides a single interface to compute feature-target association using eight methods spanning linear, rank-based, information-theoretic, and model-based approaches. All methods return a tidy `DataFrame` with columns `feature`, `target`, and a score column, making results easy to visualise and compare.
+The `AssociationAnalyzer` class provides a single interface to compute feature-target association using ten methods spanning linear, rank-based, information-theoretic, and model-based approaches. All methods return a tidy `DataFrame` with columns `feature`, `target`, and a score column, making results easy to visualise and compare.
 
 ```python
 from twiga.core.data import AssociationAnalyzer
@@ -41,7 +43,7 @@ analyzer = AssociationAnalyzer(
     data=df,
     features=["temperature", "ghi", "hour_sin", "hour_cos", "wind_speed"],
     target="load_mw",
-    task="regression",   # "regression" or "classification"
+    task="regression",  # "regression" or "classification"
 )
 
 # Single method
@@ -66,11 +68,15 @@ fig = analyzer.plot_heatmap(method="spearman", top_k=20)
 | Mutual Information | `"mi"` | Non-parametric, captures any statistical dependency |
 | ANOVA F-score | `"anova"` | Regression  -  linear effect of continuous feature on target |
 | Chi-squared | `"chi2"` | Classification  -  independence test for categorical/binned features |
+| Distance correlation | `"dcor"` | Zero if and only if independent; sees non-monotonic relationships |
+| Dependence profile | `"profile"` | Every measure at once, with the gap a linear summary misses |
 
 :::{admonition} Choosing a method
 :class: tip
 
 For energy forecasting with continuous features, **Spearman** is a safe default (robust, interpretable). Add **xi-correlation** or **PPS** when you suspect non-monotonic relationships (e.g. solar generation vs. temperature in high-irradiance regimes). Use **MI** to catch interactions that linear methods miss.
+
+When you need to know not just *whether* two variables are related but whether a linear summary of that relationship is safe, use **`"profile"`**. Pearson and Spearman both pass through zero on a V-shaped relationship, so a near-zero correlation is not evidence of independence; **`"dcor"`** is zero only under genuine independence, and the `nonlinear_gap` column reports the difference.
 :::
 
 ---
@@ -86,8 +92,8 @@ scores = rank_correlation(
     data=df,
     target="load_mw",
     features=["temperature", "ghi", "wind_speed"],
-    method="spearman",   # "pearson" | "spearman" | "kendall"
-    threshold=0.2,       # optional: drop features below this absolute score
+    method="spearman",  # "pearson" | "spearman" | "kendall"
+    threshold=0.2,  # optional: drop features below this absolute score
 )
 # Returns DataFrame with columns: feature, target, correlation  -  sorted descending
 ```
@@ -138,6 +144,48 @@ scores = compute_xicorr(
 # Returns DataFrame sorted descending by xi score
 ```
 
+### `distance_correlation`
+
+Distance correlation is zero **if and only if** the two variables are independent, and assumes no functional form. Pearson measures linear association and Spearman measures monotone association, so both report values near zero for a relationship that is real but neither, such as a V-shaped coupling.
+
+```python
+import numpy as np
+from twiga.core.stats import distance_correlation
+
+x = np.random.default_rng(0).normal(size=1000)
+y = x**2  # a real relationship, but not a monotone one
+
+np.corrcoef(x, y)[0, 1]  # ~0.00  -  Pearson sees nothing
+distance_correlation(x, y)  # ~0.54  -  the dependence is there
+```
+
+The estimator builds two `n x n` distance matrices, so cost is quadratic in the sample size. Samples above `max_samples` (default 2000) are subsampled without replacement, which adds variance to the estimate but no bias. Use `compute_distance_correlation` to apply it across many features and get a tidy frame back.
+
+**Reference:** Szekely, Rizzo & Bakirov (2007), *Measuring and testing dependence by correlation of distances*, Annals of Statistics 35(6), 2769-2794.
+
+---
+
+### `dependence_profile`
+
+Assembles every measure for the same pair, so linear, monotone and assumption-free views can be read side by side.
+
+```python
+from twiga.core.stats import dependence_profile
+
+profile = dependence_profile(df, target_col="q_kvar", variable_cols=["p_kw", "ghi"])
+```
+
+Returns `pearson`, `spearman`, `xicor`, `mutual_info`, `distance_corr` and `nonlinear_gap`, the last being `distance_corr - |pearson|`. A large gap means the dependence is real and a linear summary of it is misleading:
+
+| feature | pearson | spearman | xicor | mutual_info | distance_corr | nonlinear_gap |
+| --- | --- | --- | --- | --- | --- | --- |
+| ghi | 0.658 | 0.497 | 0.523 | 0.348 | 0.659 | 0.001 |
+| p_kw | 0.016 | -0.102 | 0.137 | 0.180 | 0.235 | **0.219** |
+
+Irradiance is adequately summarised by a correlation; active power is not. Both Pearson and Spearman sit near zero, yet the two variables are clearly dependent.
+
+---
+
 ### `compute_mutual_information`
 
 Estimates mutual information between features and a target using k-NN density estimation. Works for both regression and classification.
@@ -150,8 +198,8 @@ scores = compute_mutual_information(
     target="load_mw",
     features=feature_columns,
     task="regression",
-    threshold=0.01,   # optional: drop near-zero MI scores
-    pivot=False,      # True → wide matrix; False → long DataFrame
+    threshold=0.01,  # optional: drop near-zero MI scores
+    pivot=False,  # True → wide matrix; False → long DataFrame
 )
 ```
 
@@ -192,12 +240,12 @@ cl = compute_crosslag_association(
     data=df,
     feature_cols=["temperature", "irradiance"],
     target_col="load_mw",
-    max_lag=96,              # evaluate lags 0..96
-    forecast_horizon=48,     # 24-hour ahead at 30-min resolution
-    method="mi",             # "mi" (mutual information) or "xi" (Chatterjee Xi)
+    max_lag=96,  # evaluate lags 0..96
+    forecast_horizon=48,  # 24-hour ahead at 30-min resolution
+    method="mi",  # "mi" (mutual information) or "xi" (Chatterjee Xi)
 )
 # Returns: feature, lag, score, leakage_safe
-safe = cl[cl["leakage_safe"]]   # h >= 48 only
+safe = cl[cl["leakage_safe"]]  # h >= 48 only
 ```
 
 | Column | Description |
@@ -218,11 +266,11 @@ recs = recommend_predictive_lags(
     data=df,
     feature_cols=["temperature", "irradiance", "wind_speed"],
     target_col="load_mw",
-    forecast_horizon=48,    # minimum safe lag
-    max_lag=192,            # defaults to 4 * forecast_horizon if omitted
+    forecast_horizon=48,  # minimum safe lag
+    max_lag=192,  # defaults to 4 * forecast_horizon if omitted
     method="mi",
-    top_k=3,                # top-3 lags per feature
-    min_score=0.01,         # optional: drop near-zero associations
+    top_k=3,  # top-3 lags per feature
+    min_score=0.01,  # optional: drop near-zero associations
 )
 # Returns: feature, lag, score, rank - all rows have lag >= 48
 safe_lags = recs.groupby("feature")["lag"].apply(list).to_dict()
@@ -238,7 +286,7 @@ pipeline_config = DataPipelineConfig(
     forecast_horizon=48,
     lookback_window_size=336,
     past_features=list(safe_lags.keys()),
-    lags=safe_lags,          # only leakage-safe lags from recommend_predictive_lags
+    lags=safe_lags,  # only leakage-safe lags from recommend_predictive_lags
 )
 ```
 
@@ -265,10 +313,10 @@ top_features = select_top_features(
     target="load_mw",
     task="regression",
     top_k=15,
-    alpha=0.05,                        # optional p-value filter (ANOVA/Chi2)
-    rank_aggregation="weighted_borda", # see aggregation options below
+    alpha=0.05,  # optional p-value filter (ANOVA/Chi2)
+    rank_aggregation="weighted_borda",  # see aggregation options below
     return_scores=True,
-    include_chi2=False,                # set True for classification
+    include_chi2=False,  # set True for classification
 )
 ```
 
@@ -331,7 +379,7 @@ importance_df = compute_rf_importance(
     data=df,
     features=feature_columns,
     target="load_mw",
-    task="regression",   # "regression" or "classification"
+    task="regression",  # "regression" or "classification"
 )
 # Returns DataFrame with columns: feature, importance (sums to ~1.0)
 ```
@@ -394,7 +442,7 @@ result = get_trend_seasonality(
 # Multiple seasonalities - daily + weekly
 result = get_trend_seasonality(
     series,
-    periods=[48, 336],          # 336 = 48 * 7
+    periods=[48, 336],  # 336 = 48 * 7
     component_names=["Daily", "Weekly"],
 )
 # result.columns → ["Daily", "Weekly", "Trend", "Residual"]
@@ -519,7 +567,7 @@ std_resid = get_standardized_residual(residuals)
 from twiga.core.stats import normalise_series, get_optimal_lags, prepare_data
 
 # Normalise a series to [0, 1] or standardise to zero mean / unit variance
-norm = normalise_series(series, method="minmax")   # "minmax" | "zscore"
+norm = normalise_series(series, method="minmax")  # "minmax" | "zscore"
 
 # Estimate optimal lag order (AIC/BIC information criterion)
 lag = get_optimal_lags(series, max_lag=48, criterion="aic")
@@ -558,6 +606,12 @@ X, y = prepare_data(df, target="load_mw", features=feature_columns)
 .. autofunction:: twiga.core.stats.association.compute_anova_f
 
 .. autofunction:: twiga.core.stats.association.compute_chi2
+
+.. autofunction:: twiga.core.stats.association.distance_correlation
+
+.. autofunction:: twiga.core.stats.association.compute_distance_correlation
+
+.. autofunction:: twiga.core.stats.dependence.dependence_profile
 
 .. autofunction:: twiga.core.stats.xicorr.compute_xicorr
 

@@ -6,6 +6,7 @@
 - `twiga/distributions/nn/parametric.py`
 - `twiga/distributions/nn/quantile.py`
 - `twiga/distributions/nn/fpquantile.py`
+- `twiga/distributions/nn/fpqr/diagnostics.py`
 - `twiga/distributions/nn/residual_conformal.py`
 - `twiga/models/nn/prob/core.py`
 - `twiga/models/ml/gausscatboost_model.py`  -  `GAUSSCATBOOSTConfig` / `GAUSSCATBOOSTModel`
@@ -51,7 +52,7 @@ from twiga.distributions.nn.parametric import NormalDistribution
 
 model = ProbabilisticModel(
     backbone_cls=MLPFNetwork,
-    backbone_kwargs={...},          # num_target_feature, forecast_horizon, etc.
+    backbone_kwargs={...},  # num_target_feature, forecast_horizon, etc.
     head_cls=NormalDistribution,
     head_kwargs={"num_target_output": 1, "forecast_horizon": 48},
     # hidden_size injected automatically from backbone.encode_size
@@ -75,6 +76,8 @@ All parametric heads live in `twiga/distributions/nn/parametric.py`. Each maps t
 | `GammaDistribution` | Gamma | `(α, β)` | α, β > 0 | Strictly positive, flexible skew |
 | `BetaDistribution` | Beta | `(α, β)` | α, β > 0 | Bounded [0, 1] targets |
 | `StudentTDistribution` | Student-T | `(μ, σ, ν)` | σ > 0, ν > 2 | Very heavy tails |
+| `MultivariateNormalDistribution` | Joint Gaussian | `(μ, L)` | `LLᵀ` positive definite | Physically coupled targets |
+| `MultivariateLaplaceDistribution` | Joint Laplace | `(μ, L)` | `LLᵀ` positive definite | Coupled targets whose decision is an exceedance |
 
 All share the same interface:
 
@@ -83,7 +86,7 @@ from twiga.distributions.nn.parametric import NormalDistribution
 
 dist = NormalDistribution(
     num_target_output=1,
-    hidden_size=256,      # injected automatically by ProbabilisticModel
+    hidden_size=256,  # injected automatically by ProbabilisticModel
     forecast_horizon=48,
     out_activation_function=None,
 )
@@ -120,7 +123,7 @@ dist = QRDistribution(
     num_outputs=1,
     hidden_size=256,
     horizon=48,
-    loss_fn="pinball",    # or "huber-pinball"
+    loss_fn="pinball",  # or "huber-pinball"
     kappa=0.5,
     conf_level=0.05,
 )
@@ -248,6 +251,27 @@ $$\mathcal{L} = \mathcal{L}_{\text{quantile}} + \mathcal{L}_{\text{proposal}} - 
 
 where $\mathbb{H}$ is the entropy of the proposed quantile distribution, acting as a diversity regulariser.
 
+#### Diagnosing the Fraction-Proposal Network
+
+The entropy term above guards against grid collapse *during training*, computed per batch, per
+training step. After training, `twiga.distributions.nn.fpqr.diagnostics.quantile_fraction_diagnostics`
+answers the complementary question: did the learned grid actually end up informative, evaluated
+over a full set of forecast windows rather than one batch? A proposal network that collapsed to a
+near-uniform grid is functionally equivalent to fixed-grid quantile regression, so this is a cheap
+check to run before relying on results built on top of the adaptive mechanism.
+
+```python
+import numpy as np
+from twiga.distributions.nn.fpqr import quantile_fraction_diagnostics
+
+# tau_hats: the detached quantile-level output of QuantileProposal.forward(),
+# stacked across every evaluation window. Shape (n_windows, n_quantiles, horizon).
+diag = quantile_fraction_diagnostics(tau_hats, covariate=ghi_mean_per_window)
+
+diag.grid_entropy / diag.max_entropy  # near 1.0 → collapsed to a uniform grid
+diag.dispersion_ratio  # >> 1 → grid varies mainly with lead time; << 1 → with the forecast instance
+diag.raw_correlation  # how strongly a quantile level tracks an exogenous driver
+```
 
 ### Conditional Residual Calibration (CRC)
 
@@ -294,12 +318,12 @@ from twiga.distributions.nn.residual_conformal import CRCDistribution, AdditiveC
 # Standard backbone (MLPF, NHiTS)
 crc = CRCDistribution(
     num_target_output=1,
-    hidden_size=256,         # injected from backbone.encode_size
+    hidden_size=256,  # injected from backbone.encode_size
     forecast_horizon=48,
     sigma_loss_fn="hybrid_sqrt",  # "hybrid_sqrt" | "hybrid" | "gaussian" | "laplace" | "mse" | "log"
     alpha=0.1,
 )
-mu, sigma = crc(z)                           # z: (B, hidden_size)
+mu, sigma = crc(z)  # z: (B, hidden_size)
 loss = crc.get_log_likelihood(mu, sigma, y)  # sigma calibration loss only (not point loss)
 
 # Sigma-only step (stage 2 of two-stage training)
@@ -308,10 +332,10 @@ loss, metric = crc.step_sigma(z, y, metric_fn)
 # Additive backbone (MLPGAM, MLPGAF) - mu_layer is Identity, no linear projection
 add_crc = AdditiveCRCDistribution(
     num_target_output=1,
-    hidden_dim=256,          # internal sigma MLP width (independent of H*O)
+    hidden_dim=256,  # internal sigma MLP width (independent of H*O)
     forecast_horizon=48,
 )
-mu, sigma = add_crc(z)      # z shape (B, H*O); mu = reshape(z), sigma from ResidualSigmaHead
+mu, sigma = add_crc(z)  # z shape (B, H*O); mu = reshape(z), sigma from ResidualSigmaHead
 ```
 
 :::{admonition} CRC vs post-hoc conformal
@@ -320,6 +344,28 @@ mu, sigma = add_crc(z)      # z shape (B, H*O); mu = reshape(z), sigma from Resi
 Post-hoc conformal prediction (see [Conformal Prediction](conformal-prediction.md)) wraps any already-trained model and provides finite-sample coverage guarantees. CRC bakes the calibration objective directly into training - no separate calibration split needed - but the coverage guarantee is empirical rather than distribution-free. CRC typically produces tighter intervals when the signal-to-noise ratio is high.
 :::
 
+
+### Joint Heads and Copulas
+
+Independent heads treat the targets as unrelated, which is adequate when they are and wrong when a physical law ties them together. Active power, reactive power and voltage at a substation are linked by the power-flow equations, so a triple of individually well-calibrated marginals need not describe a state the network admits.
+
+Two routes are available.
+
+**A joint density.** `MultivariateNormalDistribution` and `MultivariateLaplaceDistribution` predict a covariance across targets at each lead time, parameterised by its Cholesky factor so the result is positive definite by construction. Both families are elliptical and share that parameterisation; they differ only in the radial part of the density. Prefer the Laplace where the quantity of interest is an exceedance rather than a central summary, because Gaussian tails decay quadratically and Laplace tails exponentially, and a constraint is evaluated precisely where the two disagree. The Laplace density is supported for an odd number of targets, and for two and four.
+
+**A copula over free margins.** Where the margins should stay distribution-free, as with a quantile head, `GaussianCopula` supplies the dependence separately. Sklar's theorem is what licenses the split: any joint distribution factors into its margins and a copula, so the margins stay exactly as the head learned them.
+
+```python
+from twiga.distributions.nn.copula_sampling import coupled_samples, fit_gaussian_copula
+
+# Fit the correlation on held-out data, so it never sees the points it is scored on.
+correlation = fit_gaussian_copula(val_observations, val_quantiles, quantile_levels)
+
+coupled = coupled_samples(quantiles, quantile_levels, num_samples=500, correlation=correlation)
+independent = coupled_samples(quantiles, quantile_levels, num_samples=500)  # same margins, no dependence
+```
+
+A Gaussian copula carries no tail dependence: it assigns vanishing probability to joint extremes however strong the correlation. Where the binding events *are* joint extremes, that is a limitation to report rather than to overlook.
 
 ## ML Parametric Models
 
@@ -616,6 +662,77 @@ for model_name, (lower, point, upper) in interval_dict.items():
 .. autoclass:: twiga.distributions.nn.parametric.StudentTDistribution
    :members:
    :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.parametric.CauchyDistribution
+   :members:
+   :show-inheritance:
+```
+
+### Bayesian heads - epistemic uncertainty
+
+The heads above are deterministic maps onto distribution parameters, so they
+express **aleatoric** uncertainty: irreducible noise in the target.  The Bayesian
+heads place a distribution over their own weights, so repeated forward passes
+differ and express **epistemic** uncertainty -- what the model does not know, which
+more data could reduce.  Both components are reported separately by
+``forecast()`` as ``scale_noiseless`` and ``scale_noise``, and combined in
+quadrature as ``scale``.
+
+Stochasticity is confined to the decoder.  A full-network Bayesian treatment
+multiplies the parameter count and the inference cost, which is the opposite of
+what a substation-scale forecaster needs.  Both heads still require ``n_samples``
+forward passes at inference, so they are slower than the quantile and density
+alternatives.
+
+```{eval-rst}
+.. autoclass:: twiga.distributions.nn.bayesian.BayesianHead
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.bayesian.MFVIDistribution
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.distributions.nn.bayesian.MCDropoutDistribution
+   :members:
+   :show-inheritance:
+```
+
+### Bayesian layers
+
+```{eval-rst}
+.. autoclass:: twiga.models.nn.core.bayesian.MFVILinear
+   :members:
+   :show-inheritance:
+
+.. autoclass:: twiga.models.nn.core.bayesian.MCDropoutLinear
+   :members:
+   :show-inheritance:
+
+.. autofunction:: twiga.models.nn.core.bayesian.FeedForwardBNN
+
+.. autofunction:: twiga.models.nn.core.bayesian.FeedForwardMCD
+```
+
+### Auxiliary losses for sample-based heads
+
+Two optional terms shape the interval during training.  They are **off by
+default** and reported as separate loss components when enabled.
+
+``sampled_pinball_loss`` reduces the posterior draws to the central interval's
+two quantile levels and applies the pinball loss, which is *consistent* for
+those levels -- it can safely shape the interval.
+
+``coverage_width_loss`` penalises the squared deviation of a smoothed coverage
+rate from nominal, plus mean width.  It is a **heuristic regulariser, not a
+proper scoring rule**: it decouples coverage from width, which is precisely the
+property that makes a composite coverage-width metric unsound.  Use it only
+alongside a consistent objective, never as the sole training signal.
+
+```{eval-rst}
+.. autofunction:: twiga.distributions.nn.custom_loss.sampled_pinball_loss
+
+.. autofunction:: twiga.distributions.nn.custom_loss.coverage_width_loss
 ```
 
 ### Parametric heads - additive backbones (MLPGAM / MLPGAF)
@@ -682,6 +799,14 @@ instead of a latent vector, preserving the GAM decomposition.
 ### Custom loss functions
 
 ```{eval-rst}
+.. autoclass:: twiga.distributions.nn.copula.GaussianCopula
+
+.. autofunction:: twiga.distributions.nn.copula_sampling.fit_gaussian_copula
+
+.. autofunction:: twiga.distributions.nn.copula_sampling.coupled_samples
+
+.. autofunction:: twiga.distributions.nn.copula_sampling.quantile_pit
+
 .. autoclass:: twiga.distributions.nn.custom_loss.QuantileLoss
    :members:
    :show-inheritance:

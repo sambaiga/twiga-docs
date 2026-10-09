@@ -212,6 +212,7 @@ Defined in `twiga/core/metrics/parametric.py`. Used via `evaluate_parametric_for
 | CRPS (PWM) | `crps_pwm` | (PWM estimator of the same quantity) | CRPS via Probability Weighted Moments - more stable for small sample counts |
 | **DSS** | `dss` | $\frac{(y_t - \mu_t)^2}{\sigma_t^2} + 2\log\sigma_t$ | Dawid-Sebastiani Score - proper rule jointly rewarding calibration and sharpness |
 | **Energy Score** | `energy_score` | $\mathbb{E}_F\|\mathbf{X}-\mathbf{y}\|_2 - \tfrac{1}{2}\mathbb{E}_F\|\mathbf{X}-\mathbf{X}'\|_2$ | Multivariate generalisation of CRPS for joint forecast distributions |
+| **Variogram Score** | `variogram_score` | $\sum_{i,j} w_{ij}(|y_i-y_j|^p - \mathbb{E}_F|X_i-X_j|^p)^2$ | Sensitive to the dependence structure, where the Energy Score is not |
 | **Brier Score** | `brier_score` | $\frac{1}{n}\sum_t(\hat{p}_t - o_t)^2$ | Probabilistic binary event forecast accuracy |
 | NLL | `nll` | $-\frac{1}{n}\sum_t\log f(y_t\mid\theta_t)$ | Negative log-likelihood under the predictive distribution |
 
@@ -239,6 +240,25 @@ from twiga.core.metrics.parametric import energy_score
 # samples shape: (n_ensemble_members, forecast_horizon)
 es = energy_score(true=true_vector, samples=ensemble_samples)
 ```
+
+### Variogram Score
+
+The Energy Score responds mainly to errors in the mean and has limited power against a misspecified correlation, so a model can place the dependence badly and lose very little of it. The Variogram Score compares pairwise differences instead and is sensitive to exactly that term:
+
+$$VS_p(F, \mathbf{y}) = \sum_{i,j} w_{ij}\left(|y_i - y_j|^p - \mathbb{E}_F|X_i - X_j|^p\right)^2$$
+
+```python
+from twiga.core.metrics.parametric import variogram_score
+
+# samples shape: (n_ensemble_members, n_targets)
+vs = variogram_score(true=true_vector, samples=ensemble_samples, order=0.5)
+```
+
+It is proper but not strictly proper, being invariant to a shift of the whole vector, which is the price of its sensitivity. Report it **alongside** the Energy Score rather than instead of it: where the two disagree, the disagreement is itself the finding.
+
+`order` defaults to `0.5`, which is robust to heavy tails; `weights` accepts a non-negative matrix to down-weight pairs whose dependence is not of interest.
+
+**Reference:** Scheuerer & Hamill (2015), *Variogram-based proper scoring rules for probabilistic forecasts of multivariate quantities*, Monthly Weather Review 143(4), 1321-1334.
 
 ### Brier Score
 
@@ -291,7 +311,7 @@ Defined in `twiga/core/metrics/parametric.py`. Closed-form implementations for c
 from twiga.core.metrics.parametric import normal_nll, normal_crps, laplace_nll
 
 nll = normal_nll(true, loc=mu, scale=sigma)
-crps = normal_crps(true, loc=mu, scale=sigma)   # exact closed form
+crps = normal_crps(true, loc=mu, scale=sigma)  # exact closed form
 ```
 
 The analytical `normal_crps` uses:
@@ -345,24 +365,42 @@ p_per_hour = giacomini_white_test(p_real, p_pred_1, p_pred_2, norm=1, version="u
 - Use **DM** for a straightforward comparison of two forecasts without conditioning on past information.
 - Use **GW** when you suspect one model exploits time-varying information (e.g., regime changes, calendar effects) that the other does not - GW is more powerful in these situations.
 
-### Visualising the test matrix
+### Comparing more than two conditions
 
-Both functions return arrays when `version="univariate"`, making it straightforward to build a model comparison heatmap:
+`diebold_mariano_test` and `giacomini_white_test` compare one pair at a time. When there are more
+than two models or conditions, `twiga/core/metrics/stats.py` provides two higher-level functions
+built on top of the pairwise primitives, each suited to a different question.
+
+**`pairwise_dm_table`** runs the DM test on every unordered pair of per-fold loss arrays and
+returns a tidy dataframe, with Benjamini-Hochberg correction applied jointly across all pairs
+(controlling the false-discovery rate across the whole comparison, not per pair):
 
 ```python
-import pandas as pd, numpy as np
-from twiga.core.metrics import diebold_mariano_test
+from twiga.core.metrics import pairwise_dm_table
 
-models = {"Model A": pred_a, "Model B": pred_b, "Naive": pred_naive}
-p_matrix = pd.DataFrame(index=models, columns=models, dtype=float)
-
-for m1, p1 in models.items():
-    for m2, p2 in models.items():
-        if m1 == m2:
-            p_matrix.loc[m1, m2] = 1.0
-        else:
-            p_matrix.loc[m1, m2] = diebold_mariano_test(p_real, p1, p2, version="multivariate")
+losses = {"FPQR": fpqr_losses, "QR": qr_losses, "BNN": bnn_losses}  # each (n_folds, horizon)
+table = pairwise_dm_table(losses, alpha=0.05)
+#   condition_a condition_b   p_value  p_adjusted  significant winner
+# 0        FPQR          QR  0.021     0.031        True        FPQR
+# ...
 ```
+
+**`mcs_ranking`** instead asks "which subset of conditions can be statistically distinguished from
+the best one, given the data?" via the Hansen-Lunde-Nason Model Confidence Set procedure, wrapping
+`model_confidence_set`:
+
+```python
+from twiga.core.metrics import mcs_ranking
+
+mcs = mcs_ranking(losses, alpha=0.10, n_boot=1000)
+mcs.included  # conditions statistically indistinguishable from the best
+mcs.eliminated  # conditions ruled out, in elimination order
+mcs.best  # the single best-performing condition
+```
+
+Use `pairwise_dm_table` when every specific pairwise comparison matters (e.g. reporting which
+model beats which in a results table); use `mcs_ranking` when the question is which models survive
+as a group, without inflating the false-positive rate across many pairwise tests.
 
 
 ## Unified Dispatch
@@ -372,7 +410,7 @@ Use {func}`~twiga.core.metrics.evaluate_forecast` as the single entry point - it
 ```python
 from twiga.core.metrics import evaluate_forecast
 
-metrics_df = evaluate_forecast(result)          # auto-dispatches
+metrics_df = evaluate_forecast(result)  # auto-dispatches
 metrics_df = evaluate_forecast(result, alpha=0.1)  # for interval/quantile kinds
 ```
 
@@ -446,6 +484,8 @@ Supported `kind` values:
 ```
 
 ```{eval-rst}
+.. autofunction:: twiga.core.metrics.parametric.variogram_score
+
 .. autofunction:: twiga.core.metrics.parametric.brier_score
 ```
 

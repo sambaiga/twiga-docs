@@ -76,14 +76,16 @@ Twiga expects a pandas `DataFrame` with:
 ```python
 import pandas as pd
 
-df = pd.DataFrame({
-    "timestamp":   pd.date_range("2024-01-01", periods=1000, freq="1h"),
-    "load_mw":     [...],   # target_feature
-    "temperature": [...],   # known_future_features  - NWP forecast known for full horizon
-    "wind_speed":  [...],   # forecast_period_features   - known only over forecast horizon
-    "irradiance":  [...],   # past_features - no future forecast available
-    # calendar features (hour, dayofweek, etc.) are derived automatically from timestamp
-})
+df = pd.DataFrame(
+    {
+        "timestamp": pd.date_range("2024-01-01", periods=1000, freq="1h"),
+        "load_mw": [...],  # target_feature
+        "temperature": [...],  # known_future_features  - NWP forecast known for full horizon
+        "wind_speed": [...],  # forecast_period_features   - known only over forecast horizon
+        "irradiance": [...],  # past_features - no future forecast available
+        # calendar features (hour, dayofweek, etc.) are derived automatically from timestamp
+    }
+)
 ```
 
 The config tells the pipeline which columns play which role:
@@ -123,12 +125,12 @@ from twiga.core.config import DataPipelineConfig
 data_config = DataPipelineConfig(
     target_feature="load_mw",
     period="1h",
-    lookback_window_size=168,           # 7 days of hourly data
-    forecast_horizon=48,                # predict 2 days ahead
-    past_features=["irradiance"], # past-only, no future forecast
+    lookback_window_size=168,  # 7 days of hourly data
+    forecast_horizon=48,  # predict 2 days ahead
+    past_features=["irradiance"],  # past-only, no future forecast
     calendar_features=["hour", "dayofweek"],
-    known_future_features=["temperature"], # known over full horizon
-    forecast_period_features=["wind_speed"],   # known only for forecast window
+    known_future_features=["temperature"],  # known over full horizon
+    forecast_period_features=["wind_speed"],  # known only for forecast window
     lags=[1, 24, 48, 168],
     windows=[24, 48],
     window_funcs=["mean", "std"],

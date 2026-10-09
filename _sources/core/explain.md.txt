@@ -29,10 +29,10 @@ lets you answer:
 from twiga.core.explain import ShapExplainer
 
 # After fitting a TwigaForecaster:
-result = forecaster.explain(X_test)       # convenience wrapper
+result = forecaster.explain(X_test)  # convenience wrapper
 # or directly:
 explainer = ShapExplainer(forecaster.models[0], forecaster.data_pipeline)
-result = explainer.explain(X_test)        # X_test: (B, L, F)
+result = explainer.explain(X_test)  # X_test: (B, L, F)
 ```
 
 `X_test` is the 3-D feature array produced by the data pipeline (same shape as
@@ -51,10 +51,10 @@ the array passed to the model's `fit()` / `predict()` methods).
 | `expected_value` | scalar | SHAP base value (mean prediction) |
 
 ```python
-print(result.values.shape)           # (B, L, F)
-importance = result.mean_importance() # dict: feature → mean |SHAP|
-result.plot_importance(top_n=20)      # bar chart
-result.plot_timestep_importance()     # line chart over lookback window
+print(result.values.shape)  # (B, L, F)
+importance = result.mean_importance()  # dict: feature → mean |SHAP|
+result.plot_importance(top_n=20)  # bar chart
+result.plot_timestep_importance()  # line chart over lookback window
 ```
 
 ### `mean_importance()`
@@ -108,8 +108,8 @@ The `explain()` method on `TwigaForecaster` is a thin convenience wrapper:
 
 ```python
 result = forecaster.explain(
-    X,              # (B, L, F) feature array
-    model_idx=0,    # which model in forecaster.models to explain
+    X,  # (B, L, F) feature array
+    model_idx=0,  # which model in forecaster.models to explain
     n_background=100,
 )
 ```
@@ -133,16 +133,19 @@ from twiga.models.ml.lightgbm_model import LIGHTGBMConfig
 
 # --- Fit ---
 data_config = DataPipelineConfig(
-    target_feature='load',
-    period='1h',
+    target_feature="load",
+    period="1h",
     lookback_window_size=168,
     forecast_horizon=24,
     lags=[1, 24, 168],
     input_scaler="standard",
 )
 train_config = ExperimentConfig(
-    split_freq='months', train_size=12, test_size=1,
-    window='expanding', project_name='shap_demo',
+    split_freq="months",
+    train_size=12,
+    test_size=1,
+    window="expanding",
+    project_name="shap_demo",
 )
 forecaster = TwigaForecaster(data_config, LIGHTGBMConfig(), train_config)
 forecaster.fit(train_df)

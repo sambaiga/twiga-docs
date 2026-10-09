@@ -19,10 +19,15 @@ All public functions are available through a single flat import:
 
 ```python
 from twiga.core.plot import (
-    plot_forecast, plot_timeseries, plot_quantile_fan,
-    twiga_theme, TWIGA_PALETTE,
-    plot_acf, plot_reliability_diagram,
-    scatter_plot, correlation_heatmap,
+    plot_forecast,
+    plot_timeseries,
+    plot_quantile_fan,
+    twiga_theme,
+    TWIGA_PALETTE,
+    plot_acf,
+    plot_reliability_diagram,
+    scatter_plot,
+    correlation_heatmap,
 )
 ```
 
@@ -58,6 +63,7 @@ print(TWIGA_PALETTE)
 
 # Apply to any ggplot figure
 from lets_plot import ggplot, aes, geom_line
+
 p = ggplot(df, aes("x", "y")) + geom_line() + twiga_theme()
 ```
 
@@ -86,8 +92,7 @@ The `gt.py` module renders model evaluation results as publication-quality table
 from twiga.core.plot.gt import twiga_report
 
 res = (
-    metrics_df
-    .groupby("Model")[["mae", "corr", "rmse", "smape"]]
+    metrics_df.groupby("Model")[["mae", "corr", "rmse", "smape"]]
     .mean()
     .round(2)
     .reset_index()
@@ -128,6 +133,7 @@ create_backtest_summary_table(
 
 ```python
 from lets_plot import LetsPlot
+
 LetsPlot.setup_html()  # call once at the top of each notebook
 ```
 
@@ -135,6 +141,7 @@ To export figures to PDF / PNG / SVG:
 
 ```python
 from lets_plot import ggsave
+
 ggsave(p, "forecast.pdf")
 ```
 
@@ -154,8 +161,8 @@ p = plot_forecast(
     date_col="timestamp",
     actual_col="Actual",
     forecast_col="forecast",
-    lower_col="lower",   # optional
-    upper_col="upper",   # optional
+    lower_col="lower",  # optional
+    upper_col="upper",  # optional
     n_samples=7 * 48,
     title="Net Load Forecast",
     y_label="Net Load (kW)",
@@ -187,7 +194,7 @@ Multi-model comparison  -  one panel per model using `facet_wrap`. The input Dat
 from twiga.core.plot import plot_forecast_grid
 
 p = plot_forecast_grid(
-    combined_df,        # long-format DataFrame with a "Model" column
+    combined_df,  # long-format DataFrame with a "Model" column
     actual_col="Actual",
     forecast_col="forecast",
     model_col="Model",
@@ -226,7 +233,7 @@ p = scatter_matrix(
     df,
     variables=["temperature", "ghi", "wind_speed"],
     targets=["load_mw"],
-    n_sample=500,   # random subsample for performance; use None to disable
+    n_sample=500,  # random subsample for performance; use None to disable
 )
 p
 ```
@@ -296,7 +303,7 @@ from twiga.core.plot import plot_forecast_intervals
 
 interval_specs = [
     {"lower_col": "lower_split", "upper_col": "upper_split", "label": "Split CP"},
-    {"lower_col": "lower_aci",   "upper_col": "upper_aci",   "label": "ACI"},
+    {"lower_col": "lower_aci", "upper_col": "upper_aci", "label": "ACI"},
 ]
 
 p = plot_forecast_intervals(
@@ -346,7 +353,7 @@ Plots empirical vs. nominal coverage levels to diagnose interval calibration:
 ```python
 from twiga.core.plot import plot_reliability_diagram
 
-nominal   = [0.1, 0.25, 0.5, 0.75, 0.9]
+nominal = [0.1, 0.25, 0.5, 0.75, 0.9]
 empirical = [0.11, 0.26, 0.49, 0.76, 0.88]
 
 p = plot_reliability_diagram(nominal, empirical, title="Reliability Diagram")
@@ -361,7 +368,7 @@ from twiga.core.plot import plot_metrics_bar
 p = plot_metrics_bar(
     summary_df,
     metric_col="MAE",
-    model_col="Model",   # default column name is "Model" (capital M)
+    model_col="Model",  # default column name is "Model" (capital M)
     title="MAE by Model",
 )
 p
@@ -382,9 +389,9 @@ from twiga.core.plot import (
 )
 
 # diagnostics_df must contain columns: fitted, residuals, leverage, cooks_d
-residual_plot(diagnostics_df)           # Tukey–Anscombe: residuals vs fitted
-normal_q_qplot(diagnostics_df)          # Normal Q-Q
-squared_residual_plot(diagnostics_df)   # Scale-Location (homoscedasticity)
+residual_plot(diagnostics_df)  # Tukey–Anscombe: residuals vs fitted
+normal_q_qplot(diagnostics_df)  # Normal Q-Q
+squared_residual_plot(diagnostics_df)  # Scale-Location (homoscedasticity)
 residual_leverage_plot(diagnostics_df)  # Residuals vs Leverage (influential points)
 ```
 
@@ -394,12 +401,14 @@ These functions pair naturally with the residual diagnostic statistics in `twiga
 from twiga.core.stats import cooks_distance, leverage_statistic, get_standardized_residual
 import pandas as pd
 
-diagnostics_df = pd.DataFrame({
-    "fitted":    fitted_values,
-    "residuals": residuals,
-    "leverage":  leverage_statistic(X),
-    "cooks_d":   cooks_distance(fitted_values, residuals, n_params=X.shape[1]),
-})
+diagnostics_df = pd.DataFrame(
+    {
+        "fitted": fitted_values,
+        "residuals": residuals,
+        "leverage": leverage_statistic(X),
+        "cooks_d": cooks_distance(fitted_values, residuals, n_params=X.shape[1]),
+    }
+)
 
 residual_plot(diagnostics_df)
 residual_leverage_plot(diagnostics_df)
@@ -415,10 +424,10 @@ For users who prefer Matplotlib, `matplot_theme.py` provides a matching theme an
 from twiga.core.plot.matplot_theme import configure_matlib_style, plot_prediction
 import matplotlib.pyplot as plt
 
-configure_matlib_style()   # apply Twiga brand style
+configure_matlib_style()  # apply Twiga brand style
 
 fig, ax = plt.subplots()
-plot_prediction(ax, true=y_true, mu=y_pred)   # actual (dots) + forecast (line)
+plot_prediction(ax, true=y_true, mu=y_pred)  # actual (dots) + forecast (line)
 plt.tight_layout()
 plt.show()
 ```

@@ -105,7 +105,7 @@ The `"window_last"` and `"window_average"` strategies adapt to the local level o
 For `"window_last"`:
 
 ```python
-last_obs = x[:, -1, :num_targets]              # (B, num_targets)
+last_obs = x[:, -1, :num_targets]  # (B, num_targets)
 preds = broadcast(last_obs, (B, horizon, num_targets))
 ```
 
@@ -170,7 +170,7 @@ For each forecast step `h` (0-indexed), the source index into the input window i
 
 ```python
 indices = [seq_len - m + (h % m) for h in range(horizon)]
-preds = x[:, indices, :num_targets].copy()   # (B, horizon, num_targets)
+preds = x[:, indices, :num_targets].copy()  # (B, horizon, num_targets)
 ```
 
 The modular wrap `h % m` ensures that when `horizon > m`, the seasonal pattern repeats correctly.
@@ -213,9 +213,9 @@ flowchart LR
 ### Predict Logic
 
 ```python
-w = window_size or seq_len          # None → full window
-window = x[:, -w:, :num_targets]    # (B, w, num_targets)
-avg = window.mean(axis=1)           # (B, num_targets)
+w = window_size or seq_len  # None → full window
+window = x[:, -w:, :num_targets]  # (B, w, num_targets)
+avg = window.mean(axis=1)  # (B, num_targets)
 preds = broadcast(avg, (B, horizon, num_targets))
 ```
 
@@ -264,10 +264,10 @@ When `L = 1`, the denominator `max(L − 1, 1) = 1`, making the slope zero, and 
 ### Predict Logic
 
 ```python
-last  = x[:, -1, :num_targets]          # (B, num_targets)
-first = x[:,  0, :num_targets]          # (B, num_targets)
+last = x[:, -1, :num_targets]  # (B, num_targets)
+first = x[:, 0, :num_targets]  # (B, num_targets)
 slope = (last - first) / max(L - 1, 1)  # (B, num_targets)
-steps = np.arange(1, horizon + 1)        # (horizon,)
+steps = np.arange(1, horizon + 1)  # (horizon,)
 
 # Vectorised outer product
 preds = last[:, np.newaxis, :] + steps[np.newaxis, :, np.newaxis] * slope[:, np.newaxis, :]
@@ -459,7 +459,7 @@ from twiga.models.ml.lightgbm_model import LIGHTGBMConfig
 data_config = DataPipelineConfig(
     target_feature="load_mw",
     period="1h",
-    lookback_window_size=168,   # 7 days at hourly resolution
+    lookback_window_size=168,  # 7 days at hourly resolution
     forecast_horizon=24,
     calendar_features=["hour", "dayofweek", "month"],
     input_scaler="standard",
@@ -501,7 +501,7 @@ forecaster = TwigaForecaster(
 
 data = pd.read_parquet("data/load.parquet")
 train_df = data[data.timestamp <= "2024-06-01"]
-test_df  = data[data.timestamp > "2024-06-01"]
+test_df = data[data.timestamp > "2024-06-01"]
 
 forecaster.fit(train_df=train_df)
 results_df, metrics_df = forecaster.evaluate_point_forecast(test_df=test_df)

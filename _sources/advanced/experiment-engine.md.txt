@@ -11,7 +11,7 @@
 
 :::
 
-`ExperimentEngine` is a two-phase orchestrator for structured rolling-origin ablation experiments. It handles backbone HPO, ablation condition evaluation across multiple datasets and CV folds, result aggregation, and MLflow tracking in a single reusable entry point. Experiment scripts define a declarative `ExperimentSpec` and call `ExperimentEngine.run(spec)`.
+`ExperimentEngine` runs structured rolling-origin experiments from an `ExperimentSpec`. It validates the selected spec, tunes or loads a fingerprint-matched backbone HPO cache, evaluates conditions across datasets and CV folds, aggregates results, and records tracking and run status. Experiment scripts construct the engine with a spec and pass a `PipelineConfig` to `run()`.
 
 ---
 
@@ -21,9 +21,11 @@
 graph TD
     A[ExperimentSpec] --> B[ExperimentEngine.run]
     B --> C{Phase 1: Backbone HPO}
-    C --> D[run_backbone_hpo per dataset]
-    D --> E[Optuna study - SQLite]
-    E --> F[save best_params.npy]
+    C --> D[run_backbone_hpo per dataset and model]
+    D --> E{matching fingerprinted cache?}
+    E -->|no| F[Optuna tuning]
+    E -->|yes| G[reuse best params]
+    F --> H[atomic versioned JSON cache]
     B --> G{Phase 2: Ablation}
     G --> H[For each condition]
     H --> I[For each dataset]
@@ -36,9 +38,9 @@ graph TD
     O --> P[CSV full + summary]
 ```
 
-**Phase 1 - Backbone HPO** searches the backbone model's hyperparameter space using Optuna and saves the best parameters to disk. This phase runs once per dataset and is skipped automatically on subsequent runs when the cached result exists.
+**Phase 1 - Backbone HPO** searches the backbone model's hyperparameter space with Optuna. A JSON cache is reused only when its fingerprint matches the model, search space, fixed parameters, input data, and HPO protocol. Cache policy is selectable as `reuse`, `refresh`, or `error-if-missing`.
 
-**Phase 2 - Ablation** evaluates each condition in `ExperimentSpec.conditions` across all datasets and CV folds using the backbone parameters from Phase 1 as the starting point. Each condition can selectively override any config field. Results are aggregated across folds and saved as CSV files.
+**Phase 2 - Conditions** evaluates each selected condition across datasets and CV folds, starting from the backbone parameters and applying condition overrides. Results are aggregated to CSV. Each run also writes a per-condition `run_status.json`; failed conditions are visible there, and an all-failed run raises instead of being promoted to `latest`.
 
 ---
 
@@ -49,35 +51,55 @@ graph TD
 `ExperimentSpec` declares the full experiment: which backbone to tune, which datasets to run on, and which conditions to compare.
 
 ```python
-from twiga.core.config import DataPipelineConfig
 from twiga.experiment import ExperimentSpec, Condition
+from twiga.models.nn.mlpf_model import MLPFConfig
+from twiga.models.nn.mlpffpqr_model import MLPFFPQRConfig
+from twiga.utils.run_forecast import PipelineConfig
 
 spec = ExperimentSpec(
-    name="ganf_ablation",
-    backbone_cls=MLPGAFConfig,
-    datasets={"ETTh1": (train_df, val_df, test_df), "ETTm1": (...)},
-    pipeline_cfg=DataPipelineConfig(...),
+    name="Chapter 5 FPQR example",
+    output_prefix="fpqr_example",
+    condition_cls=MLPFFPQRConfig,
+    backbone_cls=MLPFConfig,
+    datasets={"MLVS-PT": {"dataset_name": "MLVS-PT", "data_path": "examples/data"}},
     conditions=[
-        Condition(name="baseline",    overrides={}),
-        Condition(name="no_gate",     overrides={"use_gate": False}),
-        Condition(name="3group",      overrides={"group_scheme": "3group"}),
-        Condition(name="input_gate",  overrides={"gate_position": "input"}),
+        Condition(name="fpqr", group="benchmark", overrides={}),
     ],
-    results_dir="results/ganf_ablation",
-    hpo_trials=30,
+    cv_train_size=12,
+    cv_test_size=4,
+    cv_val_size=2,
+    cv_stride=2,
+    cv_folds=10,
+)
+
+base_cfg = PipelineConfig(
+    dataset_name="MLVS-PT",
+    data_path="examples/data",
+    output_dir="results",
+    train_start="2019-03",
+    train_end="2021-12",
+    test_start="2021-07",
+    test_end="2021-12",
+    input_window_size=96,
+    forecast_horizon=48,
+    window_stride=48,
+    period="30min",
+    epochs=500,
+    num_trials=50,
+)
+
+engine = ExperimentEngine(spec)
+summary = engine.run(
+    base_cfg,
+    groups=["benchmark"],
+    dataset_keys=["MLVS-PT"],
+    hpo_cache_policy="reuse",
 )
 ```
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `name` | `str` | Experiment name. Used as the MLflow experiment name and file prefix |
-| `backbone_cls` | type | Config class for the backbone model (e.g. `MLPGAFConfig`) |
-| `datasets` | `dict[str, tuple]` | Maps dataset name to `(train_df, val_df, test_df)` |
-| `pipeline_cfg` | `DataPipelineConfig` | Shared data pipeline configuration |
-| `conditions` | `list[Condition]` | Ablation conditions to evaluate |
-| `results_dir` | `str \| Path` | Root directory for CSV output and HPO caches |
-| `hpo_trials` | `int` | Number of Optuna trials for backbone HPO |
-| `cv_params` | `ExperimentConfig \| None` | Cross-validation split settings. Defaults to single train/val/test |
+This is the same spec shape and model pair used by `experiment/chapter-5-fpqr/fpqr_experiment.py`, reduced to one condition. It performs real training when run; use the chapter script's CLI for an experiment and `--help` to inspect available controls.
+
+The required fields are `name`, `output_prefix`, `condition_cls`, `backbone_cls`, `conditions`, and `datasets`. Each dataset value is a mapping of `PipelineConfig` field overrides, not pre-split dataframes.
 
 ### Condition
 
@@ -86,20 +108,22 @@ Each `Condition` names one ablation arm and specifies field overrides applied on
 ```python
 Condition(
     name="latent_gate_2g",
+    group="design",
     overrides={
         "group_scheme": "2group",
         "gate_position": "latent",
         "fusion_type": "gated",
     },
-    hpo_variant=None,   # shares backbone HPO cache with other 2group conditions
+    hpo_variant="2group",  # separate fingerprinted cache for this architecture
 )
 ```
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `name` | `str` | Unique condition identifier. Appears in result DataFrames and MLflow run names |
+| `group` | `str` | Condition group selected with `--group` |
+| `name` | `str` | Unique condition identifier within its group |
 | `overrides` | `dict[str, Any]` | Config fields to override. Applied after backbone HPO params are loaded |
-| `hpo_variant` | `str \| None` | When set, selects a separate HPO cache key. Use when an override changes architecture in a way that invalidates backbone params (e.g. a different `group_scheme`) |
+| `hpo_variant` | `str` | Selects a separate cache identity when a variant changes the search/model configuration |
 
 :::{admonition} When to set `hpo_variant`
 :class: tip
@@ -116,26 +140,28 @@ Two conditions that differ only in a regularisation weight can share backbone HP
 ```python
 from twiga.experiment import ExperimentEngine
 
-engine = ExperimentEngine()
-engine.run(spec)
+engine = ExperimentEngine(spec)
+summary = engine.run(
+    base_cfg,
+    groups=["benchmark"],
+    dataset_keys=["MLVS-PT"],
+    hpo_cache_policy="reuse",
+)
 ```
 
-`run()` executes both phases in order and writes results under `spec.results_dir`.
+`run()` returns a summary DataFrame. Outputs are written below `<base_cfg.output_dir>/<slugified spec.name>/runs/<run_id>/`. The run includes `meta.json`, `run_status.json`, result CSVs, and per-condition artifacts. `latest` points to the latest successful run by default. Partial runs are not promoted unless `accept_partial=True`; all-failed runs always raise.
 
 ### From the command line
 
 `ExperimentEngine.cli_main` provides a minimal CLI entry point. Experiment scripts expose it directly:
 
 ```bash
-python experiment/ganf_ablation.py --datasets ETTh1 ETTm1 --hpo-trials 50
+uv run python experiment/chapter-5-fpqr/fpqr_experiment.py --help
+uv run python experiment/chapter-5-fpqr/fpqr_experiment.py \
+    --group benchmark --dataset MLVS-PT --hpo-cache-policy reuse
 ```
 
-The script calls:
-
-```python
-if __name__ == "__main__":
-    ExperimentEngine.cli_main(spec)
-```
+The chapter script constructs `ExperimentEngine(SPEC)` and calls `ENGINE.cli_main(BASE_CFG)`. The CLI supports `--group`, `--dataset`, `--skip-hpo`, `--hpo-cache-policy`, `--accept-partial`, `--tracking-uri`, `--epochs`, `--num-trials`, and `--folds`. `--skip-hpo` requires a matching fingerprinted cache; it does not allow an unverified legacy cache.
 
 ---
 
@@ -154,7 +180,15 @@ This means a condition override always wins over HPO-tuned params, which in turn
 
 ## HPO Cache
 
-Backbone HPO results are cached as `.npy` files under `results_dir`. The cache key is `{backbone_cls.name}_{dataset}_{hpo_variant or "default"}`. Re-running a script with `--hpo-trials` greater than the previous run will resume the existing Optuna study and add more trials; it will not restart from scratch.
+Backbone HPO results are cached as versioned JSON under `<experiment_root>/backbone_hpo/<dataset>/<model>_best_params.json`. The envelope records a SHA-256 fingerprint of the model/search configuration, fixed search parameters, dataset contents and feature protocol, HPO window, trial budget, epoch budget, objective, and metrics. Existing flat/unversioned JSON files are treated as unverified and are not reused by `reuse`.
+
+Choose a policy explicitly when invoking `run_backbone_hpo()` or `ExperimentEngine.run()`:
+
+- `reuse` (default): use a matching cache; tune on a miss or stale fingerprint.
+- `refresh`: always run Optuna and atomically replace the cache.
+- `error-if-missing`: use a matching cache or raise `FileNotFoundError`; never tune.
+
+`--skip-hpo` is a compatibility shortcut for `error-if-missing`. These files contain best parameters only; they are not persistent Optuna studies, so increasing `num_trials` does not resume an earlier study. Use `refresh` to rerun the search.
 
 Load cached params directly with:
 
@@ -162,10 +196,10 @@ Load cached params directly with:
 from twiga.experiment import load_backbone_params
 
 params = load_backbone_params(
-    results_dir="results/ganf_ablation",
-    backbone_name="mlpgaf",
-    dataset="ETTh1",
-    hpo_variant=None,
+    dataset_key="MLVS-PT",
+    hpo_cache_dir=Path("results/chapter_5_fpqr/backbone_hpo"),
+    model_name_str="mlpf",
+    controlled_fields=frozenset(),
 )
 ```
 
@@ -177,7 +211,7 @@ Set `MLFLOW_TRACKING_URI` before running to enable automatic experiment tracking
 
 ```bash
 export MLFLOW_TRACKING_URI=http://localhost:5000
-python experiment/ganf_ablation.py
+python experiment/chapter-7-conformal/crc_experiment.py
 ```
 
 The run hierarchy mirrors the experiment structure:
