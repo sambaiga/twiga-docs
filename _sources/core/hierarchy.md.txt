@@ -1,0 +1,79 @@
+# Hierarchical Alignment
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/hierarchy/structure.py` - `aggregate_panel`, `level_key`
+- `twiga/hierarchy/alignment.py` - `align_to_level`, `alignment_multipliers`
+
+</details>
+
+A global model trained on thousands of products forecasts each one well, but errors it makes for *every* series at once (a missed trend, a level shift) add up when series are summed. On aggregated series (store, department, total) trend and level are far easier to see. **Top-down alignment** keeps the bottom model's split across products and takes the level from a forecast made directly at a higher level:
+
+$$
+m_{g,t} = \frac{\hat{y}^{\text{level}}_{g,t}}{\sum_{i \in g} \hat{y}_{i,t}}, \qquad
+\tilde{y}_{i,t} = \hat{y}_{i,t}\,\bigl(1 + \lambda\,(m_{g,t} - 1)\bigr)
+$$
+
+This is the adjustment the 2nd- and 5th-placed M5 Accuracy methods applied: N-BEATS forecasts at the top levels, or the recent store-department mean, as the reference. The damping $\lambda$ (`strength`) plays the role of Anderer's bias multiplier.
+
+## Workflow
+
+```python
+from twiga.core.config import DataPipelineConfig
+from twiga.forecaster.core import TwigaForecaster
+from twiga.hierarchy import aggregate_panel, align_to_level
+
+# 1. Bottom-level forecasts from a global model (panel mode).
+bottom_preds, _ = bottom_forecaster.backtesting(panel)
+
+# 2. Aggregate exactly the forecasted series to a level and forecast that small panel.
+forecasted = panel[panel["id"].isin(bottom_preds["id"].unique())]
+level = aggregate_panel(forecasted, ["store_id", "dept_id"], ["sales"], id_column="id", key_column="series")
+level_config = DataPipelineConfig(
+    target_feature="sales", period="1MS", lookback_window_size=24, forecast_horizon=6, id_column="series"
+)
+level_preds, _ = TwigaForecaster(level_config, level_model, cv_config).backtesting(level)
+
+# 3. Rescale the bottom forecasts so each store-department sums to its level forecast.
+aligned = align_to_level(
+    bottom_preds,
+    level_preds[["series", "timestamp", "forecast", "Folds"]],
+    ["store_id", "dept_id"],
+    id_column="id",
+    tags=tags,  # one row per id with store_id, dept_id
+    group_columns=["Folds"],
+)
+```
+
+Things to get right:
+
+- **Same series on both sides.** Aggregate only the series that have a bottom forecast. Series too short for a window, or launched later, would otherwise add to every level reference, and alignment would inflate the forecasted series to cover sales it never sees. When that set changes across backtest folds, build the level reference per fold.
+- **One reference per group and timestamp.** `level_forecasts` must hold a single forecast per level group and timestamp (and fold); filter to one model first.
+- **Bounds.** Multipliers are clipped to `clip=(0.5, 2.0)` by default to guard against near-zero bottom sums; `strength < 1` damps the whole adjustment.
+- **Intervals and quantiles.** Pass interval bounds or quantile columns in `scale_columns` to rescale them with the same factor.
+
+Evaluate the result across levels with {func}`~twiga.core.metrics.hierarchical_scores` (see [Panel Metrics](metrics.md)).
+
+## Example: M5 aggregated to months
+
+All 30,490 series, 3 folds × 6 months (`examples/benchmarks/m5_monthly/run_backtest.py --align-level ... --align-model ...`):
+
+| Model | M5 score (12 levels) | ± std over folds | Item-store WRMSSE |
+|---|---:|---:|---:|
+| LightGBM aligned to Chronos-2 forecasts of store-department | **0.992** | 0.076 | **1.016** |
+| LightGBM aligned to naive forecasts of store-department | 1.056 | **0.016** | 1.022 |
+| Naive | 1.077 | 0.021 | 1.124 |
+| LightGBM (no alignment) | 1.178 | 0.349 | 1.030 |
+
+Alignment fixed the global LightGBM's shared under-forecast during rising sales. It made the model the best at every level and improved even the item levels. The alignment level and reference model were chosen on these same folds, so treat the best row as indicative.
+
+## API Reference
+
+```{eval-rst}
+.. automodule:: twiga.hierarchy.structure
+   :members:
+
+.. automodule:: twiga.hierarchy.alignment
+   :members:
+```

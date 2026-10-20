@@ -319,6 +319,45 @@ The analytical `normal_crps` uses:
 $$CRPS(\mathcal{N}(\mu,\sigma^2), y) = \sigma\left[z(2\Phi(z)-1) + 2\phi(z) - \frac{1}{\sqrt{\pi}}\right], \quad z = \frac{y-\mu}{\sigma}$$
 
 
+## Panel Metrics (many series, M5-style)
+
+When thousands of products are forecast together, raw errors are dominated by the largest series and per-series percentages explode on the smallest. `twiga.core.metrics.panel` scores a panel the way the M5 competition did. It works directly on the long results frame that `backtesting()` and the `evaluate_*` methods return in panel mode (one row per series, timestamp and model):
+
+| Function | What it computes |
+|---|---|
+| `naive_scale` | In-sample error of the (seasonal) naive forecast per series, from its first non-zero value |
+| `series_weights` | Each series' share of value (e.g. revenue) over the last `window` periods |
+| `panel_point_scores` | Per-series MAE, RMSE, **MASE**, **RMSSE** and weight |
+| `weighted_panel_score` | Value-weighted mean, e.g. **WRMSSE** |
+| `hierarchical_scores` | WRMSSE at every hierarchy level (total, store, category, ..., item), forecasts summed bottom-up |
+| `panel_quantile_scores` | Per-series **scaled pinball loss** (the M5 Uncertainty score) |
+| `fold_stability` | Mean and standard deviation of a score across backtest folds |
+
+With a `Folds` column, scales and weights are recomputed per fold from the history *before* that fold's origin, so nothing from the evaluation window leaks into them.
+
+```python
+from twiga.core.metrics import fold_stability, hierarchical_scores, panel_point_scores, weighted_panel_score
+
+preds, _ = forecaster.backtesting(panel)  # panel mode: DataPipelineConfig(id_column="id")
+history = panel.assign(revenue=panel["sales"] * panel["price"])
+
+scores = panel_point_scores(preds, history, "id", "sales", value_column="revenue", weight_window=12)
+wrmsse = weighted_panel_score(scores).reset_index()  # per model and fold
+print(fold_stability(wrmsse, "wrmsse"))  # mean and std across folds
+
+levels = {"total": [], "store": ["store_id"], "category": ["cat_id"], "item-store": ["id"]}
+by_level = hierarchical_scores(preds, history, tags, levels, "id", "sales", value_column="revenue", weight_window=12)
+m5_score = by_level.groupby(["Model", "Folds"])["wrmsse"].mean()  # M5: levels weighted equally
+```
+
+Two M5 lessons are built into these functions:
+
+- **Report by level.** No method won at every aggregation level: the winner ranked 11th–13th at the item levels, and the runner-up ranked near last there. Use `hierarchical_scores` before concluding one model is best.
+- **Report stability.** The winner chose his ensemble on the mean *and* the standard deviation of cross-validation error. `fold_stability` gives both.
+
+A full example on M5 aggregated to months lives in `examples/benchmarks/m5_monthly/`.
+
+
 ## Statistical Significance Testing
 
 Defined in `twiga/core/metrics/stats.py`.
@@ -426,6 +465,11 @@ Supported `kind` values:
 
 
 ## API Reference
+
+```{eval-rst}
+.. automodule:: twiga.core.metrics.panel
+   :members:
+```
 
 ```{eval-rst}
 .. autofunction:: twiga.core.metrics.evaluate_forecast

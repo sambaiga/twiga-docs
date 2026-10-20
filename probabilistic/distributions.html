@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=fc837d61"></script>
+    <script src="../_static/documentation_options.js?v=6f037312"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -423,7 +423,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="prev" title="Probabilistic Forecasting" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.1.0" />
+  <meta name="docsearch:version" content="1.1.2" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -626,15 +626,15 @@ window.runMermaid = runMermaid;</script>
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.0"
+    aria-label="Twiga version 1.1.2"
   >
-    <span class="tw-version-label">v1.1.0</span>
+    <span class="tw-version-label">v1.1.2</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.0</strong> is in alpha.
+        <strong>Twiga 1.1.2</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -834,15 +834,15 @@ window.runMermaid = runMermaid;</script>
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.0"
+    aria-label="Twiga version 1.1.2"
   >
-    <span class="tw-version-label">v1.1.0</span>
+    <span class="tw-version-label">v1.1.2</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.0</strong> is in alpha.
+        <strong>Twiga 1.1.2</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -1097,9 +1097,41 @@ window.runMermaid = runMermaid;</script>
 <td><p><code class="docutils literal notranslate"><span class="pre">LLᵀ</span></code> positive definite</p></td>
 <td><p>Coupled targets whose decision is an exceedance</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PoissonDistribution</span></code></p></td>
+<td><p>Poisson</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(λ,)</span></code></p></td>
+<td><p>λ &gt; 0</p></td>
+<td><p>Non-negative counts, variance ≈ mean</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">NegativeBinomialDistribution</span></code></p></td>
+<td><p>Negative binomial</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(μ,</span> <span class="pre">r)</span></code></p></td>
+<td><p>μ, r &gt; 0</p></td>
+<td><p>Overdispersed counts (retail unit sales)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ZeroInflatedPoissonDistribution</span></code></p></td>
+<td><p>Zero-inflated Poisson</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(mean,</span> <span class="pre">λ,</span> <span class="pre">π)</span></code></p></td>
+<td><p>λ &gt; 0, π ∈ (0, 1)</p></td>
+<td><p>Counts with excess zeros</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ZeroInflatedNegativeBinomialDistribution</span></code></p></td>
+<td><p>Zero-inflated negative binomial</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(mean,</span> <span class="pre">μ,</span> <span class="pre">r,</span> <span class="pre">π)</span></code></p></td>
+<td><p>μ, r &gt; 0, π ∈ (0, 1)</p></td>
+<td><p>Intermittent, overdispersed demand</p></td>
+</tr>
 </tbody>
 </table>
 </div>
+<p><strong>What <code class="docutils literal notranslate"><span class="pre">forecast()</span></code> reports.</strong> Every head returns <code class="docutils literal notranslate"><span class="pre">loc</span></code> and <code class="docutils literal notranslate"><span class="pre">scale</span></code> from <code class="docutils literal notranslate"><span class="pre">predictive_moments()</span></code>. Location-scale heads report their own parameters: <code class="docutils literal notranslate"><span class="pre">NormalDistribution</span></code> gives (μ, σ) and <code class="docutils literal notranslate"><span class="pre">LaplaceDistribution</span></code> gives (μ, b). Shape-parameter heads report the predictive <strong>mean and standard deviation</strong>, not their raw parameters:</p>
+<ul class="simple">
+<li><p>Gamma: mean α/β.</p></li>
+<li><p>Beta: mean α/(α+β).</p></li>
+<li><p>Log-normal: mean exp(μ + σ²/2), not the log-space μ.</p></li>
+</ul>
+<p>They also set a <code class="docutils literal notranslate"><span class="pre">family</span></code> (<code class="docutils literal notranslate"><span class="pre">&quot;gamma&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;beta&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;lognormal&quot;</span></code>). The point forecast, the training metric (used for early stopping and checkpoint selection), and the native intervals all follow from these moments. Intervals use the quantiles of the moment-matched family (<code class="docutils literal notranslate"><span class="pre">twiga.distributions.intervals.predictive_interval</span></code>), so skewed and bounded targets get asymmetric bands that respect their support.</p>
+<p><strong>Count heads</strong> (<code class="docutils literal notranslate"><span class="pre">twiga/distributions/nn/count.py</span></code>) report <code class="docutils literal notranslate"><span class="pre">loc</span></code> = predictive mean and <code class="docutils literal notranslate"><span class="pre">scale</span></code> = predictive standard deviation, with <code class="docutils literal notranslate"><span class="pre">family</span></code> set to <code class="docutils literal notranslate"><span class="pre">&quot;poisson&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;negbin&quot;</span></code>. Native intervals then use quantiles of the moment-matched count distribution (integer, never negative) instead of a normal z-score. Their log-likelihoods accept non-integer, non-negative targets, so they work on locally scaled panels. The zero-inflated heads mix a point mass at zero (probability <code class="docutils literal notranslate"><span class="pre">π</span></code>) with the count law and report the mixture mean and standard deviation. Select any count head on any backbone that supports <code class="docutils literal notranslate"><span class="pre">distribution=</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">MLPFConfig(distribution=&quot;negbin&quot;)</span></code>, <code class="docutils literal notranslate"><span class="pre">MLPGAMConfig(distribution=&quot;zip&quot;)</span></code>, <code class="docutils literal notranslate"><span class="pre">MLPGAFConfig(distribution=&quot;poisson&quot;)</span></code> or <code class="docutils literal notranslate"><span class="pre">NHITSConfig(distribution=&quot;zinb&quot;)</span></code>.</p>
 <p>All share the same interface:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.distributions.nn.parametric</span><span class="w"> </span><span class="kn">import</span> <span class="n">NormalDistribution</span>
 
@@ -1892,8 +1924,8 @@ and <a class="reference internal" href="#twiga.distributions.nn.parametric.BaseD
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dict with <code class="docutils literal notranslate"><span class="pre">&quot;loc&quot;</span></code> (location/mean) and <code class="docutils literal notranslate"><span class="pre">&quot;scale&quot;</span></code> (std/dispersion).
-The first forward() output is always <code class="docutils literal notranslate"><span class="pre">loc</span></code>; the second is <code class="docutils literal notranslate"><span class="pre">scale</span></code>.</p>
+<dd class="field-odd"><p>Dict with <code class="docutils literal notranslate"><span class="pre">&quot;loc&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;scale&quot;</span></code> from <a class="reference internal" href="#twiga.distributions.nn.parametric.BaseDistribution.predictive_moments" title="twiga.distributions.nn.parametric.BaseDistribution.predictive_moments"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predictive_moments()</span></code></a>
+(location/mean and std/dispersion), plus <code class="docutils literal notranslate"><span class="pre">&quot;family&quot;</span></code> when set.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1927,6 +1959,27 @@ The first forward() output is always <code class="docutils literal notranslate">
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.distributions.nn.parametric.BaseDistribution.predictive_moments">
+<span class="sig-name descname"><span class="pre">predictive_moments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.parametric.BaseDistribution.predictive_moments" title="Link to this definition">#</a></dt>
+<dd><p>Point forecast and spread reported by <a class="reference internal" href="#twiga.distributions.nn.parametric.BaseDistribution.forecast" title="twiga.distributions.nn.parametric.BaseDistribution.forecast"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forecast()</span></code></a>, from the <code class="docutils literal notranslate"><span class="pre">forward</span></code> parameters.</p>
+<p>The default reads the first two parameters as location and scale, which is right
+for location-scale heads (normal, Laplace dispersion <code class="docutils literal notranslate"><span class="pre">b</span></code>). A head whose parameters
+are <em>shapes</em> (Gamma, Beta, log-normal, count laws) must override this to return its
+predictive mean and standard deviation, and set <a class="reference internal" href="#twiga.distributions.nn.parametric.BaseDistribution.family" title="twiga.distributions.nn.parametric.BaseDistribution.family"><code class="xref py py-attr docutils literal notranslate"><span class="pre">family</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>*params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></span>) – The tensors returned by <a class="reference internal" href="#twiga.distributions.nn.parametric.BaseDistribution.forward" title="twiga.distributions.nn.parametric.BaseDistribution.forward"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward()</span></code></a>.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">(loc,</span> <span class="pre">scale)</span></code>, each shaped like the parameters.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2099,6 +2152,11 @@ data pipeline if zeros are possible (e.g., target = max(y, 1e-6)).</p>
 </div>
 <dl class="field-list simple">
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.distributions.nn.parametric.LogNormalDistribution.family">
+<span class="sig-name descname"><span class="pre">family</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'lognormal'</span></span><a class="headerlink" href="#twiga.distributions.nn.parametric.LogNormalDistribution.family" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.distributions.nn.parametric.LogNormalDistribution.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.parametric.LogNormalDistribution.forward" title="Link to this definition">#</a></dt>
@@ -2138,6 +2196,17 @@ data pipeline if zeros are possible (e.g., target = max(y, 1e-6)).</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.distributions.nn.parametric.LogNormalDistribution.predictive_moments">
+<span class="sig-name descname"><span class="pre">predictive_moments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.parametric.LogNormalDistribution.predictive_moments" title="Link to this definition">#</a></dt>
+<dd><p>Mean <code class="docutils literal notranslate"><span class="pre">exp(mu</span> <span class="pre">+</span> <span class="pre">sigma^2</span> <span class="pre">/</span> <span class="pre">2)</span></code> and std of the log-normal, not the log-space <code class="docutils literal notranslate"><span class="pre">mu</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -2158,6 +2227,11 @@ rate          - rate parameter β  (softplus, strictly positive)</p>
 </div>
 <dl class="field-list simple">
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.distributions.nn.parametric.GammaDistribution.family">
+<span class="sig-name descname"><span class="pre">family</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gamma'</span></span><a class="headerlink" href="#twiga.distributions.nn.parametric.GammaDistribution.family" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.distributions.nn.parametric.GammaDistribution.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.parametric.GammaDistribution.forward" title="Link to this definition">#</a></dt>
@@ -2197,6 +2271,17 @@ rate          - rate parameter β  (softplus, strictly positive)</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.distributions.nn.parametric.GammaDistribution.predictive_moments">
+<span class="sig-name descname"><span class="pre">predictive_moments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concentration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.parametric.GammaDistribution.predictive_moments" title="Link to this definition">#</a></dt>
+<dd><p>Mean <code class="docutils literal notranslate"><span class="pre">alpha</span> <span class="pre">/</span> <span class="pre">beta</span></code> and std <code class="docutils literal notranslate"><span class="pre">sqrt(alpha)</span> <span class="pre">/</span> <span class="pre">beta</span></code>, not the raw shape and rate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -2219,6 +2304,11 @@ pipeline if boundary values are possible:
 </div>
 <dl class="field-list simple">
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.distributions.nn.parametric.BetaDistribution.family">
+<span class="sig-name descname"><span class="pre">family</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'beta'</span></span><a class="headerlink" href="#twiga.distributions.nn.parametric.BetaDistribution.family" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.distributions.nn.parametric.BetaDistribution.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.parametric.BetaDistribution.forward" title="Link to this definition">#</a></dt>
@@ -2258,6 +2348,17 @@ pipeline if boundary values are possible:
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.distributions.nn.parametric.BetaDistribution.predictive_moments">
+<span class="sig-name descname"><span class="pre">predictive_moments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.parametric.BetaDistribution.predictive_moments" title="Link to this definition">#</a></dt>
+<dd><p>Mean <code class="docutils literal notranslate"><span class="pre">alpha</span> <span class="pre">/</span> <span class="pre">(alpha</span> <span class="pre">+</span> <span class="pre">beta)</span></code> and its std, not the two shape parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -2292,8 +2393,8 @@ forecast horizon so the model learns a single df per series.</p>
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dict with <code class="docutils literal notranslate"><span class="pre">&quot;loc&quot;</span></code> (location/mean) and <code class="docutils literal notranslate"><span class="pre">&quot;scale&quot;</span></code> (std/dispersion).
-The first forward() output is always <code class="docutils literal notranslate"><span class="pre">loc</span></code>; the second is <code class="docutils literal notranslate"><span class="pre">scale</span></code>.</p>
+<dd class="field-odd"><p>Dict with <code class="docutils literal notranslate"><span class="pre">&quot;loc&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;scale&quot;</span></code> from <code class="xref py py-meth docutils literal notranslate"><span class="pre">predictive_moments()</span></code>
+(location/mean and std/dispersion), plus <code class="docutils literal notranslate"><span class="pre">&quot;family&quot;</span></code> when set.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3157,6 +3258,11 @@ sigma - std of log(target) (exp of log_scale, strictly positive)</p>
 </div>
 <dl class="field-list simple">
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.family">
+<span class="sig-name descname"><span class="pre">family</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'lognormal'</span></span><a class="headerlink" href="#twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.family" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.forward" title="Link to this definition">#</a></dt>
@@ -3196,6 +3302,17 @@ sigma - std of log(target) (exp of log_scale, strictly positive)</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.predictive_moments">
+<span class="sig-name descname"><span class="pre">predictive_moments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.predictive_moments" title="Link to this definition">#</a></dt>
+<dd><p>Mean <code class="docutils literal notranslate"><span class="pre">exp(mu</span> <span class="pre">+</span> <span class="pre">sigma^2</span> <span class="pre">/</span> <span class="pre">2)</span></code> and std of the log-normal, not the log-space <code class="docutils literal notranslate"><span class="pre">mu</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -3224,8 +3341,8 @@ df    - degrees of freedom (softplus, clipped to ≥ min_df for finite variance)
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a>]</span></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dict with <code class="docutils literal notranslate"><span class="pre">&quot;loc&quot;</span></code> (location/mean) and <code class="docutils literal notranslate"><span class="pre">&quot;scale&quot;</span></code> (std/dispersion).
-The first forward() output is always <code class="docutils literal notranslate"><span class="pre">loc</span></code>; the second is <code class="docutils literal notranslate"><span class="pre">scale</span></code>.</p>
+<dd class="field-odd"><p>Dict with <code class="docutils literal notranslate"><span class="pre">&quot;loc&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;scale&quot;</span></code> from <code class="xref py py-meth docutils literal notranslate"><span class="pre">predictive_moments()</span></code>
+(location/mean and std/dispersion), plus <code class="docutils literal notranslate"><span class="pre">&quot;family&quot;</span></code> when set.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -5794,6 +5911,7 @@ Q is number of quantiles, and C is number of channels.</p></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BaseDistribution.forward"><code class="docutils literal notranslate"><span class="pre">BaseDistribution.forward()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BaseDistribution.get_distribution"><code class="docutils literal notranslate"><span class="pre">BaseDistribution.get_distribution()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BaseDistribution.get_log_likelihood"><code class="docutils literal notranslate"><span class="pre">BaseDistribution.get_log_likelihood()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BaseDistribution.predictive_moments"><code class="docutils literal notranslate"><span class="pre">BaseDistribution.predictive_moments()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BaseDistribution.step"><code class="docutils literal notranslate"><span class="pre">BaseDistribution.step()</span></code></a></li>
 </ul>
 </li>
@@ -5814,21 +5932,27 @@ Q is number of quantiles, and C is number of channels.</p></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.LogNormalDistribution"><code class="docutils literal notranslate"><span class="pre">LogNormalDistribution</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.LogNormalDistribution.family"><code class="docutils literal notranslate"><span class="pre">LogNormalDistribution.family</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.LogNormalDistribution.forward"><code class="docutils literal notranslate"><span class="pre">LogNormalDistribution.forward()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.LogNormalDistribution.get_distribution"><code class="docutils literal notranslate"><span class="pre">LogNormalDistribution.get_distribution()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.LogNormalDistribution.get_log_likelihood"><code class="docutils literal notranslate"><span class="pre">LogNormalDistribution.get_log_likelihood()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.LogNormalDistribution.predictive_moments"><code class="docutils literal notranslate"><span class="pre">LogNormalDistribution.predictive_moments()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.GammaDistribution"><code class="docutils literal notranslate"><span class="pre">GammaDistribution</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.GammaDistribution.family"><code class="docutils literal notranslate"><span class="pre">GammaDistribution.family</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.GammaDistribution.forward"><code class="docutils literal notranslate"><span class="pre">GammaDistribution.forward()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.GammaDistribution.get_distribution"><code class="docutils literal notranslate"><span class="pre">GammaDistribution.get_distribution()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.GammaDistribution.get_log_likelihood"><code class="docutils literal notranslate"><span class="pre">GammaDistribution.get_log_likelihood()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.GammaDistribution.predictive_moments"><code class="docutils literal notranslate"><span class="pre">GammaDistribution.predictive_moments()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BetaDistribution"><code class="docutils literal notranslate"><span class="pre">BetaDistribution</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BetaDistribution.family"><code class="docutils literal notranslate"><span class="pre">BetaDistribution.family</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BetaDistribution.forward"><code class="docutils literal notranslate"><span class="pre">BetaDistribution.forward()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BetaDistribution.get_distribution"><code class="docutils literal notranslate"><span class="pre">BetaDistribution.get_distribution()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BetaDistribution.get_log_likelihood"><code class="docutils literal notranslate"><span class="pre">BetaDistribution.get_log_likelihood()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.BetaDistribution.predictive_moments"><code class="docutils literal notranslate"><span class="pre">BetaDistribution.predictive_moments()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.StudentTDistribution"><code class="docutils literal notranslate"><span class="pre">StudentTDistribution</span></code></a><ul class="nav section-nav flex-column">
@@ -5905,9 +6029,11 @@ Q is number of quantiles, and C is number of channels.</p></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.AdditiveLogNormalDistribution"><code class="docutils literal notranslate"><span class="pre">AdditiveLogNormalDistribution</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.family"><code class="docutils literal notranslate"><span class="pre">AdditiveLogNormalDistribution.family</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.forward"><code class="docutils literal notranslate"><span class="pre">AdditiveLogNormalDistribution.forward()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.get_distribution"><code class="docutils literal notranslate"><span class="pre">AdditiveLogNormalDistribution.get_distribution()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.get_log_likelihood"><code class="docutils literal notranslate"><span class="pre">AdditiveLogNormalDistribution.get_log_likelihood()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.AdditiveLogNormalDistribution.predictive_moments"><code class="docutils literal notranslate"><span class="pre">AdditiveLogNormalDistribution.predictive_moments()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.distributions.nn.parametric.AdditiveStudentTDistribution"><code class="docutils literal notranslate"><span class="pre">AdditiveStudentTDistribution</span></code></a><ul class="nav section-nav flex-column">

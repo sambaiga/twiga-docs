@@ -4,6 +4,8 @@
 <summary>Source Files</summary>
 
 - `twiga/core/data/pipeline.py` - `DataPipeline` orchestrator
+- `twiga/core/data/panel.py` - Panel (many-series) validation, regularisation and windowing
+- `twiga/core/utils/frequency.py` - Fixed-duration and calendar period helpers
 - `twiga/core/data/temporal.py` - `TemporalFeatureTransformer`
 - `twiga/core/data/autores.py` - `AutoregressTransformer`
 - `twiga/core/data/feature.py` - Fourier series, day/night, net-load helpers
@@ -47,7 +49,7 @@ The `DataPipeline` class wires these stages together into a single `sklearn.pipe
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `target_feature` | `list[str] \| str` | *required* | Column name(s) of the variable(s) to forecast. |
-| `period` | `str` | *required* | Sampling frequency as a pandas offset alias (e.g. `"30min"`, `"1h"`). |
+| `period` | `str` | *required* | Sampling frequency as a pandas offset alias: fixed-duration (`"30min"`, `"1h"`, `"1D"`) or calendar (`"1MS"`, `"1ME"`, `"1QS"`, `"QS-DEC"`). |
 | `lookback_window_size` | `int \| str` | *required* | Number of past time steps used as input features. Accepts an integer or a duration string (e.g. `"7D"`) resolved to steps via `period`. |
 | `forecast_horizon` | `int \| str` | *required* | Number of future time steps to predict. Accepts an integer or a duration string (e.g. `"1D"`) resolved to steps via `period`. |
 | `latitude` | `float \| None` | `None` | Latitude for day/night feature calculation (required when `"day_night"` is in `calendar_features`). |
@@ -62,7 +64,11 @@ The `DataPipeline` class wires these stages together into a single `sklearn.pipe
 | `windows` | `list[int] \| int \| None` | `None` | Rolling-window sizes for statistics (in periods). |
 | `window_funcs` | `list[str] \| str \| None` | `None` | Aggregation functions for rolling windows (e.g. `"mean"`, `"std"`). |
 | `date_column` | `str` | `"timestamp"` | Name of the datetime column. |
-| `stride` | `int` | `1` | Step between consecutive sliding windows. Default `1` produces fully overlapping windows. Set to `forecast_horizon` for non-overlapping windows. |
+| `window_stride` | `int` | `1` | Step between consecutive sliding windows. Default `1` produces fully overlapping windows. Set to `forecast_horizon` for non-overlapping windows. |
+| `id_column` | `str \| None` | `None` | Series identifier of a long-format panel of many series. See [Panel data](#panel-data-many-series). |
+| `static_features` | `list[str] \| None` | `None` | Time-invariant series attributes (category, store, ...) used as inputs. Requires `id_column`. |
+| `target_scaling` | `"global" \| "local"` | `"global"` | `"local"` divides each window by the mean absolute target over its own lookback. Requires `target_scaler="passthrough"`. |
+| `local_scale_floor` | `float` | `0.0` | Lower bound on the local window scale, in target units. Only with `target_scaling="local"`. |
 
 :::{admonition} Configuration shortcut
 :class: tip
@@ -231,7 +237,20 @@ cfg = DataPipelineConfig(
 )
 ```
 
-After construction `cfg.forecast_horizon` and `cfg.lookback_window_size` are always plain integers. Only fixed-duration periods such as `"30min"`, `"1h"`, or `"1D"` are supported; calendar-based offsets such as `"1ME"` are not.
+After construction `cfg.forecast_horizon` and `cfg.lookback_window_size` are always plain integers.
+
+Calendar periods resolve in whole months, so monthly data works the same way:
+
+```python
+cfg = DataPipelineConfig(
+    target_feature="sales",
+    period="1MS",  # month start
+    forecast_horizon="6MS",  # 6 steps
+    lookback_window_size="2YS",  # 24 steps
+)
+```
+
+A calendar duration cannot be expressed in fixed-duration steps or the reverse (a month has no fixed number of days), so `"30D"` with `period="1MS"` raises; pass an integer instead. On monthly or coarser data, `month`, `quarter` and `half` calendar features use their full cycle (12, 4, 2) even when the training data covers only part of it.
 
 ### Searching over lookback window size
 
@@ -285,6 +304,56 @@ cfg = DataPipelineConfig(
 
 When `lookback_window_size` is in the search space and the model is a neural network, Twiga automatically calls `sync_data_config` on the model after each trial to rebuild the Lightning module with matching input dimensions. No extra setup is required.
 :::
+
+
+## Panel data (many series)
+
+A *panel* is a long-format DataFrame holding many series side by side, one row per `(series id, timestamp)`, e.g. monthly sales of thousands of products. Setting `id_column` makes one pipeline, and one forecaster, model all of them with **global** models trained across series.
+
+```python
+from twiga.core.config import DataPipelineConfig
+
+cfg = DataPipelineConfig(
+    target_feature="sales",
+    period="1MS",
+    lookback_window_size=24,
+    forecast_horizon=6,
+    id_column="item_store_id",
+    static_features=["dept_id", "cat_id", "store_id"],
+    calendar_features=["month_sin", "month_cos"],
+    target_scaler="passthrough",
+    target_scaling="local",
+    local_scale_floor=5.0,
+)
+```
+
+In panel mode:
+
+- Rows are sorted by `(id, date)` and **no window spans two series**. Window positions are computed for all series at once with index arithmetic, so windowing stays fast for very large panels; series shorter than `lookback_window_size + forecast_horizon` yield no window and are reported.
+- Lags, rolling statistics and target differencing are computed **within each series**, and each series drops its own warm-up rows.
+- `static_features` are integer-encoded with the categories seen at fit (unseen categories map to `-1`) and placed in the known-future block.
+- Every window keeps its series id: `DataPipeline.series_ids_`, `ForecastResult.series_ids`, the id column in result frames and per-window metrics, and backtest output.
+- At prediction the forecaster prepends the last `lookback_window_size` training rows of each series; rows repeated in the test frame are kept once.
+
+### Local scaling
+
+Products differ in size by orders of magnitude. With `target_scaling="local"` each window's target, and its lag/rolling features, is divided by the mean absolute target over that window's own lookback, and predictions are multiplied back. The scale uses only the lookback, so it leaks nothing from the horizon and works for series never seen in training.
+
+A window whose lookback is almost all zeros (a launch, an intermittent item) would get a tiny scale and a huge scaled target; `local_scale_floor` bounds the scale from below in target units. For unit sales, a floor near one sale per period is a good start, and it can be searched like any other pipeline parameter through `search_space`.
+
+### Preparing a panel
+
+```python
+from twiga.core.data import regularise_panel, validate_panel
+
+summary = validate_panel(df, "item_store_id", "timestamp", "1MS", min_length=30)
+# n_series, length distribution, short / irregular / duplicated series
+
+# Insert missing months: sales 0, series attributes copied from the series itself.
+df = regularise_panel(df, "item_store_id", "timestamp", "1MS", fill_value=0.0, static_columns=["cat_id", "store_id"])
+```
+
+`TimeBasedCV` splits a panel by date across all series at once, so `backtesting()` works unchanged. A complete benchmark on M5 aggregated to months lives in `examples/benchmarks/m5_monthly/`.
 
 
 ## Sequence Creation
@@ -565,6 +634,29 @@ Lower `tail_df` produces heavier tails (more frequent extreme net-load excursion
 .. autoclass:: twiga.core.data.loader.TimeseriesDataModule
    :members:
    :show-inheritance:
+```
+
+### Panel helpers
+
+```{eval-rst}
+.. automodule:: twiga.core.data.panel
+   :members:
+```
+
+### Frequency helpers
+
+```{eval-rst}
+.. autofunction:: twiga.core.utils.frequency.resolve_steps
+
+.. autofunction:: twiga.core.utils.frequency.calendar_months
+
+.. autofunction:: twiga.core.utils.frequency.get_frequency_regime
+
+.. autofunction:: twiga.core.utils.frequency.get_n_sample_per_day
+
+.. autofunction:: twiga.core.utils.frequency.to_offset_safe
+
+.. autofunction:: twiga.core.utils.frequency.to_period_freq
 ```
 
 ### Feature engineering helpers

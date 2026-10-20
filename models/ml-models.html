@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=fc837d61"></script>
+    <script src="../_static/documentation_options.js?v=6f037312"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -63,7 +63,7 @@
     <link rel="prev" title="Foundational Models" href="foundational-models.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.1.0" />
+  <meta name="docsearch:version" content="1.1.2" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -266,15 +266,15 @@
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.0"
+    aria-label="Twiga version 1.1.2"
   >
-    <span class="tw-version-label">v1.1.0</span>
+    <span class="tw-version-label">v1.1.2</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.0</strong> is in alpha.
+        <strong>Twiga 1.1.2</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -474,15 +474,15 @@
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.0"
+    aria-label="Twiga version 1.1.2"
   >
-    <span class="tw-version-label">v1.1.0</span>
+    <span class="tw-version-label">v1.1.2</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.0</strong> is in alpha.
+        <strong>Twiga 1.1.2</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -1117,6 +1117,16 @@ and reinitialise the underlying estimator.  The base implementation is a no-op.<
 <td><p><code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
 <td><p>Whether CatBoost may write temporary files during training.</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">loss_function</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;MultiRMSE&quot;,</span> <span class="pre">&quot;Tweedie&quot;,</span> <span class="pre">&quot;Poisson&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;MultiRMSE&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MultiRMSE</span></code> fits all horizon steps jointly; <code class="docutils literal notranslate"><span class="pre">Tweedie</span></code> / <code class="docutils literal notranslate"><span class="pre">Poisson</span></code> (count data) are single-output in CatBoost, so one model is fitted per step.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tweedie_variance_power</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">float</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1.5</span></code></p></td>
+<td><p>Tweedie power in (1, 2). Only used with <code class="docutils literal notranslate"><span class="pre">loss_function=&quot;Tweedie&quot;</span></code>.</p></td>
+</tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">search_space</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">BaseSearchSpace</span></code></p></td>
 <td><p><em>(see below)</em></p></td>
@@ -1195,21 +1205,26 @@ and reinitialise the underlying estimator.  The base implementation is a no-op.<
 <td><p>Hardware acceleration type.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">objective</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;reg:squarederror&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;reg:squarederror&quot;,</span> <span class="pre">&quot;reg:tweedie&quot;,</span> <span class="pre">&quot;count:poisson&quot;]</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">&quot;reg:squarederror&quot;</span></code></p></td>
-<td><p>Regression objective function.</p></td>
+<td><p>Objective. The Tweedie and Poisson objectives suit non-negative counts.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">random_state</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tweedie_variance_power</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">float</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1.5</span></code></p></td>
+<td><p>Tweedie power in (1, 2). Only used with <code class="docutils literal notranslate"><span class="pre">objective=&quot;reg:tweedie&quot;</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">random_state</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">42</span></code></p></td>
 <td><p>Random seed for reproducibility (must be &gt; 0).</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">verbose</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">verbose</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Literal[0,</span> <span class="pre">1,</span> <span class="pre">2]</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
 <td><p>Verbosity level: 0 (silent), 1 (minimal), 2 (detailed).</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">search_space</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">search_space</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">BaseSearchSpace</span></code></p></td>
 <td><p><em>(see below)</em></p></td>
 <td><p>Default hyperparameter search space. Excluded from parameter dumps.</p></td>
@@ -1318,21 +1333,26 @@ and reinitialise the underlying estimator.  The base implementation is a no-op.<
 <td><p>Gradient boosting method.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">objective</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;regression&quot;]</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;regression&quot;,</span> <span class="pre">&quot;tweedie&quot;,</span> <span class="pre">&quot;poisson&quot;]</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">&quot;regression&quot;</span></code></p></td>
-<td><p>Regression objective.</p></td>
+<td><p>Objective. The Tweedie and Poisson objectives suit non-negative counts.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">metric</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;rmse&quot;]</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">&quot;rmse&quot;</span></code></p></td>
-<td><p>Evaluation metric (root mean squared error).</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Literal[&quot;rmse&quot;,</span> <span class="pre">&quot;tweedie&quot;,</span> <span class="pre">&quot;poisson&quot;]</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>Early-stopping / pruning metric; <code class="docutils literal notranslate"><span class="pre">None</span></code> matches the objective.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">bagging_freq</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tweedie_variance_power</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">float</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1.5</span></code></p></td>
+<td><p>Tweedie power in [1, 2). Only used with <code class="docutils literal notranslate"><span class="pre">objective=&quot;tweedie&quot;</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">bagging_freq</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">1</span></code></p></td>
 <td><p>Frequency for bagging iterations.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">search_space</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">search_space</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">BaseSearchSpace</span></code></p></td>
 <td><p><em>(see below)</em></p></td>
 <td><p>Default hyperparameter search space. Excluded from parameter dumps.</p></td>
@@ -1554,6 +1574,17 @@ and reinitialise the underlying estimator.  The base implementation is a no-op.<
 </div>
 </section>
 </section>
+</section>
+<section id="count-data-unit-sales-demand">
+<h2>Count data (unit sales, demand)<a class="headerlink" href="#count-data-unit-sales-demand" title="Link to this heading">#</a></h2>
+<p>Sales and demand counts are non-negative, often zero and right-skewed. Squared error treats them as symmetric and unbounded; a <strong>Tweedie</strong> or <strong>Poisson</strong> objective models them through a log link, so predictions stay non-negative and the long right tail is weighted correctly. This is what the strongest M5 solutions used.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml.lightgbm_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
+
+<span class="n">LIGHTGBMConfig</span><span class="p">(</span><span class="n">objective</span><span class="o">=</span><span class="s2">"tweedie"</span><span class="p">,</span> <span class="n">tweedie_variance_power</span><span class="o">=</span><span class="mf">1.3</span><span class="p">)</span>  <span class="c1"># also "poisson"</span>
+<span class="c1"># XGBOOSTConfig(objective="reg:tweedie") / CATBOOSTConfig(loss_function="Tweedie")</span>
+</pre></div>
+</div>
+<p>Targets must be non-negative, so pair these objectives with <code class="docutils literal notranslate"><span class="pre">target_scaler=&quot;passthrough&quot;</span></code>, optionally with <code class="docutils literal notranslate"><span class="pre">target_scaling=&quot;local&quot;</span></code> for a panel of many series (the fit raises a clear error otherwise). The Tweedie power is a regular config field and can be added to <code class="docutils literal notranslate"><span class="pre">search_space</span></code>; values near 1 behave like Poisson, values near 2 like Gamma. For probabilistic neural forecasts of counts, see the Poisson and negative-binomial heads in <a class="reference internal" href="../probabilistic/distributions.html"><span class="std std-doc">Distribution Families</span></a>.</p>
 </section>
 <section id="probabilistic-ml-models">
 <h2>Probabilistic ML Models<a class="headerlink" href="#probabilistic-ml-models" title="Link to this heading">#</a></h2>
@@ -2459,7 +2490,7 @@ search space.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.catboost_model.CATBOOSTConfig.loss_function">
-<span class="sig-name descname"><span class="pre">loss_function</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'MultiRMSE'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.loss_function" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">loss_function</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'MultiRMSE'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'Tweedie'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'Poisson'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.loss_function" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2486,6 +2517,11 @@ search space.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.catboost_model.CATBOOSTConfig.task_type">
 <span class="sig-name descname"><span class="pre">task_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'GPU'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'CPU'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.task_type" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.ml.catboost_model.CATBOOSTConfig.tweedie_variance_power">
+<span class="sig-name descname"><span class="pre">tweedie_variance_power</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><span class="pre">float</span></a></span><a class="headerlink" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.tweedie_variance_power" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2718,7 +2754,7 @@ Excluded from model params (passed via LightGBM callbacks).</p></li>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.lightgbm_model.LIGHTGBMConfig.metric">
-<span class="sig-name descname"><span class="pre">metric</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'rmse'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.metric" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">metric</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'rmse'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'tweedie'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'poisson'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.metric" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2734,7 +2770,7 @@ Excluded from model params (passed via LightGBM callbacks).</p></li>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.lightgbm_model.LIGHTGBMConfig.objective">
-<span class="sig-name descname"><span class="pre">objective</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'regression'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.objective" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">objective</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'regression'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'tweedie'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'poisson'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.objective" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2745,6 +2781,11 @@ Excluded from model params (passed via LightGBM callbacks).</p></li>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.lightgbm_model.LIGHTGBMConfig.seed">
 <span class="sig-name descname"><span class="pre">seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.seed" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.ml.lightgbm_model.LIGHTGBMConfig.tweedie_variance_power">
+<span class="sig-name descname"><span class="pre">tweedie_variance_power</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><span class="pre">float</span></a></span><a class="headerlink" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.tweedie_variance_power" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -3003,6 +3044,12 @@ an <code class="docutils literal notranslate"><span class="pre">eval_set</span><
 <span class="sig-name descname"><span class="pre">early_stopping_rounds</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.early_stopping_rounds" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="twiga.models.ml.xgboost_model.XGBOOSTConfig.eval_metric_name">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">eval_metric_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.eval_metric_name" title="Link to this definition">#</a></dt>
+<dd><p>Name XGBoost reports for the objective’s default validation metric.</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.xgboost_model.XGBOOSTConfig.model_config">
 <span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.ClassVar" title="(in Python v3.15)"><span class="pre">ClassVar</span></a><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'allow'}</span></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.model_config" title="Link to this definition">#</a></dt>
@@ -3016,7 +3063,7 @@ an <code class="docutils literal notranslate"><span class="pre">eval_set</span><
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.xgboost_model.XGBOOSTConfig.objective">
-<span class="sig-name descname"><span class="pre">objective</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'reg:squarederror'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.objective" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">objective</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'reg:squarederror'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'reg:tweedie'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'count:poisson'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.objective" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -3029,23 +3076,14 @@ an <code class="docutils literal notranslate"><span class="pre">eval_set</span><
 <span class="sig-name descname"><span class="pre">seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.seed" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="twiga.models.ml.xgboost_model.XGBOOSTConfig.to_estimator_params">
-<span class="sig-name descname"><span class="pre">to_estimator_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.to_estimator_params" title="Link to this definition">#</a></dt>
-<dd><p>Return a parameter dict safe to pass directly to the underlying estimator.</p>
-<p>Excludes Twiga-internal fields (<code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">domain</span></code>, <code class="docutils literal notranslate"><span class="pre">search_space</span></code>) and
-maps the unified <code class="docutils literal notranslate"><span class="pre">seed</span></code> field to the library-specific keyword defined by
-<code class="docutils literal notranslate"><span class="pre">_LIBRARY_SEED_KEY</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;random_state&quot;</span></code> for sklearn estimators).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.ml.xgboost_model.XGBOOSTConfig.tree_method">
 <span class="sig-name descname"><span class="pre">tree_method</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'hist'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'approx'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'exact'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.tree_method" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.ml.xgboost_model.XGBOOSTConfig.tweedie_variance_power">
+<span class="sig-name descname"><span class="pre">tweedie_variance_power</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><span class="pre">float</span></a></span><a class="headerlink" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.tweedie_variance_power" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -3781,6 +3819,7 @@ search space.</p>
 </li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#count-data-unit-sales-demand">Count data (unit sales, demand)</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#probabilistic-ml-models">Probabilistic ML Models</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model-comparison">Model Comparison</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#usage-example">Usage Example</a><ul class="nav section-nav flex-column">
@@ -3801,6 +3840,7 @@ search space.</p>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.search_space"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.search_space</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.seed"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.seed</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.task_type"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.task_type</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.tweedie_variance_power"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.tweedie_variance_power</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.catboost_model.CATBOOSTConfig.verbose"><code class="docutils literal notranslate"><span class="pre">CATBOOSTConfig.verbose</span></code></a></li>
 </ul>
 </li>
@@ -3823,6 +3863,7 @@ search space.</p>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.objective"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.objective</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.search_space"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.search_space</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.seed"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.seed</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.tweedie_variance_power"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.tweedie_variance_power</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.lightgbm_model.LIGHTGBMConfig.verbose"><code class="docutils literal notranslate"><span class="pre">LIGHTGBMConfig.verbose</span></code></a></li>
 </ul>
 </li>
@@ -3841,13 +3882,14 @@ search space.</p>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.device"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.device</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.domain"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.domain</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.early_stopping_rounds"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.early_stopping_rounds</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.eval_metric_name"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.eval_metric_name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.model_config"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.name"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.objective"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.objective</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.search_space"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.search_space</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.seed"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.seed</span></code></a></li>
-<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.to_estimator_params"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.to_estimator_params()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.tree_method"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.tree_method</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.tweedie_variance_power"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.tweedie_variance_power</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.ml.xgboost_model.XGBOOSTConfig.verbose"><code class="docutils literal notranslate"><span class="pre">XGBOOSTConfig.verbose</span></code></a></li>
 </ul>
 </li>

@@ -74,6 +74,8 @@ CatBoost uses **ordered boosting** with built-in categorical feature handling an
 | `random_state` | `int` | `42` | Random seed for reproducibility (must be > 0). |
 | `verbose` | `Literal[0, 1, 2]` | `0` | Verbosity level: 0 (silent), 1 (minimal), 2 (detailed). |
 | `allow_writing_files` | `bool` | `False` | Whether CatBoost may write temporary files during training. |
+| `loss_function` | `Literal["MultiRMSE", "Tweedie", "Poisson"]` | `"MultiRMSE"` | `MultiRMSE` fits all horizon steps jointly; `Tweedie` / `Poisson` (count data) are single-output in CatBoost, so one model is fitted per step. |
+| `tweedie_variance_power` | `float` | `1.5` | Tweedie power in (1, 2). Only used with `loss_function="Tweedie"`. |
 | `search_space` | `BaseSearchSpace` | *(see below)* | Default hyperparameter search space. Excluded from parameter dumps. |
 
 **Default Search Space:**
@@ -105,7 +107,8 @@ XGBoost provides regularized gradient boosting with efficient histogram-based sp
 | `name` | `Literal["xgboost"]` | `"xgboost"` | Model identifier. Excluded from parameter dumps. |
 | `domain` | `Literal["ml"]` | `"ml"` | Domain identifier. Excluded from parameter dumps. |
 | `device` | `Literal["gpu", "cpu"]` | `"cpu"` | Hardware acceleration type. |
-| `objective` | `Literal["reg:squarederror"]` | `"reg:squarederror"` | Regression objective function. |
+| `objective` | `Literal["reg:squarederror", "reg:tweedie", "count:poisson"]` | `"reg:squarederror"` | Objective. The Tweedie and Poisson objectives suit non-negative counts. |
+| `tweedie_variance_power` | `float` | `1.5` | Tweedie power in (1, 2). Only used with `objective="reg:tweedie"`. |
 | `random_state` | `int` | `42` | Random seed for reproducibility (must be > 0). |
 | `verbose` | `Literal[0, 1, 2]` | `0` | Verbosity level: 0 (silent), 1 (minimal), 2 (detailed). |
 | `search_space` | `BaseSearchSpace` | *(see below)* | Default hyperparameter search space. Excluded from parameter dumps. |
@@ -140,8 +143,9 @@ LightGBM uses histogram-based gradient boosting with leaf-wise tree growth, maki
 | `random_state` | `int` | `42` | Random seed for reproducibility (must be > 0). |
 | `verbose` | `Literal[-1, 0, 1]` | `-1` | Verbosity level: -1 (silent), 0 (warnings), 1 (info). |
 | `boosting_type` | `Literal["gbdt", "dart", "goss"]` | `"gbdt"` | Gradient boosting method. |
-| `objective` | `Literal["regression"]` | `"regression"` | Regression objective. |
-| `metric` | `Literal["rmse"]` | `"rmse"` | Evaluation metric (root mean squared error). |
+| `objective` | `Literal["regression", "tweedie", "poisson"]` | `"regression"` | Objective. The Tweedie and Poisson objectives suit non-negative counts. |
+| `metric` | `Literal["rmse", "tweedie", "poisson"] \| None` | `None` | Early-stopping / pruning metric; `None` matches the objective. |
+| `tweedie_variance_power` | `float` | `1.5` | Tweedie power in [1, 2). Only used with `objective="tweedie"`. |
 | `bagging_freq` | `int` | `1` | Frequency for bagging iterations. |
 | `search_space` | `BaseSearchSpace` | *(see below)* | Default hyperparameter search space. Excluded from parameter dumps. |
 
@@ -223,6 +227,20 @@ Random Forest is an ensemble of decision trees trained via bagging with feature 
 
 Unlike most other ML models in Twiga, `RandomForestRegressor` natively handles multiple output columns. There is no need for `MultiOutputRegressor` wrapping, which means all output trees are grown jointly and the model can exploit correlations between forecast horizons.
 :::
+
+
+## Count data (unit sales, demand)
+
+Sales and demand counts are non-negative, often zero and right-skewed. Squared error treats them as symmetric and unbounded; a **Tweedie** or **Poisson** objective models them through a log link, so predictions stay non-negative and the long right tail is weighted correctly. This is what the strongest M5 solutions used.
+
+```python
+from twiga.models.ml.lightgbm_model import LIGHTGBMConfig
+
+LIGHTGBMConfig(objective="tweedie", tweedie_variance_power=1.3)  # also "poisson"
+# XGBOOSTConfig(objective="reg:tweedie") / CATBOOSTConfig(loss_function="Tweedie")
+```
+
+Targets must be non-negative, so pair these objectives with `target_scaler="passthrough"`, optionally with `target_scaling="local"` for a panel of many series (the fit raises a clear error otherwise). The Tweedie power is a regular config field and can be added to `search_space`; values near 1 behave like Poisson, values near 2 like Gamma. For probabilistic neural forecasts of counts, see the Poisson and negative-binomial heads in [Distribution Families](../probabilistic/distributions.md).
 
 
 ## Probabilistic ML Models

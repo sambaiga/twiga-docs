@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=fc837d61"></script>
+    <script src="../_static/documentation_options.js?v=6f037312"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -63,7 +63,7 @@
     <link rel="prev" title="Baseline Models" href="baseline-models.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.1.0" />
+  <meta name="docsearch:version" content="1.1.2" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -266,15 +266,15 @@
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.0"
+    aria-label="Twiga version 1.1.2"
   >
-    <span class="tw-version-label">v1.1.0</span>
+    <span class="tw-version-label">v1.1.2</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.0</strong> is in alpha.
+        <strong>Twiga 1.1.2</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -474,15 +474,15 @@
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.0"
+    aria-label="Twiga version 1.1.2"
   >
-    <span class="tw-version-label">v1.1.0</span>
+    <span class="tw-version-label">v1.1.2</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.0</strong> is in alpha.
+        <strong>Twiga 1.1.2</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -1166,6 +1166,16 @@ quantiles = model.predict(x)</p>
 assign to <code class="docutils literal notranslate"><span class="pre">self.model</span></code>.</p></li>
 <li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">_predict()</span></code> — call <code class="xref py py-meth docutils literal notranslate"><span class="pre">_ensure_loaded()</span></code> then run inference.</p></li>
 </ul>
+<p><strong>Input handling shared by every wrapper</strong> (see <code class="xref py py-meth docutils literal notranslate"><span class="pre">_raw_quantiles()</span></code>):</p>
+<ul class="simple">
+<li><p>When the model runs inside a forecaster (<code class="docutils literal notranslate"><span class="pre">data_pipeline</span></code> is set), the
+input is cut to the lookback window first. With calendar or future
+covariates the forecaster stacks the horizon covariate block after the
+lookback, and column 0 of that block is a covariate, not the target.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">predict_batch_size</span></code> on the model config (default: all windows at once)
+splits inference into chunks of that many windows, bounding memory when
+a panel of many series produces hundreds of thousands of windows.</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1585,6 +1595,11 @@ can be called without a prior <code class="docutils literal notranslate"><span c
 <span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'chronos2'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.foundational.chronos2_model.Chronos2Config.name" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.chronos2_model.Chronos2Config.predict_batch_size">
+<span class="sig-name descname"><span class="pre">predict_batch_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.foundational.chronos2_model.Chronos2Config.predict_batch_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </section>
@@ -1851,6 +1866,11 @@ fine-tuning on the target dataset.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.foundational.tabicl_model.TabICLConfig.point_estimate">
 <span class="sig-name descname"><span class="pre">point_estimate</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'mean'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'median'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.foundational.tabicl_model.TabICLConfig.point_estimate" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.tabicl_model.TabICLConfig.predict_batch_size">
+<span class="sig-name descname"><span class="pre">predict_batch_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.foundational.tabicl_model.TabICLConfig.predict_batch_size" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -2122,6 +2142,11 @@ variants before computing empirical quantiles. Ignored for <code class="docutils
 <dd></dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.moirai_model.MoiraiConfig.predict_batch_size">
+<span class="sig-name descname"><span class="pre">predict_batch_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.foundational.moirai_model.MoiraiConfig.predict_batch_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.foundational.moirai_model.MoiraiConfig.size">
 <span class="sig-name descname"><span class="pre">size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'small'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'base'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'large'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.foundational.moirai_model.MoiraiConfig.size" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
@@ -2380,6 +2405,11 @@ Auto-raised to the requested horizon at fit time if smaller.</p></li>
 <span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'timesfm'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.foundational.timesfm_model.TimesFMConfig.name" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timesfm_model.TimesFMConfig.predict_batch_size">
+<span class="sig-name descname"><span class="pre">predict_batch_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.foundational.timesfm_model.TimesFMConfig.predict_batch_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </section>
@@ -2633,6 +2663,11 @@ computing empirical quantiles.</p></li>
 <span class="sig-name descname"><span class="pre">num_samples</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.models.foundational.lag_llama_model.LagLlamaConfig.num_samples" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.lag_llama_model.LagLlamaConfig.predict_batch_size">
+<span class="sig-name descname"><span class="pre">predict_batch_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.foundational.lag_llama_model.LagLlamaConfig.predict_batch_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </section>
@@ -2748,6 +2783,7 @@ computing empirical quantiles.</p></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.chronos2_model.Chronos2Config.horizon"><code class="docutils literal notranslate"><span class="pre">Chronos2Config.horizon</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.chronos2_model.Chronos2Config.model_config"><code class="docutils literal notranslate"><span class="pre">Chronos2Config.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.chronos2_model.Chronos2Config.name"><code class="docutils literal notranslate"><span class="pre">Chronos2Config.name</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.chronos2_model.Chronos2Config.predict_batch_size"><code class="docutils literal notranslate"><span class="pre">Chronos2Config.predict_batch_size</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -2774,6 +2810,7 @@ computing empirical quantiles.</p></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.tabicl_model.TabICLConfig.n_estimators"><code class="docutils literal notranslate"><span class="pre">TabICLConfig.n_estimators</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.tabicl_model.TabICLConfig.name"><code class="docutils literal notranslate"><span class="pre">TabICLConfig.name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.tabicl_model.TabICLConfig.point_estimate"><code class="docutils literal notranslate"><span class="pre">TabICLConfig.point_estimate</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.tabicl_model.TabICLConfig.predict_batch_size"><code class="docutils literal notranslate"><span class="pre">TabICLConfig.predict_batch_size</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -2801,6 +2838,7 @@ computing empirical quantiles.</p></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.moirai_model.MoiraiConfig.name"><code class="docutils literal notranslate"><span class="pre">MoiraiConfig.name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.moirai_model.MoiraiConfig.num_samples"><code class="docutils literal notranslate"><span class="pre">MoiraiConfig.num_samples</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.moirai_model.MoiraiConfig.patch_size"><code class="docutils literal notranslate"><span class="pre">MoiraiConfig.patch_size</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.moirai_model.MoiraiConfig.predict_batch_size"><code class="docutils literal notranslate"><span class="pre">MoiraiConfig.predict_batch_size</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.moirai_model.MoiraiConfig.size"><code class="docutils literal notranslate"><span class="pre">MoiraiConfig.size</span></code></a></li>
 </ul>
 </li>
@@ -2828,6 +2866,7 @@ computing empirical quantiles.</p></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timesfm_model.TimesFMConfig.max_horizon"><code class="docutils literal notranslate"><span class="pre">TimesFMConfig.max_horizon</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timesfm_model.TimesFMConfig.model_config"><code class="docutils literal notranslate"><span class="pre">TimesFMConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timesfm_model.TimesFMConfig.name"><code class="docutils literal notranslate"><span class="pre">TimesFMConfig.name</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timesfm_model.TimesFMConfig.predict_batch_size"><code class="docutils literal notranslate"><span class="pre">TimesFMConfig.predict_batch_size</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -2854,6 +2893,7 @@ computing empirical quantiles.</p></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.lag_llama_model.LagLlamaConfig.model_config"><code class="docutils literal notranslate"><span class="pre">LagLlamaConfig.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.lag_llama_model.LagLlamaConfig.name"><code class="docutils literal notranslate"><span class="pre">LagLlamaConfig.name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.lag_llama_model.LagLlamaConfig.num_samples"><code class="docutils literal notranslate"><span class="pre">LagLlamaConfig.num_samples</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.lag_llama_model.LagLlamaConfig.predict_batch_size"><code class="docutils literal notranslate"><span class="pre">LagLlamaConfig.predict_batch_size</span></code></a></li>
 </ul>
 </li>
 </ul>

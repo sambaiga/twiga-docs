@@ -78,6 +78,20 @@ All parametric heads live in `twiga/distributions/nn/parametric.py`. Each maps t
 | `StudentTDistribution` | Student-T | `(μ, σ, ν)` | σ > 0, ν > 2 | Very heavy tails |
 | `MultivariateNormalDistribution` | Joint Gaussian | `(μ, L)` | `LLᵀ` positive definite | Physically coupled targets |
 | `MultivariateLaplaceDistribution` | Joint Laplace | `(μ, L)` | `LLᵀ` positive definite | Coupled targets whose decision is an exceedance |
+| `PoissonDistribution` | Poisson | `(λ,)` | λ > 0 | Non-negative counts, variance ≈ mean |
+| `NegativeBinomialDistribution` | Negative binomial | `(μ, r)` | μ, r > 0 | Overdispersed counts (retail unit sales) |
+| `ZeroInflatedPoissonDistribution` | Zero-inflated Poisson | `(mean, λ, π)` | λ > 0, π ∈ (0, 1) | Counts with excess zeros |
+| `ZeroInflatedNegativeBinomialDistribution` | Zero-inflated negative binomial | `(mean, μ, r, π)` | μ, r > 0, π ∈ (0, 1) | Intermittent, overdispersed demand |
+
+**What `forecast()` reports.** Every head returns `loc` and `scale` from `predictive_moments()`. Location-scale heads report their own parameters: `NormalDistribution` gives (μ, σ) and `LaplaceDistribution` gives (μ, b). Shape-parameter heads report the predictive **mean and standard deviation**, not their raw parameters:
+
+- Gamma: mean α/β.
+- Beta: mean α/(α+β).
+- Log-normal: mean exp(μ + σ²/2), not the log-space μ.
+
+They also set a `family` (`"gamma"`, `"beta"`, `"lognormal"`). The point forecast, the training metric (used for early stopping and checkpoint selection), and the native intervals all follow from these moments. Intervals use the quantiles of the moment-matched family (`twiga.distributions.intervals.predictive_interval`), so skewed and bounded targets get asymmetric bands that respect their support.
+
+**Count heads** (`twiga/distributions/nn/count.py`) report `loc` = predictive mean and `scale` = predictive standard deviation, with `family` set to `"poisson"` or `"negbin"`. Native intervals then use quantiles of the moment-matched count distribution (integer, never negative) instead of a normal z-score. Their log-likelihoods accept non-integer, non-negative targets, so they work on locally scaled panels. The zero-inflated heads mix a point mass at zero (probability `π`) with the count law and report the mixture mean and standard deviation. Select any count head on any backbone that supports `distribution=`, e.g. `MLPFConfig(distribution="negbin")`, `MLPGAMConfig(distribution="zip")`, `MLPGAFConfig(distribution="poisson")` or `NHITSConfig(distribution="zinb")`.
 
 All share the same interface:
 

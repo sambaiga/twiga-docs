@@ -108,3 +108,48 @@ Functions for evaluating forecast quality - ACF, metric bar charts, reliability 
 
 .. autofunction:: twiga.core.plot.stats.plot_pit_histogram
 ```
+
+## Comparing Results Across Datasets
+
+An ablation or benchmark run writes `*_full.csv` and `*_summary.csv` files per metric type (point, interval, quantile). `load_ablation` reads them into an `AblationResult`. The plot helpers then show **one metric per figure**: datasets on the x-axis, one colour per condition, which keeps comparisons readable when there are many metrics.
+
+```python
+from lets_plot import ggsave
+
+from twiga.core.plot import load_ablation, plot_metric_across_datasets, plot_metrics_by_type
+
+abl = load_ablation("results/", prefix="fpqr_ablation", name="FPQR ablation")
+
+# One metric across every dataset
+p = plot_metric_across_datasets(abl, metric="NRMSE", metric_type="point", caption="Point accuracy")
+
+# Every metric of one type: CWE, PICP, NMPI, Winkler for intervals
+plots = plot_metrics_by_type(abl, metric_type="interval", caption="Interval forecasts")
+for metric, figure in plots.items():
+    ggsave(figure, f"{metric.lower()}_across_datasets.png", scale=2.0)
+```
+
+| Type | Metrics | Better |
+|---|---|---|
+| Point | NRMSE, RMSE, NBIAS / CORR | lower / higher |
+| Interval | CWE, NMPI, Winkler / PICP | lower / close to nominal |
+| Quantile | Pinball, CRPS, CalibErr | lower |
+
+`save_ablation_plots(results_dir, prefix, name, reference)` writes the whole set in one call, one folder per metric type with one `metric_<name>_across_datasets.<fmt>` file per metric:
+
+```text
+figures/
+├── point/      metric_nrmse_across_datasets.png, ...
+├── interval/   metric_cwe_across_datasets.png, metric_picp_across_datasets.png, ...
+└── quantile/   metric_pinball_across_datasets.png, metric_crps_across_datasets.png, ...
+```
+
+```{eval-rst}
+.. autofunction:: twiga.core.plot.load_ablation
+
+.. autofunction:: twiga.core.plot.plot_metric_across_datasets
+
+.. autofunction:: twiga.core.plot.plot_metrics_by_type
+
+.. autofunction:: twiga.core.plot.save_ablation_plots
+```

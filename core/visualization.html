@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=fc837d61"></script>
+    <script src="../_static/documentation_options.js?v=6f037312"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -63,7 +63,7 @@
     <link rel="prev" title="Feature Attribution (SHAP)" href="explain.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.1.0" />
+  <meta name="docsearch:version" content="1.1.2" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -266,15 +266,15 @@
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.0"
+    aria-label="Twiga version 1.1.2"
   >
-    <span class="tw-version-label">v1.1.0</span>
+    <span class="tw-version-label">v1.1.2</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.0</strong> is in alpha.
+        <strong>Twiga 1.1.2</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -474,15 +474,15 @@
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.0"
+    aria-label="Twiga version 1.1.2"
   >
-    <span class="tw-version-label">v1.1.0</span>
+    <span class="tw-version-label">v1.1.2</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.0</strong> is in alpha.
+        <strong>Twiga 1.1.2</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -554,6 +554,7 @@
 <li class="toctree-l1"><a class="reference internal" href="data-pipeline.html">Data Processing Pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="feature-analysis.html">Feature Analysis &amp; Statistical Toolkit</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hierarchy.html">Hierarchical Alignment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration and Conformal Prediction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="forecast-results.html">Forecast Results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="backtesting.html">Backtesting &amp; Time-Based Cross-Validation</a></li>
@@ -1704,6 +1705,166 @@ perfectly calibrated forecast.</p>
 </dd></dl>
 
 </section>
+<section id="comparing-results-across-datasets">
+<h2>Comparing Results Across Datasets<a class="headerlink" href="#comparing-results-across-datasets" title="Link to this heading">#</a></h2>
+<p>An ablation or benchmark run writes <code class="docutils literal notranslate"><span class="pre">*_full.csv</span></code> and <code class="docutils literal notranslate"><span class="pre">*_summary.csv</span></code> files per metric type (point, interval, quantile). <code class="docutils literal notranslate"><span class="pre">load_ablation</span></code> reads them into an <code class="docutils literal notranslate"><span class="pre">AblationResult</span></code>. The plot helpers then show <strong>one metric per figure</strong>: datasets on the x-axis, one colour per condition, which keeps comparisons readable when there are many metrics.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lets_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">ggsave</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_ablation</span><span class="p">,</span> <span class="n">plot_metric_across_datasets</span><span class="p">,</span> <span class="n">plot_metrics_by_type</span>
+
+<span class="n">abl</span> <span class="o">=</span> <span class="n">load_ablation</span><span class="p">(</span><span class="s2">"results/"</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">"fpqr_ablation"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"FPQR ablation"</span><span class="p">)</span>
+
+<span class="c1"># One metric across every dataset</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">plot_metric_across_datasets</span><span class="p">(</span><span class="n">abl</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">"NRMSE"</span><span class="p">,</span> <span class="n">metric_type</span><span class="o">=</span><span class="s2">"point"</span><span class="p">,</span> <span class="n">caption</span><span class="o">=</span><span class="s2">"Point accuracy"</span><span class="p">)</span>
+
+<span class="c1"># Every metric of one type: CWE, PICP, NMPI, Winkler for intervals</span>
+<span class="n">plots</span> <span class="o">=</span> <span class="n">plot_metrics_by_type</span><span class="p">(</span><span class="n">abl</span><span class="p">,</span> <span class="n">metric_type</span><span class="o">=</span><span class="s2">"interval"</span><span class="p">,</span> <span class="n">caption</span><span class="o">=</span><span class="s2">"Interval forecasts"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">metric</span><span class="p">,</span> <span class="n">figure</span> <span class="ow">in</span> <span class="n">plots</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">ggsave</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">metric</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_across_datasets.png"</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Metrics</p></th>
+<th class="head"><p>Better</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Point</p></td>
+<td><p>NRMSE, RMSE, NBIAS / CORR</p></td>
+<td><p>lower / higher</p></td>
+</tr>
+<tr class="row-odd"><td><p>Interval</p></td>
+<td><p>CWE, NMPI, Winkler / PICP</p></td>
+<td><p>lower / close to nominal</p></td>
+</tr>
+<tr class="row-even"><td><p>Quantile</p></td>
+<td><p>Pinball, CRPS, CalibErr</p></td>
+<td><p>lower</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">save_ablation_plots(results_dir,</span> <span class="pre">prefix,</span> <span class="pre">name,</span> <span class="pre">reference)</span></code> writes the whole set in one call, one folder per metric type with one <code class="docutils literal notranslate"><span class="pre">metric_&lt;name&gt;_across_datasets.&lt;fmt&gt;</span></code> file per metric:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>figures/
+├── point/      metric_nrmse_across_datasets.png, ...
+├── interval/   metric_cwe_across_datasets.png, metric_picp_across_datasets.png, ...
+└── quantile/   metric_pinball_across_datasets.png, metric_crps_across_datasets.png, ...
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.plot.load_ablation">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.plot.</span></span><span class="sig-name descname"><span class="pre">load_ablation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_dir</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.plot.load_ablation" title="Link to this definition">#</a></dt>
+<dd><p>Load a complete ablation result from a results directory.</p>
+<p>Automatically discovers <code class="docutils literal notranslate"><span class="pre">*_full.csv</span></code> and <code class="docutils literal notranslate"><span class="pre">*_summary.csv</span></code> files for
+point, interval, and quantile metric types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>results_dir</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span>) – Path to the directory containing the CSV files (the
+<code class="docutils literal notranslate"><span class="pre">results/</span></code> sub-directory produced by every ablation script).</p></li>
+<li><p><strong>prefix</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Optional filename prefix (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;fpqr_ablation&quot;</span></code>).  When
+empty the function searches for any matching file.</p></li>
+<li><p><strong>name</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Human-readable experiment name used in plot titles.</p></li>
+<li><p><strong>reference</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Optional <code class="docutils literal notranslate"><span class="pre">{group:</span> <span class="pre">ref_condition}</span></code> mapping.  When omitted
+the reference is inferred from the Δ column (the row where Δ = 0).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">AblationResult</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">AblationResult</span></code> ready to pass to the plot functions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.plot.plot_metric_across_datasets">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.plot.</span></span><span class="sig-name descname"><span class="pre">plot_metric_across_datasets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">abl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interval'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">caption</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.plot.plot_metric_across_datasets" title="Link to this definition">#</a></dt>
+<dd><p>Plot one metric across all datasets in the ablation.</p>
+<p>Shows each dataset as a separate group of bars/points, making it easy to
+compare how a single metric performs across different data sources.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>abl</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">AblationResult</span></code></span>) – Loaded <code class="xref py py-class docutils literal notranslate"><span class="pre">AblationResult</span></code>.</p></li>
+<li><p><strong>metric</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Metric name to plot (e.g. “NRMSE”, “CWE”, “Pinball”).</p></li>
+<li><p><strong>metric_type</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Literal</span></code></a>[<code class="docutils literal notranslate"><span class="pre">'point'</span></code>, <code class="docutils literal notranslate"><span class="pre">'interval'</span></code>, <code class="docutils literal notranslate"><span class="pre">'quantile'</span></code>]</span>) – Which summary to use (“point”, “interval”, “quantile”).</p></li>
+<li><p><strong>caption</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Plot caption.</p></li>
+<li><p><strong>fig_size</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – <code class="docutils literal notranslate"><span class="pre">(width_px,</span> <span class="pre">height_px)</span></code> override.</p></li>
+<li><p><strong>font_size</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Base font size.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A Lets-Plot <code class="docutils literal notranslate"><span class="pre">ggplot</span></code> object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.plot.plot_metrics_by_type">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.plot.</span></span><span class="sig-name descname"><span class="pre">plot_metrics_by_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">abl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interval'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">caption</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.plot.plot_metrics_by_type" title="Link to this definition">#</a></dt>
+<dd><p>Generate one plot per metric in a metric type.</p>
+<p>Creates separate plots for each metric (e.g., CWE, PIC, NMPI for interval),
+each showing that metric across all datasets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>abl</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">AblationResult</span></code></span>) – Loaded <code class="xref py py-class docutils literal notranslate"><span class="pre">AblationResult</span></code>.</p></li>
+<li><p><strong>metric_type</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Literal</span></code></a>[<code class="docutils literal notranslate"><span class="pre">'point'</span></code>, <code class="docutils literal notranslate"><span class="pre">'interval'</span></code>, <code class="docutils literal notranslate"><span class="pre">'quantile'</span></code>]</span>) – Which metric type to plot (“point”, “interval”, “quantile”).</p></li>
+<li><p><strong>caption</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Caption appended to every plot.</p></li>
+<li><p><strong>font_size</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Base font size.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">{metric_name:</span> <span class="pre">ggplot}</span></code> mapping.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.plot.save_ablation_plots">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.plot.</span></span><span class="sig-name descname"><span class="pre">save_ablation_plots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_types</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.plot.save_ablation_plots" title="Link to this definition">#</a></dt>
+<dd><p>Load CSVs from <em>results_dir</em> and save all ablation figures.</p>
+<p>Called automatically at the end of each experiment’s <code class="docutils literal notranslate"><span class="pre">summarise_ablation</span></code>
+(only for final summaries, not per-group partials).  Can also be invoked
+manually from a notebook.</p>
+<p>Generates the following plots per metric type:
+- One delta/forest plot per ablation group
+- One comparison plot per ablation group
+- One bar chart per ablation group
+- One plot per metric showing that metric across all datasets</p>
+<p>Saves to <code class="docutils literal notranslate"><span class="pre">{results_dir}/../figures/{metric_type}/{plot_name}.{fmt}</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>results_dir</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span>) – The <code class="docutils literal notranslate"><span class="pre">results/</span></code> directory written by the experiment.</p></li>
+<li><p><strong>prefix</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – CSV filename prefix (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;fpqr_ablation&quot;</span></code>).</p></li>
+<li><p><strong>name</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Experiment label used in plot titles.</p></li>
+<li><p><strong>reference</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span>) – <code class="docutils literal notranslate"><span class="pre">{group:</span> <span class="pre">ref_condition}</span></code> mapping from the experiment.</p></li>
+<li><p><strong>metric_types</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Limit to these types (default: all available).</p></li>
+<li><p><strong>fmt</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Image format passed to <code class="docutils literal notranslate"><span class="pre">ggsave</span></code> (<code class="docutils literal notranslate"><span class="pre">&quot;png&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;svg&quot;</span></code>).</p></li>
+<li><p><strong>scale</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Resolution scale factor for <code class="docutils literal notranslate"><span class="pre">ggsave</span></code> (default 2 → ~200 dpi).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path to the figures directory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 </section>
 
 
@@ -1793,6 +1954,13 @@ perfectly calibrated forecast.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.plot.stats.plot_metrics_bar"><code class="docutils literal notranslate"><span class="pre">plot_metrics_bar()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.plot.stats.plot_reliability_diagram"><code class="docutils literal notranslate"><span class="pre">plot_reliability_diagram()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.plot.stats.plot_pit_histogram"><code class="docutils literal notranslate"><span class="pre">plot_pit_histogram()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#comparing-results-across-datasets">Comparing Results Across Datasets</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.plot.load_ablation"><code class="docutils literal notranslate"><span class="pre">load_ablation()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.plot.plot_metric_across_datasets"><code class="docutils literal notranslate"><span class="pre">plot_metric_across_datasets()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.plot.plot_metrics_by_type"><code class="docutils literal notranslate"><span class="pre">plot_metrics_by_type()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.plot.save_ablation_plots"><code class="docutils literal notranslate"><span class="pre">save_ablation_plots()</span></code></a></li>
 </ul>
 </li>
 </ul>

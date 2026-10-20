@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=fc837d61"></script>
+    <script src="../_static/documentation_options.js?v=6f037312"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -421,7 +421,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="prev" title="User Guide" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.1.0" />
+  <meta name="docsearch:version" content="1.1.2" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -624,15 +624,15 @@ window.runMermaid = runMermaid;</script>
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.0"
+    aria-label="Twiga version 1.1.2"
   >
-    <span class="tw-version-label">v1.1.0</span>
+    <span class="tw-version-label">v1.1.2</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.0</strong> is in alpha.
+        <strong>Twiga 1.1.2</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -832,15 +832,15 @@ window.runMermaid = runMermaid;</script>
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.0"
+    aria-label="Twiga version 1.1.2"
   >
-    <span class="tw-version-label">v1.1.0</span>
+    <span class="tw-version-label">v1.1.2</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.0</strong> is in alpha.
+        <strong>Twiga 1.1.2</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -912,6 +912,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l1"><a class="reference internal" href="data-pipeline.html">Data Processing Pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="feature-analysis.html">Feature Analysis &amp; Statistical Toolkit</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hierarchy.html">Hierarchical Alignment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration and Conformal Prediction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="forecast-results.html">Forecast Results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="backtesting.html">Backtesting &amp; Time-Based Cross-Validation</a></li>
@@ -1578,6 +1579,27 @@ window.runMermaid = runMermaid;</script>
 </div>
 <p>For interval predictions, the ensemble is computed independently over the lower, point, and upper arrays.</p>
 </section>
+<section id="partial-pooling">
+<h2>Partial Pooling<a class="headerlink" href="#partial-pooling" title="Link to this heading">#</a></h2>
+<p>For a panel of many series there is a spectrum between one global model, which shares everything across series, and one model per series, which shares nothing. The M5 Accuracy winner used the middle ground. He trained LightGBM models on data pooled per store (10 models), per store × category (30) and per store × department (70), then averaged each series’ forecasts with equal weights.</p>
+<p><code class="docutils literal notranslate"><span class="pre">PooledForecaster</span></code> holds one <code class="docutils literal notranslate"><span class="pre">TwigaForecaster</span></code> per value of <code class="docutils literal notranslate"><span class="pre">pool_by</span></code>, all built from the same configs. It returns the usual long frames with a <code class="docutils literal notranslate"><span class="pre">pool</span></code> column. <code class="docutils literal notranslate"><span class="pre">average_prediction_frames</span></code> blends several runs into the winner’s equal-weight combination.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.forecaster</span><span class="w"> </span><span class="kn">import</span> <span class="n">PooledForecaster</span><span class="p">,</span> <span class="n">average_prediction_frames</span>
+
+<span class="n">global_preds</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">TwigaForecaster</span><span class="p">(</span><span class="n">data_config</span><span class="p">,</span> <span class="n">lgb</span><span class="p">,</span> <span class="n">cv_config</span><span class="p">)</span><span class="o">.</span><span class="n">backtesting</span><span class="p">(</span><span class="n">panel</span><span class="p">)</span>
+<span class="n">per_store</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">PooledForecaster</span><span class="p">(</span><span class="n">data_config</span><span class="p">,</span> <span class="n">lgb</span><span class="p">,</span> <span class="n">cv_config</span><span class="p">,</span> <span class="n">pool_by</span><span class="o">=</span><span class="p">[</span><span class="s2">"store_id"</span><span class="p">])</span><span class="o">.</span><span class="n">backtesting</span><span class="p">(</span><span class="n">panel</span><span class="p">)</span>
+<span class="n">per_store_cat</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">PooledForecaster</span><span class="p">(</span><span class="n">data_config</span><span class="p">,</span> <span class="n">lgb</span><span class="p">,</span> <span class="n">cv_config</span><span class="p">,</span> <span class="n">pool_by</span><span class="o">=</span><span class="p">[</span><span class="s2">"store_id"</span><span class="p">,</span> <span class="s2">"cat_id"</span><span class="p">])</span><span class="o">.</span><span class="n">backtesting</span><span class="p">(</span><span class="n">panel</span><span class="p">)</span>
+
+<span class="n">blend</span> <span class="o">=</span> <span class="n">average_prediction_frames</span><span class="p">([</span><span class="n">global_preds</span><span class="p">,</span> <span class="n">per_store</span><span class="p">,</span> <span class="n">per_store_cat</span><span class="p">],</span> <span class="s2">"LIGHTGBM-BLEND"</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Every series must belong to exactly one pool; the <code class="docutils literal notranslate"><span class="pre">pool_by</span></code> columns must be in the data, typically the <code class="docutils literal notranslate"><span class="pre">static_features</span></code>.</p></li>
+<li><p>Pools are backtested over the full panel’s date range, so fold <em>k</em> covers the same months in every pool and the frames can be blended or scored together with the <a class="reference internal" href="metrics.html"><span class="std std-doc">panel metrics</span></a>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">min_series</span></code> skips pools that are too small to be worth pooling.</p></li>
+<li><p>Each pool writes its artefacts under <code class="docutils literal notranslate"><span class="pre">&lt;project_name&gt;/pool_&lt;group&gt;</span></code>.</p></li>
+</ul>
+<p>Pooling changes <em>which</em> series share a model. <a class="reference internal" href="hierarchy.html"><span class="std std-doc">Hierarchical alignment</span></a> changes the <em>level</em> of the forecasts, and the two combine.</p>
+</section>
 <section id="checkpointing-directory-structure">
 <h2>Checkpointing &amp; Directory Structure<a class="headerlink" href="#checkpointing-directory-structure" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">BaseForecaster._create_folder()</span></code> creates a standardised directory layout under <code class="docutils literal notranslate"><span class="pre">root_dir</span></code>:</p>
@@ -1813,6 +1835,147 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">None</s
 </div>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="twiga.forecaster.pooled.PooledForecaster">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.forecaster.pooled.</span></span><span class="sig-name descname"><span class="pre">PooledForecaster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool_by</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_series</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.pooled.PooledForecaster" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>One panel forecaster per group of series, sharing a single configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.DataPipelineConfig" title="twiga.core.config.data.DataPipelineConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code></a></span>) – Panel data configuration (<code class="docutils literal notranslate"><span class="pre">id_column</span></code> must be set); every pool uses it.</p></li>
+<li><p><strong>model_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.BaseModelConfig" title="twiga.core.config.base.BaseModelConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModelConfig</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="config.html#twiga.core.config.BaseModelConfig" title="twiga.core.config.base.BaseModelConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModelConfig</span></code></a>]</span>) – Model config(s), as for <a class="reference internal" href="#twiga.forecaster.core.TwigaForecaster" title="twiga.forecaster.core.TwigaForecaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">TwigaForecaster</span></code></a>.</p></li>
+<li><p><strong>cv_params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="config.html#twiga.core.config.ExperimentConfig" title="twiga.core.config.forecaster.ExperimentConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExperimentConfig</span></code></a></span>) – Backtesting configuration. Each pool writes its artefacts to
+<code class="docutils literal notranslate"><span class="pre">&lt;project_name&gt;/pool_&lt;group&gt;</span></code>.</p></li>
+<li><p><strong>pool_by</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span>) – Columns of the data that define the pools, e.g. <code class="docutils literal notranslate"><span class="pre">[&quot;store_id&quot;]</span></code> or
+<code class="docutils literal notranslate"><span class="pre">[&quot;store_id&quot;,</span> <span class="pre">&quot;cat_id&quot;]</span></code>. Each series must belong to one pool.</p></li>
+<li><p><strong>min_series</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Pools with fewer series are skipped (with a warning); too few series
+defeat the point of pooling.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pooled</span> <span class="o">=</span> <span class="n">PooledForecaster</span><span class="p">(</span><span class="n">data_config</span><span class="p">,</span> <span class="n">LIGHTGBMConfig</span><span class="p">(),</span> <span class="n">cv_config</span><span class="p">,</span> <span class="n">pool_by</span><span class="o">=</span><span class="p">[</span><span class="s2">"store_id"</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">pooled</span><span class="o">.</span><span class="n">backtesting</span><span class="p">(</span><span class="n">panel</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.forecaster.pooled.PooledForecaster.backtesting">
+<span class="sig-name descname"><span class="pre">backtesting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.pooled.PooledForecaster.backtesting" title="Link to this definition">#</a></dt>
+<dd><p>Rolling-origin backtest of every pool, on folds shared across pools.</p>
+<p>All pools are split over the full panel’s date range (<code class="docutils literal notranslate"><span class="pre">start_dt</span></code> / <code class="docutils literal notranslate"><span class="pre">end_dt</span></code>), so
+fold <em>k</em> covers the same months in every pool and the frames can be scored or
+blended together.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span>) – Full panel, including the <code class="docutils literal notranslate"><span class="pre">pool_by</span></code> columns.</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to <code class="xref py py-meth docutils literal notranslate"><span class="pre">TwigaForecaster.backtesting()</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a>, <a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">(predictions,</span> <span class="pre">metrics)</span></code> concatenated over pools with a <code class="docutils literal notranslate"><span class="pre">pool</span></code> column.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.forecaster.pooled.PooledForecaster.evaluate_point_forecast">
+<span class="sig-name descname"><span class="pre">evaluate_point_forecast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.pooled.PooledForecaster.evaluate_point_forecast" title="Link to this definition">#</a></dt>
+<dd><p>Point forecasts and metrics of every pool’s fitted forecaster on <em>test_df</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a>, <a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a>]</span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(results,</span> <span class="pre">metrics)</span></code> as from <code class="xref py py-meth docutils literal notranslate"><span class="pre">TwigaForecaster.evaluate_point_forecast()</span></code>,
+concatenated over pools with a <code class="docutils literal notranslate"><span class="pre">pool</span></code> column.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.forecaster.pooled.PooledForecaster.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.pooled.PooledForecaster.fit" title="Link to this definition">#</a></dt>
+<dd><p>Fit one forecaster per pool on that pool’s series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_df</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span>) – Training panel, including the <code class="docutils literal notranslate"><span class="pre">pool_by</span></code> columns.</p></li>
+<li><p><strong>val_df</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Optional validation panel, split by pool the same way.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#twiga.forecaster.pooled.PooledForecaster" title="twiga.forecaster.pooled.PooledForecaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">PooledForecaster</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.forecaster.pooled.PooledForecaster.forecast">
+<span class="sig-name descname"><span class="pre">forecast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.pooled.PooledForecaster.forecast" title="Link to this definition">#</a></dt>
+<dd><p>Typed forecasts of every pool, merged into one result per model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>test_df</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span>) – Test panel, including the <code class="docutils literal notranslate"><span class="pre">pool_by</span></code> columns.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="forecast-results.html#twiga.forecaster.result.ForecastCollection" title="twiga.forecaster.result.ForecastCollection"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastCollection</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A <a class="reference internal" href="forecast-results.html#twiga.forecaster.result.ForecastCollection" title="twiga.forecaster.result.ForecastCollection"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForecastCollection</span></code></a> whose results concatenate
+the pools along the window axis, with <code class="docutils literal notranslate"><span class="pre">series_ids</span></code> identifying each window.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="twiga.forecaster.pooled.PooledForecaster.pool_name">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">pool_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><a class="headerlink" href="#twiga.forecaster.pooled.PooledForecaster.pool_name" title="Link to this definition">#</a></dt>
+<dd><p>Readable name of the pooling, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;store_id&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;store_id</span> <span class="pre">x</span> <span class="pre">cat_id&quot;</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.forecaster.ensemble.average_prediction_frames">
+<span class="sig-prename descclassname"><span class="pre">twiga.forecaster.ensemble.</span></span><span class="sig-name descname"><span class="pre">average_prediction_frames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('timestamp',</span> <span class="pre">'target',</span> <span class="pre">'Folds')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'forecast'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.ensemble.average_prediction_frames" title="Link to this definition">#</a></dt>
+<dd><p>Blend several long prediction frames into one model by (weighted) averaging the forecasts.</p>
+<p>The M5 Accuracy winner’s final forecast was the equal-weight mean of models trained on
+different pools of series (per store, per store x category, per store x department) and
+with different multi-step strategies. Use this to build such a blend from the frames that
+<code class="docutils literal notranslate"><span class="pre">backtesting()</span></code> returns, e.g. of a global and of
+<a class="reference internal" href="#twiga.forecaster.pooled.PooledForecaster" title="twiga.forecaster.pooled.PooledForecaster"><code class="xref py py-class docutils literal notranslate"><span class="pre">PooledForecaster</span></code></a> runs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>frames</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a>]</span>) – Prediction frames, each holding one model’s forecasts (filter by <code class="docutils literal notranslate"><span class="pre">Model</span></code> first).</p></li>
+<li><p><strong>model_name</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Name of the blended model, written to the <code class="docutils literal notranslate"><span class="pre">Model</span></code> column.</p></li>
+<li><p><strong>id_column</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Series identifier column.</p></li>
+<li><p><strong>key_columns</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span>) – Further columns identifying a forecast row; those absent are ignored.</p></li>
+<li><p><strong>forecast_column</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Forecast column to average.</p></li>
+<li><p><strong>weights</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – One weight per frame (normalised to sum to 1); None means equal weights.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>One frame with the rows forecast by every input, the averaged forecast, and the
+remaining columns (e.g. <code class="docutils literal notranslate"><span class="pre">Actual</span></code>) from the first frame.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If no frames are given or the weights do not match the frames.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <section id="base-classes">
@@ -2394,7 +2557,7 @@ If not provided, the training DataFrame is used as test data.</p>
 <h3>Forecast Result Types<a class="headerlink" href="#forecast-result-types" title="Link to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.forecaster.result.</span></span><span class="sig-name descname"><span class="pre">ForecastResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_tril</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">family</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantile_levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.forecaster.result.</span></span><span class="sig-name descname"><span class="pre">ForecastResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_tril</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">family</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantile_levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">series_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'series_id'</span></span></em><span class="sig-paren">)</span></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Container for one model’s forecast output.</p>
 <dl class="field-list simple">
@@ -2418,6 +2581,8 @@ model itself reports it</p></li>
 <li><p><strong>lower</strong> – lower bound, same shape as loc</p></li>
 <li><p><strong>upper</strong> – upper bound, same shape as loc</p></li>
 <li><p><strong>inference_time</strong> – inference duration in seconds</p></li>
+<li><p><strong>series_ids</strong> – panel mode only, the series id of each window, shape (n_batch,)</p></li>
+<li><p><strong>id_column</strong> – name of the series id column in <a class="reference internal" href="forecast-results.html#twiga.forecaster.result.ForecastResult.to_dataframe" title="twiga.forecaster.result.ForecastResult.to_dataframe"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_dataframe()</span></code></a> output</p></li>
 <li><p><strong>conf_level</strong></p></li>
 <li><p><strong>metric_name</strong></p></li>
 </ul>
@@ -2470,6 +2635,11 @@ omitted the <code class="docutils literal notranslate"><span class="pre">ground_
 
 <dl class="py attribute">
 <dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">id_column</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'series_id'</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">inference_time</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span></dt>
 <dd></dd></dl>
 
@@ -2516,6 +2686,11 @@ omitted the <code class="docutils literal notranslate"><span class="pre">ground_
 <dl class="py attribute">
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">scale_tril</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">series_ids</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2820,6 +2995,7 @@ EnsembleStrategy.WEIGHTED. Defaults to None.</p></li>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model-registry">Model Registry</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ensemble-strategies">Ensemble Strategies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#partial-pooling">Partial Pooling</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#checkpointing-directory-structure">Checkpointing &amp; Directory Structure</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inverse-scaling">Inverse Scaling</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api-reference">API Reference</a><ul class="nav section-nav flex-column">
@@ -2830,6 +3006,15 @@ EnsembleStrategy.WEIGHTED. Defaults to None.</p></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.core.TwigaForecaster.quick"><code class="docutils literal notranslate"><span class="pre">TwigaForecaster.quick()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.pooled.PooledForecaster"><code class="docutils literal notranslate"><span class="pre">PooledForecaster</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.pooled.PooledForecaster.backtesting"><code class="docutils literal notranslate"><span class="pre">PooledForecaster.backtesting()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.pooled.PooledForecaster.evaluate_point_forecast"><code class="docutils literal notranslate"><span class="pre">PooledForecaster.evaluate_point_forecast()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.pooled.PooledForecaster.fit"><code class="docutils literal notranslate"><span class="pre">PooledForecaster.fit()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.pooled.PooledForecaster.forecast"><code class="docutils literal notranslate"><span class="pre">PooledForecaster.forecast()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.pooled.PooledForecaster.pool_name"><code class="docutils literal notranslate"><span class="pre">PooledForecaster.pool_name</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.ensemble.average_prediction_frames"><code class="docutils literal notranslate"><span class="pre">average_prediction_frames()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#base-classes">Base Classes</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.abstract.AbstractForecaster"><code class="docutils literal notranslate"><span class="pre">AbstractForecaster</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.forecaster.abstract.AbstractForecaster.backtesting"><code class="docutils literal notranslate"><span class="pre">AbstractForecaster.backtesting()</span></code></a></li>

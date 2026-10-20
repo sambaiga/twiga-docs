@@ -424,6 +424,29 @@ predictions, times = forecaster.predict(
 For interval predictions, the ensemble is computed independently over the lower, point, and upper arrays.
 
 
+## Partial Pooling
+
+For a panel of many series there is a spectrum between one global model, which shares everything across series, and one model per series, which shares nothing. The M5 Accuracy winner used the middle ground. He trained LightGBM models on data pooled per store (10 models), per store × category (30) and per store × department (70), then averaged each series' forecasts with equal weights.
+
+`PooledForecaster` holds one `TwigaForecaster` per value of `pool_by`, all built from the same configs. It returns the usual long frames with a `pool` column. `average_prediction_frames` blends several runs into the winner's equal-weight combination.
+
+```python
+from twiga.forecaster import PooledForecaster, average_prediction_frames
+
+global_preds, _ = TwigaForecaster(data_config, lgb, cv_config).backtesting(panel)
+per_store, _ = PooledForecaster(data_config, lgb, cv_config, pool_by=["store_id"]).backtesting(panel)
+per_store_cat, _ = PooledForecaster(data_config, lgb, cv_config, pool_by=["store_id", "cat_id"]).backtesting(panel)
+
+blend = average_prediction_frames([global_preds, per_store, per_store_cat], "LIGHTGBM-BLEND", id_column="id")
+```
+
+- Every series must belong to exactly one pool; the `pool_by` columns must be in the data, typically the `static_features`.
+- Pools are backtested over the full panel's date range, so fold *k* covers the same months in every pool and the frames can be blended or scored together with the [panel metrics](metrics.md).
+- `min_series` skips pools that are too small to be worth pooling.
+- Each pool writes its artefacts under `<project_name>/pool_<group>`.
+
+Pooling changes *which* series share a model. [Hierarchical alignment](hierarchy.md) changes the *level* of the forecasts, and the two combine.
+
 ## Checkpointing & Directory Structure
 
 `BaseForecaster._create_folder()` creates a standardised directory layout under `root_dir`:
@@ -461,6 +484,13 @@ Checkpoint persistence differs by domain:
 .. autoclass:: twiga.forecaster.core.TwigaForecaster
    :members:
    :show-inheritance:
+```
+
+```{eval-rst}
+.. autoclass:: twiga.forecaster.pooled.PooledForecaster
+   :members:
+
+.. autofunction:: twiga.forecaster.ensemble.average_prediction_frames
 ```
 
 ### Base Classes
