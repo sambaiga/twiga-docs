@@ -725,43 +725,154 @@ m_{g,t} = \frac{\hat{y}^{\text{level}}_{g,t}}{\sum_{i \in g} \hat{y}_{i,t}}, \qq
 </section>
 <section id="reconciliation">
 <h2>Reconciliation<a class="headerlink" href="#reconciliation" title="Link to this heading">#</a></h2>
-<p>Forecasts made separately at each level rarely add up: the store forecasts do not sum to the total forecast. Reconciliation takes base forecasts <span class="math notranslate nohighlight">\(\hat{y}\)</span> at every node of the hierarchy and projects them onto the coherent forecasts, those that are sums of bottom-level forecasts through the summing matrix <span class="math notranslate nohighlight">\(S\)</span>:</p>
+<p>Forecasts made separately at each level rarely add up: the store forecasts do not sum to the total forecast. Reconciliation takes base forecasts <span class="math notranslate nohighlight">\(\hat{y}\)</span> at every node of the hierarchy and maps them to coherent forecasts, those that are sums of bottom-level forecasts through the summing matrix <span class="math notranslate nohighlight">\(S\)</span> (nodes × bottom series).</p>
+<section id="theory">
+<h3>Theory<a class="headerlink" href="#theory" title="Link to this heading">#</a></h3>
+<p>The linear reconcilers are projections. MinT (Wickramasuriya, Athanasopoulos and Hyndman, 2019) chooses the one that minimises the trace of the reconciled forecast-error covariance, given the covariance <span class="math notranslate nohighlight">\(W\)</span> of the base forecast errors:</p>
 <div class="math notranslate nohighlight">
 \[
-\tilde{y} = S\,(S^\top W^{-1} S)^{-1} S^\top W^{-1}\,\hat{y} = \hat{y} - W C^\top (C W C^\top)^{-1} C\,\hat{y}, \qquad C = [\,I \mid -S_{\text{agg}}\,].
+\tilde{y} = S\,(S^\top W^{-1} S)^{-1} S^\top W^{-1}\,\hat{y}.
 \]</div>
-<p>Twiga solves the second form, which needs a solve over the aggregate nodes only and keeps <span class="math notranslate nohighlight">\(W\)</span> sparse when it is diagonal. On all 12 M5 levels (42,812 nodes) every diagonal method runs in under a second. The methods differ in <span class="math notranslate nohighlight">\(W\)</span>:</p>
+<p>It is unbiased whenever the base forecasts are, and it is the generalised least-squares fit of <span class="math notranslate nohighlight">\(\hat{y} = S b + \varepsilon\)</span> with <span class="math notranslate nohighlight">\(\operatorname{Cov}(\varepsilon) = W\)</span>. With <span class="math notranslate nohighlight">\(C = [\,I \mid -S_{\text{agg}}\,]\)</span>, one row per aggregate node so that <span class="math notranslate nohighlight">\(C y = 0\)</span> exactly when <span class="math notranslate nohighlight">\(y\)</span> is coherent, the same projection is</p>
+<div class="math notranslate nohighlight">
+\[
+\tilde{y} = \hat{y} - W C^\top (C W C^\top)^{-1} C\,\hat{y},
+\]</div>
+<p>which twiga solves. It needs one solve over the <span class="math notranslate nohighlight">\(m\)</span> aggregate nodes instead of the <span class="math notranslate nohighlight">\(n_b\)</span> bottom series (<span class="math notranslate nohighlight">\(m = 12{,}350\)</span> against <span class="math notranslate nohighlight">\(n_b = 30{,}490\)</span> on M5), and <span class="math notranslate nohighlight">\(C W C^\top\)</span> stays sparse when <span class="math notranslate nohighlight">\(W\)</span> is diagonal. The methods differ only in <span class="math notranslate nohighlight">\(W\)</span>:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">method</span></code></p></th>
 <th class="head"><p><span class="math notranslate nohighlight">\(W\)</span></p></th>
+<th class="head"><p>Reference</p></th>
 <th class="head"><p>Needs residuals</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">bottom_up</span></code></p></td>
 <td><p>none: every node is the sum of its bottom base forecasts</p></td>
+<td><p></p></td>
 <td><p>no</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ols</span></code></p></td>
-<td><p>identity</p></td>
+<td><p><span class="math notranslate nohighlight">\(I\)</span></p></td>
+<td><p>Hyndman et al. (2011)</p></td>
 <td><p>no</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">wls_struct</span></code></p></td>
-<td><p>number of bottom series under each node</p></td>
+<td><p><span class="math notranslate nohighlight">\(\operatorname{diag}(S\mathbf{1})\)</span>, the number of bottom series under each node</p></td>
+<td><p>Athanasopoulos, Hyndman, Kourentzes and Petropoulos (2017)</p></td>
 <td><p>no</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">wls_var</span></code></p></td>
-<td><p>each node’s residual variance</p></td>
+<td><p><span class="math notranslate nohighlight">\(\operatorname{diag}(\hat{W}_1)\)</span>, each node’s mean squared residual</p></td>
+<td><p>Hyndman, Lee and Wang (2016)</p></td>
 <td><p>yes</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mint_shrink</span></code></p></td>
-<td><p>residual covariance shrunk toward its diagonal (Schäfer-Strimmer)</p></td>
-<td><p>yes; dense, so limited to <code class="docutils literal notranslate"><span class="pre">max_dense_nodes</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(\hat{W}_1\)</span> with its correlations shrunk toward zero, intensity <span class="math notranslate nohighlight">\(\hat\lambda\)</span> estimated from the data</p></td>
+<td><p>Wickramasuriya, Athanasopoulos and Hyndman (2019); Schäfer and Strimmer (2005)</p></td>
+<td><p>yes</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<p><span class="math notranslate nohighlight">\(\hat{W}_1\)</span> is the uncentred covariance of one-step in-sample residuals; the <span class="math notranslate nohighlight">\(h\)</span>-step covariance is taken proportional to it, and a scalar factor does not change the projection. MinT-shrink keeps each node’s variance and shrinks its correlations:</p>
+<div class="math notranslate nohighlight">
+\[
+W = D^{1/2}\bigl(\hat\lambda\, I + (1-\hat\lambda)\,\hat{R}\bigr)D^{1/2}, \qquad
+\hat\lambda = \frac{\sum_{i\ne j}\widehat{\operatorname{Var}}(\hat r_{ij})}{\sum_{i\ne j}\hat r_{ij}^2}, \qquad
+\widehat{\operatorname{Var}}(\hat r_{ij}) = \frac{\overline{w^2}_{ij} - \hat r_{ij}^2}{T-1},
+\]</div>
+<p>where <span class="math notranslate nohighlight">\(w_{tij} = z_{ti} z_{tj}\)</span> for standardised residuals <span class="math notranslate nohighlight">\(z\)</span>. This matches <code class="docutils literal notranslate"><span class="pre">hts::shrink.estim</span></code>, which the tests reproduce to machine precision.</p>
+</section>
+<section id="computation">
+<h3>Computation<a class="headerlink" href="#computation" title="Link to this heading">#</a></h3>
+<p>The shrunk covariance is a diagonal plus a matrix of rank <span class="math notranslate nohighlight">\(T\)</span>, the number of residual periods:</p>
+<div class="math notranslate nohighlight">
+\[
+W = \operatorname{diag}(a) + U U^\top, \qquad U = \sqrt{(1-\hat\lambda)/T}\; D^{1/2} Z^\top \quad (n \times T).
+\]</div>
+<p>So <span class="math notranslate nohighlight">\(C W C^\top = A + B B^\top\)</span> with <span class="math notranslate nohighlight">\(A = C \operatorname{diag}(a) C^\top\)</span> sparse and <span class="math notranslate nohighlight">\(B = C U\)</span> only <span class="math notranslate nohighlight">\(T\)</span> columns wide. Twiga factorises <span class="math notranslate nohighlight">\(A\)</span> once (sparse LU) and applies the Woodbury identity</p>
+<div class="math notranslate nohighlight">
+\[
+(A + B B^\top)^{-1} = A^{-1} - A^{-1}B\,(I_T + B^\top A^{-1} B)^{-1} B^\top A^{-1},
+\]</div>
+<p>which costs a <span class="math notranslate nohighlight">\(T \times T\)</span> solve. The shrinkage intensity uses the same structure: both sums over pairs <span class="math notranslate nohighlight">\(i \ne j\)</span> are computed from <span class="math notranslate nohighlight">\(T \times T\)</span> Gram matrices (<span class="math notranslate nohighlight">\(\sum_{ij} \hat r_{ij}^2 = \lVert Z Z^\top \rVert_F^2 / T^2\)</span>), so no <span class="math notranslate nohighlight">\(n \times n\)</span> matrix is ever formed.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Step</p></th>
+<th class="head"><p>Dense MinT</p></th>
+<th class="head"><p>Twiga</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Memory for <span class="math notranslate nohighlight">\(W\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(n^2)\)</span>: 14.7 GB for M5’s 42,812 nodes</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(nT)\)</span>: 8 MB with <span class="math notranslate nohighlight">\(T = 24\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Shrinkage intensity</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(n^2 T)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(n T^2)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Projection</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(m^3)\)</span> dense solve</p></td>
+<td><p>sparse LU of <span class="math notranslate nohighlight">\(A\)</span>, plus <span class="math notranslate nohighlight">\(O(m T^2)\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All twelve M5 levels, 42,812 nodes, six months reconciled at once on a laptop CPU:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">method</span></code></p></th>
+<th class="head text-right"><p>Time</p></th>
+<th class="head text-right"><p>Most negative forecast</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">bottom_up</span></code></p></td>
+<td class="text-right"><p>0.3 s</p></td>
+<td class="text-right"><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ols</span></code></p></td>
+<td class="text-right"><p>0.7 s</p></td>
+<td class="text-right"><p>−24,332</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">wls_struct</span></code></p></td>
+<td class="text-right"><p>0.7 s</p></td>
+<td class="text-right"><p>−65</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">wls_var</span></code></p></td>
+<td class="text-right"><p>0.7 s</p></td>
+<td class="text-right"><p>−265</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mint_shrink</span></code> (<span class="math notranslate nohighlight">\(\hat\lambda = 0.86\)</span>)</p></td>
+<td class="text-right"><p>0.7 s</p></td>
+<td class="text-right"><p>−340</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">wls_var</span></code>, <code class="docutils literal notranslate"><span class="pre">nonnegative=&quot;clip&quot;</span></code></p></td>
+<td class="text-right"><p>0.7 s</p></td>
+<td class="text-right"><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">wls_var</span></code>, <code class="docutils literal notranslate"><span class="pre">nonnegative=&quot;optimal&quot;</span></code></p></td>
+<td class="text-right"><p>46 s</p></td>
+<td class="text-right"><p>0</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Groups that cover the same series, such as several models in one fold, share one hierarchy. For OLS, the incoherence of the total is spread equally over 30,000 products, which is why it produces large negative forecasts; weighted methods put it where the errors are.</p>
+</section>
+<section id="non-negative-demand">
+<h3>Non-negative demand<a class="headerlink" href="#non-negative-demand" title="Link to this heading">#</a></h3>
+<p>A projection can turn small product forecasts negative.</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">nonnegative=&quot;clip&quot;</span></code></strong> (or <code class="docutils literal notranslate"><span class="pre">True</span></code>): sets negative bottom forecasts to zero and sums up again. The result is coherent and fast, but not the best non-negative solution.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">nonnegative=&quot;optimal&quot;</span></code></strong>: solves the constrained problem <span class="math notranslate nohighlight">\(\min_{b \ge 0} (\hat{y} - S b)^\top W^{-1} (\hat{y} - S b)\)</span> (Wickramasuriya, Turlach and Hyndman, 2020) as a bounded sparse least-squares problem per timestamp. It needs a diagonal <span class="math notranslate nohighlight">\(W\)</span>; with <code class="docutils literal notranslate"><span class="pre">mint_shrink</span></code> it falls back to clipping, with a warning.</p></li>
+</ul>
+</section>
+<section id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Link to this heading">#</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.hierarchy</span><span class="w"> </span><span class="kn">import</span> <span class="n">aggregate_levels</span><span class="p">,</span> <span class="n">naive_residuals</span><span class="p">,</span> <span class="n">reconcile</span>
 
 <span class="n">LEVELS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"total"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"store"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"store_id"</span><span class="p">],</span> <span class="s2">"store-dept"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"store_id"</span><span class="p">,</span> <span class="s2">"dept_id"</span><span class="p">],</span> <span class="s2">"item-store"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"id"</span><span class="p">]}</span>
@@ -771,17 +882,39 @@ m_{g,t} = \frac{\hat{y}^{\text{level}}_{g,t}}{\sum_{i \in g} \hat{y}_{i,t}}, \qq
 <span class="c1"># with any twiga model, then stack the predictions with a "level" column.</span>
 <span class="n">residuals</span> <span class="o">=</span> <span class="n">naive_residuals</span><span class="p">(</span><span class="n">history_before_origin</span><span class="p">,</span> <span class="n">tags</span><span class="p">,</span> <span class="n">LEVELS</span><span class="p">,</span> <span class="s2">"sales"</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
 <span class="n">reconciled</span> <span class="o">=</span> <span class="n">reconcile</span><span class="p">(</span>
-    <span class="n">base</span><span class="p">,</span> <span class="n">tags</span><span class="p">,</span> <span class="n">LEVELS</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"wls_var"</span><span class="p">,</span> <span class="n">residuals</span><span class="o">=</span><span class="n">residuals</span><span class="p">,</span> <span class="n">group_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"Folds"</span><span class="p">],</span> <span class="n">nonnegative</span><span class="o">=</span><span class="kc">True</span>
+    <span class="n">base</span><span class="p">,</span>
+    <span class="n">tags</span><span class="p">,</span>
+    <span class="n">LEVELS</span><span class="p">,</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">"mint_shrink"</span><span class="p">,</span>
+    <span class="n">residuals</span><span class="o">=</span><span class="n">residuals</span><span class="p">,</span>
+    <span class="n">group_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"Folds"</span><span class="p">],</span>
+    <span class="n">nonnegative</span><span class="o">=</span><span class="s2">"clip"</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="n">reconciled</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"diagnostics"</span><span class="p">]</span>  <span class="c1"># MinT shrinkage intensity per group</span>
 </pre></div>
 </div>
 <p>Things to get right:</p>
 <ul class="simple">
 <li><p><strong>Per-group hierarchies.</strong> The hierarchy is built per group (e.g. per fold) from the bottom series that have a base forecast there, so the set of series may grow across folds. The aggregate base forecasts must describe that same set of series, as for alignment.</p></li>
-<li><p><strong>Residuals.</strong> <code class="docutils literal notranslate"><span class="pre">wls_var</span></code> and <code class="docutils literal notranslate"><span class="pre">mint_shrink</span></code> read in-sample residuals per node. When the base models’ own residuals are not at hand, <code class="docutils literal notranslate"><span class="pre">naive_residuals</span></code> gives one-step (seasonal) naive errors, the scale RMSSE uses. Pass only history before the forecast origin. Nodes with too little history borrow the median variance of their level, with a warning.</p></li>
-<li><p><strong>Non-negative demand.</strong> <code class="docutils literal notranslate"><span class="pre">nonnegative=True</span></code> clips negative reconciled bottom forecasts to zero and sums up again, which keeps the result coherent.</p></li>
+<li><p><strong>Residuals.</strong> <code class="docutils literal notranslate"><span class="pre">wls_var</span></code> and <code class="docutils literal notranslate"><span class="pre">mint_shrink</span></code> should read the in-sample residuals of the base models themselves. When those are not at hand, <code class="docutils literal notranslate"><span class="pre">naive_residuals</span></code> gives one-step (seasonal) naive errors, the scale RMSSE uses: a proxy that ranks nodes by how hard they are to forecast. Pass only history before the forecast origin.</p></li>
+<li><p><strong>Unobserved periods.</strong> A product before its launch has no error, not a zero error: variances use only the periods a node was observed. Nodes with no residuals at all borrow the median variance of their level, with a warning.</p></li>
+<li><p><strong>Enough periods for MinT.</strong> The shrinkage needs at least 3 residual periods; with few periods relative to the number of nodes, <span class="math notranslate nohighlight">\(\hat\lambda\)</span> is close to 1 and MinT-shrink approaches <code class="docutils literal notranslate"><span class="pre">wls_var</span></code>.</p></li>
+<li><p><strong>Point forecasts only.</strong> Reconciling quantiles is not a linear projection; reconcile sample paths, or the median as a point forecast.</p></li>
 <li><p><strong>Alignment or reconciliation.</strong> Alignment trusts one level completely and keeps the bottom model’s split; reconciliation weighs every level by how reliable it is. Compare both with <code class="docutils literal notranslate"><span class="pre">hierarchical_scores</span></code> on backtest folds.</p></li>
 </ul>
+</section>
+<section id="references">
+<h3>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Athanasopoulos, G., Hyndman, R. J., Kourentzes, N. and Petropoulos, F. (2017). Forecasting with temporal hierarchies. <em>European Journal of Operational Research</em>, 262(1), 60–74.</p></li>
+<li><p>Hyndman, R. J., Ahmed, R. A., Athanasopoulos, G. and Shang, H. L. (2011). Optimal combination forecasts for hierarchical time series. <em>Computational Statistics &amp; Data Analysis</em>, 55(9), 2579–2589.</p></li>
+<li><p>Hyndman, R. J., Lee, A. J. and Wang, E. (2016). Fast computation of reconciled forecasts for hierarchical and grouped time series. <em>Computational Statistics &amp; Data Analysis</em>, 97, 16–32.</p></li>
+<li><p>Schäfer, J. and Strimmer, K. (2005). A shrinkage approach to large-scale covariance matrix estimation and implications for functional genomics. <em>Statistical Applications in Genetics and Molecular Biology</em>, 4(1).</p></li>
+<li><p>Wickramasuriya, S. L., Athanasopoulos, G. and Hyndman, R. J. (2019). Optimal forecast reconciliation for hierarchical and grouped time series through trace minimization. <em>Journal of the American Statistical Association</em>, 114(526), 804–819.</p></li>
+<li><p>Wickramasuriya, S. L., Turlach, B. A. and Hyndman, R. J. (2020). Optimal non-negative forecast reconciliation. <em>Statistics and Computing</em>, 30(5), 1167–1182.</p></li>
+</ul>
+</section>
 </section>
 <section id="module-twiga.hierarchy.structure">
 <span id="api-reference"></span><h2>API Reference<a class="headerlink" href="#module-twiga.hierarchy.structure" title="Link to this heading">#</a></h2>
@@ -965,10 +1098,15 @@ diagonal, so it scales to tens of thousands of series. The methods differ in <sp
 <li><p><code class="docutils literal notranslate"><span class="pre">wls_struct</span></code>: <span class="math notranslate nohighlight">\(W = \operatorname{diag}(S\mathbf{1})\)</span>, the number of bottom series under each
 node (Athanasopoulos et al., 2017); needs no residuals.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">wls_var</span></code>: <span class="math notranslate nohighlight">\(W = \operatorname{diag}(\hat{\sigma}^2)\)</span>, each node’s residual variance.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">mint_shrink</span></code>: <span class="math notranslate nohighlight">\(W\)</span> is the residual covariance shrunk toward its diagonal (Wickramasuriya,
-Athanasopoulos and Hyndman, 2019; Schäfer-Strimmer shrinkage). It is dense, so it is limited to
-<code class="docutils literal notranslate"><span class="pre">max_dense_nodes</span></code> nodes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mint_shrink</span></code>: <span class="math notranslate nohighlight">\(W\)</span> is the residual covariance with its correlations shrunk toward zero
+(Wickramasuriya, Athanasopoulos and Hyndman, 2019; Schäfer-Strimmer shrinkage).</p></li>
 </ul>
+<p>The shrunk covariance is a diagonal plus a rank-<span class="math notranslate nohighlight">\(T\)</span> matrix (<span class="math notranslate nohighlight">\(T\)</span> residual periods),
+so MinT-shrink is solved with a sparse LU and a <span class="math notranslate nohighlight">\(T \times T\)</span> Woodbury correction, and its
+shrinkage intensity from <span class="math notranslate nohighlight">\(T \times T\)</span> Gram matrices: no <span class="math notranslate nohighlight">\(n \times n\)</span> matrix is
+ever formed, and all methods scale to every node of M5.</p>
+<p><code class="docutils literal notranslate"><span class="pre">nonnegative=&quot;optimal&quot;</span></code> replaces the projection by the non-negative weighted least-squares
+solution (Wickramasuriya, Turlach and Hyndman, 2020) for the diagonal-weight methods.</p>
 <p>Residuals are in-sample errors per node, in the layout <code class="xref py py-func docutils literal notranslate"><span class="pre">aggregate_levels()</span></code>
 produces; <a class="reference internal" href="#twiga.hierarchy.reconcile.naive_residuals" title="twiga.hierarchy.reconcile.naive_residuals"><code class="xref py py-func docutils literal notranslate"><span class="pre">naive_residuals()</span></code></a> builds one-step naive errors from history when the base models’
 own residuals are not at hand.</p>
@@ -1100,7 +1238,7 @@ how hard it is to forecast. Pass only the history before a fold’s origin.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="twiga.hierarchy.reconcile.reconcile">
-<span class="sig-prename descclassname"><span class="pre">twiga.hierarchy.reconcile.</span></span><span class="sig-name descname"><span class="pre">reconcile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wls_struct'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residuals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'timestamp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'forecast'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'residual'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'level'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'series'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonnegative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_dense_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.hierarchy.reconcile.reconcile" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">twiga.hierarchy.reconcile.</span></span><span class="sig-name descname"><span class="pre">reconcile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wls_struct'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residuals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'timestamp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'forecast'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'residual'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'level'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'series'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonnegative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.hierarchy.reconcile.reconcile" title="Link to this definition">#</a></dt>
 <dd><p>Reconcile base forecasts made at every level of a hierarchy.</p>
 <p>The hierarchy is built per group (e.g. per backtest fold) from the bottom series that have a
 base forecast in that group, so the set of series may change across folds; base forecasts
@@ -1125,9 +1263,11 @@ bottom level.</p></li>
 <li><p><strong>level_column</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Level-name column.</p></li>
 <li><p><strong>key_column</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Node key column.</p></li>
 <li><p><strong>group_columns</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span>) – Columns reconciled separately (e.g. <code class="docutils literal notranslate"><span class="pre">Folds</span></code>, <code class="docutils literal notranslate"><span class="pre">Model</span></code>).</p></li>
-<li><p><strong>nonnegative</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Clip negative reconciled bottom forecasts to zero and sum them up again,
-which keeps the result coherent.</p></li>
-<li><p><strong>max_dense_nodes</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Largest hierarchy <code class="docutils literal notranslate"><span class="pre">mint_shrink</span></code> accepts (its covariance is dense).</p></li>
+<li><p><strong>nonnegative</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Literal</span></code></a>[<code class="docutils literal notranslate"><span class="pre">'clip'</span></code>, <code class="docutils literal notranslate"><span class="pre">'optimal'</span></code>]]</span>) – Keep the reconciled forecasts non-negative (demand, sales). <code class="docutils literal notranslate"><span class="pre">&quot;clip&quot;</span></code> (or
+<code class="docutils literal notranslate"><span class="pre">True</span></code>) sets negative bottom forecasts to zero and sums up again: coherent and fast,
+but not the best non-negative solution. <code class="docutils literal notranslate"><span class="pre">&quot;optimal&quot;</span></code> solves the non-negative weighted
+least-squares problem instead (diagonal-weight methods only; <code class="docutils literal notranslate"><span class="pre">mint_shrink</span></code> falls
+back to <code class="docutils literal notranslate"><span class="pre">&quot;clip&quot;</span></code>).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -1143,15 +1283,42 @@ shrinkage intensity per group are in <code class="docutils literal notranslate">
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="twiga.hierarchy.reconcile.shrunk_covariance">
-<span class="sig-prename descclassname"><span class="pre">twiga.hierarchy.reconcile.</span></span><span class="sig-name descname"><span class="pre">shrunk_covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">residuals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.hierarchy.reconcile.shrunk_covariance" title="Link to this definition">#</a></dt>
-<dd><p>Residual covariance shrunk toward its diagonal (Schäfer and Strimmer, 2005).</p>
-<p>The shrinkage intensity is estimated from the data, as in MinT-shrink (Wickramasuriya et al.,
-2019): correlations that are noisy relative to their size are pulled toward zero.</p>
+<dt class="sig sig-object py" id="twiga.hierarchy.reconcile.shrinkage_intensity">
+<span class="sig-prename descclassname"><span class="pre">twiga.hierarchy.reconcile.</span></span><span class="sig-name descname"><span class="pre">shrinkage_intensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">standardised</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.hierarchy.reconcile.shrinkage_intensity" title="Link to this definition">#</a></dt>
+<dd><p>Schäfer-Strimmer shrinkage intensity of the residual correlations toward zero.</p>
+<div class="math notranslate nohighlight">
+\[\hat\lambda = \frac{\sum_{i \ne j} \widehat{\operatorname{Var}}(\hat r_{ij})}{\sum_{i \ne j} \hat r_{ij}^2},
+\qquad
+\widehat{\operatorname{Var}}(\hat r_{ij}) = \frac{1}{T - 1}\Bigl(\overline{w^2}_{ij} - \hat r_{ij}^2\Bigr),
+\quad w_{tij} = z_{ti} z_{tj},\]</div>
+<p>as in Schäfer and Strimmer (2005) and the MinT-shrink estimator of Wickramasuriya,
+Athanasopoulos and Hyndman (2019) (<code class="docutils literal notranslate"><span class="pre">hts::shrink.estim</span></code>). Both sums are computed through
+<code class="docutils literal notranslate"><span class="pre">T</span> <span class="pre">x</span> <span class="pre">T</span></code> Gram matrices, <code class="docutils literal notranslate"><span class="pre">O(n</span> <span class="pre">T^2)</span></code> time and <code class="docutils literal notranslate"><span class="pre">O(n</span> <span class="pre">T)</span></code> memory, so the <code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">x</span> <span class="pre">n</span></code>
+correlation matrix is never formed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>residuals</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">n)</span></code> residuals, one column per node. <code class="docutils literal notranslate"><span class="pre">NaN</span></code> (a node not yet observed,
-e.g. a product before its launch) counts as a zero error.</p>
+<dd class="field-odd"><p><strong>standardised</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">n)</span></code> residuals divided by their root mean square (see
+<code class="xref py py-func docutils literal notranslate"><span class="pre">_scaled_residuals()</span></code>), zero where unobserved.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The intensity in [0, 1]; 1 when there are no off-diagonal correlations.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.hierarchy.reconcile.shrunk_covariance">
+<span class="sig-prename descclassname"><span class="pre">twiga.hierarchy.reconcile.</span></span><span class="sig-name descname"><span class="pre">shrunk_covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">residuals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.hierarchy.reconcile.shrunk_covariance" title="Link to this definition">#</a></dt>
+<dd><p>Residual covariance with its correlations shrunk toward zero (Schäfer and Strimmer, 2005).</p>
+<p>The dense form of the MinT-shrink weight matrix, for inspection and small hierarchies;
+<a class="reference internal" href="#twiga.hierarchy.reconcile.reconcile" title="twiga.hierarchy.reconcile.reconcile"><code class="xref py py-func docutils literal notranslate"><span class="pre">reconcile()</span></code></a> uses its diagonal-plus-low-rank form and never builds it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>residuals</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">n)</span></code> residuals, one column per node; <code class="docutils literal notranslate"><span class="pre">NaN</span></code> where a node is
+unobserved (e.g. a product before its launch).</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>]</span></p>
@@ -1217,7 +1384,14 @@ e.g. a product before its launch) counts as a zero error.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-m5-aggregated-to-months">Example: M5 aggregated to months</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reconciliation">Reconciliation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reconciliation">Reconciliation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#theory">Theory</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computation">Computation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#non-negative-demand">Non-negative demand</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#usage">Usage</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-twiga.hierarchy.structure">API Reference</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.hierarchy.structure.aggregate_levels"><code class="docutils literal notranslate"><span class="pre">aggregate_levels()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.hierarchy.structure.aggregate_panel"><code class="docutils literal notranslate"><span class="pre">aggregate_panel()</span></code></a></li>
@@ -1237,6 +1411,7 @@ e.g. a product before its launch) counts as a zero error.</p>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.hierarchy.reconcile.naive_residuals"><code class="docutils literal notranslate"><span class="pre">naive_residuals()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.hierarchy.reconcile.reconcile"><code class="docutils literal notranslate"><span class="pre">reconcile()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.hierarchy.reconcile.shrinkage_intensity"><code class="docutils literal notranslate"><span class="pre">shrinkage_intensity()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.hierarchy.reconcile.shrunk_covariance"><code class="docutils literal notranslate"><span class="pre">shrunk_covariance()</span></code></a></li>
 </ul>
 </li>

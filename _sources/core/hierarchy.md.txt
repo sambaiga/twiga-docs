@@ -75,21 +75,86 @@ Alignment fixed the global LightGBM's shared under-forecast during rising sales.
 
 ## Reconciliation
 
-Forecasts made separately at each level rarely add up: the store forecasts do not sum to the total forecast. Reconciliation takes base forecasts $\hat{y}$ at every node of the hierarchy and projects them onto the coherent forecasts, those that are sums of bottom-level forecasts through the summing matrix $S$:
+Forecasts made separately at each level rarely add up: the store forecasts do not sum to the total forecast. Reconciliation takes base forecasts $\hat{y}$ at every node of the hierarchy and maps them to coherent forecasts, those that are sums of bottom-level forecasts through the summing matrix $S$ (nodes × bottom series).
+
+### Theory
+
+The linear reconcilers are projections. MinT (Wickramasuriya, Athanasopoulos and Hyndman, 2019) chooses the one that minimises the trace of the reconciled forecast-error covariance, given the covariance $W$ of the base forecast errors:
 
 $$
-\tilde{y} = S\,(S^\top W^{-1} S)^{-1} S^\top W^{-1}\,\hat{y} = \hat{y} - W C^\top (C W C^\top)^{-1} C\,\hat{y}, \qquad C = [\,I \mid -S_{\text{agg}}\,].
+\tilde{y} = S\,(S^\top W^{-1} S)^{-1} S^\top W^{-1}\,\hat{y}.
 $$
 
-Twiga solves the second form, which needs a solve over the aggregate nodes only and keeps $W$ sparse when it is diagonal. On all 12 M5 levels (42,812 nodes) every diagonal method runs in under a second. The methods differ in $W$:
+It is unbiased whenever the base forecasts are, and it is the generalised least-squares fit of $\hat{y} = S b + \varepsilon$ with $\operatorname{Cov}(\varepsilon) = W$. With $C = [\,I \mid -S_{\text{agg}}\,]$, one row per aggregate node so that $C y = 0$ exactly when $y$ is coherent, the same projection is
 
-| `method` | $W$ | Needs residuals |
+$$
+\tilde{y} = \hat{y} - W C^\top (C W C^\top)^{-1} C\,\hat{y},
+$$
+
+which twiga solves. It needs one solve over the $m$ aggregate nodes instead of the $n_b$ bottom series ($m = 12{,}350$ against $n_b = 30{,}490$ on M5), and $C W C^\top$ stays sparse when $W$ is diagonal. The methods differ only in $W$:
+
+| `method` | $W$ | Reference | Needs residuals |
+|---|---|---|---|
+| `bottom_up` | none: every node is the sum of its bottom base forecasts | | no |
+| `ols` | $I$ | Hyndman et al. (2011) | no |
+| `wls_struct` | $\operatorname{diag}(S\mathbf{1})$, the number of bottom series under each node | Athanasopoulos, Hyndman, Kourentzes and Petropoulos (2017) | no |
+| `wls_var` | $\operatorname{diag}(\hat{W}_1)$, each node's mean squared residual | Hyndman, Lee and Wang (2016) | yes |
+| `mint_shrink` | $\hat{W}_1$ with its correlations shrunk toward zero, intensity $\hat\lambda$ estimated from the data | Wickramasuriya, Athanasopoulos and Hyndman (2019); Schäfer and Strimmer (2005) | yes |
+
+$\hat{W}_1$ is the uncentred covariance of one-step in-sample residuals; the $h$-step covariance is taken proportional to it, and a scalar factor does not change the projection. MinT-shrink keeps each node's variance and shrinks its correlations:
+
+$$
+W = D^{1/2}\bigl(\hat\lambda\, I + (1-\hat\lambda)\,\hat{R}\bigr)D^{1/2}, \qquad
+\hat\lambda = \frac{\sum_{i\ne j}\widehat{\operatorname{Var}}(\hat r_{ij})}{\sum_{i\ne j}\hat r_{ij}^2}, \qquad
+\widehat{\operatorname{Var}}(\hat r_{ij}) = \frac{\overline{w^2}_{ij} - \hat r_{ij}^2}{T-1},
+$$
+
+where $w_{tij} = z_{ti} z_{tj}$ for standardised residuals $z$. This matches `hts::shrink.estim`, which the tests reproduce to machine precision.
+
+### Computation
+
+The shrunk covariance is a diagonal plus a matrix of rank $T$, the number of residual periods:
+
+$$
+W = \operatorname{diag}(a) + U U^\top, \qquad U = \sqrt{(1-\hat\lambda)/T}\; D^{1/2} Z^\top \quad (n \times T).
+$$
+
+So $C W C^\top = A + B B^\top$ with $A = C \operatorname{diag}(a) C^\top$ sparse and $B = C U$ only $T$ columns wide. Twiga factorises $A$ once (sparse LU) and applies the Woodbury identity
+
+$$
+(A + B B^\top)^{-1} = A^{-1} - A^{-1}B\,(I_T + B^\top A^{-1} B)^{-1} B^\top A^{-1},
+$$
+
+which costs a $T \times T$ solve. The shrinkage intensity uses the same structure: both sums over pairs $i \ne j$ are computed from $T \times T$ Gram matrices ($\sum_{ij} \hat r_{ij}^2 = \lVert Z Z^\top \rVert_F^2 / T^2$), so no $n \times n$ matrix is ever formed.
+
+| Step | Dense MinT | Twiga |
 |---|---|---|
-| `bottom_up` | none: every node is the sum of its bottom base forecasts | no |
-| `ols` | identity | no |
-| `wls_struct` | number of bottom series under each node | no |
-| `wls_var` | each node's residual variance | yes |
-| `mint_shrink` | residual covariance shrunk toward its diagonal (Schäfer-Strimmer) | yes; dense, so limited to `max_dense_nodes` |
+| Memory for $W$ | $O(n^2)$: 14.7 GB for M5's 42,812 nodes | $O(nT)$: 8 MB with $T = 24$ |
+| Shrinkage intensity | $O(n^2 T)$ | $O(n T^2)$ |
+| Projection | $O(m^3)$ dense solve | sparse LU of $A$, plus $O(m T^2)$ |
+
+All twelve M5 levels, 42,812 nodes, six months reconciled at once on a laptop CPU:
+
+| `method` | Time | Most negative forecast |
+|---|---:|---:|
+| `bottom_up` | 0.3 s | 0 |
+| `ols` | 0.7 s | −24,332 |
+| `wls_struct` | 0.7 s | −65 |
+| `wls_var` | 0.7 s | −265 |
+| `mint_shrink` ($\hat\lambda = 0.86$) | 0.7 s | −340 |
+| `wls_var`, `nonnegative="clip"` | 0.7 s | 0 |
+| `wls_var`, `nonnegative="optimal"` | 46 s | 0 |
+
+Groups that cover the same series, such as several models in one fold, share one hierarchy. For OLS, the incoherence of the total is spread equally over 30,000 products, which is why it produces large negative forecasts; weighted methods put it where the errors are.
+
+### Non-negative demand
+
+A projection can turn small product forecasts negative.
+
+- **`nonnegative="clip"`** (or `True`): sets negative bottom forecasts to zero and sums up again. The result is coherent and fast, but not the best non-negative solution.
+- **`nonnegative="optimal"`**: solves the constrained problem $\min_{b \ge 0} (\hat{y} - S b)^\top W^{-1} (\hat{y} - S b)$ (Wickramasuriya, Turlach and Hyndman, 2020) as a bounded sparse least-squares problem per timestamp. It needs a diagonal $W$; with `mint_shrink` it falls back to clipping, with a warning.
+
+### Usage
 
 ```python
 from twiga.hierarchy import aggregate_levels, naive_residuals, reconcile
@@ -101,16 +166,35 @@ LEVELS = {"total": [], "store": ["store_id"], "store-dept": ["store_id", "dept_i
 # with any twiga model, then stack the predictions with a "level" column.
 residuals = naive_residuals(history_before_origin, tags, LEVELS, "sales", id_column="id", window=24)
 reconciled = reconcile(
-    base, tags, LEVELS, id_column="id", method="wls_var", residuals=residuals, group_columns=["Folds"], nonnegative=True
+    base,
+    tags,
+    LEVELS,
+    id_column="id",
+    method="mint_shrink",
+    residuals=residuals,
+    group_columns=["Folds"],
+    nonnegative="clip",
 )
+reconciled.attrs["diagnostics"]  # MinT shrinkage intensity per group
 ```
 
 Things to get right:
 
 - **Per-group hierarchies.** The hierarchy is built per group (e.g. per fold) from the bottom series that have a base forecast there, so the set of series may grow across folds. The aggregate base forecasts must describe that same set of series, as for alignment.
-- **Residuals.** `wls_var` and `mint_shrink` read in-sample residuals per node. When the base models' own residuals are not at hand, `naive_residuals` gives one-step (seasonal) naive errors, the scale RMSSE uses. Pass only history before the forecast origin. Nodes with too little history borrow the median variance of their level, with a warning.
-- **Non-negative demand.** `nonnegative=True` clips negative reconciled bottom forecasts to zero and sums up again, which keeps the result coherent.
+- **Residuals.** `wls_var` and `mint_shrink` should read the in-sample residuals of the base models themselves. When those are not at hand, `naive_residuals` gives one-step (seasonal) naive errors, the scale RMSSE uses: a proxy that ranks nodes by how hard they are to forecast. Pass only history before the forecast origin.
+- **Unobserved periods.** A product before its launch has no error, not a zero error: variances use only the periods a node was observed. Nodes with no residuals at all borrow the median variance of their level, with a warning.
+- **Enough periods for MinT.** The shrinkage needs at least 3 residual periods; with few periods relative to the number of nodes, $\hat\lambda$ is close to 1 and MinT-shrink approaches `wls_var`.
+- **Point forecasts only.** Reconciling quantiles is not a linear projection; reconcile sample paths, or the median as a point forecast.
 - **Alignment or reconciliation.** Alignment trusts one level completely and keeps the bottom model's split; reconciliation weighs every level by how reliable it is. Compare both with `hierarchical_scores` on backtest folds.
+
+### References
+
+- Athanasopoulos, G., Hyndman, R. J., Kourentzes, N. and Petropoulos, F. (2017). Forecasting with temporal hierarchies. *European Journal of Operational Research*, 262(1), 60–74.
+- Hyndman, R. J., Ahmed, R. A., Athanasopoulos, G. and Shang, H. L. (2011). Optimal combination forecasts for hierarchical time series. *Computational Statistics & Data Analysis*, 55(9), 2579–2589.
+- Hyndman, R. J., Lee, A. J. and Wang, E. (2016). Fast computation of reconciled forecasts for hierarchical and grouped time series. *Computational Statistics & Data Analysis*, 97, 16–32.
+- Schäfer, J. and Strimmer, K. (2005). A shrinkage approach to large-scale covariance matrix estimation and implications for functional genomics. *Statistical Applications in Genetics and Molecular Biology*, 4(1).
+- Wickramasuriya, S. L., Athanasopoulos, G. and Hyndman, R. J. (2019). Optimal forecast reconciliation for hierarchical and grouped time series through trace minimization. *Journal of the American Statistical Association*, 114(526), 804–819.
+- Wickramasuriya, S. L., Turlach, B. A. and Hyndman, R. J. (2020). Optimal non-negative forecast reconciliation. *Statistics and Computing*, 30(5), 1167–1182.
 
 ## API Reference
 
