@@ -119,15 +119,17 @@ This uses the default configuration from `pyproject.toml`:
 
 ```toml
 [tool.pytest.ini_options]
-norecursedirs = ["examples"]
-addopts = "--cov=twiga --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc --cov-fail-under=80"
+testpaths = ["tests"]
+addopts = "-v --tb=short --cov=twiga --cov-report=term-missing --cov-report=xml --cov-report=html"
 ```
+
+Coverage settings (sources, omitted modules, excluded lines) live in `[tool.coverage.*]` in the same file.
 
 **Default behavior:**
 - Measures coverage of the `twiga` package
 - Reports missing lines in terminal output
-- Generates `coverage.xml` for CI upload
-- **Fails if coverage drops below 80%**
+- Generates `coverage.xml` for the CI upload and `htmlcov/` for local browsing
+- `make test` additionally **fails if coverage drops below 85%** (`--cov-fail-under`)
 
 ### Run Specific Tests
 
@@ -209,7 +211,7 @@ Runs on all events:
 | Lint | `uv run ruff check . --fix` |
 | Format check | `uv run ruff format --check .` |
 | Type check | `uv run ty check twiga` |
-| Test | `uv run pytest --cov=twiga --cov-report=xml --cov-config=.coveragerc --cov-fail-under=80` |
+| Test | `uv run pytest -m "not slow"` (coverage options come from `pyproject.toml`) |
 | Coverage upload | Codecov with `coverage.xml` |
 
 
