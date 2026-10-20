@@ -1,12 +1,17 @@
-# Hierarchical Alignment
+# Hierarchical Forecasting
 
 <details>
 <summary>Source Files</summary>
 
-- `twiga/hierarchy/structure.py` - `aggregate_panel`, `level_key`
+- `twiga/hierarchy/structure.py` - `aggregate_panel`, `aggregate_levels`, `level_key`
 - `twiga/hierarchy/alignment.py` - `align_to_level`, `alignment_multipliers`
+- `twiga/hierarchy/reconcile.py` - `reconcile`, `Hierarchy`, `naive_residuals`, `shrunk_covariance`
 
 </details>
+
+Products roll up into departments, stores and a total, and a plan is needed at every level. `twiga.hierarchy` offers two ways to make forecasts agree across levels: **top-down alignment** to one reference level, and **reconciliation** of forecasts made at every level.
+
+## Top-down alignment
 
 A global model trained on thousands of products forecasts each one well, but errors it makes for *every* series at once (a missed trend, a level shift) add up when series are summed. On aggregated series (store, department, total) trend and level are far easier to see. **Top-down alignment** keeps the bottom model's split across products and takes the level from a forecast made directly at a higher level:
 
@@ -17,7 +22,7 @@ $$
 
 This is the adjustment the 2nd- and 5th-placed M5 Accuracy methods applied: N-BEATS forecasts at the top levels, or the recent store-department mean, as the reference. The damping $\lambda$ (`strength`) plays the role of Anderer's bias multiplier.
 
-## Workflow
+### Workflow
 
 ```python
 from twiga.core.config import DataPipelineConfig
@@ -55,7 +60,7 @@ Things to get right:
 
 Evaluate the result across levels with {func}`~twiga.core.metrics.hierarchical_scores` (see [Panel Metrics](metrics.md)).
 
-## Example: M5 aggregated to months
+### Example: M5 aggregated to months
 
 All 30,490 series, 3 folds × 6 months; the bottom model is a global LightGBM, aligned to a level forecast made on the aggregated series. The [panel forecasting tutorial](../tutorials/notebooks/19-panel-forecasting.ipynb) runs the same steps on a 500-product sample:
 
@@ -68,6 +73,45 @@ All 30,490 series, 3 folds × 6 months; the bottom model is a global LightGBM, a
 
 Alignment fixed the global LightGBM's shared under-forecast during rising sales. It made the model the best at every level and improved even the item levels. The alignment level and reference model were chosen on these same folds, so treat the best row as indicative.
 
+## Reconciliation
+
+Forecasts made separately at each level rarely add up: the store forecasts do not sum to the total forecast. Reconciliation takes base forecasts $\hat{y}$ at every node of the hierarchy and projects them onto the coherent forecasts, those that are sums of bottom-level forecasts through the summing matrix $S$:
+
+$$
+\tilde{y} = S\,(S^\top W^{-1} S)^{-1} S^\top W^{-1}\,\hat{y} = \hat{y} - W C^\top (C W C^\top)^{-1} C\,\hat{y}, \qquad C = [\,I \mid -S_{\text{agg}}\,].
+$$
+
+Twiga solves the second form, which needs a solve over the aggregate nodes only and keeps $W$ sparse when it is diagonal. On all 12 M5 levels (42,812 nodes) every diagonal method runs in under a second. The methods differ in $W$:
+
+| `method` | $W$ | Needs residuals |
+|---|---|---|
+| `bottom_up` | none: every node is the sum of its bottom base forecasts | no |
+| `ols` | identity | no |
+| `wls_struct` | number of bottom series under each node | no |
+| `wls_var` | each node's residual variance | yes |
+| `mint_shrink` | residual covariance shrunk toward its diagonal (Schäfer-Strimmer) | yes; dense, so limited to `max_dense_nodes` |
+
+```python
+from twiga.hierarchy import aggregate_levels, naive_residuals, reconcile
+
+LEVELS = {"total": [], "store": ["store_id"], "store-dept": ["store_id", "dept_id"], "item-store": ["id"]}
+
+# Base forecasts at every level, one row per level, node and timestamp (and fold).
+# Forecast each aggregated panel from aggregate_levels(history, LEVELS, ["sales"], id_column="id")
+# with any twiga model, then stack the predictions with a "level" column.
+residuals = naive_residuals(history_before_origin, tags, LEVELS, "sales", id_column="id", window=24)
+reconciled = reconcile(
+    base, tags, LEVELS, id_column="id", method="wls_var", residuals=residuals, group_columns=["Folds"], nonnegative=True
+)
+```
+
+Things to get right:
+
+- **Per-group hierarchies.** The hierarchy is built per group (e.g. per fold) from the bottom series that have a base forecast there, so the set of series may grow across folds. The aggregate base forecasts must describe that same set of series, as for alignment.
+- **Residuals.** `wls_var` and `mint_shrink` read in-sample residuals per node. When the base models' own residuals are not at hand, `naive_residuals` gives one-step (seasonal) naive errors, the scale RMSSE uses. Pass only history before the forecast origin. Nodes with too little history borrow the median variance of their level, with a warning.
+- **Non-negative demand.** `nonnegative=True` clips negative reconciled bottom forecasts to zero and sums up again, which keeps the result coherent.
+- **Alignment or reconciliation.** Alignment trusts one level completely and keeps the bottom model's split; reconciliation weighs every level by how reliable it is. Compare both with `hierarchical_scores` on backtest folds.
+
 ## API Reference
 
 ```{eval-rst}
@@ -75,5 +119,8 @@ Alignment fixed the global LightGBM's shared under-forecast during rising sales.
    :members:
 
 .. automodule:: twiga.hierarchy.alignment
+   :members:
+
+.. automodule:: twiga.hierarchy.reconcile
    :members:
 ```
