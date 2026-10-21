@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=cb7bf70b"></script>
+    <script src="../_static/documentation_options.js?v=00f267c6"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -54,6 +54,8 @@
     <script src="../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
 
 
@@ -421,7 +423,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="prev" title="Configuration System" href="config.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.1.3" />
+  <meta name="docsearch:version" content="1.1.4" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -624,15 +626,15 @@ window.runMermaid = runMermaid;</script>
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.3"
+    aria-label="Twiga version 1.1.4"
   >
-    <span class="tw-version-label">v1.1.3</span>
+    <span class="tw-version-label">v1.1.4</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.3</strong> is in alpha.
+        <strong>Twiga 1.1.4</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -832,15 +834,15 @@ window.runMermaid = runMermaid;</script>
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.3"
+    aria-label="Twiga version 1.1.4"
   >
-    <span class="tw-version-label">v1.1.3</span>
+    <span class="tw-version-label">v1.1.4</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.3</strong> is in alpha.
+        <strong>Twiga 1.1.4</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -913,6 +915,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l1"><a class="reference internal" href="feature-analysis.html">Feature Analysis &amp; Statistical Toolkit</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Evaluation Metrics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hierarchy.html">Hierarchical Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="decision.html">Inventory Decisions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration and Conformal Prediction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="forecast-results.html">Forecast Results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="backtesting.html">Backtesting &amp; Time-Based Cross-Validation</a></li>
@@ -1138,6 +1141,16 @@ window.runMermaid = runMermaid;</script>
 <td><p><code class="docutils literal notranslate"><span class="pre">float</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">0.0</span></code></p></td>
 <td><p>Lower bound on the local window scale, in target units. Only with <code class="docutils literal notranslate"><span class="pre">target_scaling=&quot;local&quot;</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">weight_column</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>Non-negative training weight per target row (e.g. revenue). Never a model input. See <a class="reference internal" href="#training-weights-and-censored-demand">Training weights and censored demand</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">censor_column</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>Truthy where the target is censored (a stockout); those steps get zero training weight. Never a model input.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1501,6 +1514,51 @@ window.runMermaid = runMermaid;</script>
 <p>Products differ in size by orders of magnitude. With <code class="docutils literal notranslate"><span class="pre">target_scaling=&quot;local&quot;</span></code> each window’s target, and its lag/rolling features, is divided by the mean absolute target over that window’s own lookback, and predictions are multiplied back. The scale uses only the lookback, so it leaks nothing from the horizon and works for series never seen in training.</p>
 <p>A window whose lookback is almost all zeros (a launch, an intermittent item) would get a tiny scale and a huge scaled target; <code class="docutils literal notranslate"><span class="pre">local_scale_floor</span></code> bounds the scale from below in target units. For unit sales, a floor near one sale per period is a good start, and it can be searched like any other pipeline parameter through <code class="docutils literal notranslate"><span class="pre">search_space</span></code>.</p>
 </section>
+<section id="training-weights-and-censored-demand">
+<h3>Training weights and censored demand<a class="headerlink" href="#training-weights-and-censored-demand" title="Link to this heading">#</a></h3>
+<p>Two needs of retail forecasting reduce to one training weight per window, forecast step and target (<code class="docutils literal notranslate"><span class="pre">twiga.core.data.weights</span></code>):</p>
+<ul class="simple">
+<li><p><strong>Series weights.</strong> M5 scored series by their share of revenue (WRMSSE), and its winners weighted training the same way, so the loss a model minimises matches the score it is judged by. Set <code class="docutils literal notranslate"><span class="pre">weight_column</span></code> to a per-row weight, such as revenue.</p></li>
+<li><p><strong>Censored demand.</strong> When an item is out of stock, its sales are a lower bound of demand, not demand. VN2 ships an in-stock flag; in M5, long runs of zero sales while an item is listed are likely stockouts. Set <code class="docutils literal notranslate"><span class="pre">censor_column</span></code> to a column that is truthy for those rows.</p></li>
+</ul>
+<p>The pipeline builds the per-row weight <span class="math notranslate nohighlight">\(w = \text{weight} \times (1 - \text{censored})\)</span>. It windows the weight exactly like the targets and leaves it in <code class="docutils literal notranslate"><span class="pre">target_weights_</span></code> after <code class="docutils literal notranslate"><span class="pre">transform</span></code>. Both columns bypass the feature transformer: they are never model inputs, and frames without them (test frames) still transform. The forecaster passes the weights to the model’s <code class="docutils literal notranslate"><span class="pre">fit</span></code>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p>How the weights are used</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>LightGBM, CatBoost with a count loss</p></td>
+<td><p>Each per-step model gets its own step’s weights, so a censored step is left out of that step only</p></td>
+</tr>
+<tr class="row-odd"><td><p>XGBoost, CatBoost (MultiRMSE), random forest, sklearn models</p></td>
+<td><p>One fit for all steps, so step weights are collapsed to one weight per window: the mean step weight, or 0 when any step is censored (<code class="docutils literal notranslate"><span class="pre">window_weights</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p>Neural networks</p></td>
+<td><p>Training windows are drawn with probability proportional to their window weight (<code class="docutils literal notranslate"><span class="pre">TimeseriesDataModule(train_weights=...)</span></code>). The expected loss is then the weighted loss for every head, and zero-weight windows are never drawn</p></td>
+</tr>
+<tr class="row-odd"><td><p>Baselines, foundation models</p></td>
+<td><p>Not weighted; a warning says so</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Censored steps are treated as missing, an available-case analysis. A censored likelihood, <span class="math notranslate nohighlight">\(P(D \ge \text{sales})\)</span>, would use them as lower bounds instead and is not implemented. Leave censored steps out of scoring too: the panel scorers take <code class="docutils literal notranslate"><span class="pre">exclude_column</span></code>, and <code class="docutils literal notranslate"><span class="pre">ExperimentEngine</span></code> does this automatically when <code class="docutils literal notranslate"><span class="pre">PipelineConfig.censor_column</span></code> is set.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="n">DataPipelineConfig</span><span class="p">(</span>
+    <span class="n">target_feature</span><span class="o">=</span><span class="s2">"sales"</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">"7D"</span><span class="p">,</span>
+    <span class="n">lookback_window_size</span><span class="o">=</span><span class="mi">52</span><span class="p">,</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">,</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="s2">"passthrough"</span><span class="p">,</span>
+    <span class="n">target_scaling</span><span class="o">=</span><span class="s2">"local"</span><span class="p">,</span>
+    <span class="n">weight_column</span><span class="o">=</span><span class="s2">"revenue"</span><span class="p">,</span>  <span class="c1"># train toward WRMSSE</span>
+    <span class="n">censor_column</span><span class="o">=</span><span class="s2">"stockout"</span><span class="p">,</span>  <span class="c1"># VN2: ~in_stock</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
 <section id="preparing-a-panel">
 <h3>Preparing a panel<a class="headerlink" href="#preparing-a-panel" title="Link to this heading">#</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.core.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">regularise_panel</span><span class="p">,</span> <span class="n">validate_panel</span>
@@ -1830,7 +1888,7 @@ See the [Quick Start Guide](../getting-started/quickstart.md) for the full workf
 <h3>Pipeline &amp; transformers<a class="headerlink" href="#pipeline-transformers" title="Link to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="twiga.core.data.pipeline.DataPipeline">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.core.data.pipeline.</span></span><span class="sig-name descname"><span class="pre">DataPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_feature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookback_window_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_horizon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">past_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calendar_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">known_future_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_period_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_differencing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_funcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'timestamp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">static_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_scaling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'global'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_scale_floor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.pipeline.DataPipeline" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.core.data.pipeline.</span></span><span class="sig-name descname"><span class="pre">DataPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_feature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookback_window_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_horizon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">past_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calendar_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">known_future_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_period_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_differencing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_funcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'timestamp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">static_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_scaling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'global'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_scale_floor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">censor_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.pipeline.DataPipeline" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.base.TransformerMixin.html#sklearn.base.TransformerMixin" title="(in scikit-learn v1.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransformerMixin</span></code></a>, <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html#sklearn.base.BaseEstimator" title="(in scikit-learn v1.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseEstimator</span></code></a></p>
 <p>A transformer for preparing time series forecasting datasets.</p>
 <p>Handles feature engineering, scaling, and temporal structure creation for forecasting
@@ -1875,7 +1933,7 @@ each window’s lookback from the last transform (<code class="docutils literal 
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.core.data.pipeline.DataPipeline.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_feature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookback_window_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_horizon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">past_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calendar_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">known_future_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_period_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_differencing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_funcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'timestamp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">static_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_scaling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'global'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_scale_floor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.pipeline.DataPipeline.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_feature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookback_window_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_horizon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">past_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calendar_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">known_future_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forecast_period_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_differencing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_funcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'timestamp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">static_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_scaling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'global'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_scale_floor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">censor_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.pipeline.DataPipeline.__init__" title="Link to this definition">#</a></dt>
 <dd><p>Initializes the DataPipeline transformer with data preparation parameters.</p>
 <dl class="field-list simple">
 </dl>
@@ -2071,6 +2129,8 @@ parameters and not others.</p>
 <dt class="sig sig-object py" id="twiga.core.data.pipeline.DataPipeline.transform">
 <span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.pipeline.DataPipeline.transform" title="Link to this definition">#</a></dt>
 <dd><p>Transforms the data into features and targets for forecasting.</p>
+<p>With a <code class="docutils literal notranslate"><span class="pre">weight_column</span></code> or <code class="docutils literal notranslate"><span class="pre">censor_column</span></code> configured, the matching per-step training
+weights are left in <code class="xref py py-attr docutils literal notranslate"><span class="pre">target_weights_</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>, <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>]</span></p>
@@ -2469,7 +2529,7 @@ here instead of one globally).</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="twiga.core.data.loader.TimeseriesDataModule">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.core.data.loader.</span></span><span class="sig-name descname"><span class="pre">TimeseriesDataModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persistent_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.loader.TimeseriesDataModule" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.core.data.loader.</span></span><span class="sig-name descname"><span class="pre">TimeseriesDataModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persistent_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.loader.TimeseriesDataModule" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningDataModule</span></code></p>
 <p>A PyTorch Lightning DataModule for managing time series data loading and processing.</p>
 <p>Handles dataset creation, automatic tensor conversion, and provides configurable data loaders
@@ -2486,6 +2546,11 @@ for training and validation. Designed for seamless integration with PyTorch Ligh
 <li><p><strong>persistent_workers</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Maintain worker processes between epochs.
 Requires num_workers &gt; 0. Defaults to True.</p></li>
 <li><p><strong>pin_memory</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Enable fast GPU transfer for CUDA devices. Defaults to True.</p></li>
+<li><p><strong>train_weights</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – One non-negative weight per training window. When
+given, batches are drawn with probability proportional to the weight (with
+replacement, one epoch = as many draws as windows) instead of shuffled uniformly, so
+the expected loss is the weighted loss whatever the head; zero-weight windows (e.g.
+with a censored target step) are never drawn. Defaults to None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -2511,7 +2576,7 @@ Requires num_workers &gt; 0. Defaults to True.</p></li>
 </div>
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.core.data.loader.TimeseriesDataModule.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persistent_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.loader.TimeseriesDataModule.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persistent_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.loader.TimeseriesDataModule.__init__" title="Link to this definition">#</a></dt>
 <dd><p>Initialize data module with training/validation data and loading parameters.</p>
 <dl class="field-list simple">
 </dl>
@@ -2844,6 +2909,68 @@ inserted rows take the series’ own value instead of NaN.</p></li>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A <a class="reference internal" href="#twiga.core.data.panel.PanelSummary" title="twiga.core.data.panel.PanelSummary"><code class="xref py py-class docutils literal notranslate"><span class="pre">PanelSummary</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-twiga.core.data.weights">
+<span id="training-weights"></span><h3>Training weights<a class="headerlink" href="#module-twiga.core.data.weights" title="Link to this heading">#</a></h3>
+<p>Training weights per target step: series weights and censored-demand masks.</p>
+<p>Two needs of retail forecasting reduce to one weight per window, forecast step and target:</p>
+<ul class="simple">
+<li><p><strong>Series weights.</strong> M5 scored series by their share of revenue (WRMSSE), and its winners
+weighted training the same way, so the loss the model minimises matches the score it is judged
+by. A <code class="docutils literal notranslate"><span class="pre">weight_column</span></code> gives each target row its weight (e.g. revenue).</p></li>
+<li><p><strong>Censored demand.</strong> When an item is out of stock, its sales are a lower bound of demand, not
+demand. VN2 ships an in-stock flag per week; in M5, long runs of zero sales while an item is
+listed are likely stockouts. A <code class="docutils literal notranslate"><span class="pre">censor_column</span></code> marks those rows; their steps get weight 0,
+so they are left out of training as missing values (an available-case treatment; a censored
+likelihood, <span class="math notranslate nohighlight">\(P(D \ge \text{sales})\)</span>, would use them as lower bounds instead).</p></li>
+</ul>
+<p><a class="reference internal" href="#twiga.core.data.weights.row_weights" title="twiga.core.data.weights.row_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">row_weights()</span></code></a> builds the per-row weight <span class="math notranslate nohighlight">\(w = \text{weight} \times (1 - \text{censored})\)</span>;
+the data pipeline windows it exactly like the targets. Models that weight each output step take
+the <code class="docutils literal notranslate"><span class="pre">(n_windows,</span> <span class="pre">horizon,</span> <span class="pre">n_targets)</span></code> array as is (one tree per step); models that take one
+weight per window use <a class="reference internal" href="#twiga.core.data.weights.window_weights" title="twiga.core.data.weights.window_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">window_weights()</span></code></a>, which keeps a window’s mean weight and drops a
+window with any censored or zero-weight step.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.data.weights.row_weights">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.data.weights.</span></span><span class="sig-name descname"><span class="pre">row_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">censor_column</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.weights.row_weights" title="Link to this definition">#</a></dt>
+<dd><p>Per-row target weights: the weight column (1 when None) times one minus the censor flag.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v3.0.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></a></span>) – Frame holding the weight and censor columns.</p></li>
+<li><p><strong>weight_column</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Non-negative weight column, or None.</p></li>
+<li><p><strong>censor_column</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Column that is truthy where the target is censored, or None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">(n_rows,)</span></code> float32 weights, or None when neither column is configured.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – When a configured column is missing or a weight is negative.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="twiga.core.data.weights.window_weights">
+<span class="sig-prename descclassname"><span class="pre">twiga.core.data.weights.</span></span><span class="sig-name descname"><span class="pre">window_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step_weights</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.core.data.weights.window_weights" title="Link to this definition">#</a></dt>
+<dd><p>One weight per window, for models that cannot weight each output step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>step_weights</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – <code class="docutils literal notranslate"><span class="pre">(n_windows,</span> <span class="pre">horizon,</span> <span class="pre">n_targets)</span></code> (or <code class="docutils literal notranslate"><span class="pre">(n_windows,</span> <span class="pre">horizon)</span></code>) weights.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">(n_windows,)</span></code> weights – each window’s mean step weight, or 0 when any step has zero
+weight (a censored step must not be fitted, even partly).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -4223,6 +4350,7 @@ to bound the useful forecast window.</p></li>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#panel-data-many-series">Panel data (many series)</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#local-scaling">Local scaling</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#training-weights-and-censored-demand">Training weights and censored demand</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#preparing-a-panel">Preparing a panel</a></li>
 </ul>
 </li>
@@ -4314,6 +4442,11 @@ to bound the useful forecast window.</p></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.panel.regularise_panel"><code class="docutils literal notranslate"><span class="pre">regularise_panel()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.panel.sort_panel"><code class="docutils literal notranslate"><span class="pre">sort_panel()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.panel.validate_panel"><code class="docutils literal notranslate"><span class="pre">validate_panel()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#module-twiga.core.data.weights">Training weights</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.weights.row_weights"><code class="docutils literal notranslate"><span class="pre">row_weights()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.weights.window_weights"><code class="docutils literal notranslate"><span class="pre">window_weights()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#frequency-helpers">Frequency helpers</a><ul class="nav section-nav flex-column">

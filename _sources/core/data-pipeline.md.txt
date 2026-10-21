@@ -69,6 +69,8 @@ The `DataPipeline` class wires these stages together into a single `sklearn.pipe
 | `static_features` | `list[str] \| None` | `None` | Time-invariant series attributes (category, store, ...) used as inputs. Requires `id_column`. |
 | `target_scaling` | `"global" \| "local"` | `"global"` | `"local"` divides each window by the mean absolute target over its own lookback. Requires `target_scaler="passthrough"`. |
 | `local_scale_floor` | `float` | `0.0` | Lower bound on the local window scale, in target units. Only with `target_scaling="local"`. |
+| `weight_column` | `str \| None` | `None` | Non-negative training weight per target row (e.g. revenue). Never a model input. See [Training weights and censored demand](#training-weights-and-censored-demand). |
+| `censor_column` | `str \| None` | `None` | Truthy where the target is censored (a stockout); those steps get zero training weight. Never a model input. |
 
 :::{admonition} Configuration shortcut
 :class: tip
@@ -340,6 +342,38 @@ In panel mode:
 Products differ in size by orders of magnitude. With `target_scaling="local"` each window's target, and its lag/rolling features, is divided by the mean absolute target over that window's own lookback, and predictions are multiplied back. The scale uses only the lookback, so it leaks nothing from the horizon and works for series never seen in training.
 
 A window whose lookback is almost all zeros (a launch, an intermittent item) would get a tiny scale and a huge scaled target; `local_scale_floor` bounds the scale from below in target units. For unit sales, a floor near one sale per period is a good start, and it can be searched like any other pipeline parameter through `search_space`.
+
+### Training weights and censored demand
+
+Two needs of retail forecasting reduce to one training weight per window, forecast step and target (`twiga.core.data.weights`):
+
+- **Series weights.** M5 scored series by their share of revenue (WRMSSE), and its winners weighted training the same way, so the loss a model minimises matches the score it is judged by. Set `weight_column` to a per-row weight, such as revenue.
+- **Censored demand.** When an item is out of stock, its sales are a lower bound of demand, not demand. VN2 ships an in-stock flag; in M5, long runs of zero sales while an item is listed are likely stockouts. Set `censor_column` to a column that is truthy for those rows.
+
+The pipeline builds the per-row weight $w = \text{weight} \times (1 - \text{censored})$. It windows the weight exactly like the targets and leaves it in `target_weights_` after `transform`. Both columns bypass the feature transformer: they are never model inputs, and frames without them (test frames) still transform. The forecaster passes the weights to the model's `fit`:
+
+| Model | How the weights are used |
+|---|---|
+| LightGBM, CatBoost with a count loss | Each per-step model gets its own step's weights, so a censored step is left out of that step only |
+| XGBoost, CatBoost (MultiRMSE), random forest, sklearn models | One fit for all steps, so step weights are collapsed to one weight per window: the mean step weight, or 0 when any step is censored (`window_weights`) |
+| Neural networks | Training windows are drawn with probability proportional to their window weight (`TimeseriesDataModule(train_weights=...)`). The expected loss is then the weighted loss for every head, and zero-weight windows are never drawn |
+| Baselines, foundation models | Not weighted; a warning says so |
+
+Censored steps are treated as missing, an available-case analysis. A censored likelihood, $P(D \ge \text{sales})$, would use them as lower bounds instead and is not implemented. Leave censored steps out of scoring too: the panel scorers take `exclude_column`, and `ExperimentEngine` does this automatically when `PipelineConfig.censor_column` is set.
+
+```python
+config = DataPipelineConfig(
+    target_feature="sales",
+    period="7D",
+    lookback_window_size=52,
+    forecast_horizon=8,
+    id_column="id",
+    target_scaler="passthrough",
+    target_scaling="local",
+    weight_column="revenue",  # train toward WRMSSE
+    censor_column="stockout",  # VN2: ~in_stock
+)
+```
 
 ### Preparing a panel
 
@@ -640,6 +674,13 @@ Lower `tail_df` produces heavier tails (more frequent extreme net-load excursion
 
 ```{eval-rst}
 .. automodule:: twiga.core.data.panel
+   :members:
+```
+
+### Training weights
+
+```{eval-rst}
+.. automodule:: twiga.core.data.weights
    :members:
 ```
 

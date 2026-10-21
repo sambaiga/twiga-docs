@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=cb7bf70b"></script>
+    <script src="../_static/documentation_options.js?v=00f267c6"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -421,7 +421,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="prev" title="Hyperparameter Optimization" href="hyperparameter-tuning.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.1.3" />
+  <meta name="docsearch:version" content="1.1.4" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -624,15 +624,15 @@ window.runMermaid = runMermaid;</script>
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.3"
+    aria-label="Twiga version 1.1.4"
   >
-    <span class="tw-version-label">v1.1.3</span>
+    <span class="tw-version-label">v1.1.4</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.3</strong> is in alpha.
+        <strong>Twiga 1.1.4</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -832,15 +832,15 @@ window.runMermaid = runMermaid;</script>
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.3"
+    aria-label="Twiga version 1.1.4"
   >
-    <span class="tw-version-label">v1.1.3</span>
+    <span class="tw-version-label">v1.1.4</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.3</strong> is in alpha.
+        <strong>Twiga 1.1.4</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -1154,6 +1154,77 @@ uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </sp
 </section>
 </section>
 <hr class="docutils" />
+<section id="panel-datasets">
+<h2>Panel Datasets<a class="headerlink" href="#panel-datasets" title="Link to this heading">#</a></h2>
+<p>A dataset of many series in one long file (products, stores, substations) runs through the same engine. Register it with an <code class="docutils literal notranslate"><span class="pre">id_column</span></code>; the engine loads it with every series intact, forward-fills gaps within each series only, and builds each condition’s <code class="docutils literal notranslate"><span class="pre">DataPipelineConfig</span></code> in panel mode (see <a class="reference internal" href="../core/data-pipeline.html"><span class="std std-doc">Panel forecasting</span></a>). Folds split by date across all series at once, and predictions keep the series id.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">twiga.experiment</span><span class="w"> </span><span class="kn">import</span> <span class="n">Condition</span><span class="p">,</span> <span class="n">ExperimentEngine</span><span class="p">,</span> <span class="n">ExperimentSpec</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.baseline.naive_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">NAIVEConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.models.ml.lightgbm_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGHTGBMConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.utils.data_loading</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetSpec</span><span class="p">,</span> <span class="n">register_dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">twiga.utils.run_forecast</span><span class="w"> </span><span class="kn">import</span> <span class="n">PipelineConfig</span>
+
+<span class="n">register_dataset</span><span class="p">(</span>
+    <span class="s2">"M5-M"</span><span class="p">,</span>
+    <span class="n">DatasetSpec</span><span class="p">(</span>
+        <span class="n">file</span><span class="o">=</span><span class="s2">"m5_monthly.parquet"</span><span class="p">,</span>
+        <span class="n">target</span><span class="o">=</span><span class="s2">"sales"</span><span class="p">,</span>
+        <span class="n">exogenous</span><span class="o">=</span><span class="p">[</span><span class="s2">"price_ratio"</span><span class="p">],</span>  <span class="c1"># known-future inputs</span>
+        <span class="n">period</span><span class="o">=</span><span class="s2">"1MS"</span><span class="p">,</span>
+        <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">,</span>
+        <span class="n">static</span><span class="o">=</span><span class="p">[</span><span class="s2">"dept_id"</span><span class="p">,</span> <span class="s2">"cat_id"</span><span class="p">,</span> <span class="s2">"store_id"</span><span class="p">,</span> <span class="s2">"state_id"</span><span class="p">],</span>
+        <span class="n">calendar</span><span class="o">=</span><span class="p">[</span><span class="s2">"month_sin"</span><span class="p">,</span> <span class="s2">"month_cos"</span><span class="p">],</span>
+        <span class="n">keep</span><span class="o">=</span><span class="p">[</span><span class="s2">"revenue"</span><span class="p">],</span>  <span class="c1"># for the WRMSSE weights only</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">spec</span> <span class="o">=</span> <span class="n">ExperimentSpec</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"M5 monthly"</span><span class="p">,</span>
+    <span class="n">output_prefix</span><span class="o">=</span><span class="s2">"m5"</span><span class="p">,</span>
+    <span class="n">condition_cls</span><span class="o">=</span><span class="n">LIGHTGBMConfig</span><span class="p">,</span>
+    <span class="n">backbone_cls</span><span class="o">=</span><span class="n">LIGHTGBMConfig</span><span class="p">,</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">Condition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"naive"</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="s2">"e1"</span><span class="p">,</span> <span class="n">model_cls</span><span class="o">=</span><span class="n">NAIVEConfig</span><span class="p">,</span> <span class="n">overrides</span><span class="o">=</span><span class="p">{</span><span class="s2">"strategy"</span><span class="p">:</span> <span class="s2">"window_last"</span><span class="p">}),</span>
+        <span class="n">Condition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"lightgbm"</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="s2">"e1"</span><span class="p">,</span> <span class="n">overrides</span><span class="o">=</span><span class="p">{</span><span class="s2">"objective"</span><span class="p">:</span> <span class="s2">"tweedie"</span><span class="p">}),</span>
+    <span class="p">],</span>
+    <span class="n">datasets</span><span class="o">=</span><span class="p">{</span><span class="s2">"m5"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"dataset_name"</span><span class="p">:</span> <span class="s2">"M5-M"</span><span class="p">}},</span>
+    <span class="n">cv_split_freq</span><span class="o">=</span><span class="s2">"months"</span><span class="p">,</span>
+    <span class="n">cv_test_size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="n">cv_val_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">cv_folds</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">cv_stride</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="n">hpo_enabled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">reference_conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"e1"</span><span class="p">:</span> <span class="s2">"naive"</span><span class="p">},</span>
+    <span class="n">panel_value_column</span><span class="o">=</span><span class="s2">"revenue"</span><span class="p">,</span>  <span class="c1"># WRMSSE weights: revenue over the last 12 months</span>
+    <span class="n">panel_weight_window</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">cfg</span> <span class="o">=</span> <span class="n">PipelineConfig</span><span class="p">(</span>
+    <span class="n">data_path</span><span class="o">=</span><span class="s2">"data/"</span><span class="p">,</span>
+    <span class="n">input_window_size</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span>
+    <span class="n">forecast_horizon</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">"1MS"</span><span class="p">,</span>
+    <span class="n">target_scaler</span><span class="o">=</span><span class="s2">"passthrough"</span><span class="p">,</span>
+    <span class="n">target_scaling</span><span class="o">=</span><span class="s2">"local"</span><span class="p">,</span>  <span class="c1"># each window divided by its own level</span>
+    <span class="n">local_scale_floor</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">summary</span> <span class="o">=</span> <span class="n">ExperimentEngine</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The panel’s <code class="docutils literal notranslate"><span class="pre">id_column</span></code> and <code class="docutils literal notranslate"><span class="pre">static</span></code> columns fill <code class="docutils literal notranslate"><span class="pre">PipelineConfig.id_column</span></code> and <code class="docutils literal notranslate"><span class="pre">static_features</span></code> when those are left unset; <code class="docutils literal notranslate"><span class="pre">target_scaling</span></code>, <code class="docutils literal notranslate"><span class="pre">local_scale_floor</span></code>, <code class="docutils literal notranslate"><span class="pre">input_scaler</span></code> and <code class="docutils literal notranslate"><span class="pre">target_scaler</span></code> are <code class="docutils literal notranslate"><span class="pre">PipelineConfig</span></code> fields too, and <code class="docutils literal notranslate"><span class="pre">Condition.data_overrides</span></code> can change any of them per condition. Things to know:</p>
+<ul class="simple">
+<li><p><strong>Panel scores.</strong> Pooled metrics (MAE, RMSE, …) let the largest series dominate a panel, so for a panel the engine adds M5-style scores to every condition. Per series and fold it adds RMSSE, MASE and scaled bias, each scaled by the series’ in-sample naive error before the fold’s origin. Per fold it adds WRMSSE: RMSSE weighted by each series’ recent share of <code class="docutils literal notranslate"><span class="pre">ExperimentSpec.panel_value_column</span></code> (the target when unset), over <code class="docutils literal notranslate"><span class="pre">panel_weight_window</span></code> periods. The summary shows them as <code class="docutils literal notranslate"><span class="pre">RMSSE</span></code>, <code class="docutils literal notranslate"><span class="pre">MASE</span></code> and <code class="docutils literal notranslate"><span class="pre">WRMSSE</span></code> (lower is better), sorts point conditions by WRMSSE and adds <code class="docutils literal notranslate"><span class="pre">Δ</span> <span class="pre">WRMSSE</span> <span class="pre">vs</span> <span class="pre">ref</span></code>. For revenue weights, keep a <code class="docutils literal notranslate"><span class="pre">revenue</span></code> column with <code class="docutils literal notranslate"><span class="pre">DatasetSpec(keep=[&quot;revenue&quot;])</span></code>; columns in <code class="docutils literal notranslate"><span class="pre">keep</span></code> are never given to the models.</p></li>
+<li><p><strong>Quantile scores.</strong> Conditions with a <code class="docutils literal notranslate"><span class="pre">&quot;quantile&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;parametric&quot;</span></code> metric type are also scored with the scaled pinball loss.</p>
+<ul>
+<li><p>The fold’s forecasts are read at <code class="docutils literal notranslate"><span class="pre">ExperimentSpec.panel_quantile_levels</span></code>, M5 Uncertainty’s nine levels by default, with <code class="docutils literal notranslate"><span class="pre">ForecastResult.quantile_frame</span></code>. A quantile model’s own levels are interpolated, and held at its outermost quantile beyond them.</p></li>
+<li><p>Each series’ SPL is its pinball loss divided by its in-sample mean absolute naive error. WSPL weights SPL like WRMSSE.</p></li>
+<li><p>The summary reports <code class="docutils literal notranslate"><span class="pre">SPL</span></code> and <code class="docutils literal notranslate"><span class="pre">WSPL</span></code>, sorts quantile conditions by WSPL and adds a WSPL delta to the reference.</p></li>
+</ul>
+</li>
+<li><p><strong>Hierarchy levels.</strong> Scores at aggregated levels are computed from the saved <code class="docutils literal notranslate"><span class="pre">predictions.parquet</span></code> (<code class="docutils literal notranslate"><span class="pre">hierarchical_scores</span></code>) or from forecasts of each level (<code class="docutils literal notranslate"><span class="pre">hierarchical_quantile_scores</span></code>).</p></li>
+<li><p><strong>Weights and stockouts.</strong> <code class="docutils literal notranslate"><span class="pre">PipelineConfig.weight_column</span></code> and <code class="docutils literal notranslate"><span class="pre">censor_column</span></code> (kept in the dataset with <code class="docutils literal notranslate"><span class="pre">DatasetSpec(keep=[...])</span></code>) weight training and leave censored steps out of training. The engine also leaves censored steps out of RMSSE, WRMSSE, SPL and WSPL; see <a class="reference internal" href="../core/data-pipeline.html#training-weights-and-censored-demand"><span class="std std-ref">Training weights and censored demand</span></a>.</p></li>
+<li><p><strong>Fold plots.</strong> The per-fold good/bad-window report reads one series and is skipped for panels.</p></li>
+<li><p><strong>Short series.</strong> Series shorter than <code class="docutils literal notranslate"><span class="pre">input_window_size</span> <span class="pre">+</span> <span class="pre">forecast_horizon</span></code> yield no test window and are left out of every fold.</p></li>
+</ul>
+</section>
 <section id="config-precedence">
 <h2>Config Precedence<a class="headerlink" href="#config-precedence" title="Link to this heading">#</a></h2>
 <p>When <code class="docutils literal notranslate"><span class="pre">ExperimentEngine</span></code> builds the model config for a condition it merges four layers in order (lowest to highest priority):</p>
@@ -1325,7 +1396,7 @@ by always tuning, or <code class="docutils literal notranslate"><span class="pre
 
 <dl class="py class">
 <dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.experiment.</span></span><span class="sig-name descname"><span class="pre">ExperimentSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_split_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'months'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_train_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_test_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_val_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_calib_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'expanding'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_train_size_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'derived'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpo_train_months</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpo_val_months</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpo_enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hemisphere</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'NH'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_conditions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_figures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_condition_plots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_split_scheme</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_plot_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">336</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_predictions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.experiment.ExperimentSpec" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.experiment.</span></span><span class="sig-name descname"><span class="pre">ExperimentSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_split_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'months'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_train_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_test_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_val_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_calib_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'expanding'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_train_size_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'derived'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpo_train_months</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpo_val_months</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpo_enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hemisphere</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'NH'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_conditions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_figures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_condition_plots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_split_scheme</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_plot_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">336</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_predictions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">panel_value_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">panel_weight_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">panel_seasonality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">panel_quantile_levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0.025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0.165</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0.75</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0.835</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0.975</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0.995)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.experiment.ExperimentSpec" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Full declaration of a twiga ablation / benchmark experiment.</p>
 <p>Pass an instance to <a class="reference internal" href="#twiga.experiment.ExperimentEngine" title="twiga.experiment.engine.ExperimentEngine"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExperimentEngine</span></code></a>
@@ -1412,6 +1483,20 @@ aggregated summary CSVs; set to <code class="docutils literal notranslate"><span
 where the extra Parquet writes are not needed.</p>
 </dd>
 </dl>
+</dd>
+<dt>Panel scores (datasets registered with an <code class="docutils literal notranslate"><span class="pre">id_column</span></code>):</dt><dd><dl class="simple">
+<dt>panel_value_column: Column whose recent total weights each series in WRMSSE (e.g.</dt><dd><p><code class="docutils literal notranslate"><span class="pre">revenue</span></code>, kept with <code class="docutils literal notranslate"><span class="pre">DatasetSpec(keep=[...])</span></code>); the target when None.</p>
+</dd>
+<dt>panel_weight_window: Periods before each fold’s origin summed for the weights; all</dt><dd><p>history when None.</p>
+</dd>
+</dl>
+<p>panel_seasonality: Naive lag of the RMSSE / MASE scale (1 = previous period, as in M5).
+panel_quantile_levels: Levels at which quantile and parametric conditions are scored</p>
+<blockquote>
+<div><p>with SPL / WSPL; M5 Uncertainty’s nine by default. A quantile model’s own levels are
+interpolated, and held at its outermost quantile beyond them, so a model that stops
+at 0.95 is penalised in the tails it does not forecast.</p>
+</div></blockquote>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -1517,6 +1602,26 @@ where the extra Parquet writes are not needed.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.output_prefix">
 <span class="sig-name descname"><span class="pre">output_prefix</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.output_prefix" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.panel_quantile_levels">
+<span class="sig-name descname"><span class="pre">panel_quantile_levels</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(0.005,</span> <span class="pre">0.025,</span> <span class="pre">0.165,</span> <span class="pre">0.25,</span> <span class="pre">0.5,</span> <span class="pre">0.75,</span> <span class="pre">0.835,</span> <span class="pre">0.975,</span> <span class="pre">0.995)</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.panel_quantile_levels" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.panel_seasonality">
+<span class="sig-name descname"><span class="pre">panel_seasonality</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.panel_seasonality" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.panel_value_column">
+<span class="sig-name descname"><span class="pre">panel_value_column</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.panel_value_column" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.experiment.ExperimentSpec.panel_weight_window">
+<span class="sig-name descname"><span class="pre">panel_weight_window</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#twiga.experiment.ExperimentSpec.panel_weight_window" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2212,6 +2317,7 @@ recognised metric columns are present.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-the-command-line">From the command line</a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#panel-datasets">Panel Datasets</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#config-precedence">Config Precedence</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hpo-cache">HPO Cache</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mlflow-tracking">MLflow Tracking</a></li>
@@ -2245,6 +2351,10 @@ recognised metric columns are present.</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.hpo_val_months"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.hpo_val_months</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.name"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.name</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.output_prefix"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.output_prefix</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.panel_quantile_levels"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.panel_quantile_levels</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.panel_seasonality"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.panel_seasonality</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.panel_value_column"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.panel_value_column</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.panel_weight_window"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.panel_weight_window</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.plot_figures"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.plot_figures</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.plot_split_scheme"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.plot_split_scheme</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.experiment.ExperimentSpec.reference_conditions"><code class="docutils literal notranslate"><span class="pre">ExperimentSpec.reference_conditions</span></code></a></li>

@@ -330,7 +330,8 @@ When thousands of products are forecast together, raw errors are dominated by th
 | `panel_point_scores` | Per-series MAE, RMSE, **MASE**, **RMSSE** and weight |
 | `weighted_panel_score` | Value-weighted mean, e.g. **WRMSSE** |
 | `hierarchical_scores` | WRMSSE at every hierarchy level (total, store, category, ..., item), forecasts summed bottom-up |
-| `panel_quantile_scores` | Per-series **scaled pinball loss** (the M5 Uncertainty score) |
+| `panel_quantile_scores` | Per-series **scaled pinball loss** (SPL) of quantile forecasts |
+| `hierarchical_quantile_scores` | **WSPL** at every hierarchy level, each level scored on its own quantile forecasts: the M5 Uncertainty score |
 | `fold_stability` | Mean and standard deviation of a score across backtest folds |
 
 With a `Folds` column, scales and weights are recomputed per fold from the history *before* that fold's origin, so nothing from the evaluation window leaks into them.
@@ -348,6 +349,18 @@ print(fold_stability(wrmsse, "wrmsse"))  # mean and std across folds
 levels = {"total": [], "store": ["store_id"], "category": ["cat_id"], "item-store": ["id"]}
 by_level = hierarchical_scores(preds, history, tags, levels, "id", "sales", value_column="revenue", weight_window=12)
 m5_score = by_level.groupby(["Model", "Folds"])["wrmsse"].mean()  # M5: levels weighted equally
+```
+
+**Quantiles per level.** Quantiles do not add up: the 95 % quantile of a store's sales is not the sum of its products' 95 % quantiles. So the M5 Uncertainty track forecast every level separately, and `hierarchical_quantile_scores` scores each level on its own quantile forecasts, against the history summed to that level. Forecast the panel aggregated with `twiga.hierarchy.aggregate_levels`, read any forecast kind at common levels with `ForecastResult.quantile_frame(levels)` (quantile models are interpolated; parametric and count heads use their distribution family), and stack them with a `level` column:
+
+```python
+from twiga.core.metrics import hierarchical_quantile_scores
+
+M5_LEVELS_Q = (0.005, 0.025, 0.165, 0.25, 0.5, 0.75, 0.835, 0.975, 0.995)
+quantiles = result.quantile_frame(M5_LEVELS_Q).assign(level="item-store", series=lambda f: f["id"])
+# ... the same for each aggregated level, keyed as aggregate_levels names its groups ...
+wspl = hierarchical_quantile_scores(level_quantiles, history, tags, levels, "id", "sales", value_column="revenue")
+m5_uncertainty = wspl.groupby(["model", "Folds"])["wspl"].mean()  # levels weighted equally
 ```
 
 Two M5 lessons are built into these functions:

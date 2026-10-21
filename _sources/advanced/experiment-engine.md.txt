@@ -165,6 +165,75 @@ The chapter script constructs `ExperimentEngine(SPEC)` and calls `ENGINE.cli_mai
 
 ---
 
+## Panel Datasets
+
+A dataset of many series in one long file (products, stores, substations) runs through the same engine. Register it with an `id_column`; the engine loads it with every series intact, forward-fills gaps within each series only, and builds each condition's `DataPipelineConfig` in panel mode (see [Panel forecasting](../core/data-pipeline.md)). Folds split by date across all series at once, and predictions keep the series id.
+
+```python
+from twiga.experiment import Condition, ExperimentEngine, ExperimentSpec
+from twiga.models.baseline.naive_model import NAIVEConfig
+from twiga.models.ml.lightgbm_model import LIGHTGBMConfig
+from twiga.utils.data_loading import DatasetSpec, register_dataset
+from twiga.utils.run_forecast import PipelineConfig
+
+register_dataset(
+    "M5-M",
+    DatasetSpec(
+        file="m5_monthly.parquet",
+        target="sales",
+        exogenous=["price_ratio"],  # known-future inputs
+        period="1MS",
+        id_column="id",
+        static=["dept_id", "cat_id", "store_id", "state_id"],
+        calendar=["month_sin", "month_cos"],
+        keep=["revenue"],  # for the WRMSSE weights only
+    ),
+)
+
+spec = ExperimentSpec(
+    name="M5 monthly",
+    output_prefix="m5",
+    condition_cls=LIGHTGBMConfig,
+    backbone_cls=LIGHTGBMConfig,
+    conditions=[
+        Condition(name="naive", group="e1", model_cls=NAIVEConfig, overrides={"strategy": "window_last"}),
+        Condition(name="lightgbm", group="e1", overrides={"objective": "tweedie"}),
+    ],
+    datasets={"m5": {"dataset_name": "M5-M"}},
+    cv_split_freq="months",
+    cv_test_size=6,
+    cv_val_size=0,
+    cv_folds=3,
+    cv_stride=6,
+    hpo_enabled=False,
+    reference_conditions={"e1": "naive"},
+    panel_value_column="revenue",  # WRMSSE weights: revenue over the last 12 months
+    panel_weight_window=12,
+)
+cfg = PipelineConfig(
+    data_path="data/",
+    input_window_size=24,
+    forecast_horizon=6,
+    period="1MS",
+    target_scaler="passthrough",
+    target_scaling="local",  # each window divided by its own level
+    local_scale_floor=5.0,
+)
+summary = ExperimentEngine(spec).run(cfg)
+```
+
+The panel's `id_column` and `static` columns fill `PipelineConfig.id_column` and `static_features` when those are left unset; `target_scaling`, `local_scale_floor`, `input_scaler` and `target_scaler` are `PipelineConfig` fields too, and `Condition.data_overrides` can change any of them per condition. Things to know:
+
+- **Panel scores.** Pooled metrics (MAE, RMSE, ...) let the largest series dominate a panel, so for a panel the engine adds M5-style scores to every condition. Per series and fold it adds RMSSE, MASE and scaled bias, each scaled by the series' in-sample naive error before the fold's origin. Per fold it adds WRMSSE: RMSSE weighted by each series' recent share of `ExperimentSpec.panel_value_column` (the target when unset), over `panel_weight_window` periods. The summary shows them as `RMSSE`, `MASE` and `WRMSSE` (lower is better), sorts point conditions by WRMSSE and adds `Δ WRMSSE vs ref`. For revenue weights, keep a `revenue` column with `DatasetSpec(keep=["revenue"])`; columns in `keep` are never given to the models.
+- **Quantile scores.** Conditions with a `"quantile"` or `"parametric"` metric type are also scored with the scaled pinball loss.
+  - The fold's forecasts are read at `ExperimentSpec.panel_quantile_levels`, M5 Uncertainty's nine levels by default, with `ForecastResult.quantile_frame`. A quantile model's own levels are interpolated, and held at its outermost quantile beyond them.
+  - Each series' SPL is its pinball loss divided by its in-sample mean absolute naive error. WSPL weights SPL like WRMSSE.
+  - The summary reports `SPL` and `WSPL`, sorts quantile conditions by WSPL and adds a WSPL delta to the reference.
+- **Hierarchy levels.** Scores at aggregated levels are computed from the saved `predictions.parquet` (`hierarchical_scores`) or from forecasts of each level (`hierarchical_quantile_scores`).
+- **Weights and stockouts.** `PipelineConfig.weight_column` and `censor_column` (kept in the dataset with `DatasetSpec(keep=[...])`) weight training and leave censored steps out of training. The engine also leaves censored steps out of RMSSE, WRMSSE, SPL and WSPL; see [Training weights and censored demand](../core/data-pipeline.md#training-weights-and-censored-demand).
+- **Fold plots.** The per-fold good/bad-window report reads one series and is skipped for panels.
+- **Short series.** Series shorter than `input_window_size + forecast_horizon` yield no test window and are left out of every fold.
+
 ## Config Precedence
 
 When `ExperimentEngine` builds the model config for a condition it merges four layers in order (lowest to highest priority):

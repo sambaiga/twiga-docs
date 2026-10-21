@@ -1,0 +1,91 @@
+# Inventory Decisions
+
+<details>
+<summary>Source Files</summary>
+
+- `twiga/decision/inventory.py` - `order_up_to_levels`, `order_up_to_from_samples`, `order_up_to_frame`, `simulate_inventory`, `critical_ratio`, `quantile_function`
+- `twiga/core/metrics/inventory.py` - `inventory_scores`, `inventory_costs`, `fill_rate`, `cycle_service_level`
+
+</details>
+
+A demand forecast is ultimately judged by the stock decisions it drives. `twiga.decision` turns quantile forecasts or sample paths into replenishment orders, replays them against actual demand, and scores the outcome by cost and service, the setting of the VN2 inventory challenge.
+
+## Theory
+
+Under a **periodic-review order-up-to policy** $(R, S)$:
+
+1. the stock is reviewed every $R$ periods;
+2. an order is placed that raises the inventory position (on hand plus on order, minus backorders) to the level $S$;
+3. the order arrives after a lead time of $L$ periods.
+
+The order must therefore cover demand over the **protection period** of $L + R$ periods. With holding cost $h$ per unit left in stock and shortage cost $p$ per unit short, the cost-minimising level is the newsvendor solution: the critical-fractile quantile of protection-period demand,
+
+$$
+S = F^{-1}_{D_{L+R}}\!\left(\frac{p}{p + h}\right).
+$$
+
+This is exact for backorders and the standard approximation under lost sales (Silver, Pyke and Thomas, 2017). VN2 has $L = 2$ weeks, weekly review ($R = 1$), $h = 0.2$ and $p = 1.0$, so the critical ratio is $0.833$.
+
+A forecast gives quantiles per period, but $S$ needs a quantile of their **sum**. How the periods combine has to be assumed:
+
+| `dependence` | Assumption | Quantile of the sum |
+|---|---|---|
+| `"comonotonic"` | periods move together (perfect rank correlation) | sum of the period quantiles: the largest, most cautious level |
+| `"independent"` | periods are independent | Monte Carlo over each period's quantile function (inverse-CDF sampling) |
+| sample paths | whatever the model's paths carry | empirical quantile of the summed paths (`order_up_to_from_samples`) |
+
+Real demand lies between the two assumptions; comparing them shows how much the choice matters. Quantile functions are interpolated linearly between the forecast levels and held at the outermost quantile beyond them, so forecast the levels the critical ratio needs (a 0.95 cap understates the tail at a 0.97 service level).
+
+## Usage
+
+```python
+from twiga.core.metrics import inventory_scores
+from twiga.decision import order_up_to_frame, simulate_inventory
+
+# Order-up-to levels for every series and forecast origin of a backtest's quantile forecasts.
+levels = order_up_to_frame(
+    quantiles,  # long: id, forecast_origin, timestamp, q_level, quantile_forecast
+    id_column="id",
+    lead_time=2,
+    review_period=1,
+    holding_cost=0.2,
+    shortage_cost=1.0,
+    dependence="independent",
+)
+
+# Replay the policy against actual demand: arrays (n_series, T), one level per review period.
+simulation = simulate_inventory(demand, order_up_to, lead_time=2, review_period=1, initial_on_hand=on_hand)
+scores = inventory_scores(simulation, holding_cost=0.2, shortage_cost=1.0, ids=series_ids)
+scores[["total_cost", "fill_rate", "cycle_service_level"]].mean()
+```
+
+## The simulation
+
+Each period, in order:
+
+1. **Review:** at a review period, an order raises the inventory position to that period's level. It arrives `lead_time` periods later; with `lead_time=0`, before this period's demand.
+2. **Arrivals:** the units due this period arrive.
+3. **Demand:** stock serves the backlog first, then this period's demand. Demand not met is lost (`lost_sales=True`, as in VN2) or joins the backlog.
+
+| Score | Definition |
+|---|---|
+| `holding_cost` | $h \times$ units on hand at the end of each period |
+| `shortage_cost` | $p \times$ units lost (lost sales), or $p \times$ backordered units per period (backorders) |
+| `fill_rate` | share of demand met from stock in the period it occurred (type-II service) |
+| `cycle_service_level` | share of review cycles without any shortage (type-I service) |
+| `stockout_periods` | share of periods with unmet demand |
+
+## References
+
+- Silver, E. A., Pyke, D. F. and Thomas, D. J. (2017). *Inventory and Production Management in Supply Chains*, 4th ed. CRC Press.
+- Petropoulos, F. et al. (2022). Forecasting: theory and practice. *International Journal of Forecasting*, 38(3), 705–871 (section on inventory forecasting).
+
+## API Reference
+
+```{eval-rst}
+.. automodule:: twiga.decision.inventory
+   :members:
+
+.. automodule:: twiga.core.metrics.inventory
+   :members:
+```
