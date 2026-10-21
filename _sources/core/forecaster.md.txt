@@ -459,12 +459,17 @@ Pooling changes *which* series share a model. [Hierarchical alignment](hierarchy
   checkpoints/{project_name}/{model_type}/[file_name]/
 ```
 
+With a configured `checkpoints_path`, a single-model forecaster writes its files directly into that folder, and a forecaster with several models writes one subfolder per model (`{checkpoints_path}/{model_type}/`), so the models never overwrite each other. Every folder also holds `context.pkl`, the rows kept after fitting that the next forecast looks back over.
+
 Checkpoint persistence differs by domain:
 
 | Domain | Save | Load |
 |---|---|---|
-| `ml` | `joblib.dump` of `{"model": ..., "data_pipeline": ...}` | `joblib.load` of the most recent file in `checkpoints_path` |
-| `nn` | Delegated to the model's own save logic | `model.load_checkpoint()`, then copies `model.data_pipeline` |
+| `ml`, `baseline` | `joblib.dump` of `{"model": ..., "data_pipeline": ...}` with a `_checkpoint_manifest.json` | the file named by the manifest (newest `*.pkl` without one) |
+| `nn` | Lightning's best checkpoint (`*.ckpt`) and `data_pipeline.pkl` | the newest `*.ckpt` via `model.load_checkpoint()`, then `data_pipeline.pkl` |
+| `foundational` | nothing (pretrained weights come from the hub) | nothing |
+
+`on_load_checkpoint()` restores the current model, or every model of a forecaster that has not fitted or predicted yet (e.g. one rebuilt for serving). A missing checkpoint raises `FileNotFoundError` and a checkpoint that cannot be read raises `RuntimeError`, rather than leaving an unfitted model behind.
 
 
 ## Inverse Scaling

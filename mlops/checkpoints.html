@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=00f267c6"></script>
+    <script src="../_static/documentation_options.js?v=a48ae3df"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -63,7 +63,7 @@
     <link rel="prev" title="Experiment Tracking" href="tracking.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.1.4" />
+  <meta name="docsearch:version" content="1.1.5" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -266,15 +266,15 @@
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.4"
+    aria-label="Twiga version 1.1.5"
   >
-    <span class="tw-version-label">v1.1.4</span>
+    <span class="tw-version-label">v1.1.5</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.4</strong> is in alpha.
+        <strong>Twiga 1.1.5</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -474,15 +474,15 @@
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
-    aria-label="Twiga version 1.1.4"
+    aria-label="Twiga version 1.1.5"
   >
-    <span class="tw-version-label">v1.1.4</span>
+    <span class="tw-version-label">v1.1.5</span>
     <span class="tw-alpha-pill">alpha</span>
   </button>
   <div class="dropdown-menu dropdown-menu-end tw-version-menu">
     <div class="tw-version-info">
       <p>
-        <strong>Twiga 1.1.4</strong> is in alpha.
+        <strong>Twiga 1.1.5</strong> is in alpha.
         The API may change before 1.0.
       </p>
       <a
@@ -723,7 +723,9 @@ for the full sequence diagram.</p>
 <dd><p>Save the data pipeline and model to a versioned checkpoint file.</p>
 <p>Writes <code class="docutils literal notranslate"><span class="pre">model_and_pipeline.pkl</span></code> for ML/baseline domains alongside a
 <code class="docutils literal notranslate"><span class="pre">_checkpoint_manifest.json</span></code> that records the version, timestamp, and
-model type.  The manifest is the authoritative source for
+model type, and for every domain the kept forecast context
+(<code class="docutils literal notranslate"><span class="pre">context.pkl</span></code>), restored by <a class="reference internal" href="#twiga.forecaster.base.BaseForecaster.on_load_checkpoint" title="twiga.forecaster.base.BaseForecaster.on_load_checkpoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">on_load_checkpoint()</span></code></a> on a forecaster
+that has none.  The manifest is the authoritative source for
 <a class="reference internal" href="#twiga.forecaster.base.BaseForecaster.on_load_checkpoint" title="twiga.forecaster.base.BaseForecaster.on_load_checkpoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">on_load_checkpoint()</span></code></a> - avoiding brittle mtime-based selection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -742,26 +744,31 @@ model type.  The manifest is the authoritative source for
 <dl class="py method">
 <dt class="sig sig-object py" id="twiga.forecaster.base.BaseForecaster.on_load_checkpoint">
 <span class="sig-prename descclassname"><span class="pre">BaseForecaster.</span></span><span class="sig-name descname"><span class="pre">on_load_checkpoint</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#twiga.forecaster.base.BaseForecaster.on_load_checkpoint" title="Link to this definition">#</a></dt>
-<dd><p>Load the model and data pipeline from the versioned checkpoint.</p>
-<p>Prefers the <code class="docutils literal notranslate"><span class="pre">_checkpoint_manifest.json</span></code> written by
-<a class="reference internal" href="#twiga.forecaster.base.BaseForecaster.on_save_checkpoint" title="twiga.forecaster.base.BaseForecaster.on_save_checkpoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">on_save_checkpoint()</span></code></a> to identify the checkpoint file.  Falls
-back to mtime-based selection only when no manifest is present
-(e.g. checkpoints written by an older version of Twiga).</p>
+<dd><p>Load models, data pipeline and forecast context from their checkpoint folders.</p>
+<p>Restores the current model when there is one (the evaluation path reloads the model
+it is scoring), and every model of a forecaster that has not fitted or predicted yet
+(e.g. one rebuilt in a new process for serving). Each model is read from
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">_model_checkpoint_dir()</span></code>, falling back to the configured root for checkpoints
+written before models had their own folders. ML and baseline models are located via
+the <code class="docutils literal notranslate"><span class="pre">_checkpoint_manifest.json</span></code> written by <a class="reference internal" href="#twiga.forecaster.base.BaseForecaster.on_save_checkpoint" title="twiga.forecaster.base.BaseForecaster.on_save_checkpoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">on_save_checkpoint()</span></code></a> (newest
+<code class="docutils literal notranslate"><span class="pre">*.pkl</span></code> without one), neural networks via their newest Lightning checkpoint, and
+foundational models need no files.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">checkpoints_path</span></code> is not set or the domain is
-    unsupported.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If no checkpoint folder is configured or a domain is unsupported.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#FileNotFoundError" title="(in Python v3.15)"><strong>FileNotFoundError</strong></a> – If a model has no checkpoint.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#RuntimeError" title="(in Python v3.15)"><strong>RuntimeError</strong></a> – If a checkpoint exists but cannot be loaded.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">forecaster</span><span class="o">.</span><span class="n">on_load_checkpoint</span><span class="p">()</span>
 </pre></div>
 </div>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
-</dd>
-</dl>
 </dd></dl>
 
 </section>

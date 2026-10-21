@@ -468,12 +468,10 @@ class SimpleNNForecastModel(BaseNeuralModel):
 
 ### Step 5: Define the Forecaster Class
 
-The forecaster extends `BaseNeuralForecast` and ties everything together. It must implement `update(trial)` (for Optuna) and `load_checkpoint()`.
+The forecaster extends `BaseNeuralForecast` and ties everything together. It must implement `_init_model()`, which builds the Lightning module from `self.model_config`. The base class provides `update(trial)`, which applies a trial's sampled hyperparameters (including the batch size and epoch budget training uses) and rebuilds the module, and `load_checkpoint()`, which restores the newest checkpoint; override them only to change that behaviour.
 
 ```python
 # Back in twiga/models/nn/simplenn_model.py
-
-import optuna
 
 from twiga.models.nn.core.base import BaseNeuralForecast
 from twiga.models.nn.net.simplenn import SimpleNNForecastModel
@@ -516,21 +514,6 @@ class SIMPLENNModel(BaseNeuralForecast):
             metric=self.model_config.metric,
             max_epochs=self.model_config.max_epochs,
         )
-
-    def update(self, trial: optuna.Trial) -> None:
-        """Update model with Optuna-suggested hyperparameters.
-
-        Args:
-            trial: Optuna trial for sampling hyperparameters.
-        """
-        params = self.model_config.get_optuna_params(trial=trial)
-        self.model_config = SIMPLENNConfig(**params)
-        self._init_model()
-
-    def load_checkpoint(self):
-        """Load the latest checkpoint into the model."""
-        self._load_checkpoints(model_instance=SimpleNNForecastModel)
-        self.model.eval()
 ```
 
 ### Step 6: Use Your Custom NN Model
@@ -663,12 +646,13 @@ To fix a parameter during tuning, simply set it as a regular field (not in the s
 | `BaseArchitecture` | `twiga/models/nn/core/base_arch.py` | Abstract `nn.Module`: `forward()`, `step()`, `forecast()` |
 | `BaseNeuralModel` | `twiga/models/nn/core/base_model.py` | Lightning module: `training_step`, `validation_step`, `configure_optimizers` |
 
-**`BaseNeuralForecast` abstract methods (must implement):**
+**`BaseNeuralForecast` methods:**
 
 | Method | Signature | Description |
 |---|---|---|
-| `update` | `update(trial: Trial)` | Reinitialize model with Optuna-suggested hyperparameters |
-| `load_checkpoint` | `load_checkpoint(checkpoints_path)` | Restore model from a saved checkpoint |
+| `_init_model` | `_init_model()` | Build the Lightning module from `self.model_config` (abstract, must implement) |
+| `update` | `update(trial: Trial)` | Apply a trial's sampled hyperparameters, including batch size and epochs, and rebuild the module (provided) |
+| `load_checkpoint` | `load_checkpoint()` | Restore the newest checkpoint in `checkpoints_path` and switch to eval mode (provided) |
 
 **`BaseArchitecture` abstract methods (must implement):**
 
@@ -686,8 +670,8 @@ Before your custom model is ready for production use, verify:
 - [ ] Model class is named `{NAME}Model` (all uppercase) and extends `BaseRegressor` or `BaseNeuralForecast`
 - [ ] Config `name` field uses `Literal["{name}"]` with `exclude=True`
 - [ ] Config `domain` field uses `Literal["ml"]` or `Literal["nn"]` with `exclude=True`
-- [ ] Model class implements `update(trial)` for Optuna hyperparameter tuning
-- [ ] NN models implement `load_checkpoint()` for checkpoint restoration
+- [ ] ML model classes implement `update(trial)` for Optuna hyperparameter tuning
+- [ ] NN model classes implement `_init_model()` (`update` and `load_checkpoint` are inherited)
 - [ ] NN architectures implement `forward(x)` in their `BaseArchitecture` subclass
 - [ ] Search space fields use tuples for numeric ranges and lists for categorical choices
 - [ ] `get_model("yourmodel", "yourdomain")` returns the correct `(ModelClass, ConfigClass)` tuple
