@@ -5,7 +5,7 @@
 
 - `twiga/core/data/relevance.py`  -  `AssociationAnalyzer` class
 - `twiga/core/data/selection.py`  -  `select_top_features`, `compute_rf_importance`, `diversity_weights`
-- `twiga/core/stats/association.py`  -  `rank_correlation`, `compute_anova_f`, `compute_chi2`, `distance_correlation`, `compute_distance_correlation`
+- `twiga/core/stats/association.py`  -  `rank_correlation`, `compute_anova_f`, `compute_chi2`, `distance_correlation`, `distance_correlation_test`, `compute_distance_correlation`
 - `twiga/core/stats/dependence.py`  -  `dependence_profile`
 - `twiga/core/stats/autocorr.py`  -  `get_pacf_values`, `estimate_ar_order`, `calculate_durbin_watson`
 - `twiga/core/stats/crosslag.py`  -  `compute_crosslag_association`, `recommend_predictive_lags`
@@ -162,6 +162,23 @@ distance_correlation(x, y)  # ~0.54  -  the dependence is there
 The estimator builds two `n x n` distance matrices, so cost is quadratic in the sample size. Samples above `max_samples` (default 2000) are subsampled without replacement, which adds variance to the estimate but no bias. Use `compute_distance_correlation` to apply it across many features and get a tidy frame back.
 
 **Reference:** Szekely, Rizzo & Bakirov (2007), *Measuring and testing dependence by correlation of distances*, Annals of Statistics 35(6), 2769-2794.
+
+---
+
+### `distance_correlation_test`
+
+The estimator above is biased upwards: for independent samples it is not zero but of the order of `1 / sqrt(n)` (about 0.1 at 300 pairs), so a raw value cannot be read without its chance level. `distance_correlation_test` returns the value, its mean when one sample is permuted, the bias-corrected squared distance correlation (expectation zero under independence, so it can be negative) and a permutation p-value that is never zero.
+
+```python
+from twiga.core.stats import distance_correlation_test
+
+result = distance_correlation_test(x, y, permutations=999)
+result["dcor"], result["null_mean"], result["corrected"], result["p"]
+```
+
+Pass `max_samples=None` to use every pair; the two matrices then need about `32 n^2` bytes.
+
+**References:** Szekely & Rizzo (2014), *Partial distance correlation with methods for dissimilarities*, Annals of Statistics 42(6), 2382-2412; Phipson & Smyth (2010), *Permutation p-values should never be zero*, Statistical Applications in Genetics and Molecular Biology 9(1).
 
 ---
 
