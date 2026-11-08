@@ -3981,12 +3981,14 @@ Stage 1 to Stage 4 parametrisation loop:</p>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><p><em>Dict with keys</em> –</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">&quot;lags&quot;</span></code> – list of suggested lag values for the <code class="docutils literal notranslate"><span class="pre">lags</span></code>
-parameter of <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code>.  Empty list when no seasonal
-periods are detected.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">&quot;lookback_window_size&quot;</span></code> – <code class="docutils literal notranslate"><span class="pre">max(lags)</span></code> when lags are
-available, otherwise <code class="docutils literal notranslate"><span class="pre">n_samples_per_day</span> <span class="pre">*</span> <span class="pre">7</span></code> as a safe
-weekly fallback.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;lags&quot;</span></code> – the suggested lags that are longer than the
+look-back window, for the <code class="docutils literal notranslate"><span class="pre">lags</span></code> parameter of <code class="docutils literal notranslate"><span class="pre">DataPipeline</span></code>.
+Empty list when no seasonal periods are detected.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;lookback_window_size&quot;</span></code> – the shortest detected seasonal
+period, the span over which the dynamics repeat; the longer
+peaks stay outside the window as lag features. Without a
+detected period it is the longest suggested lag, or
+<code class="docutils literal notranslate"><span class="pre">n_samples_per_day</span> <span class="pre">*</span> <span class="pre">7</span></code> as a safe weekly fallback.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">&quot;integration_order&quot;</span></code> – integration order <em>d</em> from the
 stationarity result, for downstream use with
 <a class="reference internal" href="#twiga.core.data.diff.TimeSeriesDifferentiator" title="twiga.core.data.diff.TimeSeriesDifferentiator"><code class="xref py py-class docutils literal notranslate"><span class="pre">TimeSeriesDifferentiator</span></code></a>.</p></li>
@@ -4019,7 +4021,7 @@ null hypothesis (i.e. the series is stationary).</p></li>
 stationarity null hypothesis (i.e. the series is non-stationary).</p></li>
 <li><p><strong>integration_order</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Recommended differencing order <em>d</em>.  <code class="docutils literal notranslate"><span class="pre">0</span></code> means
 operate on levels; <code class="docutils literal notranslate"><span class="pre">1</span></code> means first-difference before modelling.</p></li>
-<li><p><strong>verdict</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><em>Literal</em></a><em>[</em><em>'stationary'</em><em>, </em><em>'non-stationary'</em><em>, </em><em>'near-integrated'</em><em>, </em><em>'fractional'</em><em>]</em>) – Human-readable joint interpretation of the two tests.</p></li>
+<li><p><strong>verdict</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><em>Literal</em></a><em>[</em><em>'stationary'</em><em>, </em><em>'non-stationary'</em><em>, </em><em>'near-integrated'</em><em>, </em><em>'fractional'</em><em>, </em><em>'seasonal-level'</em><em>]</em>) – Human-readable joint interpretation of the two tests.</p></li>
 <li><p><strong>recommendation</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – One-sentence operational guidance derived from
 <code class="docutils literal notranslate"><span class="pre">verdict</span></code>.</p></li>
 </ul>
@@ -4063,7 +4065,7 @@ operate on levels; <code class="docutils literal notranslate"><span class="pre">
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.core.data.characterisation.StationarityResult.verdict">
-<span class="sig-name descname"><span class="pre">verdict</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'stationary'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'non-stationary'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'near-integrated'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'fractional'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.core.data.characterisation.StationarityResult.verdict" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">verdict</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'stationary'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'non-stationary'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'near-integrated'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'fractional'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'seasonal-level'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.core.data.characterisation.StationarityResult.verdict" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -4143,12 +4145,20 @@ detected.</p></li>
 <a class="reference internal" href="#twiga.core.data.characterisation.TemporalStructureResult.seasonal_periods" title="twiga.core.data.characterisation.TemporalStructureResult.seasonal_periods"><code class="xref py py-attr docutils literal notranslate"><span class="pre">seasonal_periods</span></code></a> and scaled by <code class="docutils literal notranslate"><span class="pre">n_samples_per_day</span></code>.
 These are ready for direct use as the <code class="docutils literal notranslate"><span class="pre">lags</span></code> argument of
 <a class="reference internal" href="#twiga.core.data.pipeline.DataPipeline" title="twiga.core.data.pipeline.DataPipeline"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataPipeline</span></code></a>.</p></li>
+<li><p><strong>differencing_order</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Order of the differencing applied to the series before the ACF and PACF were taken.
+It equals the integration order of the stationarity result, and it is 0 when the series is stationary or
+when differencing left no significant peak, in which case the peaks of the levels are reported.</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.core.data.characterisation.TemporalStructureResult.ar_order">
 <span class="sig-name descname"><span class="pre">ar_order</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.core.data.characterisation.TemporalStructureResult.ar_order" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.core.data.characterisation.TemporalStructureResult.differencing_order">
+<span class="sig-name descname"><span class="pre">differencing_order</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></span><a class="headerlink" href="#twiga.core.data.characterisation.TemporalStructureResult.differencing_order" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -4519,6 +4529,7 @@ to bound the useful forecast window.</p></li>
 </li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.characterisation.TemporalStructureResult"><code class="docutils literal notranslate"><span class="pre">TemporalStructureResult</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.characterisation.TemporalStructureResult.ar_order"><code class="docutils literal notranslate"><span class="pre">TemporalStructureResult.ar_order</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.characterisation.TemporalStructureResult.differencing_order"><code class="docutils literal notranslate"><span class="pre">TemporalStructureResult.differencing_order</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.characterisation.TemporalStructureResult.dominant_period"><code class="docutils literal notranslate"><span class="pre">TemporalStructureResult.dominant_period</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.characterisation.TemporalStructureResult.model_config"><code class="docutils literal notranslate"><span class="pre">TemporalStructureResult.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.core.data.characterisation.TemporalStructureResult.seasonal_periods"><code class="docutils literal notranslate"><span class="pre">TemporalStructureResult.seasonal_periods</span></code></a></li>
