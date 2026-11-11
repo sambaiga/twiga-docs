@@ -284,10 +284,13 @@ def get_optuna_params(self, trial: optuna.Trial) -> dict[str, Any]:
 | `pin_memory` | `bool` | `True` | Pin host memory in the `DataLoader` for faster CPU-to-GPU transfer. |
 | `max_epochs` | `int` | `10` | Maximum number of training epochs. Training may stop earlier if early stopping triggers. |
 | `metric` | `str` | `"mae"` | Metric used to monitor model performance and trigger early stopping (e.g., `"mae"`, `"mse"`). |
-| `optimizer_type` | `OptimizerType` | `"adamw"` | Optimizer: `adam`, `adamw`, `nadam`, `radam`, `adamax`, `adafactor`, `adagrad`, `adadelta`, `rmsprop`, `rprop`, `asgd`, `sgd` or `muon`. An unknown name raises an error. |
-| `optimizer_params` | `dict \| None` | `{"lr": 1e-3, "weight_decay": 1e-6}` | Parameters passed to the optimizer, as a flat dict (e.g., `{"lr": 1e-4, "weight_decay": 1e-2}`). The default replaces the selected optimizer's own defaults, so give the full set for an optimizer whose learning rate differs from AdamW's. |
-| `lr_scheduler_type` | `SchedulerType` | `"multi_step"` | Learning-rate scheduler: `step`, `multi_step`, `multiplicative`, `exponential`, `constant`, `linear_decay`, `polynomial`, `cosine_annealing`, `cosine_annealing_lr`, `cyclic`, `reduce_on_plateau`, `one_cycle`, `warmup_multi_step` or `warmup_cosine`. The default `multi_step` has no milestones, so the rate stays constant. An unknown name raises an error. |
+| `optimizer_type` | `OptimizerType` | `"adamw"` | Optimizer: `adam`, `adamw`, `nadam`, `radam`, `adamax`, `adafactor`, `adagrad`, `adadelta`, `rmsprop`, `rprop`, `asgd`, `sgd`, `muon`, `lion` or `sam`. `muon` trains the 2-D weight matrices with Muon and every other parameter with AdamW; `sam` is sharpness-aware minimisation around AdamW and takes two forward and backward passes per step. |
+| `optimizer_params` | `dict \| None` | `{"lr": 1e-3, "weight_decay": 1e-6}` | Parameters passed to the optimizer, as a flat dict (e.g., `{"lr": 1e-4, "weight_decay": 1e-2}`). The default replaces the selected optimizer's own defaults, so give the full set for an optimizer whose learning rate differs from AdamW's, such as `lion` (about 1e-4) or `muon` (2e-2). |
+| `lr_scheduler_type` | `SchedulerType` | `"multi_step"` | Learning-rate scheduler: `step`, `multi_step`, `multiplicative`, `exponential`, `constant`, `linear_decay`, `polynomial`, `cosine_annealing`, `cosine_annealing_lr`, `cyclic`, `reduce_on_plateau`, `one_cycle`, `warmup_multi_step` or `warmup_cosine`. The default `multi_step` has no milestones, so the rate stays constant. |
 | `scheduler_params` | `dict \| None` | `None` | Scheduler parameters, as a flat dict (e.g., `{"gamma": 0.1, "prob_decay_1": 0.5}`). |
+| `weight_averaging` | `Literal["none", "ema", "swa"]` | `"none"` | Average the weights during training. `ema` keeps an exponential moving average per optimizer step and `swa` an equally weighted average at the end of each epoch from `weight_averaging_start` on. Validation and the final model use the averaged weights. |
+| `weight_averaging_decay` | `float` | `0.99` | EMA decay per optimizer step; a run of about 150 steps wants 0.98 to 0.99. |
+| `weight_averaging_start` | `float` | `0.5` | Fraction of `max_epochs` after which SWA starts averaging. |
 | `patience` | `int` | `10` | Number of epochs with no improvement before early stopping halts training. |
 | `resume_training` | `bool` | `True` | Resume training from the last saved checkpoint if one exists. |
 | `seed` | `int` | `42` | Random seed for reproducibility. Must be a positive integer (`gt=0`). |
@@ -484,10 +487,13 @@ It is passed as `training_params` to `TwigaForecaster`.
 | `wandb_logging` | `bool \| None` | `None` | Enable Weights & Biases logging. |
 | `rich_progress_bar` | `bool \| None` | `None` | Enable rich progress bars. |
 | `gradient_clip_val` | `float \| None` | `None` | Max gradient norm for clipping. |
-| `optimizer_type` | `OptimizerType \| None` | `None` | Optimizer name, the same set as `NeuralModelConfig.optimizer_type` (e.g. `"adamw"`, `"muon"`). |
+| `optimizer_type` | `OptimizerType \| None` | `None` | Optimizer name, the same set as `NeuralModelConfig.optimizer_type` (e.g. `"adamw"`, `"lion"`). |
 | `lr_scheduler_type` | `SchedulerType \| None` | `None` | Scheduler name, the same set as `NeuralModelConfig.lr_scheduler_type` (e.g. `"warmup_cosine"`). |
 | `optimizer_params` | `dict \| None` | `None` | Partial override for optimizer defaults. |
 | `scheduler_params` | `dict \| None` | `None` | Partial override for scheduler defaults. |
+| `weight_averaging` | `Literal["none", "ema", "swa"] \| None` | `None` | Average the weights during training; see `NeuralModelConfig`. |
+| `weight_averaging_decay` | `float \| None` | `None` | EMA decay per optimizer step. |
+| `weight_averaging_start` | `float \| None` | `None` | Fraction of `max_epochs` after which SWA starts averaging. |
 
 ### Usage Example
 
