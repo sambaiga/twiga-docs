@@ -635,6 +635,7 @@
 <li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">twiga/models/foundational/moirai_model.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">MoiraiModel</span></code> / <code class="docutils literal notranslate"><span class="pre">MoiraiConfig</span></code></p></li>
 <li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">twiga/models/foundational/timesfm_model.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">TimesFMModel</span></code> / <code class="docutils literal notranslate"><span class="pre">TimesFMConfig</span></code></p></li>
 <li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">twiga/models/foundational/lag_llama_model.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">LagLlamaModel</span></code> / <code class="docutils literal notranslate"><span class="pre">LagLlamaConfig</span></code></p></li>
+<li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">twiga/models/foundational/timestral_model.py</span></code>  -  <code class="docutils literal notranslate"><span class="pre">TimestralModel</span></code> / <code class="docutils literal notranslate"><span class="pre">TimestralConfig</span></code></p></li>
 </ul>
 </div>
 </details><p>Twiga’s <strong>foundational domain</strong> provides pre-trained, task-agnostic models that require no training on your target data. Unlike learned models that fit parameters to your specific time series, foundational models download pre-trained weights and generate probabilistic forecasts immediately through zero-shot inference. They leverage transfer learning from training on millions of diverse time series, making them robust to domain shift and data scarcity.</p>
@@ -1013,6 +1014,21 @@ its 9 native quantile levels.</p>
 <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;git+https://github.com/google-research/timesfm.git#egg=timesfm[torch]&quot;</span></code>.</p>
 </div>
 </section>
+<section id="timestralmodel">
+<h3>TimestralModel<a class="headerlink" href="#timestralmodel" title="Link to this heading">#</a></h3>
+<p>Mistral AI’s <strong>Timestral</strong> (209M parameters in the checkpoint used here), an open-weight
+foundation model with a 32,768-step context that forecasts up to 1,024 steps in one pass and
+exposes 21 native quantile levels (0.01, 0.05, 0.1, 0.15, …, 0.9, 0.95, 0.99). With
+<code class="docutils literal notranslate"><span class="pre">use_covariates=True</span></code> inside a forecaster, the columns that exist in both the past and the
+future block of the data pipeline are passed as known-future covariates.</p>
+<div class="note admonition">
+<p class="admonition-title">Installation and licence</p>
+<p>Not on PyPI - install from source:
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">git+https://github.com/mistralai/timestral.git</span></code> (torch &gt;= 2.4). The inference
+code is Apache 2.0; the weights carry a separate Modified MIT licence with a revenue
+condition, so read the licence of the checkpoint before use or redistribution.</p>
+</div>
+</section>
 <section id="lagllamamodel">
 <h3>LagLlamaModel<a class="headerlink" href="#lagllamamodel" title="Link to this heading">#</a></h3>
 <p>The first open-source time-series foundation model: a decoder-only transformer
@@ -1332,10 +1348,16 @@ parameters and not others.</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.models.foundational.chronos2_model.</span></span><span class="sig-name descname"><span class="pre">Chronos2Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.foundational.chronos2_model.Chronos2Model" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#twiga.models.foundational.base.BaseFoundationalModel" title="twiga.models.foundational.base.BaseFoundationalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseFoundationalModel</span></code></a></p>
 <p>Zero-shot forecasting with Chronos-2.</p>
-<p>Chronos-2 is a 12B-parameter autoregressive transformer that performs
-zero-shot time series forecasting without fine-tuning on the target
-dataset. It produces 21 quantile predictions spanning
+<p>Chronos-2 is an encoder-only transformer of about 120M parameters that
+performs zero-shot time series forecasting without fine-tuning on the
+target dataset. It produces 21 quantile predictions spanning
 <code class="docutils literal notranslate"><span class="pre">[0.025,</span> <span class="pre">0.05,</span> <span class="pre">…,</span> <span class="pre">0.95,</span> <span class="pre">0.975]</span></code>.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">use_covariates=True</span></code> and a data pipeline attached, the known
+covariates are passed to Chronos-2: a column that is in both the past and
+the future block of the pipeline (for example an irradiance forecast or a
+calendar feature) goes in as a past covariate with its past values and a
+future covariate with its future values. Columns of the future block that
+have no past values are not used, and the model logs which ones.</p>
 <p><strong>fit() is optional</strong> — model weights are loaded lazily on the first
 <code class="docutils literal notranslate"><span class="pre">predict()</span></code> call:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Zero-shot: no fit() required when horizon is known</span>
@@ -1543,9 +1565,11 @@ parameters and not others.</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.models.foundational.chronos2_model.</span></span><span class="sig-name descname"><span class="pre">Chronos2Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.foundational.chronos2_model.Chronos2Config" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../core/config.html#twiga.core.config.BaseModelConfig" title="twiga.core.config.base.BaseModelConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModelConfig</span></code></a></p>
 <p>Configuration for Chronos-2 zero-shot forecasting.</p>
-<p>Chronos-2 is a 12B-parameter autoregressive transformer trained on 2M+
-diverse time series. It performs zero-shot forecasting without fine-tuning
-on the target dataset and produces 21 quantile predictions.</p>
+<p>Chronos-2 is an encoder-only transformer of about 120M parameters trained
+on a large corpus of diverse time series. It performs zero-shot forecasting
+without fine-tuning on the target dataset and produces 21 quantile
+predictions. It can also read known future covariates, which the model
+ignores unless <code class="docutils literal notranslate"><span class="pre">use_covariates</span></code> is set.</p>
 <dl class="simple">
 <dt>Fixed quantiles: 0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45,</dt><dd><p>0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.975</p>
 </dd>
@@ -1598,6 +1622,11 @@ can be called without a prior <code class="docutils literal notranslate"><span c
 <dl class="py attribute">
 <dt class="sig sig-object py" id="twiga.models.foundational.chronos2_model.Chronos2Config.predict_batch_size">
 <span class="sig-name descname"><span class="pre">predict_batch_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.foundational.chronos2_model.Chronos2Config.predict_batch_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.chronos2_model.Chronos2Config.use_covariates">
+<span class="sig-name descname"><span class="pre">use_covariates</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span><a class="headerlink" href="#twiga.models.foundational.chronos2_model.Chronos2Config.use_covariates" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -2414,7 +2443,271 @@ Auto-raised to the requested horizon at fit time if smaller.</p></li>
 
 </section>
 <section id="id7">
-<h3>LagLlamaModel<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<h3>TimestralModel<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralModel">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.models.foundational.timestral_model.</span></span><span class="sig-name descname"><span class="pre">TimestralModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralModel" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#twiga.models.foundational.base.BaseFoundationalModel" title="twiga.models.foundational.base.BaseFoundationalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseFoundationalModel</span></code></a></p>
+<p>Zero-shot forecasting with Timestral.</p>
+<p>Loads the pre-trained weights from Hugging Face through the <code class="docutils literal notranslate"><span class="pre">timestral</span></code> package and forecasts one target. With
+<code class="docutils literal notranslate"><span class="pre">use_covariates=True</span></code> and a data pipeline attached, the columns that sit in both the past and the future block
+of the pipeline (for example an irradiance forecast or a calendar feature) are passed as known-future
+covariates. Columns of the future block without past values are not used, and the model logs which ones.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_config</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#twiga.models.foundational.timestral_model.TimestralConfig" title="twiga.models.foundational.timestral_model.TimestralConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">TimestralConfig</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – <a class="reference internal" href="#twiga.models.foundational.timestral_model.TimestralConfig" title="twiga.models.foundational.timestral_model.TimestralConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">TimestralConfig</span></code></a> with device, checkpoint and horizon settings.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="n">TimestralConfig</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">,</span> <span class="n">horizon</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">TimestralModel</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="n">median</span><span class="p">,</span> <span class="n">quantiles</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralModel.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralModel.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize the Timestral model without loading weights.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_config</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#twiga.models.foundational.timestral_model.TimestralConfig" title="twiga.models.foundational.timestral_model.TimestralConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">TimestralConfig</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Configuration. Defaults to <a class="reference internal" href="#twiga.models.foundational.timestral_model.TimestralConfig" title="twiga.models.foundational.timestral_model.TimestralConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">TimestralConfig</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralModel.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralModel.fit" title="Link to this definition">#</a></dt>
+<dd><p>Pre-load the Timestral weights (optional; called automatically on the first predict).</p>
+<p>No training occurs. <code class="docutils literal notranslate"><span class="pre">fit()</span></code> validates the array dimensions and loads the checkpoint, so that the first fold
+of a backtest does not pay the cold-start cost.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Lookback features, shape <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">seq_len,</span> <span class="pre">n_features)</span></code>. Used for dimension validation only.</p></li>
+<li><p><strong>y</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span>) – Forecast targets, shape <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">horizon,</span> <span class="pre">n_targets)</span></code>. Used for dimension validation only.</p></li>
+<li><p><strong>eval_set</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>, <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Ignored.</p></li>
+<li><p><strong>verbose</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Ignored.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#twiga.models.foundational.timestral_model.TimestralModel" title="twiga.models.foundational.timestral_model.TimestralModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">TimestralModel</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Self for method chaining.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">X</span></code> or <code class="docutils literal notranslate"><span class="pre">y</span></code> is not 3-D, or <code class="docutils literal notranslate"><span class="pre">y</span></code> has more than one target.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ImportError" title="(in Python v3.15)"><strong>ImportError</strong></a> – If the <code class="docutils literal notranslate"><span class="pre">timestral</span></code> package is not installed.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralModel.quantile_levels">
+<span class="sig-name descname"><span class="pre">quantile_levels</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[0.01,</span> <span class="pre">0.05,</span> <span class="pre">0.1,</span> <span class="pre">0.15,</span> <span class="pre">0.2,</span> <span class="pre">0.25,</span> <span class="pre">0.3,</span> <span class="pre">0.35,</span> <span class="pre">0.4,</span> <span class="pre">0.45,</span> <span class="pre">0.5,</span> <span class="pre">0.55,</span> <span class="pre">0.6,</span> <span class="pre">0.65,</span> <span class="pre">0.7,</span> <span class="pre">0.75,</span> <span class="pre">0.8,</span> <span class="pre">0.85,</span> <span class="pre">0.9,</span> <span class="pre">0.95,</span> <span class="pre">0.99]</span></span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralModel.quantile_levels" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralModel.set_fit_request">
+<span class="sig-name descname"><span class="pre">set_fit_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'$UNCHANGED$'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'$UNCHANGED$'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralModel.set_fit_request" title="Link to this definition">#</a></dt>
+<dd><p>Configure whether metadata should be requested to be passed to the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method.</p>
+<p>Note that this method is only relevant when this estimator is used as a
+sub-estimator within a <a class="reference external" href="https://scikit-learn.org/stable/glossary.html#term-meta-estimator" title="(in scikit-learn v1.9)"><span class="xref std std-term">meta-estimator</span></a> and metadata routing is enabled
+with <code class="docutils literal notranslate"><span class="pre">enable_metadata_routing=True</span></code> (see <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.set_config.html#sklearn.set_config" title="(in scikit-learn v1.9)"><code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.set_config()</span></code></a>).
+Please check the <a class="reference external" href="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing" title="(in scikit-learn v1.9)"><span class="xref std std-ref">User Guide</span></a> on how the routing
+mechanism works.</p>
+<p>The options for each parameter are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">True</span></code>: metadata is requested, and passed to <code class="docutils literal notranslate"><span class="pre">fit</span></code> if provided. The request is ignored if metadata is not provided.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">False</span></code>: metadata is not requested and the meta-estimator will not pass it to <code class="docutils literal notranslate"><span class="pre">fit</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">None</span></code>: metadata is not requested, and the meta-estimator will raise an error if the user provides it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">str</span></code>: metadata should be passed to the meta-estimator with this given alias instead of the original name.</p></li>
+</ul>
+<p>The default (<code class="docutils literal notranslate"><span class="pre">sklearn.utils.metadata_routing.UNCHANGED</span></code>) retains the
+existing request. This allows you to change the request for some
+parameters and not others.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 1.3.</span></p>
+</div>
+<section id="parameters">
+<h4>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">#</a></h4>
+<dl class="simple">
+<dt>eval_set<span class="classifier">str, True, False, or None,                     default=sklearn.utils.metadata_routing.UNCHANGED</span></dt><dd><p>Metadata routing for <code class="docutils literal notranslate"><span class="pre">eval_set</span></code> parameter in <code class="docutils literal notranslate"><span class="pre">fit</span></code>.</p>
+</dd>
+<dt>verbose<span class="classifier">str, True, False, or None,                     default=sklearn.utils.metadata_routing.UNCHANGED</span></dt><dd><p>Metadata routing for <code class="docutils literal notranslate"><span class="pre">verbose</span></code> parameter in <code class="docutils literal notranslate"><span class="pre">fit</span></code>.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h4>Returns<a class="headerlink" href="#returns" title="Link to this heading">#</a></h4>
+<dl class="simple">
+<dt>self<span class="classifier">object</span></dt><dd><p>The updated object.</p>
+</dd>
+</dl>
+</section>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralModel.set_predict_request">
+<span class="sig-name descname"><span class="pre">set_predict_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'$UNCHANGED$'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralModel.set_predict_request" title="Link to this definition">#</a></dt>
+<dd><p>Configure whether metadata should be requested to be passed to the <code class="docutils literal notranslate"><span class="pre">predict</span></code> method.</p>
+<p>Note that this method is only relevant when this estimator is used as a
+sub-estimator within a <a class="reference external" href="https://scikit-learn.org/stable/glossary.html#term-meta-estimator" title="(in scikit-learn v1.9)"><span class="xref std std-term">meta-estimator</span></a> and metadata routing is enabled
+with <code class="docutils literal notranslate"><span class="pre">enable_metadata_routing=True</span></code> (see <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.set_config.html#sklearn.set_config" title="(in scikit-learn v1.9)"><code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.set_config()</span></code></a>).
+Please check the <a class="reference external" href="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing" title="(in scikit-learn v1.9)"><span class="xref std std-ref">User Guide</span></a> on how the routing
+mechanism works.</p>
+<p>The options for each parameter are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">True</span></code>: metadata is requested, and passed to <code class="docutils literal notranslate"><span class="pre">predict</span></code> if provided. The request is ignored if metadata is not provided.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">False</span></code>: metadata is not requested and the meta-estimator will not pass it to <code class="docutils literal notranslate"><span class="pre">predict</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">None</span></code>: metadata is not requested, and the meta-estimator will raise an error if the user provides it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">str</span></code>: metadata should be passed to the meta-estimator with this given alias instead of the original name.</p></li>
+</ul>
+<p>The default (<code class="docutils literal notranslate"><span class="pre">sklearn.utils.metadata_routing.UNCHANGED</span></code>) retains the
+existing request. This allows you to change the request for some
+parameters and not others.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 1.3.</span></p>
+</div>
+<section id="id1">
+<h4>Parameters<a class="headerlink" href="#id1" title="Link to this heading">#</a></h4>
+<dl class="simple">
+<dt>sigma<span class="classifier">str, True, False, or None,                     default=sklearn.utils.metadata_routing.UNCHANGED</span></dt><dd><p>Metadata routing for <code class="docutils literal notranslate"><span class="pre">sigma</span></code> parameter in <code class="docutils literal notranslate"><span class="pre">predict</span></code>.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h4>Returns<a class="headerlink" href="#id2" title="Link to this heading">#</a></h4>
+<dl class="simple">
+<dt>self<span class="classifier">object</span></dt><dd><p>The updated object.</p>
+</dd>
+</dl>
+</section>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralModel.set_score_request">
+<span class="sig-name descname"><span class="pre">set_score_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'$UNCHANGED$'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralModel.set_score_request" title="Link to this definition">#</a></dt>
+<dd><p>Configure whether metadata should be requested to be passed to the <code class="docutils literal notranslate"><span class="pre">score</span></code> method.</p>
+<p>Note that this method is only relevant when this estimator is used as a
+sub-estimator within a <a class="reference external" href="https://scikit-learn.org/stable/glossary.html#term-meta-estimator" title="(in scikit-learn v1.9)"><span class="xref std std-term">meta-estimator</span></a> and metadata routing is enabled
+with <code class="docutils literal notranslate"><span class="pre">enable_metadata_routing=True</span></code> (see <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.set_config.html#sklearn.set_config" title="(in scikit-learn v1.9)"><code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.set_config()</span></code></a>).
+Please check the <a class="reference external" href="https://scikit-learn.org/stable/metadata_routing.html#metadata-routing" title="(in scikit-learn v1.9)"><span class="xref std std-ref">User Guide</span></a> on how the routing
+mechanism works.</p>
+<p>The options for each parameter are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">True</span></code>: metadata is requested, and passed to <code class="docutils literal notranslate"><span class="pre">score</span></code> if provided. The request is ignored if metadata is not provided.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">False</span></code>: metadata is not requested and the meta-estimator will not pass it to <code class="docutils literal notranslate"><span class="pre">score</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">None</span></code>: metadata is not requested, and the meta-estimator will raise an error if the user provides it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">str</span></code>: metadata should be passed to the meta-estimator with this given alias instead of the original name.</p></li>
+</ul>
+<p>The default (<code class="docutils literal notranslate"><span class="pre">sklearn.utils.metadata_routing.UNCHANGED</span></code>) retains the
+existing request. This allows you to change the request for some
+parameters and not others.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 1.3.</span></p>
+</div>
+<section id="id3">
+<h4>Parameters<a class="headerlink" href="#id3" title="Link to this heading">#</a></h4>
+<dl class="simple">
+<dt>sample_weight<span class="classifier">str, True, False, or None,                     default=sklearn.utils.metadata_routing.UNCHANGED</span></dt><dd><p>Metadata routing for <code class="docutils literal notranslate"><span class="pre">sample_weight</span></code> parameter in <code class="docutils literal notranslate"><span class="pre">score</span></code>.</p>
+</dd>
+</dl>
+</section>
+<section id="id4">
+<h4>Returns<a class="headerlink" href="#id4" title="Link to this heading">#</a></h4>
+<dl class="simple">
+<dt>self<span class="classifier">object</span></dt><dd><p>The updated object.</p>
+</dd>
+</dl>
+</section>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="timestralconfig">
+<h3>TimestralConfig<a class="headerlink" href="#timestralconfig" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralConfig">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.models.foundational.timestral_model.</span></span><span class="sig-name descname"><span class="pre">TimestralConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralConfig" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../core/config.html#twiga.core.config.BaseModelConfig" title="twiga.core.config.base.BaseModelConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModelConfig</span></code></a></p>
+<p>Configuration for Timestral zero-shot forecasting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Model identifier, fixed to <code class="docutils literal notranslate"><span class="pre">'timestral'</span></code>.</p></li>
+<li><p><strong>domain</strong> – Domain identifier, fixed to <code class="docutils literal notranslate"><span class="pre">'foundational'</span></code>.</p></li>
+<li><p><strong>device</strong> – Compute device. <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> (default) selects CUDA, then MPS, then CPU.</p></li>
+<li><p><strong>horizon</strong> – Optional forecast horizon hint. When set, <code class="docutils literal notranslate"><span class="pre">predict()</span></code> can be called without a prior <code class="docutils literal notranslate"><span class="pre">fit()</span></code>.</p></li>
+<li><p><strong>hf_repo</strong> – Hugging Face checkpoint id.</p></li>
+<li><p><strong>use_covariates</strong> – Pass the known covariates of the data pipeline to Timestral, so that the forecast is
+conditioned on them. Off by default, so the model sees the target history only.</p></li>
+<li><p><strong>predict_batch_size</strong> – Windows per inference call. <code class="docutils literal notranslate"><span class="pre">None</span></code> sends every window at once.</p></li>
+<li><p><strong>enforce_monotonic</strong> – Monotonicity enforcement strategy.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralConfig.device">
+<span class="sig-name descname"><span class="pre">device</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralConfig.device" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralConfig.domain">
+<span class="sig-name descname"><span class="pre">domain</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'foundational'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralConfig.domain" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralConfig.enforce_monotonic">
+<span class="sig-name descname"><span class="pre">enforce_monotonic</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'sort'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'isotonic'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'none'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralConfig.enforce_monotonic" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralConfig.hf_repo">
+<span class="sig-name descname"><span class="pre">hf_repo</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralConfig.hf_repo" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralConfig.horizon">
+<span class="sig-name descname"><span class="pre">horizon</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralConfig.horizon" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.ClassVar" title="(in Python v3.15)"><span class="pre">ClassVar</span></a><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'allow'}</span></span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralConfig.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralConfig.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'timestral'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralConfig.name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralConfig.predict_batch_size">
+<span class="sig-name descname"><span class="pre">predict_batch_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralConfig.predict_batch_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="twiga.models.foundational.timestral_model.TimestralConfig.use_covariates">
+<span class="sig-name descname"><span class="pre">use_covariates</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span><a class="headerlink" href="#twiga.models.foundational.timestral_model.TimestralConfig.use_covariates" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="id8">
+<h3>LagLlamaModel<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="twiga.models.foundational.lag_llama_model.LagLlamaModel">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">twiga.models.foundational.lag_llama_model.</span></span><span class="sig-name descname"><span class="pre">LagLlamaModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#twiga.models.foundational.lag_llama_model.LagLlamaModel" title="Link to this definition">#</a></dt>
@@ -2741,6 +3034,7 @@ computing empirical quantiles.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tabiclmodel">TabICLModel</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#moiraimodel">MoiraiModel</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#timesfmmodel">TimesFMModel</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#timestralmodel">TimestralModel</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#lagllamamodel">LagLlamaModel</a></li>
 </ul>
 </li>
@@ -2784,6 +3078,7 @@ computing empirical quantiles.</p></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.chronos2_model.Chronos2Config.model_config"><code class="docutils literal notranslate"><span class="pre">Chronos2Config.model_config</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.chronos2_model.Chronos2Config.name"><code class="docutils literal notranslate"><span class="pre">Chronos2Config.name</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.chronos2_model.Chronos2Config.predict_batch_size"><code class="docutils literal notranslate"><span class="pre">Chronos2Config.predict_batch_size</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.chronos2_model.Chronos2Config.use_covariates"><code class="docutils literal notranslate"><span class="pre">Chronos2Config.use_covariates</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -2871,7 +3166,34 @@ computing empirical quantiles.</p></li>
 </li>
 </ul>
 </li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">LagLlamaModel</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">TimestralModel</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralModel"><code class="docutils literal notranslate"><span class="pre">TimestralModel</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralModel.__init__"><code class="docutils literal notranslate"><span class="pre">TimestralModel.__init__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralModel.fit"><code class="docutils literal notranslate"><span class="pre">TimestralModel.fit()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralModel.quantile_levels"><code class="docutils literal notranslate"><span class="pre">TimestralModel.quantile_levels</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralModel.set_fit_request"><code class="docutils literal notranslate"><span class="pre">TimestralModel.set_fit_request()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralModel.set_predict_request"><code class="docutils literal notranslate"><span class="pre">TimestralModel.set_predict_request()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralModel.set_score_request"><code class="docutils literal notranslate"><span class="pre">TimestralModel.set_score_request()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#timestralconfig">TimestralConfig</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralConfig"><code class="docutils literal notranslate"><span class="pre">TimestralConfig</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralConfig.device"><code class="docutils literal notranslate"><span class="pre">TimestralConfig.device</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralConfig.domain"><code class="docutils literal notranslate"><span class="pre">TimestralConfig.domain</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralConfig.enforce_monotonic"><code class="docutils literal notranslate"><span class="pre">TimestralConfig.enforce_monotonic</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralConfig.hf_repo"><code class="docutils literal notranslate"><span class="pre">TimestralConfig.hf_repo</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralConfig.horizon"><code class="docutils literal notranslate"><span class="pre">TimestralConfig.horizon</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralConfig.model_config"><code class="docutils literal notranslate"><span class="pre">TimestralConfig.model_config</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralConfig.name"><code class="docutils literal notranslate"><span class="pre">TimestralConfig.name</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralConfig.predict_batch_size"><code class="docutils literal notranslate"><span class="pre">TimestralConfig.predict_batch_size</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.timestral_model.TimestralConfig.use_covariates"><code class="docutils literal notranslate"><span class="pre">TimestralConfig.use_covariates</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">LagLlamaModel</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.lag_llama_model.LagLlamaModel"><code class="docutils literal notranslate"><span class="pre">LagLlamaModel</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.lag_llama_model.LagLlamaModel.__init__"><code class="docutils literal notranslate"><span class="pre">LagLlamaModel.__init__()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#twiga.models.foundational.lag_llama_model.LagLlamaModel.fit"><code class="docutils literal notranslate"><span class="pre">LagLlamaModel.fit()</span></code></a></li>
